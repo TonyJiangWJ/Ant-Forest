@@ -27,12 +27,16 @@ const devices = {
 ## 添加对应手机/分辨率下的多点找色配置
 
 ```javascript
-const multi_colors = {
-  HUAWEI_P10_Plus: {prime: "#30ab7c", extra: [[29, 16, "#ffffff"], [28, 42, "#ffffff"]]},
+const discern = {
+  HUAWEI_P10_Plus: {prime: "#30ab7c", extra: [[29, 16, "#ffffff"], [28, 42, "#ffffff"]], region: {region: [1350, 0, 89, 2559]}},
 }
 ```
 
-其中 prime 是左上角第一个绿色像素点，extra 则是另外两个手指尖端位置的白色像素，其中第一个数字代表该像素相对于绿色像素的x值，第二个数字则代表该像素相对于绿色像素的y值。
+其中：
+
+* prime：下图所示左上角第一个绿色像素点；
+* extra：下图所示两个手指尖端位置的白色像素，其中第一个数字代表该像素相对于绿色像素的x值，第二个数字则代表该像素相对于绿色像素的y值；
+* region：设置识别区域，提高识别效率，区域为下图手状图标所在的屏幕范围。
 
 ![](./instruction.png)
 
@@ -40,10 +44,10 @@ const multi_colors = {
 
 ```javascript
 const config = {
-  device: devices.HUAWEI_P10_Plus,        // 上面填好的设备信息
-  discern: multi_colors.HUAWEI_P10_Plus,  // 上面填好的设备信息
-  passwd: "123456",                       // 解锁密码
-  times: 10                               // 循环收取次数
+  device: devices.HUAWEI_P10_Plus,   // 上面填好的设备信息
+  discern: discern.HUAWEI_P10_Plus,  // 上面填好的设备信息
+  passwd: "123456",                  // 解锁密码
+  times: 10                          // 循环收取次数
 }
 ```
 
