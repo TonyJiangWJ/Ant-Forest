@@ -46,6 +46,7 @@ const discern = {
 const config = {
   device: devices.HUAWEI_P10_Plus,   // 上面填好的设备信息
   discern: discern.HUAWEI_P10_Plus,  // 上面填好的设备信息
+  encrypt: true,                     // 是否设置解锁密码
   passwd: "123456",                  // 解锁密码
   times: 10                          // 循环收取次数
 }

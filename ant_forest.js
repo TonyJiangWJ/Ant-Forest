@@ -36,36 +36,38 @@ const discern = {
   HUAWEI_P10_Plus: {prime: "#30ab7c", extra: [[29, 16, "#ffffff"], [28, 42, "#ffffff"]], region: {region: [1350, 0, 89, 2559]}},
 }
 
-// 配置
+// 执行配置
 const config = {
   device: devices.HUAWEI_P10_Plus,
   discern: discern.HUAWEI_P10_Plus,
+  encrypt: true,
   passwd: "123456",
-  times: 10
+  times: 1
 }
 
-/************************
- * 主程序
- ***********************/
+// 变量别名
+const w = device.width;
+const h = device.height;
 
-// 储存收取数量
-var pre_collect_energy = 0;
-var post_collect_energy = 0;
+/************************
+ * 函数模块
+ ***********************/
 
 // 解锁屏幕
 function unlock() {
   if (!device.isScreenOn()) {
-    const w = device.width;
-    const h = device.height;
-    const pwd = config.passwd.split("");
+    // 唤醒屏幕
     device.wakeUp();
-    sleep(1000);
+    sleep(500);
+    // 滑动解锁
     swipe((w / 2), (3 * h / 4), (w / 2), (h / 4), 300);
-    sleep(1000);
-    pwd.forEach(function(i) {
-      click(config.device[i].x, config.device[i].y);
-    });
-    sleep(1000);
+    sleep(500);
+    // 输入密码
+    if (config.encrypt) {
+      config.passwd.split("").forEach(function(i) {
+        click(config.device[i].x, config.device[i].y);
+      });
+    }
   }
 }
 
@@ -75,36 +77,31 @@ function homepage() {
     action: "VIEW",
     data: "alipays://platformapi/startapp?appId=60000002",    
   });
+  descEndsWith("背包").waitFor();
 }
 
-// 进入好友列表
-function friends_list() {
-  while (true) {
-    if (descEndsWith("查看更多好友").exists() && descEndsWith("查看更多好友").findOne().bounds().centerY() < device.height) {
-      var show_more_fri = descEndsWith("查看更多好友").findOne().bounds();
-      click(show_more_fri.centerX(), show_more_fri.centerY());
-      break;
-    }
-    scrollDown();
-    sleep(1000);
-  }
-}
-
-// 收集能量
+// 收取能量
 function collect() {
   if (descEndsWith("克").exists()) {
     descEndsWith("克").find().forEach(function(obj) {
       click(obj.bounds().centerX(), obj.bounds().centerY());
-      sleep(1000);
+      sleep(500);
     });
   }
+}
+
+// 收取自己的能量
+function collect_own() {
+  if (!textContains("蚂蚁森林").exists()) homepage();
+  if (pre_collect_energy === 0) pre_collect_energy = parseInt(descEndsWith("g").findOne().desc().replace(/[^0-9]/ig, ""));
+  collect();
 }
 
 // 显示文字悬浮窗
 function show_text(text) {
   var window = floaty.window(
     <frame gravity = "center">
-      <text id = "text" textSize="16sp" textColor="#0099FF" />
+      <text id = "text" textSize="20sp" textColor="#228B22" />
     </frame>
   );
   setInterval(()=>{
@@ -118,55 +115,48 @@ function show_text(text) {
   window.exitOnClose();
 }
 
-// 计算收取能量数量并显示
-function calcu_total_collect() {
-  if (!textContains("蚂蚁森林").exists()) homepage();
-  descEndsWith("背包").waitFor();
-  post_collect_energy = parseInt(descEndsWith("g").findOne().desc().replace(/[^0-9]/ig, ""));
-  if (descEndsWith("关闭").exists()) descEndsWith("关闭").findOne().click();
-  home();
-  show_text("共收取：" + (post_collect_energy - pre_collect_energy) + "g 能量");
-}
-
-// 收取自己的能量
-function collect_own() {
-  if (!textContains("蚂蚁森林").exists()) homepage();
-  descEndsWith("背包").waitFor();
-  if (pre_collect_energy === 0) {
-    pre_collect_energy = parseInt(descEndsWith("g").findOne().desc().replace(/[^0-9]/ig, ""));
-  }
-  collect();
-}
-
 // 收取好友的能量
-function collect_friend() {
-  friends_list();
-  sleep(1000);
+function collect_friend(times) {
+  descEndsWith("查看更多好友").findOne().click();
+  while(!textContains("好友排行榜").exists()) sleep(1000);
   while (true) {
     var pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.region);
     while (pos) {
-      click(pos.x + 50, pos.y + 50);
+      click(pos.x, pos.y + 100);
       descEndsWith("浇水").waitFor();
       collect();
       back();
-      sleep(1000);
+      while(!textContains("好友排行榜").exists()) sleep(1000);
       pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.region);
     }
     if (descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne().bounds().centerY() < device.height) break;
     scrollDown();
     sleep(1000);
   }
+  if (times == config.times - 1) {
+    if (descEndsWith("返回").exists()) descEndsWith("返回").findOne().click();
+    descEndsWith("背包").waitFor();
+    post_collect_energy = parseInt(descEndsWith("g").findOne().desc().replace(/[^0-9]/ig, ""));
+    show_text("共收取：" + (post_collect_energy - pre_collect_energy) + "g 能量");
+  }
   if (descEndsWith("关闭").exists()) descEndsWith("关闭").findOne().click();
   home();
 }
 
-// 每隔10秒收取一次
+/************************
+ * 主程序
+ ***********************/
+
+// 储存收取数量
+var pre_collect_energy = 0;
+var post_collect_energy = 0;
+
+// 根据配置收取 n 次，之间的 n-1 次间隔 20s
 for (let i = 0; i < config.times; i++) {
   unlock();
   collect_own();
-  collect_friend();
-  sleep(10000);
+  collect_friend(i);
+  if (i != config.times - 1) {
+    sleep(20000);
+  }
 }
-
-// 计算收取的能量数量
-calcu_total_collect();
