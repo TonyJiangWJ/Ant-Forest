@@ -122,7 +122,7 @@ function collect_friend(times) {
   while (true) {
     var pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.region);
     while (pos) {
-      click(pos.x, pos.y + 100);
+      click(pos.x, pos.y + 20);
       descEndsWith("浇水").waitFor();
       collect();
       back();
