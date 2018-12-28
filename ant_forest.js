@@ -33,7 +33,7 @@ const devices = {
 
 // 不同手机/分辨率对应多点找色识别信息
 const discern = {
-  HUAWEI_P10_Plus: {prime: "#30ab7c", extra: [[29, 16, "#ffffff"], [28, 42, "#ffffff"]]},
+  HUAWEI_P10_Plus: {prime: "#30ab7c", extra: [[29, 16, "#ffffff"], [28, 42, "#ffffff"]], region: {region: [1350, 0, 89, 2559]}},
 }
 
 // 配置
@@ -86,7 +86,7 @@ function friends_list() {
       break;
     }
     scrollDown();
-    sleep(500);
+    sleep(1000);
   }
 }
 
@@ -141,17 +141,16 @@ function collect_own() {
 // 收取好友的能量
 function collect_friend() {
   friends_list();
-  sleep(2000);
+  sleep(1000);
   while (true) {
-    var pos = true;
+    var pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.region);
     while (pos) {
-      pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra);
-      if (pos) {
-        click(pos.x + 50, pos.y + 50);
-        descEndsWith("浇水").waitFor();
-        collect();
-        back();
-      }
+      click(pos.x + 50, pos.y + 50);
+      descEndsWith("浇水").waitFor();
+      collect();
+      back();
+      sleep(1000);
+      pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.region);
     }
     if (descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne().bounds().centerY() < device.height) break;
     scrollDown();
