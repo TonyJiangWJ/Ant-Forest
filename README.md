@@ -28,17 +28,19 @@ const devices = {
 
 ```javascript
 const discern = {
-  HUAWEI_P10_Plus: {prime: "#30ab7c", extra: [[29, 16, "#ffffff"], [28, 42, "#ffffff"]], region: {region: [1350, 0, 89, 2559]}},
+  HUAWEI_P10_Plus: {prime: "#31ab7c", extra: [[21, 14, "#1da06e"], [30, 14, "#ffffff"], [17, 42, "#1da06e"], [28, 42, "#ffffff"]], option: {region: [1350, 0, 89, 2559], threhold: 4}},
 }
 ```
 
 其中：
 
-* prime：下图所示左上角第一个绿色像素点；
-* extra：下图所示两个手指尖端位置的白色像素，其中第一个数字代表该像素相对于绿色像素的x值，第二个数字则代表该像素相对于绿色像素的y值；
-* region：设置识别区域，提高识别效率，区域为下图手状图标所在的屏幕范围。
+* prime：下图所示左上角第一个像素点；
+* extra：下图所示四个额外像素点，其中每一个额外像素颜色信息中第一个数字代表该像素相对于 prime 像素点的 x 值，第二个数字则代表该像素相对于 prime 像素点的 y 值；
+* option：设置识别区域和识别偏移量，提高识别效率，具体请参考 Autojs 官方文档。
 
-![](./instruction.png)
+__注意__：如果觉得使用多点找色麻烦的话，也可以直接截取如下图所示的手形图标，然后修改代码中的区域多点找色为区域找图即可，详情见 Autojs 官方文档。
+
+![说明图](./instruction.png)
 
 ## 设置参数
 

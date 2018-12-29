@@ -33,7 +33,7 @@ const devices = {
 
 // 不同手机/分辨率对应多点找色识别信息
 const discern = {
-  HUAWEI_P10_Plus: {prime: "#30ab7c", extra: [[29, 16, "#ffffff"], [28, 42, "#ffffff"]], region: {region: [1350, 0, 89, 2559]}},
+  HUAWEI_P10_Plus: {prime: "#31ab7c", extra: [[21, 14, "#1da06e"], [30, 14, "#ffffff"], [17, 42, "#1da06e"], [28, 42, "#ffffff"]], option: {region: [1350, 0, 89, 2559], threhold: 4}},
 }
 
 // 执行配置
@@ -56,13 +56,10 @@ const h = device.height;
 // 解锁屏幕
 function unlock() {
   if (!device.isScreenOn()) {
-    // 唤醒屏幕
     device.wakeUp();
     sleep(500);
-    // 滑动解锁
     swipe((w / 2), (3 * h / 4), (w / 2), (h / 4), 300);
     sleep(500);
-    // 输入密码
     if (config.encrypt) {
       config.passwd.split("").forEach(function(i) {
         click(config.device[i].x, config.device[i].y);
@@ -120,14 +117,14 @@ function collect_friend(times) {
   descEndsWith("查看更多好友").findOne().click();
   while(!textContains("好友排行榜").exists()) sleep(1000);
   while (true) {
-    var pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.region);
+    var pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.option);
     while (pos) {
       click(pos.x, pos.y + 20);
       descEndsWith("浇水").waitFor();
       collect();
       back();
       while(!textContains("好友排行榜").exists()) sleep(1000);
-      pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.region);
+      pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.option);
     }
     if (descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne().bounds().centerY() < device.height) break;
     scrollDown();
