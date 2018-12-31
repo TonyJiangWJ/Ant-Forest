@@ -88,9 +88,9 @@ function collect() {
 }
 
 // 收取自己的能量
-function collect_own() {
+function collect_own(times) {
   if (!textContains("蚂蚁森林").exists()) homepage();
-  if (pre_collect_energy === 0) pre_collect_energy = parseInt(descEndsWith("g").findOne().desc().replace(/[^0-9]/ig, ""));
+  if (times == 0) pre_collect_energy = parseInt(descEndsWith("g").findOne().desc().replace(/[^0-9]/ig, ""));
   collect();
 }
 
@@ -145,13 +145,13 @@ function collect_friend(times) {
  ***********************/
 
 // 储存收取数量
-var pre_collect_energy = 0;
-var post_collect_energy = 0;
+let pre_collect_energy = 0;
+let post_collect_energy = 0;
 
 // 根据配置收取 n 次，之间的 n-1 次间隔 20s
 for (let i = 0; i < config.times; i++) {
   unlock();
-  collect_own();
+  collect_own(i);
   collect_friend(i);
   if (i != config.times - 1) {
     sleep(20000);
