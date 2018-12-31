@@ -1,8 +1,7 @@
 /*
 * @Author: NickHopps
-* @Date:   2018-12-26 02:44:53
 * @Last Modified by:   NickHopps
-* @Last Modified time: 2018-12-28 11:55:46
+* @Last Modified time: 2018-12-31 20:30:18
 * @Description: 蚂蚁森林自动收能量
 */
 
@@ -33,7 +32,7 @@ const devices = {
 
 // 不同手机/分辨率对应多点找色识别信息
 const discern = {
-  HUAWEI_P10_Plus: {prime: "#31ab7c", extra: [[21, 14, "#1da06e"], [30, 14, "#ffffff"], [17, 42, "#1da06e"], [28, 42, "#ffffff"]], option: {region: [1350, 0, 89, 2559], threhold: 4}},
+  HUAWEI_P10_Plus: {prime: "#31ab7c", extra: [[28, 42, "#ffffff"], [87, 87, "#23a372"]], option: {region: [1350, 0, 89, 2559], threhold: 4}},
 }
 
 // 执行配置
