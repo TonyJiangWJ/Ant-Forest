@@ -151,10 +151,11 @@ function collect_friend(times) {
     if (descEndsWith("返回").exists()) descEndsWith("返回").findOne().click();
     descEndsWith("背包").waitFor();
     post_collect_energy = parseInt(descEndsWith("g").findOne().desc().replace(/[^0-9]/ig, ""));
-    show_text("共收取：" + (post_collect_energy - pre_collect_energy) + "g 能量");
   }
   if (descEndsWith("关闭").exists()) descEndsWith("关闭").findOne().click();
   home();
+  sleep(1000);
+  show_text("共收取：" + (post_collect_energy - pre_collect_energy) + "g 能量");
 }
 
 /************************
