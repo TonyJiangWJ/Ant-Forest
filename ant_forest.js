@@ -96,19 +96,37 @@ function collect_own(times) {
 // 显示文字悬浮窗
 function show_text(text) {
   var window = floaty.window(
-    <frame gravity = "center">
-      <text id = "text" textSize="20sp" textColor="#228B22" />
-    </frame>
+    <card cardBackgroundColor = "#aa000000" cardCornerRadius = "20dp">
+      <horizontal w = "250" h = "40" paddingLeft = "15" gravity="center">
+        <text id = "log" w = "180" h = "30" textSize = "12dp" textColor = "#ffffff" layout_gravity="center" gravity="left|center"></text>
+        <card id = "stop" w = "30" h = "30" cardBackgroundColor = "#fafafa" cardCornerRadius = "15dp" layout_gravity="right|center" paddingRight = "-15">
+          <text w = "30" h = "30" textSize = "16dp" textColor = "#000000" layout_gravity="center" gravity="center">×</text>
+        </card>
+      </horizontal>
+    </card>
   );
+  window.log.setOnTouchListener(function(view, event) {
+    switch (event.getAction()) {
+      case event.ACTION_DOWN:
+        x = event.getRawX();
+        y = event.getRawY();
+        windowX = window.getX();
+        windowY = window.getY();
+        return true;
+      case event.ACTION_MOVE:
+        window.setPosition(windowX + (event.getRawX() - x), windowY + (event.getRawY() - y));
+        return true;
+    }
+    return true;
+  });
+  window.stop.on("click", () => {
+    engines.stopAll();
+  });
   setInterval(()=>{
     ui.run(function(){
-      window.text.setText(text);
+      window.log.text(text)
     });
   }, 1000);
-  window.text.click(()=>{
-    window.setAdjustEnabled(!window.isAdjustEnabled());
-  });
-  window.exitOnClose();
 }
 
 // 收取好友的能量
