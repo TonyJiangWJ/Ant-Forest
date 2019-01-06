@@ -1,7 +1,7 @@
 /*
 * @Author: NickHopps
 * @Last Modified by:   NickHopps
-* @Last Modified time: 2018-12-31 20:30:18
+* @Last Modified time: 2019-01-06 23:15:00
 * @Description: 蚂蚁森林自动收能量
 */
 
@@ -11,9 +11,6 @@
 
 // 检查手机是否开启无障碍服务
 auto();
-
-// 检测安卓版本是否符合要求(安卓7.0以上)
-requiresApi(24);
 
 // 请求截图权限
 if (! requestScreenCapture()) {
@@ -35,25 +32,94 @@ const discern = {
   HUAWEI_P10_Plus: {prime: "#31ab7c", extra: [[28, 42, "#ffffff"], [87, 87, "#23a372"]], option: {region: [1350, 0, 89, 2559], threhold: 4}},
 }
 
+// 判断 ROOT 权限
+const IS_ROOT = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su");
+
 // 执行配置
 const config = {
   device: devices.HUAWEI_P10_Plus,
   discern: discern.HUAWEI_P10_Plus,
   encrypt: true,
   passwd: "123456",
-  times: 1
+  times: 10
 }
 
-// 变量别名
-const w = device.width;
-const h = device.height;
+/************************
+ * 多版本支持
+ ***********************/
+
+// 安卓7.0以下版本使用 root 模式模拟操作
+function Automation_root() {
+  this.check_root = function() {
+    if (!IS_ROOT) {
+      throw new Error("未获取ROOT权限");
+    }
+  };
+
+  this.click = function (x, y) {
+    this.check_root();
+    return (shell("input tap " + x + " " + y, true).code === 0);
+  };
+
+  this.swipe = function (x1, y1, x2, y2, duration) {
+    var duration = duration || 500;
+    this.check_root();
+    return (shell("input swipe " + x1 + " " + y1 + " " + x2 + " " + y2 + " " + duration, true).code === 0);
+  };
+
+  this.back = function() {
+    this.check_root();
+    return (shell("input keyevent KEYCODE_BACK", true).code === 0);
+  }
+}
+
+// 安卓7.0及以上版本使用无障碍服务模拟操作
+function Automation() {
+  this.click = function (x, y) {
+    return click(x, y);
+  };
+
+  this.swipe = function (x1, y1, x2, y2, duration) {
+    var duration = duration || 500;
+    return swipe(x1, y1, x2, y2, duration);
+  };
+
+  this.back = function() {
+    return back();
+  }
+}
+
+// 工厂方法
+function Automator() {
+  var automator = (device.sdkInt < 24) ? new Automation_root() : new Automation();
+
+  return {
+    click: function (x, y) {
+      return automator.click(x, y);
+    },
+    clickCenter: function (obj) {
+      return automator.click(obj.bounds().centerX(), obj.bounds().centerY());
+    },
+    swipe: function (x1, y1, x2, y2, duration) {
+      return automator.swipe(x1, y1, x2, y2, duration);
+    },
+    back: function () {
+      return automator.back();
+    }
+  }
+}
+
+// 加载 Automator
+const amt = new Automator();
 
 /************************
- * 函数模块
+ * 功能模块
  ***********************/
 
 // 解锁屏幕
 function unlock() {
+  var w = device.width;
+  var h = device.height;
   if (!device.isScreenOn()) {
     device.wakeUp();
     sleep(500);
@@ -61,7 +127,7 @@ function unlock() {
     sleep(500);
     if (config.encrypt) {
       config.passwd.split("").forEach(function(i) {
-        click(config.device[i].x, config.device[i].y);
+        amt.click(config.device[i].x, config.device[i].y);
       });
     }
   }
@@ -80,7 +146,7 @@ function homepage() {
 function collect() {
   if (descEndsWith("克").exists()) {
     descEndsWith("克").find().forEach(function(obj) {
-      click(obj.bounds().centerX(), obj.bounds().centerY());
+      amt.clickCenter(obj);
       sleep(500);
     });
   }
@@ -126,7 +192,7 @@ function show_text(text) {
     ui.run(function(){
       window.log.text(text)
     });
-  }, 1000);
+  }, 0);
 }
 
 // 收取好友的能量
@@ -136,10 +202,10 @@ function collect_friend(times) {
   while (true) {
     var pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.option);
     while (pos) {
-      click(pos.x, pos.y + 20);
+      amt.click(pos.x, pos.y + 20);
       descEndsWith("浇水").waitFor();
       collect();
-      back();
+      amt.back();
       while(!textContains("好友排行榜").exists()) sleep(1000);
       pos = images.findMultiColors(captureScreen(), config.discern.prime, config.discern.extra, config.discern.option);
     }
@@ -165,12 +231,12 @@ function collect_friend(times) {
 let pre_collect_energy = 0;
 let post_collect_energy = 0;
 
-// 根据配置收取 n 次，之间的 n-1 次间隔 20s
+// 根据配置收取 n 次，之间的 n-1 次间隔 10s
 for (let i = 0; i < config.times; i++) {
   unlock();
   collect_own(i);
   collect_friend(i);
   if (i != config.times - 1) {
-    sleep(20000);
+    sleep(10000);
   }
 }
