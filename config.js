@@ -10,6 +10,7 @@ var config = {
   discern: {prime: "#31ab7c", extra: [[28, 42, "#ffffff"], [87, 87, "#23a372"]]},
   password: "52897",
   max_wait_time: 20,
+  wait_time_offset: 5,
   max_retry_times: 3,
   max_repeat_times: 10
 };
