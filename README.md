@@ -8,8 +8,9 @@
 
 # 功能
 
-- 自动识别屏幕锁定方式并根据配置的密码解锁，支持图形解锁，PIN解锁，混合密码解锁。
-- 根据好友列表倒计时是否满足配置的时间，一段时间后自动运行。
+- 自动匹配不同系统下自动化的方式，安卓7及以上通过无障碍服务模拟操作，以下版本通过 root 权限模拟操作；
+- 自动识别屏幕锁定方式并根据配置的密码解锁，支持图形解锁，PIN解锁，混合密码解锁；
+- 识别自己能量球的倒计时，和好友列表中的倒计时做对比，取最小值作为下次收取的等待时间；
 - 收取完毕后悬浮框显示收取的能量数量。
 
 # 配置
@@ -20,10 +21,9 @@
 var config = {
   discern: {prime: "#31ab7c", extra: [[28, 42, "#ffffff"], [87, 87, "#23a372"]]},
   password: "52897",
-  max_wait_time: 20,
-  wait_time_offset: 5,
-  max_retry_times: 3,
-  max_repeat_times: 10
+  max_unlock_retry: 3,
+  max_collect_repeat: 20,
+  max_collect_wait_time: 20
 };
 ```
 
@@ -31,10 +31,9 @@ var config = {
 
 - discern：用来识别可收集标志，采用多点找色的办法，取点的方法见下图；
 - password：手机解锁密码，如果是图形解锁则为图形经过的点对应的数字；
-- max_wait_time：等待好友收取能量倒计时的最大值；
-- wait_time_offset：由于下拉好友列表需要一定时间，可以通过这个偏移值减少等待时间，单位是秒；
-- max_retry_times：解锁最大尝试次数；
-- max_repeat_times：脚本重复收取的最大次数。
+- max_unlock_retry：解锁最大尝试次数；
+- max_collect_repeat：脚本重复收取的最大次数；
+- max_collect_wait_time：等待好友收取能量倒计时的最大值。
 
 ## 如何获取所需图片的信息
 
@@ -55,4 +54,5 @@ var config = {
 # 目前存在的问题
 
 - 某些未ROOT设备无法解锁混合密码
+- Autojs 在锁屏状态下由于软件优先度被降低导致 sleep() 函数时间不准确
 

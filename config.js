@@ -1,7 +1,7 @@
 /*
 * @Author: NickHopps
 * @Last Modified by:   NickHopps
-* @Last Modified time: 2019-01-10 02:24:41
+* @Last Modified time: 2019-01-18 19:33:35
 * @Description: 配置文件
 */
 
@@ -9,10 +9,9 @@
 var config = {
   discern: {prime: "#31ab7c", extra: [[28, 42, "#ffffff"], [87, 87, "#23a372"]]},
   password: "52897",
-  max_wait_time: 20,
-  wait_time_offset: 5,
-  max_retry_times: 3,
-  max_repeat_times: 10
+  max_unlock_retry: 3,
+  max_collect_repeat: 20,
+  max_collect_wait_time: 20
 };
 
 module.exports = config;
