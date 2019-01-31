@@ -4,7 +4,7 @@
     "ignore": [
         "build"
     ],
-    "packageName": "com.ant-forest-autoscript",
-    "versionName": "2.0.0",
+    "packageName": "com.example",
+    "versionName": "1.0.0",
     "versionCode": 1
 }
