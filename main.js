@@ -1,7 +1,7 @@
 /*
 * @Author: NickHopps
 * @Last Modified by:   NickHopps
-* @Last Modified time: 2019-01-31 11:47:10
+* @Last Modified time: 2019-01-31 18:40:40
 * @Description: 蚂蚁森林自动收能量
 */
 
@@ -22,12 +22,12 @@ if (! requestScreenCapture()) {
  ***********************/
 var Automator = require("./lib/Automator.js");
 var Unlock = require("./lib/Unlock.js");
-var Ant_forest = require("./lib/Ant_forest.js");
-var config = require("./config.js");
+var Ant_forest = require("./core/Ant_forest.js");
 
-var automator = new Automator();
-var unlock = new Unlock(automator, config);
-var ant_forest = new Ant_forest(automator, unlock, config);
+var automator = Automator();
+var config = require("./config.js");
+var unlock = Unlock(automator, config);
+var ant_forest = Ant_forest(automator, unlock, config);
 
 /************************
  * 主程序
