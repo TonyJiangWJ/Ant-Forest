@@ -198,15 +198,20 @@ function Ant_forest(automator, unlock, config) {
     if (className("Button").descMatches(/\s/).exists()) {
       className("Button").descMatches(/\s/).untilFind().forEach(function(energy_ball) {
         let bounds = energy_ball.bounds();
-        let threshold = _config.color_offset;
-        if (images.findColor(screen, "#f99236", {region: [bounds.left, bounds.top, bounds.width(), bounds.height()], threshold: threshold})) {
+        let o_x = bounds.left,
+            o_y = bounds.top,
+            o_w = bounds.width(),
+            o_h = bounds.height(),
+            threshold = _config.color_offset;
+        if (images.findColor(screen, "#f99236", {region: [o_x, o_y, o_w, o_h], threshold: threshold})
+          || images.findColor(screen, "#fdc183", {region: [o_x, o_y, o_w, o_h], threshold: threshold})) {
           _automator.clickCenter(energy_ball);
           sleep(500);
         }
       });
     }
   }
-
+  
   // 判断是否可收取
   const _is_obtainable = function(obj, screen) {
     let len = obj.childCount();
@@ -328,6 +333,7 @@ function Ant_forest(automator, unlock, config) {
   return {
     exec: function() {
       let thread = threads.start(function() {
+        events.setMaxListeners(0);
         events.observeToast();
       });
       while (true) {
@@ -336,6 +342,8 @@ function Ant_forest(automator, unlock, config) {
         _unlock.exec();
         _collect_own();
         _collect_friend();
+        log("当前监听器数量: " + events.listenerCount("toast"));
+        events.removeAllListeners();
         if (_current_time++ > _config.max_collect_repeat || _has_next == false) break;
       }
       thread.interrupt();
