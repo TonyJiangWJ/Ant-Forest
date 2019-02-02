@@ -100,10 +100,10 @@ function Ant_forest(automator, unlock, config) {
         });
         _min_countdown = Math.min.apply(null, temp);
         _timestamp = new Date();
-      } else {
-        _min_countdown = null;
-        log("无可收取能量");
       }
+    } else {
+      _min_countdown = null;
+      log("无可收取能量");
     }
   }
 
