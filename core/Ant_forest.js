@@ -111,13 +111,8 @@ function Ant_forest(automator, unlock, config) {
   const _get_min_countdown = function() {
     let temp = [];
     if (_min_countdown && _timestamp instanceof Date) {
-      let interval = (new Date() - _timestamp) / 1000;
-      if (interval > 30) {
-        let countdown_own = _min_countdown - Math.ceil(interval / 60);
-        countdown_own >= 0 ? temp.push(countdown_own) : temp.push(0);
-      } else {
-        temp.push(_min_countdown);
-      }
+      let countdown_own = _min_countdown - Math.floor((new Date() - _timestamp) / 60000);
+      countdown_own >= 0 ? temp.push(countdown_own) : temp.push(0);
     }
     if (descEndsWith("’").exists()) {
       descEndsWith("’").untilFind().forEach(function(countdown) {
@@ -140,7 +135,7 @@ function Ant_forest(automator, unlock, config) {
     minutes = (typeof minutes != null) ? minutes : 0;
     for (let i = 0; i < minutes; i++) {
       log("距离下次运行还有 " + (minutes - i) + " 分钟");
-      sleep(60 * 1000);
+      sleep(60000);
     }
   }
 
