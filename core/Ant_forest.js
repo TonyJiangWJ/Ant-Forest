@@ -111,26 +111,27 @@ function Ant_forest(automator, unlock, config) {
   const _get_min_countdown = function() {
     let temp = [];
     if (_min_countdown && _timestamp instanceof Date) {
-      // 收取结束时若收取时间超过30s，则自己能量倒计时减1
       let interval = (new Date() - _timestamp) / 1000;
-      if (interval > 30) temp.push(_min_countdown--);
+      if (interval > 30) {
+        let countdown_own = _min_countdown - Math.ceil(interval / 60);
+        countdown_own >= 0 ? temp.push(countdown_own) : temp.push(0);
+      } else {
+        temp.push(_min_countdown);
+      }
     }
     if (descEndsWith("’").exists()) {
       descEndsWith("’").untilFind().forEach(function(countdown) {
-        let coutndown = parseInt(countdown.desc().match(/\d+/));
-        temp.push(coutndown);
+        let countdown_fri = parseInt(countdown.desc().match(/\d+/));
+        temp.push(countdown_fri);
       });
     }
-    if (!_min_countdown && !descEndsWith("’").exists()) {
-      _min_countdown = null;
-      return;
-    }
+    if (!temp.length) return;
     _min_countdown = Math.min.apply(null, temp);
   }
 
   // 构建下一次运行
   const _generate_next = function() {
-    if (_min_countdown && _min_countdown <= _config.max_collect_wait_time) _has_next = true;
+    if (_min_countdown != null && _min_countdown <= _config.max_collect_wait_time) _has_next = true;
     else _has_next = false;
   }
 
@@ -344,7 +345,10 @@ function Ant_forest(automator, unlock, config) {
         _collect_friend();
         log("当前监听器数量: " + events.listenerCount("toast"));
         events.removeAllListeners();
-        if (_current_time++ > _config.max_collect_repeat || _has_next == false) break;
+        if (_current_time++ > _config.max_collect_repeat || _has_next == false) {
+          log("收取结束");
+          break;
+        }
       }
       thread.interrupt();
     }
