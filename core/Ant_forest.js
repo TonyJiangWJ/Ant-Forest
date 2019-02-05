@@ -271,7 +271,7 @@ function Ant_forest(automator, unlock, config) {
       let obj = _avil_list.shift();
       if (!obj.protect) {
         let temp = _protect_detect(_package_name);
-        click(obj.target.centerX(), obj.target.centerY());
+        _automator.click(obj.target.centerX(), obj.target.centerY());
         descEndsWith("浇水").waitFor();
         if (_config.help_friend) _collect_and_help();
         else _collect();
