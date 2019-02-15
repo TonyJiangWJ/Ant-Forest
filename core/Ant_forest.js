@@ -75,9 +75,9 @@ function Ant_forest(automator, unlock, config) {
       });
       // 触发 toast
       object.forEach(function(obj) {
+        counter++;
         _automator.clickCenter(obj);
         sleep(100);
-        counter++;
       });
     });
     // 获取结果
