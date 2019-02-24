@@ -340,7 +340,7 @@ function Ant_forest(automator, unlock, config) {
         _collect_friend();
         log("当前监听器数量: " + events.listenerCount("toast"));
         events.removeAllListeners();
-        if (_current_time++ > _config.max_collect_repeat || _has_next == false) {
+        if (++_current_time > _config.max_collect_repeat || _has_next == false) {
           log("收取结束");
           break;
         }
