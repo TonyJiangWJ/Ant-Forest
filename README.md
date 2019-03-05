@@ -1,8 +1,6 @@
 # 简介
 
-基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.0 Alpha 版本开发。解锁模块参考自：https://github.com/e1399579/autojs
-
-*注意：新版本因缺乏样本，测试不够全面，麻烦大家及时反馈BUG，如需使用旧版，直接下载 old 中的文件*
+基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha 版本开发。解锁模块参考自：https://github.com/e1399579/autojs
 
 - 2019/1/31 
   - ~~发现识别能量罩时采用的函数不合适~~（使用了同步获取 toast 的方法，会卡住，已修正）
@@ -21,9 +19,14 @@
   - ~~实际运行中安卓7.0以下会报错~~（已修正）
 
 - 2019/2/24
-  - 多语言问题，繁体或者英文环境下判断字符不同（待修正）
+  - 多语言问题，繁体或者英文环境下判断字符不同（取消）
   - ~~当收取次数设置为 0 次时，收取行为出错~~（已修正）
-  - 初次进入蚂蚁森林弹窗提醒添加至首页和合种信息（待修正）
+  - ~~初次进入蚂蚁森林弹窗提醒添加至首页和合种信息~~（已修正）
+
+- 2019/3/5
+  - 重构了一下 Unlock 的内容，方便添加设备
+  - 由于基本所有设备解锁都有滑动层，因此去掉了判断是否有滑动层的代码
+  - 目前看来新版本效果不错，因此去掉了 old 版本的脚本
 
 # 使用
 
@@ -44,10 +47,11 @@
 
 ```javascript
 var config = {
-  color_offset: 4,
-  password: "52897",
+  color_offset: 10,
+  password: "123456",
   help_friend: true,
-  max_unlock_retry: 3,
+  timeout_unlock: 1000,
+  timeout_findOne: 1000,
   max_collect_repeat: 20,
   max_collect_wait_time: 20
 };
@@ -58,9 +62,44 @@ var config = {
 - color_offset：设置颜色识别的偏移量，如果识别失败可以尝试增加该值；
 - password：手机解锁密码，如果是图形解锁则为图形经过的点对应的数字；
 - help_friend：设定是否帮助好友收取能量；
-- max_unlock_retry：解锁最大尝试次数；
+- timeout_unlock：解锁模块的延时，解锁操作过快导致出错时可修改，默认为1s；
+- timeout_findOne：控件搜索时最大搜索时间，找不到控件时可修改，默认为1s；
 - max_collect_repeat：脚本重复收取的最大次数；
 - max_collect_wait_time：等待好友收取能量倒计时的最大值。
+
+# 添加解锁设备
+
+在 Unlock.js 中，按照以下格式扩展：
+
+```javascript
+var Devices = { 
+  device_1: function(obj) {
+    this.__proto__ = obj;
+
+    this.unlock = function(password) {
+      if (typeof password !== "string") throw new Error("密码应为字符串！");
+      
+      // 此处为解锁的代码
+
+      return this.check_unlock();
+    }
+  },
+  device_2: function(obj) {
+    ...
+  },
+  device_3: function(obj) {
+    ...
+  }
+}
+```
+
+上述所示为最简单的解锁模板，也可以参考 Unlocl.js 默认多解锁方式的代码进行修改。
+
+然后在下方的 MyDevice 中设置解锁设备：
+
+```javascript
+var MyDevice = Devices.device_1;
+```
 
 # 注意事项
 
@@ -71,7 +110,4 @@ var config = {
 
 # 目前存在的问题
 
-- 某些未ROOT设备无法解锁混合密码
 - Autojs 在锁屏状态下由于软件优先度被降低导致 sleep() 函数时间不准确
-- 由于MIUI的布局和原生差别有点大，小米手机无法解锁，希望哪位朋友能帮忙开发一下，添加到 Unlock.js 的 Device 里面即可
-

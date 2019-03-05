@@ -1,15 +1,15 @@
 /*
-* @Author: NickHopps
-* @Last Modified by:   NickHopps
-* @Last Modified time: 2019-01-31 18:39:57
-* @Description: 蚂蚁森林操作集
-*/
+ * @Author: NickHopps
+ * @Last Modified by: NickHopps
+ * @Last Modified time: 2019-03-05 14:16:13
+ * @Description: 蚂蚁森林操作集
+ */
 
 function Ant_forest(automator, unlock, config) {
-  const _automator = automator;
-  const _unlock = unlock;
-  const _config = config;
-  const _package_name = "com.eg.android.AlipayGphone";
+  const _automator = automator,
+        _unlock = unlock,
+        _config = config,
+        _package_name = "com.eg.android.AlipayGphone";
 
   let _pre_energy = 0,       // 记录收取前能量值
       _post_energy = 0,      // 记录收取后能量值
@@ -31,6 +31,14 @@ function Ant_forest(automator, unlock, config) {
       action: "VIEW",
       data: "alipays://platformapi/startapp?appId=60000002",    
     });
+  }
+
+  // 关闭提醒弹窗
+  const _clear_floty = function() {
+    threads.start(function() {
+      let floty = idEndsWith("J_pop_treedialog_close").findOne(_config.timeout_findOne);
+      if (floty) floty.click();
+    }); 
   }
 
   // 显示文字悬浮窗
@@ -146,7 +154,7 @@ function Ant_forest(automator, unlock, config) {
   // 记录当前能量
   const _get_current_energy = function() {
     if (descEndsWith("背包").exists()) {
-      return parseInt(descEndsWith("g").findOne().desc().match(/\d+/));
+      return parseInt(descEndsWith("g").findOne(_config.timeout_findOne).desc().match(/\d+/));
     }
   }
 
@@ -161,13 +169,13 @@ function Ant_forest(automator, unlock, config) {
   // 记录最终能量值
   const _get_post_energy = function() {
     if (!_fisrt_running && !_has_next) {
-      if (descEndsWith("返回").exists()) descEndsWith("返回").findOne().click();
+      if (descEndsWith("返回").exists()) descEndsWith("返回").findOne(_config.timeout_findOne).click();
       descEndsWith("背包").waitFor();
       _post_energy = _get_current_energy();
       log("当前能量：" + _post_energy);
       _show_floaty("共收取：" + (_post_energy - _pre_energy) + "g 能量");
     }
-    if (descEndsWith("关闭").exists()) descEndsWith("关闭").findOne().click();
+    if (descEndsWith("关闭").exists()) descEndsWith("关闭").findOne(_config.timeout_findOne).click();
     home();
   }
 
@@ -249,7 +257,7 @@ function Ant_forest(automator, unlock, config) {
    // 判断并记录保护罩
    const _record_protected = function(toast) {
     if (toast.indexOf("能量罩") > 0) {
-      let title = textContains("的蚂蚁森林").findOne().text();
+      let title = textContains("的蚂蚁森林").findOne(_config.timeout_findOne).text();
       _has_protect.push(title.substring(0, title.indexOf("的")));
     }
   }
@@ -284,9 +292,9 @@ function Ant_forest(automator, unlock, config) {
 
   // 识别可收取好友并记录
   const _find_and_collect = function() {
-    while (!(descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne().bounds().centerY() < device.height)) {
+    while (!(descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne(_config.timeout_findOne).bounds().centerY() < device.height)) {
       let screen = captureScreen();
-      let friends_list = idEndsWith("J_rank_list").findOne();
+      let friends_list = idEndsWith("J_rank_list").findOne(_config.timeout_findOne);
       if (friends_list) {
         friends_list.children().forEach(function(fri) {
           if (fri.visibleToUser() && fri.childCount()) {
@@ -309,6 +317,7 @@ function Ant_forest(automator, unlock, config) {
     log("开始收集自己能量");
     if (!textContains("蚂蚁森林").exists()) _start_app();
     descEndsWith("背包").waitFor();
+    _clear_floty();
     _get_pre_energy();
     _collect();
     _get_min_countdown_own();
@@ -318,7 +327,7 @@ function Ant_forest(automator, unlock, config) {
   // 收取好友的能量
   const _collect_friend = function() {
     log("开始收集好友能量");
-    descEndsWith("查看更多好友").findOne().click();
+    descEndsWith("查看更多好友").findOne(_config.timeout_findOne).click();
     while(!textContains("好友排行榜").exists()) sleep(1000);
     _find_and_collect();
     _get_min_countdown();
