@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-05 14:16:13
+ * @Last Modified time: 2019-03-05 17:19:47
  * @Description: 蚂蚁森林操作集
  */
 
@@ -134,8 +134,13 @@ function Ant_forest(automator, unlock, config) {
 
   // 构建下一次运行
   const _generate_next = function() {
-    if (_min_countdown != null && _min_countdown <= _config.max_collect_wait_time) _has_next = true;
-    else _has_next = false;
+    if (_config.is_cycle) {
+      if (_current_time < _config.cycle_times) _has_next = true;
+      else _has_next = false;
+    } else {
+      if (_min_countdown != null && _min_countdown <= _config.max_collect_wait_time) _has_next = true;
+      else _has_next = false;
+    }
   }
 
   // 按分钟延时
@@ -343,13 +348,12 @@ function Ant_forest(automator, unlock, config) {
       });
       while (true) {
         _delay(_min_countdown);
-        log("第 " + (_current_time + 1) + " 次运行");
+        log("第 " + (++_current_time) + " 次运行");
         _unlock.exec();
         _collect_own();
         _collect_friend();
-        log("当前监听器数量: " + events.listenerCount("toast"));
         events.removeAllListeners();
-        if (++_current_time > _config.max_collect_repeat || _has_next == false) {
+        if ((!_config.is_cycle && _current_time > _config.max_collect_repeat) || _has_next == false) {
           log("收取结束");
           break;
         }
