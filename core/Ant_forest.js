@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-05 17:19:47
+ * @Last Modified time: 2019-03-07 14:25:21
  * @Description: 蚂蚁森林操作集
  */
 
@@ -212,8 +212,7 @@ function Ant_forest(automator, unlock, config) {
             o_w = bounds.width(),
             o_h = bounds.height(),
             threshold = _config.color_offset;
-        if (images.findColor(screen, "#f99236", {region: [o_x, o_y, o_w, o_h], threshold: threshold})
-          || images.findColor(screen, "#fdc183", {region: [o_x, o_y, o_w, o_h], threshold: threshold})) {
+        if (images.findColor(screen, "#f99236", {region: [o_x, o_y, o_w, o_h], threshold: threshold})) {
           _automator.clickCenter(energy_ball);
           sleep(500);
         }
@@ -256,7 +255,7 @@ function Ant_forest(automator, unlock, config) {
     temp.protect = false;
     _has_protect.forEach(function(obj) {if (temp.name == obj) temp.protect = true});
     // 添加到可收取列表
-    _avil_list.push(temp);
+    if (_config.white_list.indexOf(temp.name) < 0) _avil_list.push(temp);
   }
 
    // 判断并记录保护罩
@@ -307,6 +306,7 @@ function Ant_forest(automator, unlock, config) {
           }
         });
         _collect_avil_list();
+        log(_avil_list);
       }
       scrollDown();
       sleep(1000);

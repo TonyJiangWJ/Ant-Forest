@@ -29,6 +29,10 @@
   - 目前看来新版本效果不错，因此去掉了 old 版本的脚本
   - 增加循环收取的功能
 
+- 2019/3/7
+  - 增加白名单功能
+  - 计算颜色相似度，修改默认颜色偏移量为50
+
 # 使用
 
 下载安装 [Autojs](https://github.com/hyb1996/Auto.js) 之后把整个脚本项目放进 __"/sdcard/脚本/"__ 文件夹下面。运行项目或者 main 即可。
@@ -41,6 +45,7 @@
 - 识别好友能量罩，下一次收取时跳过开启能量罩的好友；
 - 默认使用倒计时收取，可通过配置打开循环收取；
 - 根据设置选择是否帮助好友收取能量；
+- 根据白名单实现不收取特定还有能量；
 - 收取完毕后悬浮框显示收取的能量数量。
 
 # 配置
@@ -49,7 +54,7 @@
 
 ```javascript
 var config = {
-  color_offset: 10,
+  color_offset: 50,
   password: "123456",
   help_friend: true,
   is_cycle: false,
@@ -57,13 +62,14 @@ var config = {
   timeout_unlock: 1000,
   timeout_findOne: 1000,
   max_collect_repeat: 20,
-  max_collect_wait_time: 20
+  max_collect_wait_time: 20,
+  white_list: ["好友1", "好友2"]
 };
 ```
 
 其中：
 
-- color_offset：设置颜色识别的偏移量，如果识别失败可以尝试增加该值；
+- color_offset：设置颜色识别的偏移量，如果识别失败可以尝试增加该值，默认为50，即80%的相似度；
 - password：手机解锁密码，如果是图形解锁则为图形经过的点对应的数字；
 - help_friend：设定是否帮助好友收取能量；
 - is_cycle: false：设定是否循环执行，开启后 max_collect_repeat 无效；
@@ -71,7 +77,8 @@ var config = {
 - timeout_unlock：解锁模块的延时，解锁操作过快导致出错时可修改，默认为1s；
 - timeout_findOne：控件搜索时最大搜索时间，找不到控件时可修改，默认为1s；
 - max_collect_repeat：脚本重复收取的最大次数；
-- max_collect_wait_time：等待好友收取能量倒计时的最大值。
+- max_collect_wait_time：等待好友收取能量倒计时的最大值；
+- white_list：白名单，将好友的 ID 添加到白名单实现不收取特定好友的能量。
 
 # 添加解锁设备
 
