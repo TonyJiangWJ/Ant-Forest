@@ -306,7 +306,6 @@ function Ant_forest(automator, unlock, config) {
           }
         });
         _collect_avil_list();
-        log(_avil_list);
       }
       scrollDown();
       sleep(1000);
