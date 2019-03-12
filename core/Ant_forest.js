@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-12 10:11:41
+ * @Last Modified time: 2019-03-12 12:49:40
  * @Description: 蚂蚁森林操作集
  */
 
@@ -100,10 +100,11 @@ function Ant_forest(automator, unlock, config) {
 
   // 获取自己的能量球中可收取倒计时的最小值
   const _get_min_countdown_own = function() {
-    if (className("Button").descMatches(/\s/).exists()) {
-      let energy_ball = className("Button").descMatches(/\s/).filter(function(obj){
-        return obj.bounds().width() != obj.bounds().height();
-      }).untilFind();
+    let target = className("Button").descMatches(/\s/).filter(function(obj) {
+      return obj.bounds().width() != obj.bounds().height()
+    });
+    if (target.exists()) {
+      let energy_ball = target.untilFind();
       // 如果存在能量球则通过 toast 记录收取倒计时
       if (energy_ball.length) {
         let temp = [];
@@ -211,9 +212,7 @@ function Ant_forest(automator, unlock, config) {
     _collect();
     // 帮助好友收取能量
     if (className("Button").descMatches(/\s/).exists()) {
-      className("Button").descMatches(/\s/).filter(function(obj){
-        return obj.bounds().width() != obj.bounds().height();
-      }).untilFind().forEach(function(energy_ball) {
+      className("Button").descMatches(/\s/).untilFind().forEach(function(energy_ball) {
         let bounds = energy_ball.bounds();
         let o_x = bounds.left,
             o_y = bounds.top,
