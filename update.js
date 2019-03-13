@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps 
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-13 22:45:15
+ * @Last Modified time: 2019-03-13 22:54:50
  * @Description: 脚本更新
  */
 
@@ -53,7 +53,6 @@ function stopDownload() {
 function startDownload() {
   downloadId = setInterval(()=>{
     let process = downloadDialog.getProgress();
-    log(process);
     if (process >= update_list.length) {
       stopDownload();
       downloadDialog.dismiss();
