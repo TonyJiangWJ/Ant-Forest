@@ -1,11 +1,11 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-12 12:49:40
+ * @Last Modified time: 2019-03-13 09:07:19
  * @Description: 蚂蚁森林操作集
  */
 
-function Ant_forest(automator, unlock, config) {
+function Ant_forest(automator, unlock) {
   const _automator = automator,
         _unlock = unlock,
         _config = storages.create("ant_forest_config"),
@@ -34,14 +34,16 @@ function Ant_forest(automator, unlock, config) {
   }
 
   // 关闭提醒弹窗
-  const _clear_floty = function() {
+  const _clear_popup = function() {
+    // 合种/添加快捷方式提醒
     threads.start(function() {
-      let floty = idEndsWith("J_pop_treedialog_close").findOne(_config.get("timeout_findOne"));
-      if (floty) floty.click();
+      let popup = idEndsWith("J_pop_treedialog_close").findOne(_config.get("timeout_findOne"));
+      if (popup) popup.click();
     });
+    // 活动
     threads.start(function() {
-      let floty = descEndsWith("关闭蒙层").findOne(_config.get("timeout_findOne"));
-      if (floty) floty.click();
+      let popup = descEndsWith("关闭蒙层").findOne(_config.get("timeout_findOne"));
+      if (popup) popup.click();
     }); 
   }
 
@@ -67,36 +69,36 @@ function Ant_forest(automator, unlock, config) {
     }, 0);
   }
 
-  /***********************
-   * 构建下次运行
-   ***********************/
-
   // 同步获取 toast 内容
-  const _get_toast_sync = function(filter, object) {
+  const _get_toast_sync = function(filter, limit, exec) {
     filter = (typeof filter == null) ? "" : filter;
     let messages = threads.disposable();
-    let result;
     // 在新线程中开启监听
     let thread = threads.start(function() {
       let temp = [];
       let counter = 0;
       // 监控 toast
       events.onToast(function(toast) {
-        if (toast.getPackageName().indexOf(filter) >= 0) temp.push(toast.getText());
-        if (counter == object.length) messages.setAndNotify(temp);
+        if (toast) {
+          if (toast.getPackageName().indexOf(filter) >= 0) {
+            counter++;
+            temp.push(toast.getText())
+            if (counter == limit) messages.setAndNotify(temp);
+          }
+        }
       });
       // 触发 toast
-      object.forEach(function(obj) {
-        counter++;
-        _automator.clickCenter(obj);
-        sleep(500);
-      });
+      exec();
     });
     // 获取结果
-    result = messages.blockedGet();
+    let result = messages.blockedGet();
     thread.interrupt();
     return result;
   }
+
+  /***********************
+   * 获取下次运行倒计时
+   ***********************/
 
   // 获取自己的能量球中可收取倒计时的最小值
   const _get_min_countdown_own = function() {
@@ -104,18 +106,20 @@ function Ant_forest(automator, unlock, config) {
       return obj.bounds().width() != obj.bounds().height()
     });
     if (target.exists()) {
-      let energy_ball = target.untilFind();
-      // 如果存在能量球则通过 toast 记录收取倒计时
-      if (energy_ball.length) {
-        let temp = [];
-        let toasts = _get_toast_sync(_package_name, energy_ball);
-        toasts.forEach(function(toast) {
-          let countdown = toast.match(/\d+/g);
-          temp.push(countdown[0] * 60 - (-countdown[1]));
+      let ball = target.untilFind();
+      let temp = [];
+      let toasts = _get_toast_sync(_package_name, ball.length, function() {
+        ball.forEach(function(obj) {
+          _automator.clickCenter(obj);
+          sleep(500);
         });
-        _min_countdown = Math.min.apply(null, temp);
-        _timestamp = new Date();
-      }
+      });
+      toasts.forEach(function(toast) {
+        let countdown = toast.match(/\d+/g);
+        temp.push(countdown[0] * 60 - (-countdown[1]));
+      });
+      _min_countdown = Math.min.apply(null, temp);
+      _timestamp = new Date();
     } else {
       _min_countdown = null;
       log("无可收取能量");
@@ -139,14 +143,24 @@ function Ant_forest(automator, unlock, config) {
     _min_countdown = Math.min.apply(null, temp);
   }
 
+  /***********************
+   * 构建下次运行操作
+   ***********************/
+
   // 构建下一次运行
   const _generate_next = function() {
     if (_config.get("is_cycle")) {
-      if (_current_time < _config.get("cycle_times")) _has_next = true;
-      else _has_next = false;
+      if (_current_time < _config.get("cycle_times")) {
+        _has_next = true;
+      } else {
+        _has_next = false;
+      }
     } else {
-      if (_min_countdown != null && _min_countdown <= _config.get("max_collect_wait_time")) _has_next = true;
-      else _has_next = false;
+      if (_min_countdown != null && _min_countdown <= _config.get("max_collect_wait_time")) {
+        _has_next = true;
+      } else {
+        _has_next = false;
+      } 
     }
   }
 
@@ -198,8 +212,8 @@ function Ant_forest(automator, unlock, config) {
   // 收取能量
   const _collect = function() {
     if (descEndsWith("克").exists()) {
-      descEndsWith("克").untilFind().forEach(function(energy_ball) {
-        _automator.clickCenter(energy_ball);
+      descEndsWith("克").untilFind().forEach(function(ball) {
+        _automator.clickCenter(ball);
         sleep(500);
       });
     }
@@ -212,15 +226,14 @@ function Ant_forest(automator, unlock, config) {
     _collect();
     // 帮助好友收取能量
     if (className("Button").descMatches(/\s/).exists()) {
-      className("Button").descMatches(/\s/).untilFind().forEach(function(energy_ball) {
-        let bounds = energy_ball.bounds();
-        let o_x = bounds.left,
-            o_y = bounds.top,
-            o_w = bounds.width(),
-            o_h = bounds.height(),
-            threshold = _config.get("color_offset");
-        if (images.findColor(screen, "#f99236", {region: [o_x, o_y, o_w, o_h], threshold: threshold})) {
-          _automator.clickCenter(energy_ball);
+      className("Button").descMatches(/\s/).untilFind().forEach(function(ball) {
+        let x = ball.bounds().left,
+            y = ball.bounds().top,
+            w = ball.bounds().width(),
+            h = ball.bounds().height(),
+            t = _config.get("color_offset");
+        if (images.findColor(screen, "#f99236", {region: [x, y, w, h], threshold: t})) {
+          _automator.clickCenter(ball);
           sleep(500);
         }
       });
@@ -230,17 +243,16 @@ function Ant_forest(automator, unlock, config) {
   // 判断是否可收取
   const _is_obtainable = function(obj, screen) {
     let len = obj.childCount();
-    let o_x = obj.child(len - 3).bounds().right,
-        o_y = obj.bounds().top,
-        o_w = 5,
-        o_h = obj.bounds().height() - 10,
-        threshold = _config.get("color_offset");
-    if (o_h > 0 && !obj.child(len - 2).childCount()) {
+    let x = obj.child(len - 3).bounds().right,
+        y = obj.bounds().top,
+        w = 5,
+        h = obj.bounds().height() - 10,
+        t = _config.get("color_offset");
+    if (h > 0 && !obj.child(len - 2).childCount()) {
       if (_config.get("help_friend")) {
-        return images.findColor(screen, "#1da06a", {region: [o_x, o_y, o_w, o_h], threshold: threshold})
-          || images.findColor(screen, "#f99236", {region: [o_x, o_y, o_w, o_h], threshold: threshold});
+        return images.findColor(screen, "#1da06a", {region: [x, y, w, h], threshold: t}) || images.findColor(screen, "#f99236", {region: [x, y, w, h], threshold: t});
       } else {
-        return images.findColor(screen, "#1da06a", {region: [o_x, o_y, o_w, o_h], threshold: threshold});
+        return images.findColor(screen, "#1da06a", {region: [x, y, w, h], threshold: t});
       }
     } else {
       return false;
@@ -260,7 +272,9 @@ function Ant_forest(automator, unlock, config) {
     }
     // 记录是否有保护罩
     temp.protect = false;
-    _has_protect.forEach(function(obj) {if (temp.name == obj) temp.protect = true});
+    _has_protect.forEach(function(obj) {
+      if (temp.name == obj) temp.protect = true
+    });
     // 添加到可收取列表
     if (_config.get("white_list").indexOf(temp.name) < 0) _avil_list.push(temp);
   }
@@ -292,8 +306,11 @@ function Ant_forest(automator, unlock, config) {
         let temp = _protect_detect(_package_name);
         _automator.click(obj.target.centerX(), obj.target.centerY());
         descEndsWith("浇水").waitFor();
-        if (_config.get("help_friend")) _collect_and_help();
-        else _collect();
+        if (_config.get("help_friend")) {
+          _collect_and_help();
+        } else {
+          _collect();
+        }
         _automator.back();
         temp.interrupt();
         while(!textContains("好友排行榜").exists()) sleep(1000);
@@ -308,9 +325,8 @@ function Ant_forest(automator, unlock, config) {
       let friends_list = idEndsWith("J_rank_list").findOne(_config.get("timeout_findOne"));
       if (friends_list) {
         friends_list.children().forEach(function(fri) {
-          if (fri.visibleToUser() && fri.childCount()) {
+          if (fri.visibleToUser() && fri.childCount())
             if (_is_obtainable(fri, screen)) _record_avil_list(fri);
-          }
         });
         _collect_avil_list();
       }
@@ -328,7 +344,7 @@ function Ant_forest(automator, unlock, config) {
     log("开始收集自己能量");
     if (!textContains("蚂蚁森林").exists()) _start_app();
     descEndsWith("背包").waitFor();
-    _clear_floty();
+    _clear_popup();
     _get_pre_energy();
     _collect();
     _get_min_countdown_own();
