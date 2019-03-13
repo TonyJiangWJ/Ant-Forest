@@ -1,16 +1,16 @@
 /*
  * @Author: NickHopps 
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-13 22:12:18
+ * @Last Modified time: 2019-03-13 22:45:15
  * @Description: 脚本更新
  */
 
-var server_path = "https://www.infiniture.cn/ant-forest";
-var remote_file_temp = {};
-var update_list = [];
-var downloadDialog = null;
-var downloadId = -1;
-
+var server_path = "https://www.infiniture.cn/ant-forest",
+    remote_file_temp = {},
+    update_list = [],
+    downloadDialog = null,
+    downloadId = -1;
+    
 // 获取文件更新状态
 function get_update_status(local_path, remote_path) {
   let local_file = files.read(local_path, "utf-8");
@@ -29,10 +29,12 @@ function get_update_status(local_path, remote_path) {
 function check_update(path) {
   files.listDir(path).forEach(function(file) {
     let new_path = files.join(path, file);
-    if (files.isDir(new_path)) {
-      check_update(new_path);
-    } else {
-      if (get_update_status(new_path, server_path) == true) update_list.push(new_path);
+    if (file != ".git") {
+      if (files.isDir(new_path)) {
+        check_update(new_path);
+      } else {
+        if (get_update_status(new_path, server_path) == true) update_list.push(new_path);
+      }
     }
   });
 }
