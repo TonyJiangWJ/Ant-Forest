@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-14 09:48:49
+ * @Last Modified time: 2019-03-14 10:29:30
  * @Description: 蚂蚁森林操作集
  */
 
@@ -325,7 +325,7 @@ function Ant_forest(automator, unlock) {
       let friends_list = idEndsWith("J_rank_list").findOne(_config.get("timeout_findOne"));
       if (friends_list) {
         friends_list.children().forEach(function(fri) {
-          if (fri.visibleToUser() && fri.childCount())
+          if (fri.visibleToUser() && fri.childCount() > 3)
             if (_is_obtainable(fri, screen)) _record_avil_list(fri);
         });
         _collect_avil_list();
@@ -374,6 +374,7 @@ function Ant_forest(automator, unlock) {
         _unlock.exec();
         _collect_own();
         _collect_friend();
+        if (_config.get("is_cycle")) sleep(1000);
         events.removeAllListeners();
         if (_has_next == false) {
           log("收取结束");

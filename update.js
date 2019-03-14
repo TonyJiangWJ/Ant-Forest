@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps 
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-14 09:46:13
+ * @Last Modified time: 2019-03-14 10:36:40
  * @Description: 脚本更新
  */
 
@@ -34,8 +34,7 @@ function check_update(path) {
       if (files.isDir(new_path)) {
         check_update(new_path);
       } else {
-        //if (get_update_status(new_path, server_path) == true) update_list.push(new_path);
-        log(new_path);
+        if (get_update_status(new_path, server_path) == true) update_list.push(new_path);
       }
     }
   });
