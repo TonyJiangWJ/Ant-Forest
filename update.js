@@ -1,13 +1,14 @@
 /*
  * @Author: NickHopps 
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-13 22:54:50
+ * @Last Modified time: 2019-03-14 09:46:13
  * @Description: 脚本更新
  */
 
 var server_path = "https://www.infiniture.cn/ant-forest",
     remote_file_temp = {},
     update_list = [],
+    ignore_list = [".git"],
     downloadDialog = null,
     downloadId = -1;
     
@@ -29,11 +30,12 @@ function get_update_status(local_path, remote_path) {
 function check_update(path) {
   files.listDir(path).forEach(function(file) {
     let new_path = files.join(path, file);
-    if (file != ".git") {
+    if (ignore_list.indexOf(file) < 0) {
       if (files.isDir(new_path)) {
         check_update(new_path);
       } else {
-        if (get_update_status(new_path, server_path) == true) update_list.push(new_path);
+        //if (get_update_status(new_path, server_path) == true) update_list.push(new_path);
+        log(new_path);
       }
     }
   });

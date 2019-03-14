@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-13 09:07:19
+ * @Last Modified time: 2019-03-14 09:48:49
  * @Description: 蚂蚁森林操作集
  */
 
@@ -347,7 +347,7 @@ function Ant_forest(automator, unlock) {
     _clear_popup();
     _get_pre_energy();
     _collect();
-    _get_min_countdown_own();
+    if (!_config.get("is_cycle")) _get_min_countdown_own();
     _fisrt_running = false;
   }
 
@@ -357,7 +357,7 @@ function Ant_forest(automator, unlock) {
     descEndsWith("查看更多好友").findOne(_config.get("timeout_findOne")).click();
     while(!textContains("好友排行榜").exists()) sleep(1000);
     _find_and_collect();
-    _get_min_countdown();
+    if (!_config.get("is_cycle")) _get_min_countdown();
     _generate_next();
     _get_post_energy();
   }
