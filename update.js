@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps 
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-17 08:20:59
+ * @Last Modified time: 2019-03-17 08:27:34
  * @Description: 脚本更新
  */
 
@@ -147,10 +147,9 @@ function DownloadUtil(url, path, listener) {
       let dir = files.join(local, file).replace(files.getName(file), '');
       files.remove(files.join(local, file));
       if (files.isEmptyDir(dir)) files.removeDir(dir);
+      toastLog("更新完成");
     });
-  }
-
-  if (update_files.length) {
+  } else if (update_files.length) {
     let downloadDialog = null;
     let res = http.get(server + "/ant-forest/CHANGELOG.md");
     if (res.statusCode != 200) {
