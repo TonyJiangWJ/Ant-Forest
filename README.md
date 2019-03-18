@@ -65,10 +65,16 @@ var config = {
   max_collect_repeat: 20,
   max_collect_wait_time: 20,
   white_list: ["好友1", "好友2"],
+  // 是否定时启动
+  auto_start: true,
   auto_start_same_day: false,
   auto_start_hours: 6,
   auto_start_minutes: 40,
-  auto_start_seconds: 0
+  auto_start_seconds: 0,
+  // 是否显示调试日志
+  show_debug_log: true,
+  // 是否toast调试日志
+  toast_debug_info: false
 };
 ```
 
@@ -87,13 +93,15 @@ var config = {
 
 ---------
 
+- auto_start: 是否定时启动
 - auto_start_same_day: 自动启动的时间是否同一天
 - auto_start_hours minutes seconds: 自动启动的时间 
 
 因为autojs某些版本有问题 无法自动启动定时脚本 只能用这个方式在前一天开始一直运行直到第二天开始执行能量收集
 
 -----------
-
+-- show_debug_log: 是否打印调试日志
+-- toast_debug_info: 是否将调试信息toast显示
 
 # 添加解锁设备
 

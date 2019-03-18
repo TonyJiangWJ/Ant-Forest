@@ -17,10 +17,15 @@ var config = {
   max_collect_repeat: 20,
   max_collect_wait_time: 20,
   white_list: [],
+  auto_start: true,
   auto_start_same_day: false,
   auto_start_hours: 6,
   auto_start_minutes: 40,
-  auto_start_seconds: 0
+  auto_start_seconds: 0,
+  // 是否显示调试日志信息
+  show_debug_log: true,
+  // 是否toast调试日志
+  toast_debug_info: false
 };
 
 module.exports = config;
