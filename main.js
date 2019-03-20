@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-12 02:09:14
+ * @Last Modified time: 2019-03-20 12:51:35
  * @Description: 蚂蚁森林自动收能量
  */
 
@@ -16,6 +16,15 @@ if (! requestScreenCapture()) {
   toast("请求截图失败");
   exit();
 }
+
+// 检查脚本是否重复运行
+const current_engine = engines.myEngine().getSource();
+engines.all().slice(1).forEach(script => {
+  if (script.getSource().getName().indexOf(current_engine)) {
+    toastLog("脚本正在运行中");
+    exit();
+  }
+});
 
 /************************
  * 依赖加载
