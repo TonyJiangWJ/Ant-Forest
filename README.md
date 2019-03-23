@@ -79,6 +79,7 @@ var MyDevice = Devices.device_1;
 # 目前存在的问题
 
 - Autojs 在锁屏状态下由于软件优先度被降低导致 sleep() 函数时间不准确
+- 当好友列表数量超过大约 100 后，列表下拉会很慢
 
 # CHANGELOG
 
