@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps 
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-17 08:27:34
+ * @Last Modified time: 2019-04-08 08:38:08
  * @Description: 脚本更新
  */
 
@@ -10,6 +10,8 @@ importClass(java.io.IOException);
 importClass(java.io.InputStream);
 importClass(java.io.FileOutputStream);
 importClass(java.security.MessageDigest);
+
+importPackage(Packages.okhttp3);
 
 /**
  * 向服务器查询发生更改的文件列表
