@@ -320,7 +320,7 @@ function Ant_forest(automator, unlock) {
 
   // 识别可收取好友并记录
   const _find_and_collect = function() {
-    while (!(descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne(_config.get("timeout_findOne")).bounds().centerY() < device.height)) {
+    do {
       let screen = captureScreen();
       let friends_list = idEndsWith("J_rank_list").findOne(_config.get("timeout_findOne"));
       if (friends_list) {
@@ -332,7 +332,7 @@ function Ant_forest(automator, unlock) {
       }
       scrollDown();
       sleep(1000);
-    }
+    } while (!(descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne(_config.get("timeout_findOne")).bounds().centerY() < device.height));
   }
 
   /***********************
