@@ -103,7 +103,7 @@ function Ant_forest(automator, unlock) {
   // 获取自己的能量球中可收取倒计时的最小值
   const _get_min_countdown_own = function() {
     let target = className("Button").descMatches(/\s/).filter(function(obj) {
-      return obj.bounds().height() / obj.bounds().width() > 1.1; 
+      return obj.bounds().height() / obj.bounds().width() > 1.05; 
     });
     if (target.exists()) {
       let ball = target.untilFind();
