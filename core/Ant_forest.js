@@ -334,7 +334,19 @@ function Ant_forest(automator, unlock) {
       sleep(1000);
     } while (!(descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne(_config.get("timeout_findOne")).bounds().centerY() < device.height));
   }
-
+  
+  // 监听音量上键结束脚本运行
+  const _listen_stop = function() {
+    threads.start(function () {
+        toast("即将收取能量，按音量上键停止");
+        events.observeKey();
+        events.onceKeyDown("volume_up", function (event) {
+            engines.stopAll();
+            exit();
+          });
+    });
+  };
+  
   /***********************
    * 主要函数
    ***********************/
@@ -370,6 +382,7 @@ function Ant_forest(automator, unlock) {
       });
       while (true) {
         _delay(_min_countdown);
+        _listen_stop();
         log("第 " + (++_current_time) + " 次运行");
         _unlock.exec();
         _collect_own();
