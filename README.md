@@ -33,7 +33,9 @@
 - 2019/3/13
   - 定时执行
   - 优化锁屏后sleep优先级降低导致的时间不准确问题
-
+- 2019/4/1
+  - 设定收集后自动锁屏
+  - 
 # 使用
 
 - 下载安装 [Autojs](https://github.com/hyb1996/Auto.js/releases) 之后把整个脚本项目放进 __"/sdcard/脚本/"__ 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
@@ -68,13 +70,23 @@ var config = {
   // 是否定时启动
   auto_start: true,
   auto_start_same_day: false,
+  /**
+   * 设置自动启动时间为 6:55:00
+   */
   auto_start_hours: 6,
-  auto_start_minutes: 40,
+  auto_start_minutes: 55,
   auto_start_seconds: 0,
-  // 是否显示调试日志
+  // 是否跳过低于五克的能量，避免频繁偷别人的
+  skip_five: true,
+  // 是否显示调试日志信息
   show_debug_log: true,
   // 是否toast调试日志
-  toast_debug_info: false
+  toast_debug_info: false,
+  // 是否在收集完成后根据收集前状态判断是否锁屏，非ROOT设备通过下拉状态栏中的锁屏按钮实现 需要配置锁屏按钮位置
+  auto_lock: false,
+  // 配置锁屏按钮位置
+  lock_x: 150,
+  lock_y: 970
 };
 ```
 
@@ -100,8 +112,11 @@ var config = {
 因为autojs某些版本有问题 无法自动启动定时脚本 只能用这个方式在前一天开始一直运行直到第二天开始执行能量收集
 
 -----------
--- show_debug_log: 是否打印调试日志
--- toast_debug_info: 是否将调试信息toast显示
+- show_debug_log: 是否打印调试日志
+- toast_debug_info: 是否将调试信息toast显示
+- skip_five: true, 是否跳过低于五克的能量
+- auto_lock: false, 是否在收集完成后根据收集前状态判断是否锁屏，非ROOT设备通过下拉状态栏中的锁屏按钮实现 需要配置锁屏按钮位置
+  - 配置锁屏按钮位置 lock_x: 150,  lock_y: 970
 
 # 添加解锁设备
 
@@ -129,7 +144,7 @@ var Devices = {
 }
 ```
 
-上述所示为最简单的解锁模板，也可以参考 Unlocl.js 默认多解锁方式的代码进行修改。
+上述所示为最简单的解锁模板，也可以参考 Unlock.js 默认多解锁方式的代码进行修改。
 
 然后在下方的 MyDevice 中设置解锁设备：
 
@@ -146,4 +161,5 @@ var MyDevice = Devices.device_1;
 
 # 目前存在的问题
 
-- ~~autojs 在锁屏状态下由于软件优先度被降低导致 sleep() 函数时间不准确~~ (优化delay代码 可以降低延迟)
+- ~~autojs 在锁屏状态下由于软件优先度被降低导致 sleep() 函数时间不准确~~ (已优化delay代码 可以降低延迟)
+- MIUI10 默认锁屏主题解锁失败，修改成第三方主题可以解决

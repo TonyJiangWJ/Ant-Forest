@@ -28,14 +28,15 @@ let CommonFunctions = require("./lib/CommonFunction.js")
 let formatDate = require("./lib/DateUtil.js");
 let DateCompare = require("./lib/DateCompare.js");
 let commonFunctions = new CommonFunctions()
-var automator = Automator();
-var config = require("./config.js");
-var unlock = Unlock(automator, config);
-var ant_forest = Ant_forest(automator, unlock, config);
 
+var config = require("./config.js");
 if (config.auto_start) {
   scheduler(config)
 }
+var automator = Automator(config);
+var unlock = Unlock(automator, config);
+var ant_forest = Ant_forest(automator, unlock, config);
+
 /************************
  * 主程序
  ***********************/
