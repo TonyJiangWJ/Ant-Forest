@@ -165,11 +165,32 @@ function Ant_forest(automator, unlock) {
   }
 
   // 按分钟延时
-  const _delay = function(minutes) {
-    minutes = (typeof minutes != null) ? minutes : 0;
-    for (let i = 0; i < minutes; i++) {
-      log("距离下次运行还有 " + (minutes - i) + " 分钟");
-      sleep(60000);
+  const _delay = function (minutes) {
+    minutes = typeof minutes != null ? minutes : 0;
+    if (minutes === 0) {
+      // delay时间为0时直接跳过
+      return;
+    }
+    let startTime = new Date().getTime();
+    let timestampGap = minutes * 60000;
+    let i = 0;
+    for (;;) {
+      let now = new Date().getTime();
+      if (now - startTime >= timestampGap) {
+        // 当前已经过时间大于设定的延迟时间则直接退出
+        break;
+      }
+      i = (now - startTime) / 60000;
+      let left = minutes - i;
+      log("距离下次运行还有 " + left.toFixed(2) + " 分钟");
+      if (left * 60000 > 30000) {
+        // 剩余时间大于三十秒时 睡眠30秒
+        // 锁屏情况下的30秒可能实际时间有五分钟之久，如果不能忍受这个长度可以再改小一点比如10秒之类的
+        sleep(30000);
+      } else {
+        // 剩余时间小于30秒时 直接等待实际时间
+        sleep(left * 60000);
+      }
     }
   }
 
