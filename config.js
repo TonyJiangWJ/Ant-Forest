@@ -32,7 +32,7 @@ var config = {
   // 是否toast调试日志
   toast_debug_info: false,
   // 是否在收集完成后根据收集前状态判断是否锁屏，非ROOT设备通过下拉状态栏中的锁屏按钮实现 需要配置锁屏按钮位置
-  auto_lock: false,
+  auto_lock: true,
   // 配置锁屏按钮位置
   lock_x: 150,
   lock_y: 970

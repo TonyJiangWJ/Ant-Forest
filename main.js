@@ -30,6 +30,8 @@ let DateCompare = require("./lib/DateCompare.js");
 let commonFunctions = new CommonFunctions()
 
 var config = require("./config.js");
+
+commonFunctions.clearLogFile()
 if (config.auto_start) {
   scheduler(config)
 }
