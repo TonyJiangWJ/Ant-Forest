@@ -2,6 +2,8 @@
 
 基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha 版本开发。解锁模块参考自：https://github.com/e1399579/autojs
 
+交流群：524611323
+
 # 使用
 
 下载安装 [Autojs](https://github.com/hyb1996/Auto.js) 之后把整个脚本项目放进 __"/sdcard/脚本/"__ 文件夹下面。运行项目或者 main 即可。
