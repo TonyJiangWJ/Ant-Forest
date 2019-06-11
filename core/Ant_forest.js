@@ -416,6 +416,7 @@ function Ant_forest(automator, unlock) {
         }
       }
       thread.interrupt();
+      exit()
     }
   }
 }
