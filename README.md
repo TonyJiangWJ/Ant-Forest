@@ -1,8 +1,9 @@
 # 简介
 
-基于 Autojs 的蚂蚁森林自动收能量脚本，采用  ~~4.1.1 Alpha~~ ([Autojs](https://github.com/hyb1996/Auto.js/releases) 找不到这个版本，不知道原作者这个版本在哪下载的) 版本开发。解锁模块参考自：https://github.com/e1399579/autojs
+基于 Autojs 的蚂蚁森林自动收能量脚本，采用  4.1.1 Alpha 版本开发。解锁模块参考自：https://github.com/e1399579/autojs
 
 - 经过测试小米mix2s可以使用4.0.4alpha版本,4.0.5alpha会报错
+- 找到最新版了 经过测试可以执行。建议下载该版本，可以直接设置定时任务，而不需要通过脚本中的定时启动方式。[AutoJs 4.1.1 alpha2下载](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0)
 
 ## 更新记录
 
@@ -68,7 +69,7 @@ var config = {
   max_collect_wait_time: 20,
   white_list: ["好友1", "好友2"],
   // 是否定时启动
-  auto_start: true,
+  auto_start: false,
   auto_start_same_day: false,
   /**
    * 设置自动启动时间为 6:55:00
@@ -104,7 +105,7 @@ var config = {
 - white_list：白名单，将好友的 ID 添加到白名单实现不收取特定好友的能量。
 
 ---------
-
+- 结合最新版AutoJs 4.1.1 alpha2，可以不设置该项，使用软件中提供的定时执行功能即可
 - auto_start: 是否定时启动
 - auto_start_same_day: 自动启动的时间是否同一天
 - auto_start_hours minutes seconds: 自动启动的时间 
