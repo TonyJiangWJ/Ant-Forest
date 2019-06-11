@@ -95,7 +95,70 @@ function Ant_forest(automator, unlock) {
     thread.interrupt();
     return result;
   }
+  // 异步获取 toast 内容
+  const _get_toast_async = function(filter, limit, exec) {
+    filter = typeof filter == null ? '' : filter
+    let lock = threads.lock()
+    let complete = lock.newCondition()
+    let result = []
+    lock.lock()
 
+    // 在新线程中开启监听
+    let thread = threads.start(function() {
+      try {
+        lock.lock()
+        let temp = []
+        let counter = 0
+        let toastDone = false
+        let startTimestamp = new Date().getTime()
+        // 监控 toast
+        events.onToast(function(toast) {
+          if (
+            toast &&
+            toast.getPackageName() &&
+            toast.getPackageName().indexOf(filter) >= 0
+          ) {
+            counter++
+            temp.push(toast.getText())
+            if (counter == limit) {
+              log('正常获取toast信息' + temp)
+              toastDone = true
+            } else if (new Date().getTime() - startTimestamp > 10000) {
+              log('等待超过十秒秒钟，直接返回结果')
+              toastDone = true
+            }
+          } else {
+            log('无法获取toast内容，直接返回[]')
+            toastDone = true
+          }
+        })
+        // 触发 toast
+        exec()
+        let count = 10
+        // 主线程等待10秒 超时退出等待
+        while (count-- > 0 && !toastDone) {
+          sleep(1000)
+        }
+        if (!toastDone) {
+          log('超时释放锁')
+        } else {
+          log('temp' + temp)
+          result = temp
+        }
+        complete.signal()
+        lock.unlock()
+      } finally {
+        lock.unlock()
+      }
+    })
+    // 获取结果
+    log('阻塞等待toast结果')
+    complete.await()
+    log('阻塞等待结束，等待锁释放')
+    lock.unlock()
+    thread.interrupt()
+    return result
+  }
   /***********************
    * 获取下次运行倒计时
    ***********************/
@@ -108,7 +171,7 @@ function Ant_forest(automator, unlock) {
     if (target.exists()) {
       let ball = target.untilFind();
       let temp = [];
-      let toasts = _get_toast_sync(_package_name, ball.length, function() {
+      let toasts = _get_toast_async(_package_name, ball.length, function() {
         ball.forEach(function(obj) {
           _automator.clickCenter(obj);
           sleep(500);
