@@ -145,9 +145,8 @@ function Ant_forest(automator, unlock) {
           log('temp' + temp)
           result = temp
         }
-        complete.signal()
-        lock.unlock()
       } finally {
+        complete.signal()
         lock.unlock()
       }
     })
