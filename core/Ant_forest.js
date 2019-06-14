@@ -225,10 +225,8 @@ function Ant_forest(automator, unlock, config) {
           commonFunctions.debug('temp' + temp)
           result = temp
         }
-        complete.signal()
-        lock.unlock()
       } finally {
-        //result = temp
+        complete.signal()
         lock.unlock()
       }
     })
