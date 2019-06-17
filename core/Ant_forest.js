@@ -106,29 +106,14 @@ function Ant_forest(automator, unlock, config) {
       exit()
       //engines.stopAll()
     })
-    setInterval(() => {
+    commonFunctions.log(text)
+    setTimeout(() => {
       ui.run(function() {
         window.log.text(text)
       })
-    }, 0)
-  }
-
-  const _temp_show = function(minutes) {
-    floaty.closeAll()
-    if (minutes === 0) {
-      return
-    }
-    var w = floaty.rawWindow(
-      <frame gravity="center" bg="#77ff0000">
-        <text id="content" />
-      </frame>
-    )
-
-    ui.run(function() {
-      w.content.text('下一次执行在【' + minutes + '】分之后')
-    })
-    w.setSize(-2, -2)
-
+    }, 10)
+    // 30秒后关闭，防止立即停止
+    setTimeout(() => {}, 1000 * 30)
   }
 
   /***********************
@@ -597,10 +582,13 @@ function Ant_forest(automator, unlock, config) {
   // 识别可收取好友并记录
   const _find_and_collect = function() {
     do {
+      commonFunctions.debug("截屏")
       let screen = captureScreen()
+      commonFunctions.debug("获取好友列表")
       let friends_list = idEndsWith('J_rank_list').findOne(
         _config.timeout_findOne
       )
+      commonFunctions.debug("判断好友信息")
       if (friends_list) {
         commonFunctions.debug(
           '读取好友列表完成，开始检查可收取列表 列表长度:' + friends_list.children().length
@@ -633,6 +621,7 @@ function Ant_forest(automator, unlock, config) {
       commonFunctions.debug('收集完成，下滑进入下一页')
       _automator.scrollDown()
       sleep(1000)
+      commonFunctions.debug("进入下一页")
     } while (
       !(
         descEndsWith('没有更多了').exists() &&
