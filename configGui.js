@@ -5,8 +5,8 @@
  * @Description: 配置文件
  */
 'ui';
-
-var config = require('./config.js')
+// 读取并加载配置到storage
+var default_config = require('./config.js')
 
 var configStorage = storages.create('ant_forest_config')
 
@@ -38,6 +38,55 @@ function draw_view() {
             <radio text="否" checked="{{!configStorage.get('help_friend')}}" marginLeft="20" />
           </radiogroup>
         </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="定时自动启动：" textColor="#666666" textSize="14sp" />
+          <radiogroup id="auto_start" orientation="horizontal" margin="0 10">
+            <radio text="是" checked="{{configStorage.get('auto_start')}}" />
+            <radio text="否" checked="{{!configStorage.get('auto_start')}}" marginLeft="20" />
+          </radiogroup>
+          <vertical visibility="{{configStorage.get('auto_start') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left">
+          <text text="是否同一天：" textColor="#666666" textSize="14sp" />
+          <radiogroup id="auto_start_same_day" orientation="horizontal" margin="0 10">
+            <radio text="是" checked="{{configStorage.get('auto_start_same_day')}}" />
+            <radio text="否" checked="{{!configStorage.get('auto_start_same_day')}}" marginLeft="20" />
+          </radiogroup>
+          </vertical>
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="是否跳过小于等于5克的能量"/>
+          <radiogroup id="skip_five" orientation="horizontal" margin="0 10">
+            <radio text="是" checked="{{configStorage.get('skip_five')}}" />
+            <radio text="否" checked="{{!configStorage.get('skip_five')}}" marginLeft="20" />
+          </radiogroup>
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="是否显示调试日志信息"/>
+          <radiogroup id="show_debug_log" orientation="horizontal" margin="0 10">
+            <radio text="是" checked="{{configStorage.get('show_debug_log')}}" />
+            <radio text="否" checked="{{!configStorage.get('show_debug_log')}}" marginLeft="20" />
+          </radiogroup>
+          <vertical visibility="{{configStorage.get('show_debug_log') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+            <text text="是否toast调试日志"/>
+            <radiogroup id="toast_debug_info" orientation="horizontal" margin="0 10">
+              <radio text="是" checked="{{configStorage.get('toast_debug_info')}}" />
+              <radio text="否" checked="{{!configStorage.get('toast_debug_info')}}" marginLeft="20" />
+            </radiogroup>
+          </vertical>
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="是否在收集完成后根据收集前状态判断是否锁屏"/>
+          <radiogroup id="auto_lock" orientation="horizontal" margin="0 10">
+            <radio text="是" checked="{{configStorage.get('auto_lock')}}" />
+            <radio text="否" checked="{{!configStorage.get('auto_lock')}}" marginLeft="20" />
+          </radiogroup>
+          <horizontal  visibility="{{configStorage.get('auto_lock') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+            <text text="锁屏按钮位置"/>
+          </horizontal>
+          <horizontal  visibility="{{configStorage.get('auto_lock') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+            <text text="x:"/><input id="lock_x" inputType="number" text="{{configStorage.get('lock_x')}}" />
+            <text text="y:"/><input id="lock_y" inputType="number" text="{{configStorage.get('lock_y')}}" />
+          </horizontal>
+        </vertical>
         <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="颜色偏移量：" textColor="#666666" textSize="14sp" />
@@ -53,7 +102,7 @@ function draw_view() {
         </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="解锁操作时延：" textColor="#666666" textSize="14sp" />
-          <input id="delay_unlock" inputType="number" text="{{configStorage.get('delay_unlock')}}" />
+          <input id="timeout_unlock" inputType="number" text="{{configStorage.get('timeout_unlock')}}" />
         </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="控件搜索超时：" textColor="#666666" textSize="14sp" />
@@ -84,9 +133,20 @@ function draw_view() {
 
 
   // 更新本地配置同时重绘UI
-  function update(target, new_val) {
+  function update(target, new_val, update_view) {
     configStorage.put(target, new_val);
-    if (target == "is_cycle" || target == "white_list") draw_view();
+    if (update_view) draw_view();
+  }
+
+  // 更新radio值
+  function updateRadioValue(radioGroup, id, valueKey, p) {
+    let identify = p || '是'
+    let index = (id + 1) % radioGroup.getChildCount()
+    if (radioGroup.getChildAt(index).getText() == identify) {
+      update(valueKey, true, true)
+    } else {
+      update(valueKey, false, true)
+    }
   }
 
   // 格式化
@@ -96,25 +156,43 @@ function draw_view() {
 
   // 更新选中的执行方法
   ui.exec_pattern.setOnCheckedChangeListener(function(radioGroup, id) {
-    let index = (id + 1) % radioGroup.getChildCount();
-    //toast(radioGroup.getChildAt(index).getText());
-    if (radioGroup.getChildAt(index).getText() == "循环") {
-      update("is_cycle", true);
-    } else {
-      update("is_cycle", false);
-    }
+    updateRadioValue(radioGroup, id, "is_cycle", "循环")
   });
 
   // 更新是否帮助好友
   ui.is_help_fris.setOnCheckedChangeListener(function(radioGroup, id) {
-    let index = (id + 1) % radioGroup.getChildCount();
-    //toast(radioGroup.getChildAt(index).getText());
-    if (radioGroup.getChildAt(index).getText() == "是") {
-      update("help_friend", true);
-    } else {
-      update("help_friend", false);
-    }
+    updateRadioValue(radioGroup, id, "help_friend")
   });
+
+  // 是否定时启动
+  ui.auto_start.setOnCheckedChangeListener(function (radioGroup, id) {
+    updateRadioValue(radioGroup, id, "auto_start")
+  })
+
+  // 是否同一天
+  ui.auto_start_same_day.setOnCheckedChangeListener(function (radioGroup, id) {
+    updateRadioValue(radioGroup, id, "auto_start_same_day")
+  })
+
+  // 是否跳过低于五克的能量
+  ui.skip_five.setOnCheckedChangeListener(function (radioGroup, id) {
+    updateRadioValue(radioGroup, id, "skip_five")
+  })
+
+  // 是否显示调试日志
+  ui.show_debug_log.setOnCheckedChangeListener(function (radioGroup, id) {
+    updateRadioValue(radioGroup, id, "show_debug_log")
+  })
+
+  // 是否toast调试日志
+  ui.toast_debug_info.setOnCheckedChangeListener(function (radioGroup, id) {
+    updateRadioValue(radioGroup, id, "toast_debug_info")
+  })
+
+  // 是否自动锁屏
+  ui.auto_lock.setOnCheckedChangeListener(function (radioGroup, id) {
+    updateRadioValue(radioGroup, id, "auto_lock")
+  })
 
   // 更新颜色偏移
   ui.emitter.on("pause", () => {
@@ -123,7 +201,7 @@ function draw_view() {
       update("color_offset", format(ui.color_offset.getText()));
       update("password", format(ui.password.getText()));
       update("max_collect_wait_time", format(ui.max_collect_wait_time.getText()));
-      update("delay_unlock", format(ui.delay_unlock.getText()));
+      update("timeout_unlock", format(ui.timeout_unlock.getText()));
       update("timeout_findOne", format(ui.timeout_findOne.getText()));
     }
   });
@@ -145,7 +223,7 @@ function draw_view() {
       .then(fri_name => {
         if (!fri_name) return;
         list_temp.push({name: fri_name});
-        update("white_list", list_temp.map(i => i['name']));
+        update("white_list", list_temp.map(i => i['name']), true);
       });
   });
 
@@ -156,6 +234,7 @@ function draw_view() {
         if (ok) {
           storages.remove("ant_forest_config");
           toastLog("清除成功");
+          draw_view()
         }
       });
   });

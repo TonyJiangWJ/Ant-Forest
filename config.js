@@ -43,7 +43,7 @@ if (!configStorage.contains('color_offset')) {
   toastLog('使用默认配置')
   // 存储默认配置到本地
   Object.keys(default_config).forEach(key => {
-    configStorage.put(key, default_config(key))
+    configStorage.put(key, default_config[key])
   })
   config = default_config
 } else {

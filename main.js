@@ -4,7 +4,7 @@
  * @Last Modified time: 2019-03-05 14:16:30
  * @Description: 蚂蚁森林自动收能量
  */
-let formatDate = require("./lib/DateUtil.js");
+let formatDate = require("./lib/DateUtil.js")
 let CommonFunctions = require("./lib/CommonFunction.js")
 let commonFunctions = new CommonFunctions()
 
