@@ -67,6 +67,7 @@ function Ant_forest(automator, unlock, config) {
 
   // 显示文字悬浮窗
   const _show_floaty = function(text) {
+    floaty.closeAll()
     let window = floaty.window(
       <card cardBackgroundColor="#aa000000" cardCornerRadius="20dp">
         <horizontal w="250" h="40" paddingLeft="15" gravity="center">
@@ -230,7 +231,7 @@ function Ant_forest(automator, unlock, config) {
     let target = className('Button')
       .descMatches(/\s/)
       .filter(function(obj) {
-        return obj.bounds().height() / obj.bounds().width() > 1.1 
+        return obj.bounds().height() / obj.bounds().width() > 1.05
       })
     if (target.exists()) {
       let ball = target.untilFind()
@@ -316,10 +317,16 @@ function Ant_forest(automator, unlock, config) {
 
   // 记录初始能量值
   const _get_pre_energy = function() {
+    let currentEnergy = _get_current_energy()
     if (_fisrt_running && _has_next) {
-      _pre_energy = _get_current_energy()
-      commonFunctions.persitst_history_energy(_pre_energy)
-      commonFunctions.log('当前能量：' + _pre_energy)
+      _pre_energy = currentEnergy
+      commonFunctions.persitst_history_energy(currentEnergy)
+      commonFunctions.log('当前能量：' + currentEnergy)
+    } else {
+      let sum = currentEnergy - _pre_energy
+      let content = "第 " + _current_time + " 次运行, 累计收集:" + sum + "g"
+      commonFunctions.log(content)
+      commonFunctions.show_temp_floaty(content)
     }
   }
 
@@ -347,14 +354,15 @@ function Ant_forest(automator, unlock, config) {
    ***********************/
 
   // 收取能量
-  const _collect = function() {
+  const _collect = function(own) {
+    let isOwn = own || false
     if (descEndsWith('克').exists()) {
       commonFunctions.debug('能量球存在')
       let regexCheck = /(\d+)克/
       descEndsWith('克')
         .untilFind()
         .forEach(function(energy_ball) {
-          if (config.skip_five) {
+          if (config.skip_five && !isOwn) {
             let execResult = regexCheck.exec(energy_ball.desc())
             if (execResult.length > 1 && parseInt(execResult[1]) <= 5) {
               commonFunctions.debug(
@@ -551,8 +559,7 @@ function Ant_forest(automator, unlock, config) {
       }
       _automator.back()
       temp.interrupt()
-      commonFunctions.debug('开始收取完毕')
-      commonFunctions.debug('回到好友排行榜')
+      commonFunctions.debug('好友能量收取完毕, 回到好友排行榜')
       let returnCount = 0
       while (!textContains('好友排行榜').exists()) {
         sleep(1000)
@@ -724,7 +731,7 @@ function Ant_forest(automator, unlock, config) {
     _clear_floty()
     _get_pre_energy()
     commonFunctions.debug('准备收集自己能量')
-    _collect()
+    _collect(true)
     commonFunctions.debug('准备计算最短时间')
     _get_min_countdown_own()
     _fisrt_running = false
