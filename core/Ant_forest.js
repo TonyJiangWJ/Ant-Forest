@@ -679,7 +679,8 @@ function Ant_forest(automator, unlock, config) {
   // 识别可收取好友并记录
   const _find_and_collect = function () {
     do {
-      commonFunctions.debug("截屏")
+      let height = device.height()
+      height = height < 2160 ? 2300: height
       let screen = captureScreen()
       commonFunctions.debug("获取好友列表")
       let friends_list = []
@@ -732,13 +733,13 @@ function Ant_forest(automator, unlock, config) {
         descEndsWith('没有更多了')
           .findOne(_config.timeout_findOne)
           .bounds()
-          .centerY() < device.height
+          .centerY() < height
         ||
         textEndsWith('没有更多了').exists() &&
         textEndsWith('没有更多了')
           .findOne(_config.timeout_findOne)
           .bounds()
-          .centerY() < device.height
+          .centerY() < height
       )
     )
     commonFunctions.log('全部好友收集完成')
