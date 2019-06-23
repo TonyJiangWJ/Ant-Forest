@@ -327,21 +327,25 @@ function Ant_forest(automator, unlock, config) {
 
   // 记录当前能量
   const _get_current_energy = function () {
+    let currentEnergy
     if (descEndsWith('背包').exists()) {
-      return parseInt(
+      currentEnergy = parseInt(
         descEndsWith('g')
           .findOne(_config.timeout_findOne)
           .desc()
           .match(/\d+/)
       )
     } else if (textEndsWith('背包').exists()) {
-      return parseInt(
+      currentEnergy = parseInt(
         textEndsWith('g')
           .findOne(_config.timeout_findOne)
           .text()
           .match(/\d+/)
       )
     }
+    // 存储能量值数据
+    commonFunctions.storeEnergy(currentEnergy)
+    return currentEnergy
   }
 
   // 记录初始能量值
@@ -388,6 +392,7 @@ function Ant_forest(automator, unlock, config) {
       textThread.interrupt()
       _post_energy = _get_current_energy()
       commonFunctions.log('当前能量：' + _post_energy)
+      commonFunctions.showEnergyInfo()
       _show_floaty('共收取：' + (_post_energy - _pre_energy) + 'g 能量')
     }
     if (descEndsWith('关闭').exists()) {
@@ -678,9 +683,9 @@ function Ant_forest(automator, unlock, config) {
 
   // 识别可收取好友并记录
   const _find_and_collect = function () {
+    let height = device.height
+    height = height < 2160 ? 2300: height
     do {
-      let height = device.height
-      height = height < 2160 ? 2300: height
       let screen = captureScreen()
       commonFunctions.debug("获取好友列表")
       let friends_list = []
@@ -759,9 +764,7 @@ function Ant_forest(automator, unlock, config) {
     let isRun = true
     let checkThread = threads.start(function () {
       lock.lock()
-      commonFunctions.debug('子线程获得锁')
-
-      commonFunctions.debug('子线程进入校验状态')
+      commonFunctions.debug('子线程获得锁,进入校验状态')
       let running = true
       let restartCount = 1
       let waitCount = 0
@@ -890,9 +893,9 @@ function Ant_forest(automator, unlock, config) {
       try {
         while (true) {
           _delay(_min_countdown)
+          commonFunctions.showEnergyInfo()
+          let currentTime = commonFunctions.increaseRunTimes()
           commonFunctions.show_temp_floaty('第 ' + ++_current_time + ' 次运行')
-          commonFunctions.log('第 ' + _current_time + ' 次运行')
-          commonFunctions.log('启动时能量:' + _pre_energy)
           _unlock.exec()
           try {
             _avil_list = []
