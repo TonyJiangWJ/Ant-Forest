@@ -679,7 +679,7 @@ function Ant_forest(automator, unlock, config) {
   // 识别可收取好友并记录
   const _find_and_collect = function () {
     do {
-      let height = device.height()
+      let height = device.height
       height = height < 2160 ? 2300: height
       let screen = captureScreen()
       commonFunctions.debug("获取好友列表")
