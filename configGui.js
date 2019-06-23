@@ -29,6 +29,10 @@ function draw_view() {
             <text text="循环次数：" textColor="#666666" textSize="14sp" />
             <input id="cycle_times" inputType="number" text="{{configStorage.get('cycle_times')}}" />
           </vertical>
+          <vertical visibility="{{configStorage.get('is_cycle') ? 'gone' : 'visible'}}" w="*" gravity="left" layout_gravity="left">
+            <text text="最大收集次数：" textColor="#666666" textSize="14sp" />
+            <input id="max_collect_repeat" inputType="number" text="{{configStorage.get('max_collect_repeat')}}" />
+          </vertical>
         </vertical>
         <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
@@ -198,6 +202,7 @@ function draw_view() {
   ui.emitter.on("pause", () => {
     if (configStorage.contains("color_offset")) {
       update("cycle_times", format(ui.cycle_times.getText()));
+      update("max_collect_repeat", format(ui.max_collect_repeat.getText()));
       update("color_offset", format(ui.color_offset.getText()));
       update("password", format(ui.password.getText()));
       update("max_collect_wait_time", format(ui.max_collect_wait_time.getText()));
