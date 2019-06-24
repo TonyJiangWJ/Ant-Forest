@@ -29,9 +29,20 @@ function draw_view() {
             <text text="循环次数：" textColor="#666666" textSize="14sp" />
             <input id="cycle_times" inputType="number" text="{{configStorage.get('cycle_times')}}" />
           </vertical>
-          <vertical visibility="{{configStorage.get('is_cycle') ? 'gone' : 'visible'}}" w="*" gravity="left" layout_gravity="left">
+          <vertical  w="*" visibility="{{configStorage.get('is_cycle') ? 'gone' : 'visible'}}" >
+            <text text="永不停止：" textColor="#666666" textSize="14sp" />
+            <radiogroup id="never_stop" orientation="horizontal" margin="0 10">
+              <radio text="是" checked="{{configStorage.get('never_stop')}}" />
+              <radio text="否" checked="{{!configStorage.get('never_stop')}}" marginLeft="20" />
+            </radiogroup>
+          </vertical>
+          <vertical visibility="{{configStorage.get('never_stop') ? 'gone' : 'visible'}}" w="*" gravity="left" layout_gravity="left">
             <text text="最大收集次数：" textColor="#666666" textSize="14sp" />
             <input id="max_collect_repeat" inputType="number" text="{{configStorage.get('max_collect_repeat')}}" />
+          </vertical>
+          <vertical visibility="{{configStorage.get('never_stop') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left">
+            <text text="重新激活等待时间：" textColor="#666666" textSize="14sp" />
+            <input id="reactive_time" inputType="number" text="{{configStorage.get('reactive_time')}}" />
           </vertical>
         </vertical>
         <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
@@ -40,6 +51,13 @@ function draw_view() {
           <radiogroup id="is_help_fris" orientation="horizontal" margin="0 10">
             <radio text="是" checked="{{configStorage.get('help_friend')}}" />
             <radio text="否" checked="{{!configStorage.get('help_friend')}}" marginLeft="20" />
+          </radiogroup>
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="显示mini悬浮窗" textColor="#666666" textSize="14sp" />
+          <radiogroup id="show_small_floaty" orientation="horizontal" margin="0 10">
+            <radio text="是" checked="{{configStorage.get('show_small_floaty')}}" />
+            <radio text="否" checked="{{!configStorage.get('show_small_floaty')}}" marginLeft="20" />
           </radiogroup>
         </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
@@ -139,7 +157,9 @@ function draw_view() {
   // 更新本地配置同时重绘UI
   function update(target, new_val, update_view) {
     configStorage.put(target, new_val);
-    if (update_view) draw_view();
+    if (update_view) {
+      draw_view();
+    }
   }
 
   // 更新radio值
@@ -162,6 +182,15 @@ function draw_view() {
   ui.exec_pattern.setOnCheckedChangeListener(function(radioGroup, id) {
     updateRadioValue(radioGroup, id, "is_cycle", "循环")
   });
+
+  // 更新选中的执行方法
+  ui.never_stop.setOnCheckedChangeListener(function(radioGroup, id) {
+    updateRadioValue(radioGroup, id, "never_stop")
+  });
+
+  ui.show_small_floaty.setOnCheckedChangeListener(function(radioGroup, id) {
+    updateRadioValue(radioGroup, id, "show_small_floaty")
+  })
 
   // 更新是否帮助好友
   ui.is_help_fris.setOnCheckedChangeListener(function(radioGroup, id) {
@@ -202,6 +231,7 @@ function draw_view() {
   ui.emitter.on("pause", () => {
     if (configStorage.contains("color_offset")) {
       update("cycle_times", format(ui.cycle_times.getText()));
+      update("reactive_time", format(ui.reactive_time.getText()));
       update("max_collect_repeat", format(ui.max_collect_repeat.getText()));
       update("color_offset", format(ui.color_offset.getText()));
       update("password", format(ui.password.getText()));

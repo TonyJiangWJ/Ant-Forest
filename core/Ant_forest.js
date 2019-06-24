@@ -20,6 +20,7 @@ function Ant_forest(automator, unlock, config) {
     _has_next = true, // 是否下一次运行
     _avil_list = [], // 可收取好友列表
     _has_protect = [], // 开启能量罩好友
+    _collect_any = false, // 收集过能量
     reTry = 0
   /***********************
    * 综合操作
@@ -276,6 +277,14 @@ function Ant_forest(automator, unlock, config) {
 
   // 确定下一次收取倒计时
   const _get_min_countdown = function () {
+    // 如果有收集过能量，那么先返回主页在进入排行榜，以获取最新的倒计时信息，避免收集过的倒计时信息不刷新，此过程可能导致执行过慢
+    if (_collect_any) {
+      _automator.clickBack()
+      homePageWaiting()
+      _automator.enterFriendList()
+      friendListWaiting()
+      quickScrollDown()
+    }
     let temp = []
     if (_min_countdown && _timestamp instanceof Date) {
       let countdown_own =
@@ -303,16 +312,36 @@ function Ant_forest(automator, unlock, config) {
 
   // 构建下一次运行
   const _generate_next = function () {
+    // 循环模式，判断循环次数
     if (_config.is_cycle) {
-      if (_current_time < _config.cycle_times) _has_next = true
-      else _has_next = false
+      if (_current_time < _config.cycle_times) {
+        _has_next = true
+      } else {
+        _has_next = false
+      }
     } else {
+      // 永不终止模式，判断倒计时不存在，直接等待配置的激活时间
+      if (_current_time.never_stop) {
+        if (_min_countdown === null) {
+          _min_countdown = _config.reactive_time
+        }
+        _has_next = true
+        return
+      }
+      // 计时模式 超过最大循环次数 退出执行
+      if (_current_time > _config.max_collect_repeat) {
+        _has_next = false
+        return
+      }
+      // 计时模式，超过最大等待时间 退出执行
       if (
         _min_countdown != null &&
         _min_countdown <= _config.max_collect_wait_time
-      )
+      ) {
         _has_next = true
-      else _has_next = false
+      } else {
+        _has_next = false
+      }
     }
   }
 
@@ -356,8 +385,10 @@ function Ant_forest(automator, unlock, config) {
       commonFunctions.persitst_history_energy(currentEnergy)
       commonFunctions.log('当前能量：' + currentEnergy)
     } else {
-      let sum = currentEnergy - _pre_energy
-      let content = "第 " + _current_time + " 次运行, 累计收集:" + sum + "g"
+      let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
+      let runTimes = commonFunctions.getTodaysRuntimeStorage('runTimes')
+      let sum = currentEnergy - energyInfo.startEnergy
+      let content = "第 " + runTimes.runTimes + " 次运行, 累计收集:" + sum + "g"
       commonFunctions.log(content)
       commonFunctions.show_temp_floaty(content)
     }
@@ -365,51 +396,53 @@ function Ant_forest(automator, unlock, config) {
 
   // 记录最终能量值
   const _get_post_energy = function () {
+    
+    _automator.clickBack()
+    homePageWaiting()
+    _post_energy = _get_current_energy()
+    commonFunctions.log('当前能量：' + _post_energy)
+    commonFunctions.showEnergyInfo()
+    let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
     if (!_fisrt_running && !_has_next) {
-      if (descEndsWith('返回').exists()) {
-        descEndsWith('返回')
-          .findOne(_config.timeout_findOne)
-          .click()
-      } else if (textEndsWith('返回').exists()) {
-        textEndsWith('返回')
-          .findOne(_config.timeout_findOne)
-          .click()
-      }
-      countDown = new java.util.concurrent.CountDownLatch(1)
-      let descThread = threads.start(function () {
-        descEndsWith('背包').waitFor()
-        commonFunctions.debug('find desc "背包"')
-        countDown.countDown()
-      })
-
-      let textThread = threads.start(function () {
-        textEndsWith('背包').waitFor()
-        commonFunctions.debug('find text "背包"')
-        countDown.countDown()
-      })
-      countDown.await()
-      descThread.interrupt()
-      textThread.interrupt()
-      _post_energy = _get_current_energy()
-      commonFunctions.log('当前能量：' + _post_energy)
-      commonFunctions.showEnergyInfo()
-      _show_floaty('共收取：' + (_post_energy - _pre_energy) + 'g 能量')
+      _show_floaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共收取' + (_post_energy - energyInfo.startEnergy) + 'g')
     }
-    if (descEndsWith('关闭').exists()) {
-      descEndsWith('关闭')
-        .findOne(_config.timeout_findOne)
-        .click()
-    } else if (textEndsWith('关闭').exists()) {
-      textEndsWith('关闭')
-        .findOne(_config.timeout_findOne)
-        .click()
-    }
+    _automator.clickClose()
     home()
   }
 
   /***********************
    * 收取能量
    ***********************/
+
+   /**
+    * 收集目标能量球能量
+    * 
+    * @param {*} energy_ball 能量球对象
+    * @param {boolean} isDesc 是否提取文本自desc
+    * @param {boolean} isOwn 是否收集自身能量
+    */
+  const collectBallEnergy = function (energy_ball, isDesc, isOwn) {
+    if (config.skip_five && !isOwn) {
+      let execResult
+      if (isDesc) {
+        execResult = regexCheck.exec(energy_ball.desc())
+      } else {
+        execResult = regexCheck.exec(energy_ball.text())
+      }
+      if (execResult.length > 1 && parseInt(execResult[1]) <= 5) {
+        commonFunctions.debug(
+          '能量小于等于五克跳过收取 ' + isDesc ? energy_ball.desc() : energy_ball.text()
+        )
+        return
+      }
+    }
+    commonFunctions.debug(isDesc ? energy_ball.desc() : energy_ball.text())
+    _automator.clickCenter(energy_ball)
+    if (!isOwn) {
+      _collect = true
+    }
+    sleep(300)
+  }
 
   // 收取能量
   const _collect = function (own) {
@@ -420,18 +453,7 @@ function Ant_forest(automator, unlock, config) {
       descEndsWith('克')
         .untilFind()
         .forEach(function (energy_ball) {
-          if (config.skip_five && !isOwn) {
-            let execResult = regexCheck.exec(energy_ball.desc())
-            if (execResult.length > 1 && parseInt(execResult[1]) <= 5) {
-              commonFunctions.debug(
-                '能量小于等于五克跳过收取 ' + energy_ball.desc()
-              )
-              return
-            }
-          }
-          commonFunctions.debug('收集能量' + energy_ball.desc())
-          _automator.clickCenter(energy_ball)
-          sleep(500)
+          collectBallEnergy(energy_ball, true, isOwn)
         })
     } else if (textEndsWith('克').exists()) {
       commonFunctions.debug('能量球存在')
@@ -439,18 +461,7 @@ function Ant_forest(automator, unlock, config) {
       textEndsWith('克')
         .untilFind()
         .forEach(function (energy_ball) {
-          if (config.skip_five && !isOwn) {
-            let execResult = regexCheck.exec(energy_ball.text())
-            if (execResult.length > 1 && parseInt(execResult[1]) <= 5) {
-              commonFunctions.debug(
-                '能量小于等于五克跳过收取 ' + energy_ball.text()
-              )
-              return
-            }
-          }
-          commonFunctions.debug('收集能量' + energy_ball.text())
-          _automator.clickCenter(energy_ball)
-          sleep(500)
+          collectBallEnergy(energy_ball, false, isOwn)
         })
     } else {
       commonFunctions.debug("无能量球可收取")
@@ -503,6 +514,7 @@ function Ant_forest(automator, unlock, config) {
         ) {
           _automator.clickCenter(energy_ball)
           helped = true
+          _collect_any = true
           sleep(500)
         }
       })
@@ -550,13 +562,13 @@ function Ant_forest(automator, unlock, config) {
     // 记录可收取对象
     temp.target = fri.bounds()
     // 记录好友ID
-    if (fri.child(1).desc() === '') {
+    if (commonFunctions.isEmpty(fri.child(1).desc())) {
       temp.name = fri.child(2).desc()
     } else {
       temp.name = fri.child(1).desc()
     }
-    if (temp.name === '') {
-      if (fri.child(1).text() === '') {
+    if (commonFunctions.isEmpty(temp.name)) {
+      if (commonFunctions.isEmpty(fri.child(1).text())) {
         temp.name = fri.child(2).text()
       } else {
         temp.name = fri.child(1).text()
@@ -600,48 +612,21 @@ function Ant_forest(automator, unlock, config) {
       //_automator.click(obj.target.centerX(), obj.target.centerY())
       commonFunctions.debug('等待进入好友主页：' + obj.name)
       let restartLoop = false
-      let lock = threads.lock()
-      let complete = lock.newCondition()
-      lock.lock()
-      commonFunctions.debug('主线程获得锁并等待')
-
-      let checkThread = threads.start(function () {
-        try {
-          lock.lock()
-          commonFunctions.debug('子线程获得锁')
-
-          commonFunctions.debug('子线程进入检测状态')
-          let count = 1
-          let running = true
-          _automator.click(obj.target.centerX(), obj.target.centerY())
-          ///sleep(1000)
-          while (running) {
-            if (count > 5) {
-              commonFunctions.log('重试超过5次，取消操作')
-              restartLoop = true
-              break
-            }
-            if (!descContains('浇水').exists()) {
-              commonFunctions.debug(
-                '未能进入主页，尝试再次进入 count:' + count++
-              )
-              _automator.click(obj.target.centerX(), obj.target.centerY())
-              sleep(1000)
-            } else {
-              running = false
-              commonFunctions.debug('进入好友主页成功')
-            }
-          }
-          complete.signal()
-        } finally {
-          commonFunctions.debug('子线程发送信号并释放锁')
-          lock.unlock()
+      let count = 1
+      _automator.click(obj.target.centerX(), obj.target.centerY())
+      ///sleep(1000)
+      while (!wateringWaiting()) {
+        commonFunctions.debug(
+          '未能进入主页，尝试再次进入 count:' + count++
+        )
+        _automator.click(obj.target.centerX(), obj.target.centerY())
+        sleep(1000)
+        if (count > 5) {
+          commonFunctions.log('重试超过5次，取消操作')
+          restartLoop = true
+          break
         }
-      })
-      complete.await()
-      lock.unlock()
-      commonFunctions.debug('关闭检测线程')
-      checkThread.interrupt()
+      }
       if (restartLoop) {
         commonFunctions.log('页面流程出错，重新开始')
         return false
@@ -656,7 +641,7 @@ function Ant_forest(automator, unlock, config) {
       temp.interrupt()
       commonFunctions.debug('好友能量收取完毕, 回到好友排行榜')
       let returnCount = 0
-      while (!textContains('好友排行榜').exists()) {
+      while (!friendListWaiting()) {
         sleep(1000)
         if (returnCount++ === 2) {
           // 等待两秒后再次触发
@@ -683,18 +668,18 @@ function Ant_forest(automator, unlock, config) {
 
   // 识别可收取好友并记录
   const _find_and_collect = function () {
-    let height = device.height
-    height = height < 2160 ? 2300: height
     do {
       let screen = captureScreen()
       commonFunctions.debug("获取好友列表")
       let friends_list = []
-      if (idEndsWith('J_rank_list').exists()) {
-        friends_list = idEndsWith('J_rank_list').findOne(
+      if (idMatches('J_rank_list_append').exists()) {
+        commonFunctions.debug('newAppendList')
+        friends_list = idMatches('J_rank_list_append').findOne(
           _config.timeout_findOne
         )
-      } else if (idEndsWith('J_rank_list_append').exists()) {
-        friends_list = idEndsWith('J_rank_list_append').findOne(
+      } else if (idMatches('J_rank_list').exists()) {
+        commonFunctions.debug('oldList')
+        friends_list = idMatches('J_rank_list').findOne(
           _config.timeout_findOne
         )
       }
@@ -733,19 +718,7 @@ function Ant_forest(automator, unlock, config) {
       sleep(1000)
       commonFunctions.debug("进入下一页")
     } while (
-      !(
-        descEndsWith('没有更多了').exists() &&
-        descEndsWith('没有更多了')
-          .findOne(_config.timeout_findOne)
-          .bounds()
-          .centerY() < height
-        ||
-        textEndsWith('没有更多了').exists() &&
-        textEndsWith('没有更多了')
-          .findOne(_config.timeout_findOne)
-          .bounds()
-          .centerY() < height
-      )
+      !foundNoMoreWidget()
     )
     commonFunctions.log('全部好友收集完成')
   }
@@ -757,90 +730,25 @@ function Ant_forest(automator, unlock, config) {
   // 收取自己的能量
   const _collect_own = function () {
     commonFunctions.log('开始收集自己能量')
-    let lock = threads.lock()
-    let complete = lock.newCondition()
-    lock.lock()
-    commonFunctions.debug('主线程获得锁并等待信号')
-    let isRun = true
-    let checkThread = threads.start(function () {
-      lock.lock()
-      commonFunctions.debug('子线程获得锁,进入校验状态')
-      let running = true
-      let restartCount = 1
-      let waitCount = 0
-      if (!textContains('蚂蚁森林').exists()) {
-        commonFunctions.log('程序未启动，尝试唤醒')
-        _unlock.exec()
-        _start_app()
-      }
-      while (running) {
-        if (restartCount > 5) {
-          commonFunctions.log('重试超过五次，取消操作')
-          isRun = false
-          break
-        }
-        sleep(500)
-        let closeAndReopen = false
-        // 等待载入蚂蚁森林界面，等待超过三次继续重新打开
-        if (!textContains('蚂蚁森林').exists()) {
-          commonFunctions.debug("未打开蚂蚁森林APP")
-          closeAndReopen = true
-        } else {
-          if (descContains('背包').exists()) {
-            commonFunctions.debug('进入个人主页成功')
-            running = false
-          } else {
-            if (descContains('浇水').exists()) {
-              commonFunctions.debug('进错页面啦，好友的主页！')
-              closeAndReopen = true
-            } else {
-              if (waitCount >= 3) {
-                waitCount = 0
-                closeAndReopen = true
-                commonFunctions.debug('等待超过3次，重新打开')
-              } else {
-                commonFunctions.debug(
-                  '已启动蚂蚁森林，等待载入界面，第' + ++waitCount + '次等待'
-                )
-              }
-            }
-          }
-        }
-        if (closeAndReopen) {
-          if (descEndsWith('关闭').exists()) {
-            descEndsWith('关闭')
-              .findOne(_config.timeout_findOne)
-              .click()
-            commonFunctions.debug('关闭H5')
-            sleep(1000)
-          } else if (textEndsWith('关闭').exists()) {
-            textEndsWith('关闭')
-              .findOne(_config.timeout_findOne)
-              .click()
-            commonFunctions.debug('关闭H5')
-            sleep(1000)
-          }
-          // home()
-          commonFunctions.log('程序未启动，尝试再次唤醒 count:' + restartCount++)
-          _unlock.exec()
-          _start_app()
-        }
-        if (running) {
-          sleep(2500)
-        }
-      }
-      commonFunctions.debug('子线程发送信号并释放锁')
-      complete.signal()
-      lock.unlock()
-    })
-    complete.await()
-    lock.unlock()
-    checkThread.interrupt()
-    commonFunctions.debug('关闭检测线程')
-    if (!isRun) {
+    let restartCount = 0
+    let waitFlag
+    _start_app()
+    // 首次启动等待久一点
+    sleep(1500)
+    while(!(waitFlag = homePageWaiting()) && restartCount++ < 5) {
+      commonFunctions.log('程序未启动，尝试再次唤醒')
+      _automator.clickClose()
+      commonFunctions.debug('关闭H5')
+      sleep(1500)
+      // 解锁并启动
+      _unlock.exec()
+      _start_app()
+    }
+    if (!waitFlag && restartCount >= 5) {
       commonFunctions.log('退出脚本')
       engines.stopAll()
     }
+    commonFunctions.log('进入个人首页成功')
     _clear_floty()
     _get_pre_energy()
     commonFunctions.debug('准备收集自己能量')
@@ -853,24 +761,11 @@ function Ant_forest(automator, unlock, config) {
   // 收取好友的能量
   const _collect_friend = function () {
     commonFunctions.log('开始收集好友能量')
-    if (descEndsWith('查看更多好友').exists()) {
-      descEndsWith('查看更多好友')
-        .findOne(_config.timeout_findOne)
-        .click()
-    } else if (textEndsWith('查看更多好友').exists()) {
-      textEndsWith('查看更多好友')
-        .findOne(_config.timeout_findOne)
-        .click()
+    _automator.enterFriendList()
+    let enterFlag = friendListWaiting()
+    if (!enterFlag) {
+      return false
     }
-    let enterCount = 0
-    while (!textContains('好友排行榜').exists() && !descContains('好友排行榜').exists()) {
-      sleep(1000)
-      if (enterCount++ > 5) {
-        commonFunctions.log('进入好友排行榜失败，重新开始')
-        return false
-      }
-    }
-    commonFunctions.log('进入好友排行榜')
     if (false == _find_and_collect()) {
       _min_countdown = 0
       _has_next = true
@@ -884,6 +779,92 @@ function Ant_forest(automator, unlock, config) {
     _get_post_energy()
   }
 
+  const quickScrollDown = function () {
+    do {
+      _automator.scrollDown(100)
+      sleep(50)
+    } while (
+      !foundNoMoreWidget()
+    )
+  }
+
+  const foundNoMoreWidget = function () {
+    let height = device.height
+    height = height < 2160 ? 2300 : height
+    let noMoreWidgetCenterY = 0
+
+    if (descEndsWith('没有更多了').exists()) {
+      noMoreWidgetCenterY = descEndsWith('没有更多了')
+      .findOne(_config.timeout_findOne)
+      .bounds()
+      .centerY()
+    } else if (textEndsWith('没有更多了').exists()) {
+      noMoreWidgetCenterY = textEndsWith('没有更多了')
+      .findOne(_config.timeout_findOne)
+      .bounds()
+      .centerY()
+    }
+    if (noMoreWidgetCenterY !== 0 && noMoreWidgetCenterY < height) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  const widgetWaiting = function (contentVal, position) {
+    countDown = new java.util.concurrent.CountDownLatch(1)
+    let descThread = threads.start(function () {
+      descEndsWith(contentVal).waitFor()
+      commonFunctions.debug('find desc ' + contentVal)
+      countDown.countDown()
+    })
+
+    let textThread = threads.start(function () {
+      textEndsWith(contentVal).waitFor()
+      commonFunctions.debug('find text ' + contentVal)
+      countDown.countDown()
+    })
+
+    let timeout = false
+    let timeoutThread = threads.start(function () {
+      sleep(6000)
+      timeout = true
+      countDown.countDown()
+    })
+    countDown.await()
+    descThread.interrupt()
+    textThread.interrupt()
+    timeoutThread.interrupt()
+    if (timeout) {
+      commonFunctions.log('进入' + position + '失败')
+      return false
+    } else {
+      commonFunctions.debug('成功进入' + position)
+      return true
+    }
+  }
+
+  /**
+   * 校验是否成功进入自己的首页
+   */
+  const homePageWaiting = function () {
+    return widgetWaiting('背包', '个人首页')
+  }
+
+  /**
+   * 校验是否成功进入好友首页
+   */
+  const wateringWaiting = function () {
+    return widgetWaiting('浇水', '好友首页')
+  }
+
+  /**
+   * 校验是否成功进入好友排行榜
+   */
+  const friendListWaiting = function () {
+    return widgetWaiting('好友排行榜', '好友排行榜')
+  }
+
   return {
     exec: function () {
       let thread = threads.start(function () {
@@ -892,10 +873,13 @@ function Ant_forest(automator, unlock, config) {
       })
       try {
         while (true) {
+          _collect_any = false
           _delay(_min_countdown)
           commonFunctions.showEnergyInfo()
           let currentTime = commonFunctions.increaseRunTimes()
-          commonFunctions.show_temp_floaty('第 ' + ++_current_time + ' 次运行')
+          let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
+          commonFunctions.show_temp_floaty('第 ' + currentTime + ' 次运行, 累计已收集' + energyInfo.totalIncrease + 'g')
+          _current_time++ 
           _unlock.exec()
           try {
             _avil_list = []
@@ -913,11 +897,7 @@ function Ant_forest(automator, unlock, config) {
             _automator.lockScreen()
           }
           events.removeAllListeners()
-          if (
-            (!_config.is_cycle && _current_time > _config.max_collect_repeat) ||
-            _has_next == false ||
-            reTry > 5
-          ) {
+          if (_has_next === false || reTry > 5) {
             commonFunctions.log('收取结束')
             break
           }
