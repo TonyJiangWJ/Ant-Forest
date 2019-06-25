@@ -7,7 +7,6 @@
 'ui';
 // 读取并加载配置到storage
 var default_config = require('./config.js')
-
 var configStorage = storages.create('ant_forest_config')
 
 function draw_view() {
@@ -60,6 +59,13 @@ function draw_view() {
             <radio text="否" checked="{{!configStorage.get('show_small_floaty')}}" marginLeft="20" />
           </radiogroup>
         </vertical>
+        <horizontal  visibility="{{configStorage.get('show_small_floaty') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="mini悬浮窗位置"/>
+        </horizontal>
+        <horizontal  visibility="{{configStorage.get('show_small_floaty') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="x:"/><input id="min_floaty_x" inputType="number" text="{{configStorage.get('min_floaty_x')}}" />
+          <text text="y:"/><input id="min_floaty_y" inputType="number" text="{{configStorage.get('min_floaty_y')}}" />
+        </horizontal>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="定时自动启动：" textColor="#666666" textSize="14sp" />
           <radiogroup id="auto_start" orientation="horizontal" margin="0 10">
@@ -238,6 +244,10 @@ function draw_view() {
       update("max_collect_wait_time", format(ui.max_collect_wait_time.getText()));
       update("timeout_unlock", format(ui.timeout_unlock.getText()));
       update("timeout_findOne", format(ui.timeout_findOne.getText()));
+      update("min_floaty_x", format(ui.min_floaty_x.getText()));
+      update("min_floaty_y", format(ui.min_floaty_y.getText()));
+      update("lock_x", format(ui.lock_x.getText()));
+      update("lock_y", format(ui.lock_y.getText()));
     }
   });
 
@@ -269,6 +279,10 @@ function draw_view() {
         if (ok) {
           storages.remove("ant_forest_config");
           toastLog("清除成功");
+          default_config = require('./config.js')
+          Object.keys(default_config).forEach(key => {
+            configStorage.put(key, default_config[key])
+          })
           draw_view()
         }
       });

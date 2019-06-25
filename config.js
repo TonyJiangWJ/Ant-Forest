@@ -20,6 +20,8 @@ var default_config = {
   max_collect_repeat: 20,
   // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置暂时未做配置管理 可在/lib/CommonFunctions.js$show_raw_floaty中[第12行]的setPosition中修改
   show_small_floaty: true,
+  min_floaty_x: 150,
+  min_floaty_y: 20,
   max_collect_wait_time: 60,
   white_list: [],
   auto_start: false,
