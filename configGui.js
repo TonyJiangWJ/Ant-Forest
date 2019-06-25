@@ -279,6 +279,7 @@ function draw_view() {
         if (ok) {
           storages.remove("ant_forest_config");
           toastLog("清除成功");
+          configStorage = storages.create('ant_forest_config')
           Object.keys(default_config).forEach(key => {
             configStorage.put(key, default_config[key])
           })
