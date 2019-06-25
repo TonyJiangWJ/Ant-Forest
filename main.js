@@ -36,7 +36,7 @@ var Ant_forest = require("./core/Ant_forest.js");
 var scheduler = require('./lib/scheduler.js')
 let DateCompare = require("./lib/DateCompare.js");
 
-var config = require("./config.js");
+var {config} = require("./config.js");
 
 commonFunctions.clearLogFile()
 if (config.auto_start) {

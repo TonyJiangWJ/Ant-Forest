@@ -6,7 +6,7 @@
  */
 'ui';
 // 读取并加载配置到storage
-var default_config = require('./config.js')
+var {default_config} = require('./config.js')
 var configStorage = storages.create('ant_forest_config')
 
 function draw_view() {
@@ -138,7 +138,7 @@ function draw_view() {
         </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="白名单：" textColor="#666666" textSize="14sp" />
-          <text visibility="{{configStorage.get('white_list').length == 0 ? 'visible' : 'gone'}}"  w="*" h="80" gravity="center" layout_gravity="center" text="白名单为空" textColor="#999999" textSize="18sp" margin="0 20" bg="#eeeeee" />
+          <text visibility="{{(!configStorage.get('white_list') || configStorage.get('white_list').length == 0) ? 'visible' : 'gone'}}"  w="*" h="80" gravity="center" layout_gravity="center" text="白名单为空" textColor="#999999" textSize="18sp" margin="0 20" bg="#eeeeee" />
           <frame>
             <list id="white_list">
               <horizontal w="*" h="40" gravity="left" bg="#efefef" margin="0 5">
@@ -252,7 +252,7 @@ function draw_view() {
   });
 
   // 白名单缓存
-  var list_temp = configStorage.get("white_list").map(i => {return {name: i}});
+  var list_temp = configStorage.get("white_list") ? configStorage.get("white_list").map(i => {return {name: i}}) : [];
   // 生成白名单
   ui.white_list.setDataSource(list_temp);
   // 从白名单中删除
@@ -279,7 +279,6 @@ function draw_view() {
         if (ok) {
           storages.remove("ant_forest_config");
           toastLog("清除成功");
-          default_config = require('./config.js')
           Object.keys(default_config).forEach(key => {
             configStorage.put(key, default_config[key])
           })

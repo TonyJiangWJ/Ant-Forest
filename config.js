@@ -60,4 +60,7 @@ if (!configStorage.contains('color_offset')) {
   })
 }
 
-module.exports = config
+module.exports = {
+  config: config, 
+  default_config: default_config
+}
