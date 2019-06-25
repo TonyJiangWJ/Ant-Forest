@@ -279,11 +279,14 @@ function Ant_forest(automator, unlock, config) {
   const _get_min_countdown = function () {
     // 如果有收集过能量，那么先返回主页在进入排行榜，以获取最新的倒计时信息，避免收集过的倒计时信息不刷新，此过程可能导致执行过慢
     if (_collect_any) {
+      commonFunctions.debug("收集过能量，重新获取倒计时列表")
       _automator.clickBack()
       homePageWaiting()
       _automator.enterFriendList()
       friendListWaiting()
       quickScrollDown()
+    } else {
+      commonFunctions.debug("未收集能量直接获取倒计时列表")
     }
     let temp = []
     if (_min_countdown && _timestamp instanceof Date) {
@@ -321,7 +324,7 @@ function Ant_forest(automator, unlock, config) {
       }
     } else {
       // 永不终止模式，判断倒计时不存在，直接等待配置的激活时间
-      if (_current_time.never_stop) {
+      if (_config.never_stop) {
         if (_min_countdown === null) {
           _min_countdown = _config.reactive_time
         }
@@ -439,7 +442,7 @@ function Ant_forest(automator, unlock, config) {
     commonFunctions.debug(isDesc ? energy_ball.desc() : energy_ball.text())
     _automator.clickCenter(energy_ball)
     if (!isOwn) {
-      _collect = true
+      _collect_any = true
     }
     sleep(300)
   }
@@ -791,7 +794,7 @@ function Ant_forest(automator, unlock, config) {
 
   const foundNoMoreWidget = function () {
     let height = device.height
-    height = height < 2160 ? 2300 : height
+    height = height < 10 ? 2300 : height
     let noMoreWidgetCenterY = 0
 
     if (descEndsWith('没有更多了').exists()) {

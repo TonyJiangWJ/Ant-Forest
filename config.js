@@ -11,12 +11,15 @@ var default_config = {
   help_friend: true,
   is_cycle: false,
   cycle_times: 10,
+  // 是否永不停止，即倒计时信息不存在时 睡眠reactive_time之后重新开始收集
   never_stop: false,
+  // 重新激活等待时间 单位分钟
   reactive_time: 60,
   timeout_unlock: 1000,
   timeout_findOne: 1000,
   max_collect_repeat: 20,
-  show_small_floaty: false,
+  // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置暂时未做配置管理 可在/lib/CommonFunctions.js$show_raw_floaty中[第12行]的setPosition中修改
+  show_small_floaty: true,
   max_collect_wait_time: 60,
   white_list: [],
   auto_start: false,
