@@ -668,6 +668,7 @@ function Ant_forest(automator, unlock, config) {
 
   // 识别可收取好友并记录
   const _find_and_collect = function () {
+    let count = 0
     do {
       let screen = captureScreen()
       commonFunctions.debug("获取好友列表")
@@ -718,7 +719,7 @@ function Ant_forest(automator, unlock, config) {
       sleep(1000)
       commonFunctions.debug("进入下一页")
     } while (
-      !foundNoMoreWidget()
+      (count += foundNoMoreWidget() ? 1 : 0) < 2
     )
     commonFunctions.log('全部好友收集完成')
   }
