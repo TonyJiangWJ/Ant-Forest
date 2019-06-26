@@ -236,6 +236,8 @@ function Ant_forest(automator, unlock) {
     let startTime = new Date().getTime();
     let timestampGap = minutes * 60000;
     let i = 0;
+    let showLogTimePoint = -1
+    let showLogGap = 0
     for (;;) {
       let now = new Date().getTime();
       if (now - startTime >= timestampGap) {
@@ -244,15 +246,15 @@ function Ant_forest(automator, unlock) {
       }
       i = (now - startTime) / 60000;
       let left = minutes - i;
-      log("距离下次运行还有 " + left.toFixed(2) + " 分钟");
-      if (left * 60000 > 30000) {
-        // 剩余时间大于三十秒时 睡眠30秒
-        // 锁屏情况下的30秒可能实际时间有五分钟之久，如果不能忍受这个长度可以再改小一点比如10秒之类的
-        sleep(30000);
-      } else {
-        // 剩余时间小于30秒时 直接等待实际时间
-        sleep(left * 60000);
+      // 距离上一次打印日志的间隔
+      showLogGap = i - showLogTimePoint
+      // 每半分钟打印一次
+      if (showLogGap > 0.5) {
+        showLogTimePoint = i
+        log("距离下次运行还有 " + left.toFixed(2) + " 分钟");
       }
+      // 睡眠500毫秒
+      sleep(500)
     }
   }
 
