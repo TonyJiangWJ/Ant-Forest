@@ -19,7 +19,6 @@ function Ant_forest(automator, unlock, config) {
     _fisrt_running = true, // 是否第一次进入蚂蚁森林
     _has_next = true, // 是否下一次运行
     _avil_list = [], // 可收取好友列表
-    _has_protect = [], // 开启能量罩好友
     _collect_any = false, // 收集过能量
     reTry = 0
   /***********************
@@ -72,7 +71,7 @@ function Ant_forest(automator, unlock, config) {
 
   // 显示文字悬浮窗
   const _show_floaty = function (text) {
-    floaty.closeAll()
+    commonFunctions.closeFloatyWindow()
     let window = floaty.window(
       <card cardBackgroundColor="#aa000000" cardCornerRadius="20dp">
         <horizontal w="250" h="40" paddingLeft="15" gravity="center">
@@ -125,47 +124,6 @@ function Ant_forest(automator, unlock, config) {
   /***********************
    * 构建下次运行
    ***********************/
-
-  // 同步获取 toast 内容
-  const _get_toast_sync = function (filter, limit, exec) {
-    filter = typeof filter == null ? '' : filter
-    let messages = threads.disposable()
-    // 在新线程中开启监听
-    let thread = threads.start(function () {
-      let temp = []
-      let counter = 0
-      let startTimestamp = new Date().getTime()
-      // 监控 toast
-      events.onToast(function (toast) {
-        if (
-          toast &&
-          toast.getPackageName() &&
-          toast.getPackageName().indexOf(filter) >= 0
-        ) {
-          counter++
-          temp.push(toast.getText())
-          if (counter == limit) {
-            messages.setAndNotify(temp)
-          } else if (new Date().getTime() - startTimestamp > 5000) {
-            commonFunctions.log('等待超过五秒钟，直接返回结果')
-            messages.setAndNotify(temp)
-          }
-        } else {
-          commonFunctions.log('无法获取toast内容，直接返回[]')
-          messages.setAndNotify(temp)
-        }
-      })
-      // 触发 toast
-      exec()
-    })
-    // 获取结果
-    commonFunctions.debug("阻塞等待toast结果")
-    let result = messages.blockedGet()
-    commonFunctions.debug("获取toast结果成功：" + result)
-    thread.interrupt()
-    return result
-  }
-
 
   // 异步获取 toast 内容
   const _get_toast_async = function (filter, limit, exec) {
@@ -594,12 +552,11 @@ function Ant_forest(automator, unlock, config) {
       }
     }
     // 记录是否有保护罩
-    temp.protect = false
-    _has_protect.forEach(function (obj) {
-      if (temp.name == obj) temp.protect = true
-    })
-    // 添加到可收取列表
-    if (_config.white_list.indexOf(temp.name) < 0) _avil_list.push(temp)
+    temp.protect = commonFunctions.checkIsProtected(temp.name)
+    // 不在白名单的 添加到可收取列表
+    if (_config.white_list.indexOf(temp.name) < 0) {
+      _avil_list.push(temp)
+    }
   }
 
   // 判断并记录保护罩
@@ -608,7 +565,7 @@ function Ant_forest(automator, unlock, config) {
       let title = textContains('的蚂蚁森林')
         .findOne(_config.timeout_findOne)
         .text()
-      _has_protect.push(title.substring(0, title.indexOf('的')))
+      commonFunctions.addNameToProtect(title.substring(0, title.indexOf('的')))
     }
   }
 
@@ -954,7 +911,6 @@ function Ant_forest(automator, unlock, config) {
       }
       // 释放资源
       _avil_list = []
-      _has_protect = []
       thread.interrupt()
     }
   }
