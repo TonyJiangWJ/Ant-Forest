@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-13 09:07:19
+ * @Last Modified time: 2019-03-14 10:29:30
  * @Description: 蚂蚁森林操作集
  */
 
@@ -95,7 +95,69 @@ function Ant_forest(automator, unlock) {
     thread.interrupt();
     return result;
   }
+  // 异步获取 toast 内容
+  const _get_toast_async = function(filter, limit, exec) {
+    filter = typeof filter == null ? '' : filter
+    let lock = threads.lock()
+    let complete = lock.newCondition()
+    let result = []
+    lock.lock()
 
+    // 在新线程中开启监听
+    let thread = threads.start(function() {
+      try {
+        lock.lock()
+        let temp = []
+        let counter = 0
+        let toastDone = false
+        let startTimestamp = new Date().getTime()
+        // 监控 toast
+        events.onToast(function(toast) {
+          if (
+            toast &&
+            toast.getPackageName() &&
+            toast.getPackageName().indexOf(filter) >= 0
+          ) {
+            counter++
+            temp.push(toast.getText())
+            if (counter == limit) {
+              log('正常获取toast信息' + temp)
+              toastDone = true
+            } else if (new Date().getTime() - startTimestamp > 10000) {
+              log('等待超过十秒秒钟，直接返回结果')
+              toastDone = true
+            }
+          } else {
+            log('无法获取toast内容，直接返回[]')
+            toastDone = true
+          }
+        })
+        // 触发 toast
+        exec()
+        let count = 10
+        // 主线程等待10秒 超时退出等待
+        while (count-- > 0 && !toastDone) {
+          sleep(1000)
+        }
+        if (!toastDone) {
+          log('超时释放锁')
+        } else {
+          log('temp' + temp)
+          result = temp
+        }
+      } finally {
+        complete.signal()
+        lock.unlock()
+      }
+    })
+    // 获取结果
+    log('阻塞等待toast结果')
+    complete.await()
+    log('阻塞等待结束，等待锁释放')
+    lock.unlock()
+    thread.interrupt()
+    return result
+  }
   /***********************
    * 获取下次运行倒计时
    ***********************/
@@ -103,12 +165,12 @@ function Ant_forest(automator, unlock) {
   // 获取自己的能量球中可收取倒计时的最小值
   const _get_min_countdown_own = function() {
     let target = className("Button").descMatches(/\s/).filter(function(obj) {
-      return obj.bounds().width() != obj.bounds().height()
+      return obj.bounds().height() / obj.bounds().width() > 1.05; 
     });
     if (target.exists()) {
       let ball = target.untilFind();
       let temp = [];
-      let toasts = _get_toast_sync(_package_name, ball.length, function() {
+      let toasts = _get_toast_async(_package_name, ball.length, function() {
         ball.forEach(function(obj) {
           _automator.clickCenter(obj);
           sleep(500);
@@ -165,11 +227,34 @@ function Ant_forest(automator, unlock) {
   }
 
   // 按分钟延时
-  const _delay = function(minutes) {
-    minutes = (typeof minutes != null) ? minutes : 0;
-    for (let i = 0; i < minutes; i++) {
-      log("距离下次运行还有 " + (minutes - i) + " 分钟");
-      sleep(60000);
+  const _delay = function (minutes) {
+    minutes = typeof minutes != null ? minutes : 0;
+    if (minutes === 0) {
+      // delay时间为0时直接跳过
+      return;
+    }
+    let startTime = new Date().getTime();
+    let timestampGap = minutes * 60000;
+    let i = 0;
+    let showLogTimePoint = -1
+    let showLogGap = 0
+    for (;;) {
+      let now = new Date().getTime();
+      if (now - startTime >= timestampGap) {
+        // 当前已经过时间大于设定的延迟时间则直接退出
+        break;
+      }
+      i = (now - startTime) / 60000;
+      let left = minutes - i;
+      // 距离上一次打印日志的间隔
+      showLogGap = i - showLogTimePoint
+      // 每半分钟打印一次
+      if (showLogGap > 0.5) {
+        showLogTimePoint = i
+        log("距离下次运行还有 " + left.toFixed(2) + " 分钟");
+      }
+      // 睡眠500毫秒
+      sleep(500)
     }
   }
 
@@ -320,21 +405,33 @@ function Ant_forest(automator, unlock) {
 
   // 识别可收取好友并记录
   const _find_and_collect = function() {
-    while (!(descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne(_config.get("timeout_findOne")).bounds().centerY() < device.height)) {
+    do {
       let screen = captureScreen();
       let friends_list = idEndsWith("J_rank_list").findOne(_config.get("timeout_findOne"));
       if (friends_list) {
         friends_list.children().forEach(function(fri) {
-          if (fri.visibleToUser() && fri.childCount())
+          if (fri.visibleToUser() && fri.childCount() > 3)
             if (_is_obtainable(fri, screen)) _record_avil_list(fri);
         });
         _collect_avil_list();
       }
       scrollDown();
       sleep(1000);
-    }
+    } while (!(descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne(_config.get("timeout_findOne")).bounds().centerY() < device.height));
   }
-
+  
+  // 监听音量上键结束脚本运行
+  const _listen_stop = function() {
+    threads.start(function () {
+        toast("即将收取能量，按音量上键停止");
+        events.observeKey();
+        events.onceKeyDown("volume_up", function (event) {
+            engines.stopAll();
+            exit();
+          });
+    });
+  };
+  
   /***********************
    * 主要函数
    ***********************/
@@ -347,7 +444,7 @@ function Ant_forest(automator, unlock) {
     _clear_popup();
     _get_pre_energy();
     _collect();
-    _get_min_countdown_own();
+    if (!_config.get("is_cycle")) _get_min_countdown_own();
     _fisrt_running = false;
   }
 
@@ -357,7 +454,7 @@ function Ant_forest(automator, unlock) {
     descEndsWith("查看更多好友").findOne(_config.get("timeout_findOne")).click();
     while(!textContains("好友排行榜").exists()) sleep(1000);
     _find_and_collect();
-    _get_min_countdown();
+    if (!_config.get("is_cycle")) _get_min_countdown();
     _generate_next();
     _get_post_energy();
   }
@@ -370,10 +467,12 @@ function Ant_forest(automator, unlock) {
       });
       while (true) {
         _delay(_min_countdown);
+        _listen_stop();
         log("第 " + (++_current_time) + " 次运行");
         _unlock.exec();
         _collect_own();
         _collect_friend();
+        if (_config.get("is_cycle")) sleep(1000);
         events.removeAllListeners();
         if (_has_next == false) {
           log("收取结束");
@@ -381,6 +480,7 @@ function Ant_forest(automator, unlock) {
         }
       }
       thread.interrupt();
+      exit()
     }
   }
 }

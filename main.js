@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-12 02:09:14
+ * @Last Modified time: 2019-04-08 08:44:22
  * @Description: 蚂蚁森林自动收能量
  */
 
@@ -17,9 +17,19 @@ if (! requestScreenCapture()) {
   exit();
 }
 
+// 检查脚本是否重复运行
+engines.all().slice(1).forEach(script => {
+  if (script.getSource().getName().indexOf(engines.myEngine().getSource())) {
+    toastLog("脚本正在运行中");
+    engines.myEngine().forceStop();
+  }
+});
+
 /************************
  * 依赖加载
  ***********************/
+// 检查更新
+engines.execScriptFile("./update.js");
 
 // 加载本地配置
 var config = storages.create("ant_forest_config");
