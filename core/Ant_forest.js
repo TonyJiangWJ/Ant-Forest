@@ -109,16 +109,13 @@ function Ant_forest(automator, unlock, config) {
     )
     window.stop.on('click', () => {
       exit()
-      //engines.stopAll()
     })
     commonFunctions.log(text)
-    setTimeout(() => {
-      ui.run(function () {
-        window.log.text(text)
-      })
-    }, 10)
+    ui.run(function () {
+      window.log.text(text)
+    })
     // 30秒后关闭，防止立即停止
-    setTimeout(() => { }, 1000 * 30)
+    setTimeout(() => { exit() }, 1000 * 30)
   }
 
   /***********************

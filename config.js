@@ -18,12 +18,14 @@ var default_config = {
   timeout_unlock: 1000,
   timeout_findOne: 1000,
   max_collect_repeat: 20,
-  // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置暂时未做配置管理 可在/lib/CommonFunctions.js$show_raw_floaty中[第12行]的setPosition中修改
+  // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
   show_small_floaty: true,
   min_floaty_x: 150,
   min_floaty_y: 20,
   max_collect_wait_time: 60,
   white_list: [],
+  // 自动定时启动 其实是基于循环等待的 此项可以废弃 使用AutoJS 4.1.1 Alpha2的定时任务功能即可
+  // ---↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓---
   auto_start: false,
   auto_start_same_day: true,
   /**
@@ -32,6 +34,7 @@ var default_config = {
   auto_start_hours: 6,
   auto_start_minutes: 55,
   auto_start_seconds: 0,
+  // ---↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑---
   // 是否跳过低于五克的能量，避免频繁偷别人的
   skip_five: false,
   // 是否显示调试日志信息
