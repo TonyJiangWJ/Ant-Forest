@@ -44,8 +44,9 @@ var default_config = {
   lock_x: 150,
   lock_y: 970
 }
-
-var configStorage = storages.create('ant_forest_config')
+// 配置缓存的key值
+const CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
+var configStorage = storages.create(CONFIG_STORAGE_NAME)
 var config = {}
 if (!configStorage.contains('color_offset')) {
   toastLog('使用默认配置')
@@ -62,5 +63,6 @@ if (!configStorage.contains('color_offset')) {
 
 module.exports = {
   config: config, 
-  default_config: default_config
+  default_config: default_config,
+  storage_name: CONFIG_STORAGE_NAME
 }

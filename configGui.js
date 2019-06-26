@@ -6,8 +6,8 @@
  */
 'ui';
 // 读取并加载配置到storage
-var {default_config} = require('./config.js')
-var configStorage = storages.create('ant_forest_config')
+var {default_config, storage_name} = require('./config.js')
+var configStorage = storages.create(storage_name)
 
 function draw_view() {
   ui.layout(
@@ -277,9 +277,9 @@ function draw_view() {
     confirm("确定要清除本地储存吗？")
       .then(ok => {
         if (ok) {
-          storages.remove("ant_forest_config");
+          storages.remove(storage_name);
           toastLog("清除成功");
-          configStorage = storages.create('ant_forest_config')
+          configStorage = storages.create(storage_name)
           Object.keys(default_config).forEach(key => {
             configStorage.put(key, default_config[key])
           })
