@@ -723,7 +723,7 @@ function Ant_forest(automator, unlock, config) {
     }
     if (!waitFlag && restartCount >= 5) {
       commonFunctions.log('退出脚本')
-      engines.stopAll()
+      engines.myEngine().forceStop();
     }
     commonFunctions.log('进入个人首页成功')
     _clear_floty()
