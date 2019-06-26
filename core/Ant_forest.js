@@ -25,6 +25,12 @@ function Ant_forest(automator, unlock) {
    * 综合操作
    ***********************/
 
+  const scrollDown0 = function (speed) {
+    let millis = speed || 200
+    let deviceHeight = device.height || 2000
+    swipe(400, deviceHeight - 100, 600, 200, millis)
+  }
+
   // 进入蚂蚁森林主页
   const _start_app = function() {
     app.startActivity({        
@@ -60,13 +66,15 @@ function Ant_forest(automator, unlock) {
       </card>
     );
     window.stop.on("click", () => {
-      engines.stopAll();
+      exit()
     });
-    setInterval(()=>{
-      ui.run(function(){
-        window.log.text(text)
-      });
-    }, 0);
+    ui.run(function () {
+      window.log.text(text)
+    })
+    // 30秒后关闭，防止立即停止
+    setTimeout(() => {
+      exit()
+    }, 1000 * 30)
   }
 
   // 同步获取 toast 内容
@@ -164,10 +172,23 @@ function Ant_forest(automator, unlock) {
 
   // 获取自己的能量球中可收取倒计时的最小值
   const _get_min_countdown_own = function() {
-    let target = className("Button").descMatches(/\s/).filter(function(obj) {
-      return obj.bounds().height() / obj.bounds().width() > 1.05; 
-    });
-    if (target.exists()) {
+    let target
+    if (className('Button')
+      .descMatches(/\s/).exists()) {
+      target = className('Button')
+        .descMatches(/\s/)
+        .filter(function (obj) {
+          return obj.bounds().height() / obj.bounds().width() > 1.05
+        })
+    } else if (className('Button')
+      .textMatches(/\s/).exists()) {
+      target = className('Button')
+        .textMatches(/\s/)
+        .filter(function (obj) {
+          return obj.bounds().height() / obj.bounds().width() > 1.05
+        })
+    }
+    if (target && target.exists()) {
       let ball = target.untilFind();
       let temp = [];
       let toasts = _get_toast_async(_package_name, ball.length, function() {
@@ -200,6 +221,13 @@ function Ant_forest(automator, unlock) {
         let countdown_fri = parseInt(countdown.desc().match(/\d+/));
         temp.push(countdown_fri);
       });
+    } else if (textEndsWith('’').exists()) {
+      textEndsWith('’')
+        .untilFind()
+        .forEach(function (countdown) {
+          let countdown_fri = parseInt(countdown.text().match(/\d+/))
+          temp.push(countdown_fri)
+        })
     }
     if (!temp.length) return;
     _min_countdown = Math.min.apply(null, temp);
@@ -264,16 +292,32 @@ function Ant_forest(automator, unlock) {
 
   // 记录当前能量
   const _get_current_energy = function() {
-    if (descEndsWith("背包").exists()) {
-      return parseInt(descEndsWith("g").findOne(_config.get("timeout_findOne")).desc().match(/\d+/));
+    let currentEnergy
+    if (descEndsWith('背包').exists()) {
+      toastLog('desc 背包')
+      currentEnergy = parseInt(
+        descEndsWith('g')
+          .findOne(_config.get("timeout_findOne"))
+          .desc()
+          .match(/\d+/)
+      )
+    } else if (textEndsWith('背包').exists()) {
+      toastLog('text 背包')
+      currentEnergy = parseInt(
+        textEndsWith('g')
+          .findOne(_config.get("timeout_findOne"))
+          .text()
+          .match(/\d+/)
+      )
     }
+    return currentEnergy
   }
 
   // 记录初始能量值
   const _get_pre_energy = function() {
     if (_fisrt_running && _has_next) {
       _pre_energy = _get_current_energy();
-      log("当前能量：" + _pre_energy);
+      toastLog("当前能量：" + _pre_energy);
     }
   }
 
@@ -281,12 +325,14 @@ function Ant_forest(automator, unlock) {
   const _get_post_energy = function() {
     if (!_fisrt_running && !_has_next) {
       if (descEndsWith("返回").exists()) descEndsWith("返回").findOne(_config.get("timeout_findOne")).click();
-      descEndsWith("背包").waitFor();
+      else if (textEndsWith("返回").exists()) textEndsWith("返回").findOne(_config.get("timeout_findOne")).click();
+      homePageWaiting()
       _post_energy = _get_current_energy();
       log("当前能量：" + _post_energy);
       _show_floaty("共收取：" + (_post_energy - _pre_energy) + "g 能量");
     }
     if (descEndsWith("关闭").exists()) descEndsWith("关闭").findOne(_config.get("timeout_findOne")).click();
+    else if (textEndsWith("关闭").exists()) textEndsWith("关闭").findOne(_config.get("timeout_findOne")).click();
     home();
   }
 
@@ -301,6 +347,11 @@ function Ant_forest(automator, unlock) {
         _automator.clickCenter(ball);
         sleep(500);
       });
+    } else if (textEndsWith("克").exists()) {
+      textEndsWith("克").untilFind().forEach(function(ball) {
+        _automator.clickCenter(ball);
+        sleep(500);
+      });
     }
   }
 
@@ -310,8 +361,27 @@ function Ant_forest(automator, unlock) {
     // 收取好友能量
     _collect();
     // 帮助好友收取能量
-    if (className("Button").descMatches(/\s/).exists()) {
-      className("Button").descMatches(/\s/).untilFind().forEach(function(ball) {
+    let energyBalls
+    if (
+      className('Button')
+        .descMatches(/\s/)
+        .exists()
+    ) {
+      energyBalls = className('Button')
+        .descMatches(/\s/)
+        .untilFind()
+    } else if (
+      className('Button')
+        .textMatches(/\s/)
+        .exists()
+    ) {
+      energyBalls = className('Button')
+        .textMatches(/\s/)
+        .untilFind()
+    }
+    
+    if (energyBalls && energyBalls.length > 0) {
+      energyBalls.forEach(function(ball) {
         let x = ball.bounds().left,
             y = ball.bounds().top,
             w = ball.bounds().width(),
@@ -355,6 +425,13 @@ function Ant_forest(automator, unlock) {
     } else {
       temp.name = fri.child(1).desc();
     }
+    if (temp.name === "") {
+      if (fri.child(1).text() == "") {
+        temp.name = fri.child(2).text();
+      } else {
+        temp.name = fri.child(1).text();
+      }
+    }
     // 记录是否有保护罩
     temp.protect = false;
     _has_protect.forEach(function(obj) {
@@ -390,7 +467,7 @@ function Ant_forest(automator, unlock) {
       if (!obj.protect) {
         let temp = _protect_detect(_package_name);
         _automator.click(obj.target.centerX(), obj.target.centerY());
-        descEndsWith("浇水").waitFor();
+        wateringWaiting()
         if (_config.get("help_friend")) {
           _collect_and_help();
         } else {
@@ -398,26 +475,38 @@ function Ant_forest(automator, unlock) {
         }
         _automator.back();
         temp.interrupt();
-        while(!textContains("好友排行榜").exists()) sleep(1000);
+        while(!friendListWaiting()) sleep(1000);
       }
     }
   }
 
   // 识别可收取好友并记录
   const _find_and_collect = function() {
+    let count = 0
     do {
       let screen = captureScreen();
-      let friends_list = idEndsWith("J_rank_list").findOne(_config.get("timeout_findOne"));
-      if (friends_list) {
+      let friends_list = []
+      if (idMatches('J_rank_list_append').exists()) {
+        log('newAppendList')
+        friends_list = idMatches('J_rank_list_append').findOne(
+          _config.get("timeout_findOne")
+        )
+      } else if (idMatches('J_rank_list').exists()) {
+        log('oldList')
+        friends_list = idMatches('J_rank_list').findOne(
+          _config.get("timeout_findOne")
+        )
+      }
+      if (friends_list && friends_list.children()) {
         friends_list.children().forEach(function(fri) {
           if (fri.visibleToUser() && fri.childCount() > 3)
             if (_is_obtainable(fri, screen)) _record_avil_list(fri);
         });
         _collect_avil_list();
       }
-      scrollDown();
+      scrollDown0();
       sleep(1000);
-    } while (!(descEndsWith("没有更多了").exists() && descEndsWith("没有更多了").findOne(_config.get("timeout_findOne")).bounds().centerY() < device.height));
+    } while ((count += foundNoMoreWidget() ? 1 : 0) < 2);
   }
   
   // 监听音量上键结束脚本运行
@@ -438,9 +527,10 @@ function Ant_forest(automator, unlock) {
 
   // 收取自己的能量
   const _collect_own = function() {
+    // 首先启动蚂蚁森林，然后开始等待背包
+    _start_app();
     log("开始收集自己能量");
-    if (!textContains("蚂蚁森林").exists()) _start_app();
-    descEndsWith("背包").waitFor();
+    if (!homePageWaiting()) _start_app();
     _clear_popup();
     _get_pre_energy();
     _collect();
@@ -451,14 +541,119 @@ function Ant_forest(automator, unlock) {
   // 收取好友的能量
   const _collect_friend = function() {
     log("开始收集好友能量");
-    descEndsWith("查看更多好友").findOne(_config.get("timeout_findOne")).click();
-    while(!textContains("好友排行榜").exists()) sleep(1000);
+    if (descEndsWith('查看更多好友').exists()) {
+      descEndsWith('查看更多好友')
+        .findOne(_config.get("timeout_findOne"))
+        .click()
+    } else if (textEndsWith('查看更多好友').exists()) {
+      textEndsWith('查看更多好友')
+        .findOne(_config.get("timeout_findOne"))
+        .click()
+    }
+    sleep(200)
+    while(!friendListWaiting()) sleep(1000);
     _find_and_collect();
     if (!_config.get("is_cycle")) _get_min_countdown();
     _generate_next();
     _get_post_energy();
   }
 
+  const foundNoMoreWidget = function () {
+    let height = device.height
+    height = height < 10 ? 2300 : height
+    let noMoreWidgetCenterY = 0
+
+    if (descEndsWith('没有更多了').exists()) {
+      noMoreWidgetCenterY = descEndsWith('没有更多了')
+        .findOne(_config.get("timeout_findOne"))
+        .bounds()
+        .centerY()
+    } else if (textEndsWith('没有更多了').exists()) {
+      noMoreWidgetCenterY = textEndsWith('没有更多了')
+        .findOne(_config.get("timeout_findOne"))
+        .bounds()
+        .centerY()
+    }
+    // todo 该校验并不完美，当列表已经加载过之后，明明没有在视野中的控件，位置centerY还是能够获取到，而且非0
+    if (noMoreWidgetCenterY !== 0 && noMoreWidgetCenterY < height) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  /**
+   * 校验控件是否存在，并打印相应日志
+   * @param {String} contentVal 控件文本
+   * @param {String} position 日志内容 当前所在位置是否成功进入
+   * @param {Number} timeoutSetting 超时时间 默认6000 即6秒钟
+   */
+  const widgetWaiting = function (contentVal, position, timeoutSetting) {
+    let waitingSuccess = widgetCheck(contentVal, timeoutSetting)
+
+    if (waitingSuccess) {
+      log('成功进入' + position)
+      return true
+    } else {
+      log('进入' + position + '失败')
+      return false
+    }
+  }
+
+  /**
+   * 校验控件是否存在
+   * @param {String} contentVal 控件文本
+   * @param {Number} timeoutSetting 超时时间 不设置则为6秒
+   * 超时返回false
+   */
+  const widgetCheck = function (contentVal, timeoutSetting) {
+    let timeout = timeoutSetting || 6000
+    countDown = new java.util.concurrent.CountDownLatch(1)
+    let descThread = threads.start(function () {
+      descEndsWith(contentVal).waitFor()
+      log('find desc ' + contentVal)
+      countDown.countDown()
+    })
+
+    let textThread = threads.start(function () {
+      textEndsWith(contentVal).waitFor()
+      log('find text ' + contentVal)
+      countDown.countDown()
+    })
+    let timeoutFlag = false
+    let timeoutThread = threads.start(function () {
+      sleep(timeout)
+      log('timeout for ' + contentVal)
+      timeoutFlag = true
+      countDown.countDown()
+    })
+    countDown.await()
+    descThread.interrupt()
+    textThread.interrupt()
+    timeoutThread.interrupt()
+    return !timeoutFlag
+  }
+
+  /**
+   * 校验是否成功进入自己的首页
+   */
+  const homePageWaiting = function () {
+    return widgetWaiting('背包', '个人首页')
+  }
+
+  /**
+   * 校验是否成功进入好友首页
+   */
+  const wateringWaiting = function () {
+    return widgetWaiting('浇水', '好友首页')
+  }
+
+  /**
+   * 校验是否成功进入好友排行榜
+   */
+  const friendListWaiting = function () {
+    return widgetWaiting('好友排行榜', '好友排行榜')
+  }
   return {
     exec: function() {
       let thread = threads.start(function() {
@@ -480,7 +675,6 @@ function Ant_forest(automator, unlock) {
         }
       }
       thread.interrupt();
-      exit()
     }
   }
 }
