@@ -484,6 +484,7 @@ function Ant_forest(automator, unlock) {
   const _find_and_collect = function() {
     let count = 0
     do {
+      sleep(1000);
       let screen = captureScreen();
       let friends_list = []
       if (idMatches('J_rank_list_append').exists()) {
@@ -505,7 +506,6 @@ function Ant_forest(automator, unlock) {
         _collect_avil_list();
       }
       scrollDown0();
-      sleep(1000);
     } while ((count += foundNoMoreWidget() ? 1 : 0) < 2);
   }
   
