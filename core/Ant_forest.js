@@ -530,7 +530,19 @@ function Ant_forest(automator, unlock) {
     // 首先启动蚂蚁森林，然后开始等待背包
     _start_app();
     log("开始收集自己能量");
-    if (!homePageWaiting()) _start_app();
+    // 重试次数
+    let retry = 0
+    // 判断是否进入成功
+    let enteredFlag
+    while (!(enteredFlag = homePageWaiting()) && ++retry <= 3) {
+      clickClose()
+      sleep(1500)
+      _start_app()
+    }
+    if (!enteredFlag && retry >= 3) {
+      log('打开森林失败 退出脚本')
+      exit()
+    }
     _clear_popup();
     _get_pre_energy();
     _collect();
@@ -556,6 +568,18 @@ function Ant_forest(automator, unlock) {
     if (!_config.get("is_cycle")) _get_min_countdown();
     _generate_next();
     _get_post_energy();
+  }
+
+  const clickClose = function () {
+    if (descEndsWith('关闭').exists()) {
+      descEndsWith('关闭')
+        .findOne(_config.get("timeout_findOne"))
+        .click()
+    } else if (textEndsWith('关闭').exists()) {
+      textEndsWith('关闭')
+        .findOne(_config.get("timeout_findOne"))
+        .click()
+    }
   }
 
   const foundNoMoreWidget = function () {
