@@ -765,21 +765,22 @@ function Ant_forest(automator, unlock, config) {
    */
   const foundNoMoreWidget = function (sleepTime) {
     let sleep = sleepTime || _config.timeout_findOne
-
-    let height = _config.deviceHeight || device.height
-    height = height < 10 ? 1920 : height
-    let noMoreCenterHeight = _config.noMoreCenterHeight || 62
-    let noMoreWidgetCenterY = 0
+    let noMoreWidgetHeight = 0
 
     let noMoreWidget = widgetGetOne('没有更多了', sleep)
     if (noMoreWidget) {
-      noMoreWidgetCenterY = noMoreWidget.bounds().centerY()
+      let bounds = noMoreWidget.bounds()
+      commonFunctions.debug("找到控件: [" + bounds.left + ", " + bounds.top + ", " + bounds.right + ", " + bounds.bottom + "]")
+      noMoreWidgetHeight = bounds.bottom - bounds.top
     }
     // todo 该校验并不完美，当列表已经加载过之后，明明没有在视野中的控件，位置centerY还是能够获取到，而且非0
-    if (noMoreWidgetCenterY !== 0 && noMoreWidgetCenterY <= height - noMoreCenterHeight) {
-      commonFunctions.debug('"没有更多了" 当前centerY:' + noMoreWidgetCenterY)
+    if (noMoreWidgetHeight > 50) {
+      commonFunctions.debug('"没有更多了" 当前控件高度:' + noMoreWidgetHeight)
       return true
     } else {
+      if (noMoreWidgetHeight > 0) {
+        commonFunctions.debug('"没有更多了" 控件高度不符合要求' + noMoreWidgetHeight)
+      }
       return false
     }
   }
