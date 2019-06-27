@@ -189,15 +189,13 @@ function Ant_forest(automator, unlock, config) {
   // 获取自己的能量球中可收取倒计时的最小值
   const _get_min_countdown_own = function () {
     let target
-    if (className('Button')
-      .descMatches(/\s/).exists()) {
+    if (className('Button').descMatches(/\s/).exists()) {
       target = className('Button')
         .descMatches(/\s/)
         .filter(function (obj) {
           return obj.bounds().height() / obj.bounds().width() > 1.05
         })
-    } else if (className('Button')
-      .textMatches(/\s/).exists()) {
+    } else if (className('Button').textMatches(/\s/).exists()) {
       target = className('Button')
         .textMatches(/\s/)
         .filter(function (obj) {
@@ -241,7 +239,7 @@ function Ant_forest(automator, unlock, config) {
         homePageWaiting()
         _automator.enterFriendList()
         friendListWaiting()
-        quickScrollDown()
+        loadFriendList()
         // 再次获取倒计时数据
         countDownNow = calculateMinCountdown()
       } else {
@@ -262,20 +260,19 @@ function Ant_forest(automator, unlock, config) {
       commonFunctions.debug("本次收集经过了：" + passedTime + "分，最终记录自身倒计时：" + countdown_own + "分")
       countdown_own >= 0 ? temp.push(countdown_own) : temp.push(0)
     }
-    if (descEndsWith('’').exists()) {
-      descEndsWith('’')
-        .untilFind()
-        .forEach(function (countdown) {
-          let countdown_fri = parseInt(countdown.desc().match(/\d+/))
+    let friCountDownList = widgetGetAll('\\d+’')
+    if (friCountDownList) {
+      friCountDownList.forEach(function (countdown) {
+        let countdown_fri = null
+        if (countdown.desc()) {
+          countdown_fri = parseInt(countdown.desc().match(/\d+/))
+        } else if (countdown.text()) {
+          countdown_fri = parseInt(countdown.text().match(/\d+/))
+        }
+        if (countdown_fri) {
           temp.push(countdown_fri)
-        })
-    } else if (textEndsWith('’').exists()) {
-      textEndsWith('’')
-        .untilFind()
-        .forEach(function (countdown) {
-          let countdown_fri = parseInt(countdown.text().match(/\d+/))
-          temp.push(countdown_fri)
-        })
+        }
+      })
     }
     if (temp.length === 0) {
       return
@@ -392,15 +389,19 @@ function Ant_forest(automator, unlock, config) {
    * 收集目标能量球能量
    * 
    * @param {*} energy_ball 能量球对象
-   * @param {boolean} isDesc 是否提取文本自desc
    * @param {boolean} isOwn 是否收集自身能量
    */
-  const collectBallEnergy = function (energy_ball, isDesc, isOwn) {
+  const collectBallEnergy = function (energy_ball, isOwn) {
+    let isDesc = energy_ball.desc() ? true : false
+    
     if (config.skip_five && !isOwn) {
+      let regexCheck = /(\d+)克/
       let execResult
       if (isDesc) {
+        commonFunctions.debug('获取能量球desc数据')
         execResult = regexCheck.exec(energy_ball.desc())
       } else {
+        commonFunctions.debug('获取能量球text数据')
         execResult = regexCheck.exec(energy_ball.text())
       }
       if (execResult.length > 1 && parseInt(execResult[1]) <= 5) {
@@ -421,21 +422,12 @@ function Ant_forest(automator, unlock, config) {
   // 收取能量
   const _collect = function (own) {
     let isOwn = own || false
-    if (descEndsWith('克').exists()) {
+    let ballCheckTarget = widgetGetAll(/.*克/)
+    if (ballCheckTarget !== null) {
       commonFunctions.debug('能量球存在')
-      let regexCheck = /(\d+)克/
-      descEndsWith('克')
-        .untilFind()
+      ballCheckTarget
         .forEach(function (energy_ball) {
-          collectBallEnergy(energy_ball, true, isOwn)
-        })
-    } else if (textEndsWith('克').exists()) {
-      commonFunctions.debug('能量球存在')
-      let regexCheck = /(\d+)克/
-      textEndsWith('克')
-        .untilFind()
-        .forEach(function (energy_ball) {
-          collectBallEnergy(energy_ball, false, isOwn)
+          collectBallEnergy(energy_ball, isOwn)
         })
     } else {
       commonFunctions.debug("无能量球可收取")
@@ -450,21 +442,13 @@ function Ant_forest(automator, unlock, config) {
     // 帮助好友收取能量
     let energyBalls
     if (
-      className('Button')
-        .descMatches(/\s/)
-        .exists()
+      className('Button').descMatches(/\s/).exists()
     ) {
-      energyBalls = className('Button')
-        .descMatches(/\s/)
-        .untilFind()
+      energyBalls = className('Button').descMatches(/\s/).untilFind()
     } else if (
-      className('Button')
-        .textMatches(/\s/)
-        .exists()
+      className('Button').textMatches(/\s/).exists()
     ) {
-      energyBalls = className('Button')
-        .textMatches(/\s/)
-        .untilFind()
+      energyBalls = className('Button').textMatches(/\s/).untilFind()
     }
     if (energyBalls && energyBalls.length > 0) {
       let length = energyBalls.length
@@ -489,7 +473,7 @@ function Ant_forest(automator, unlock, config) {
           _automator.clickCenter(energy_ball)
           helped = true
           _collect_any = true
-          sleep(500)
+          sleep(200)
         }
       })
       // 当数量大于等于6且帮助收取后，重新进入
@@ -639,25 +623,33 @@ function Ant_forest(automator, unlock, config) {
     }
   }
 
+  const getFriendList = function () {
+    let friends_list = null
+    if (idMatches('J_rank_list_append').exists()) {
+      commonFunctions.debug('newAppendList')
+      friends_list = idMatches('J_rank_list_append').findOne(
+        _config.timeout_findOne
+      )
+    } else if (idMatches('J_rank_list').exists()) {
+      commonFunctions.debug('oldList')
+      friends_list = idMatches('J_rank_list').findOne(
+        _config.timeout_findOne
+      )
+    }
+    return friends_list
+  }
+
   // 识别可收取好友并记录
   const _find_and_collect = function () {
     let count = 0
+    commonFunctions.debug('加载好友列表')
+    loadFriendList()
     do {
-      sleep(800)
+      sleep(100)
       let screen = captureScreen()
+      sleep(100)
       commonFunctions.debug("获取好友列表")
-      let friends_list = []
-      if (idMatches('J_rank_list_append').exists()) {
-        commonFunctions.debug('newAppendList')
-        friends_list = idMatches('J_rank_list_append').findOne(
-          _config.timeout_findOne
-        )
-      } else if (idMatches('J_rank_list').exists()) {
-        commonFunctions.debug('oldList')
-        friends_list = idMatches('J_rank_list').findOne(
-          _config.timeout_findOne
-        )
-      }
+      let friends_list = getFriendList()
       commonFunctions.debug("判断好友信息")
       if (friends_list && friends_list.children) {
         commonFunctions.debug(
@@ -753,6 +745,10 @@ function Ant_forest(automator, unlock, config) {
     _get_post_energy()
   }
 
+  /**
+   * 快速下滑 
+   * @deprecated 不再使用 本用来统计最短时间 现在可以先直接加载全部列表然后获取
+   */
   const quickScrollDown = function () {
     do {
       _automator.scrollDown(50)
@@ -762,24 +758,26 @@ function Ant_forest(automator, unlock, config) {
     )
   }
 
-  const foundNoMoreWidget = function () {
-    let height = device.height
-    height = height < 10 ? 2300 : height
+  /**
+   * 查找没有更多了控件是否存在
+   * 
+   * @param {number} sleepTime 超时时间
+   */
+  const foundNoMoreWidget = function (sleepTime) {
+    let sleep = sleepTime || _config.timeout_findOne
+
+    let height = _config.deviceHeight || device.height
+    height = height < 10 ? 1920 : height
+    let noMoreCenterHeight = _config.noMoreCenterHeight || 62
     let noMoreWidgetCenterY = 0
 
-    if (descEndsWith('没有更多了').exists()) {
-      noMoreWidgetCenterY = descEndsWith('没有更多了')
-        .findOne(_config.timeout_findOne)
-        .bounds()
-        .centerY()
-    } else if (textEndsWith('没有更多了').exists()) {
-      noMoreWidgetCenterY = textEndsWith('没有更多了')
-        .findOne(_config.timeout_findOne)
-        .bounds()
-        .centerY()
+    let noMoreWidget = widgetGetOne('没有更多了', sleep)
+    if (noMoreWidget) {
+      noMoreWidgetCenterY = noMoreWidget.bounds().centerY()
     }
     // todo 该校验并不完美，当列表已经加载过之后，明明没有在视野中的控件，位置centerY还是能够获取到，而且非0
-    if (noMoreWidgetCenterY !== 0 && noMoreWidgetCenterY < height) {
+    if (noMoreWidgetCenterY !== 0 && noMoreWidgetCenterY <= height - noMoreCenterHeight) {
+      commonFunctions.debug('"没有更多了" 当前centerY:' + noMoreWidgetCenterY)
       return true
     } else {
       return false
@@ -812,7 +810,7 @@ function Ant_forest(automator, unlock, config) {
    */
   const widgetCheck = function (contentVal, timeoutSetting) {
     let timeout = timeoutSetting || 6000
-    countDown = new java.util.concurrent.CountDownLatch(1)
+    let countDown = new java.util.concurrent.CountDownLatch(1)
     let descThread = threads.start(function () {
       descEndsWith(contentVal).waitFor()
       commonFunctions.debug('find desc ' + contentVal)
@@ -864,6 +862,93 @@ function Ant_forest(automator, unlock, config) {
    */
   const friendListWaiting = function () {
     return widgetWaiting('好友排行榜', '好友排行榜')
+  }
+
+  /**
+   * 根据内容获取一个对象
+   * 
+   * @param {string} contentVal 
+   * @param {number} timeout 
+   */
+  const widgetGetOne = function (contentVal, timeout) {
+    let target = null
+    let waitTime = timeout || _config.timeout_findOne
+    if (textMatches(contentVal).exists()) {
+      commonFunctions.debug('text ' + contentVal + ' found')
+      target = textMatches(contentVal).findOne(waitTime)
+    } else if (descMatches(contentVal).exists()) {
+      commonFunctions.debug('desc ' + contentVal + ' found')
+      target = descMatches(contentVal).findOne(waitTime)
+    } else {
+      commonFunctions.log('none of text or desc found for ' + contentVal)
+    }
+    return target
+  }
+
+  /**
+   * 根据内容获取所有对象的列表
+   * 
+   * @param {string} contentVal 
+   * @param {number} timeout 
+   */
+  const widgetGetAll = function (contentVal, timeout) {
+    let target = null
+    let countDown = new java.util.concurrent.CountDownLatch(1)
+    let waitTime = timeout || _config.timeout_findOne
+    let findThread = threads.start(function () {
+      if (textMatches(contentVal).exists()) {
+        commonFunctions.debug('text ' + contentVal + ' found')
+        target = textMatches(contentVal).untilFind()
+      } else if (descMatches(contentVal).exists()) {
+        commonFunctions.debug('desc ' + contentVal + ' found')
+        target = descMatches(contentVal).untilFind()
+      } else {
+        commonFunctions.log('none of text or desc found for ' + contentVal)
+      }
+      countDown.countDown()
+    })
+    let timeoutFlag = false
+    let timeoutThread = threads.start(function () {
+      sleep(waitTime)
+      timeoutFlag = true
+      countDown.countDown()
+      commonFunctions.log('timeout for finding ' + contentVal)
+    })
+    countDown.await()
+    findThread.interrupt()
+    timeoutThread.interrupt()
+    return timeoutFlag ? null : target
+  }
+
+  /**
+   * 加载好友排行榜列表
+   */
+  const loadFriendList = function () {
+    commonFunctions.log('正在展开好友列表请稍等。。。', true)
+    let start = new Date()
+    let countDown = new java.util.concurrent.CountDownLatch(1)
+    let loadThread = threads.start(function () {
+      while ((more = idMatches(".*J_rank_list_more.*").findOne(200)) != null) {
+        more.click()
+      }
+      countDown.countDown()
+    })
+    let foundNoMoreThread = threads.start(function () {
+      widgetCheck('没有更多了')
+      countDown.countDown()
+    })
+    countDown.await()
+    let end = new Date()
+    commonFunctions.log('好友列表展开完成, cost ' + (end - start) + ' ms', true)
+    // 调试模式时获取信息
+    if (_config.show_debug_log) {
+      let friendList = getFriendList()
+      if (friendList && friendList.children) {
+        commonFunctions.debug('好友列表长度：' + friendList.children().length)
+      }
+    }
+    loadThread.interrupt()
+    foundNoMoreThread.interrupt()
   }
 
   return {

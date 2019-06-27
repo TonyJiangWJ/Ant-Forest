@@ -45,7 +45,11 @@ var default_config = {
   auto_lock: false,
   // 配置锁屏按钮位置
   lock_x: 150,
-  lock_y: 970
+  lock_y: 970,
+  // 设备高度 正常情况下device.height可以获取到
+  // deviceHeight: 2160,
+  // 好友排行榜 控件“没有更多了”的中心位置距离底部的高度，当虚拟按键不存在时值为62 当有虚拟按键时需要自行计算
+  // noMoreCenterHeight: 62
 }
 // 配置缓存的key值
 const CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
