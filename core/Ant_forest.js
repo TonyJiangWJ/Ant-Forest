@@ -27,8 +27,8 @@ function Ant_forest(automator, unlock) {
 
   const scrollDown0 = function (speed) {
     let millis = speed || 200
-    let deviceHeight = device.height || 2000
-    swipe(400, deviceHeight - 100, 600, 200, millis)
+    let deviceHeight = device.height || 1900
+    swipe(400, deviceHeight - 250, 600, 200, millis)
   }
 
   // 进入蚂蚁森林主页
@@ -498,7 +498,7 @@ function Ant_forest(automator, unlock) {
           _config.get("timeout_findOne")
         )
       }
-      if (friends_list && friends_list.children()) {
+      if (friends_list && friends_list.children) {
         friends_list.children().forEach(function(fri) {
           if (fri.visibleToUser() && fri.childCount() > 3)
             if (_is_obtainable(fri, screen)) _record_avil_list(fri);
