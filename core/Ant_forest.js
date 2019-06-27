@@ -659,7 +659,7 @@ function Ant_forest(automator, unlock, config) {
         )
       }
       commonFunctions.debug("判断好友信息")
-      if (friends_list && friends_list.children()) {
+      if (friends_list && friends_list.children) {
         commonFunctions.debug(
           '读取好友列表完成，开始检查可收取列表 列表长度:' + friends_list.children().length
         )
