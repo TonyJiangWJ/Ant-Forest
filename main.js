@@ -11,21 +11,7 @@ let { unlocker } = require('./lib/Unlock.js')
 let { antForestRunner } = require('./core/Ant_forest.js')
 commonFunctions.log('======校验是否重复运行=======')
 // 检查脚本是否重复运行
-
-engines
-  .all()
-  .slice(1)
-  .forEach(script => {
-    if (
-      script
-        .getSource()
-        .getName()
-        .indexOf(engines.myEngine().getSource())
-    ) {
-      commonFunctions.log('脚本正在运行中')
-      engines.myEngine().forceStop()
-    }
-  })
+commonFunctions.checkDuplicateRunning()
 
 /***********************
  * 初始化
@@ -35,7 +21,7 @@ commonFunctions.log('======校验无障碍功能======')
 try {
   auto.waitFor()
 } catch (e) {
-  commonFunctions.log('auto.waitFor()不可用')
+  commonFunctions.warn('auto.waitFor()不可用')
   auto()
 }
 commonFunctions.log('---前置校验完成;启动系统--->>>>')
@@ -48,7 +34,7 @@ unlocker.exec()
 commonFunctions.log('解锁成功')
 // 请求截图权限
 if (!requestScreenCapture()) {
-  commonFunctions.og('请求截图失败')
+  commonFunctions.error('请求截图失败')
   exit()
 } else {
   commonFunctions.log('请求截图权限成功')

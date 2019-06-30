@@ -22,7 +22,8 @@ function Ant_forest() {
     _has_next = true, // 是否下一次运行
     _avil_list = [], // 可收取好友列表
     _collect_any = false, // 收集过能量
-    reTry = 0
+    reTry = 0,
+    increasedEnergy = 0
   /***********************
    * 综合操作
    ***********************/
@@ -155,11 +156,11 @@ function Ant_forest() {
               commonFunctions.log('正常获取toast信息' + temp)
               toastDone = true
             } else if (new Date().getTime() - startTimestamp > 10000) {
-              commonFunctions.log('等待超过十秒秒钟，直接返回结果')
+              commonFunctions.warn('等待超过十秒秒钟，直接返回结果')
               toastDone = true
             }
           } else {
-            commonFunctions.log('无法获取toast内容，直接返回[]')
+            commonFunctions.error('无法获取toast内容，直接返回[]')
             toastDone = true
           }
         })
@@ -170,11 +171,10 @@ function Ant_forest() {
           sleep(1000)
         }
         if (!toastDone) {
-          commonFunctions.debug('超时释放锁')
-        } else {
-          commonFunctions.debug('temp' + temp)
-          result = temp
+          commonFunctions.warn('获取toast超时释放锁')
         }
+        commonFunctions.debug('temp' + temp)
+        result = temp
       } finally {
         complete.signal()
         lock.unlock()
@@ -221,7 +221,7 @@ function Ant_forest() {
         if (countdown !== null && countdown.length >= 2) {
           temp.push(countdown[0] * 60 - -countdown[1])
         } else {
-          commonFunctions.debug('获取倒计时错误：' + countdown)
+          commonFunctions.error('获取倒计时错误：' + countdown)
         }
       })
       _min_countdown = Math.min.apply(null, temp)
@@ -352,14 +352,16 @@ function Ant_forest() {
       _pre_energy = currentEnergy
       commonFunctions.persistHistoryEnergy(currentEnergy)
       commonFunctions.log('当前能量：' + currentEnergy)
-    } else {
-      let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
-      let runTimes = commonFunctions.getTodaysRuntimeStorage('runTimes')
-      let sum = currentEnergy - energyInfo.startEnergy
-      let content = '第 ' + runTimes.runTimes + ' 次运行, 累计收集:' + sum + 'g'
-      commonFunctions.log(content)
-      commonFunctions.showTextFloaty(content)
     }
+    showCollectSummaryFloaty()
+  }
+
+  const showCollectSummaryFloaty = function (increased) {
+    increased = increased || 0
+    let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
+    let runTimes = commonFunctions.getTodaysRuntimeStorage('runTimes')
+    let content = '第 ' + runTimes.runTimes + ' 次运行, 累计已收集:' + (energyInfo.totalIncrease + increased) + 'g'
+    commonFunctions.showTextFloaty(content)
   }
 
   // 记录最终能量值
@@ -371,7 +373,9 @@ function Ant_forest() {
     commonFunctions.showEnergyInfo()
     let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
     if (!_fisrt_running && !_has_next) {
-      showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共收取' + (_post_energy - energyInfo.startEnergy) + 'g')
+      showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共收取' + energyInfo.totalIncrease + 'g')
+    } else {
+      showCollectSummaryFloaty()
     }
     automator.clickClose()
     home()
@@ -501,11 +505,6 @@ function Ant_forest() {
   }
 
   const collectTargetFriend = function (obj) {
-    if (obj.isHelp) {
-      commonFunctions.log('帮助好友' + obj.name)
-    } else {
-      commonFunctions.log('收集好友' + obj.name)
-    }
     let rentery = false
     if (!obj.protect) {
       let temp = protectDetect(_package_name)
@@ -522,20 +521,52 @@ function Ant_forest() {
         automator.click(obj.target.centerX(), obj.target.centerY())
         sleep(1000)
         if (count > 5) {
-          commonFunctions.log('重试超过5次，取消操作')
+          commonFunctions.warn('重试超过5次，取消操作')
           restartLoop = true
           break
         }
       }
       if (restartLoop) {
-        commonFunctions.log('页面流程出错，重新开始')
+        commonFunctions.error('页面流程出错，重新开始')
         return false
       }
       commonFunctions.debug('准备开始收取')
+      let preGot
+      let preE
+      try {
+        preGot = WidgetUtils.getYouCollectEnergy()
+        preE = WidgetUtils.getFriendEnergy()
+      } catch (e) { commonFunctions.error("[" + obj.name + "]获取收集前能量异常" + e) }
       if (config.help_friend) {
         rentery = collectAndHelp()
       } else {
         collectEnergy()
+      }
+      try {
+        let postGet = WidgetUtils.getYouCollectEnergy()
+        let postE = WidgetUtils.getFriendEnergy()
+        if (!obj.isHelp && postGet !== null && preGot !== null) {
+          let gotEnergy = postGet - preGot
+          commonFunctions.debug("开始收集前:" + preGot + "收集后:" + postGet)
+          if (gotEnergy) {
+            commonFunctions.log("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
+            increasedEnergy += gotEnergy
+            showCollectSummaryFloaty(increasedEnergy)
+          } else {
+            commonFunctions.debug("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
+
+          }
+        } else if (obj.isHelp && postE !== null && preE !== null) {
+          let gotEnergy = postE - preE
+          commonFunctions.debug("开始帮助前:" + preE + " 帮助后:" + postE)
+          if (gotEnergy) {
+            commonFunctions.log("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
+          } else {
+            commonFunctions.debug("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
+          }
+        }
+      } catch (e) {
+        commonFunctions.error("[" + obj.name + "]获取收取后能量异常" + e)
       }
       automator.back()
       temp.interrupt()
@@ -548,7 +579,7 @@ function Ant_forest() {
           automator.back()
         }
         if (returnCount > 5) {
-          commonFunctions.log('返回好友排行榜失败，重新开始')
+          commonFunctions.error('返回好友排行榜失败，重新开始')
           return false
         }
       }
@@ -633,11 +664,17 @@ function Ant_forest() {
     let friendListLength = -2
     commonFunctions.debug('加载好友列表')
     WidgetUtils.loadFriendList()
+    if (!WidgetUtils.friendListWaiting()) {
+      commonFunctions.error('崩了 当前不在好友列表 重新开始')
+      return false
+    }
+    commonFunctions.addOpenPlacehold("<<<<>>>>")
     do {
-      // todo 等待列表稳定
       sleep(100)
+      commonFunctions.debug('等待列表稳定')
+      WidgetUtils.waitRankListStable()
+      commonFunctions.debug('列表已经稳定')
       let screen = captureScreen()
-      sleep(100)
       commonFunctions.debug('获取好友列表')
       let friends_list = WidgetUtils.getFriendList()
       commonFunctions.debug('判断好友信息')
@@ -674,14 +711,14 @@ function Ant_forest() {
           '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length
         )
         if (false == collectAvailableList()) {
-          commonFunctions.log('流程出错 向上抛出')
+          commonFunctions.error('流程出错 向上抛出')
           return false
         }
       } else {
         commonFunctions.log('好友列表不存在')
       }
       if (!WidgetUtils.friendListWaiting()) {
-        commonFunctions.log('崩了崩了 重新开始')
+        commonFunctions.error('崩了 当前不在好友列表 重新开始')
         return false
       }
       // 重置为空列表
@@ -692,6 +729,7 @@ function Ant_forest() {
     } while (
       lastCheckFriend < friendListLength
     )
+    commonFunctions.addClosePlacehold(">>>><<<<")
     commonFunctions.log('全部好友收集完成, last:' + lastCheckFriend + ' length:' + friendListLength)
   }
 
@@ -701,14 +739,14 @@ function Ant_forest() {
 
   // 收取自己的能量
   const collectOwn = function () {
-    commonFunctions.log('开始收集自己能量')
+    commonFunctions.addOpenPlacehold('开始收集自己能量')
     let restartCount = 0
     let waitFlag
     startApp()
     // 首次启动等待久一点
     sleep(1500)
     while (!(waitFlag = WidgetUtils.homePageWaiting()) && restartCount++ < 5) {
-      commonFunctions.log('程序未启动，尝试再次唤醒')
+      commonFunctions.warn('程序未启动，尝试再次唤醒')
       automator.clickClose()
       commonFunctions.debug('关闭H5')
       sleep(1500)
@@ -727,12 +765,13 @@ function Ant_forest() {
     collectEnergy(true)
     commonFunctions.debug('准备计算最短时间')
     getMinCountdownOwn()
+    commonFunctions.addClosePlacehold("收集自己的能量完毕")
     _fisrt_running = false
   }
 
   // 收取好友的能量
   const collectFriend = function () {
-    commonFunctions.log('开始收集好友能量')
+    commonFunctions.addOpenPlacehold('开始收集好友能量')
     automator.enterFriendList()
     let enterFlag = WidgetUtils.friendListWaiting()
     if (!enterFlag) {
@@ -742,10 +781,11 @@ function Ant_forest() {
       _min_countdown = 0
       _has_next = true
       _current_time = _current_time == 0 ? 0 : _current_time - 1
-      commonFunctions.log('重新开始')
+      commonFunctions.error('收集好友能量失败，重新开始')
       reTry++
       return false
     }
+    commonFunctions.addClosePlacehold("收集好友能量结束")
     getMinCountdown()
     generateNext()
     getPostEnergy()
@@ -761,11 +801,12 @@ function Ant_forest() {
       try {
         while (true) {
           _collect_any = false
+          increasedEnergy = 0
           commonFunctions.commonDelay(_min_countdown)
           commonFunctions.showEnergyInfo()
-          let currentTime = commonFunctions.increaseRunTimes()
-          let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
-          commonFunctions.showTextFloaty('第 ' + currentTime + ' 次运行, 累计已收集' + energyInfo.totalIncrease + 'g')
+          let runTime = commonFunctions.increaseRunTimes()
+          commonFunctions.info("========第" + runTime + "次运行========")
+          showCollectSummaryFloaty()
           _current_time++
           unlocker.exec()
           try {
@@ -773,7 +814,7 @@ function Ant_forest() {
             collectOwn()
             collectFriend()
           } catch (e) {
-            commonFunctions.log('发生异常 [' + e + '] [' + e.message + ']')
+            commonFunctions.error('发生异常 [' + e + '] [' + e.message + ']')
             _current_time = _current_time == 0 ? 0 : _current_time - 1
             _min_countdown = 0
             _has_next = true
@@ -790,7 +831,7 @@ function Ant_forest() {
           }
         }
       } catch (e) {
-        commonFunctions.log('发生异常，终止程序 [' + e + '] [' + e.message + ']')
+        commonFunctions.error('发生异常，终止程序 [' + e + '] [' + e.message + ']')
       }
       // 释放资源
       _avil_list = []
