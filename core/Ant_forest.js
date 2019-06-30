@@ -534,7 +534,7 @@ function Ant_forest() {
       let preGot
       let preE
       try {
-        preGot = WidgetUtils.getYouCollectEnergy()
+        preGot = WidgetUtils.getYouCollectEnergy() || 0
         preE = WidgetUtils.getFriendEnergy()
       } catch (e) { commonFunctions.error("[" + obj.name + "]获取收集前能量异常" + e) }
       if (config.help_friend) {
@@ -543,7 +543,7 @@ function Ant_forest() {
         collectEnergy()
       }
       try {
-        let postGet = WidgetUtils.getYouCollectEnergy()
+        let postGet = WidgetUtils.getYouCollectEnergy() || 0
         let postE = WidgetUtils.getFriendEnergy()
         if (!obj.isHelp && postGet !== null && preGot !== null) {
           let gotEnergy = postGet - preGot
