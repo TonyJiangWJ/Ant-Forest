@@ -360,7 +360,7 @@ function Ant_forest() {
     increased = increased || 0
     let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
     let runTimes = commonFunctions.getTodaysRuntimeStorage('runTimes')
-    let content = '第 ' + runTimes.runTimes + ' 次运行, 累计已收集:' + (energyInfo.totalIncrease + increased) + 'g'
+    let content = '第 ' + runTimes.runTimes + ' 次运行, 累计已收集:' + ((energyInfo.totalIncrease || 0) + increased) + 'g'
     commonFunctions.showTextFloaty(content)
   }
 
