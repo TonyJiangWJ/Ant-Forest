@@ -662,6 +662,7 @@ function Ant_forest() {
   const findAndCollect = function () {
     let lastCheckFriend = -1
     let friendListLength = -2
+    let totalVaildLength = 0
     commonFunctions.debug('加载好友列表')
     WidgetUtils.loadFriendList()
     if (!WidgetUtils.friendListWaiting()) {
@@ -670,7 +671,7 @@ function Ant_forest() {
     }
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     do {
-      sleep(100)
+      sleep(50)
       commonFunctions.debug('等待列表稳定')
       WidgetUtils.waitRankListStable()
       commonFunctions.debug('列表已经稳定')
@@ -699,12 +700,17 @@ function Ant_forest() {
                 }
                 // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
                 lastCheckFriend = idx + 1
+                // 记录总数其实会被下一次循环更新掉
+                totalVaildLength = idx +1
               } else {
                 // commonFunctions.debug('不在视野范围'+ idx + ' name:' + WidgetUtils.getFriendsName(fri))
+                totalVaildLength = idx + 1
               }
             } else {
               commonFunctions.debug('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
             }
+          } else {
+            totalVaildLength=idx+1
           }
         })
         commonFunctions.debug(
@@ -727,10 +733,10 @@ function Ant_forest() {
       automator.scrollDown(200)
       commonFunctions.debug('进入下一页')
     } while (
-      lastCheckFriend < friendListLength
+      lastCheckFriend < totalVaildLength
     )
     commonFunctions.addClosePlacehold(">>>><<<<")
-    commonFunctions.log('全部好友收集完成, last:' + lastCheckFriend + ' length:' + friendListLength)
+    commonFunctions.log('全部好友收集完成, last:' + lastCheckFriend + ' length:' + totalVaildLength)
   }
 
   /***********************
