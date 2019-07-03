@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
- * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-12 09:49:26
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2019-07-04 00:14:13
  * @Description: 配置文件
  */
 
@@ -20,30 +20,47 @@ var default_conf = {
   timeout_findOne: 1000,
   max_collect_wait_time: 20,
   white_list: [],
+  // 是否显示debug详细日志
   show_debug_info: true,
+  // 预加载排行榜数据的超时时间 正常情况下100个好友约2000ms，超时时间配置为实际加载时间的2-3倍，具体自己计算
   timeoutLoadFriendList: 6000,
-  friendListStableCount: 5
+  // 等待列表稳定的计数，越大越慢但是越稳定，越小越快但是容易导致漏收
+  friendListStableCount: 5,
+  // 滑动开始距离底部的高度
+  bottomHeight: 150,
+  // 最大重试次数
+  maxRetryTime: 5,
+  // mini悬浮窗的位置
+  min_floaty_x: 145,
+  min_floaty_y: 20,
+  // 帮助收取能量球颜色, 可以多增加几组以便全部能够找到，但是越多识别速度越慢
+  help_energy_ball_color: ['#f99236', '#f7af70'],
+  // 保存日志文件 文件名 log-verboses.log
+  save_log_file: false
 };
 
 var ui_config = {
-  home_ui_content: '背包|通知', 
+  // 是否进入个人页面用
+  home_ui_content: '背包|通知',
+  // 是否进入好友页面用
   friend_home_ui_content: '浇水|发消息',
+  // 是否进入排行榜用
   friend_list_ui_content: '好友排行榜',
+  // 校验排行榜加载完毕用
   no_more_ui_content: '没有更多了',
-  warting_widget_content: '浇水',
+  // 检测是否存在可收取能量球
   collectable_energy_ball_content: /.*克/
 }
 
 var config = storages.create("ant_forest_config");
 if (!config.contains("color_offset")) {
   logInfo("使用默认配置", true);
-  // 默认执行配置
-  
   // 储存默认配置到本地
-  Object.keys(default_conf).forEach(function(key) {
+  Object.keys(default_conf).forEach(function (key) {
     config.put(key, default_conf[key]);
   });
 } else {
+  // 某些非可视化配置的
   Object.keys(default_conf).forEach(key => {
     let storedConfigItem = config.get(key)
     if (storedConfigItem === undefined) {
@@ -93,49 +110,49 @@ function draw_view() {
           </radiogroup>
         </vertical>
         <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
-          <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="颜色偏移量：" textColor="#666666" textSize="14sp" />
-            <input id="color_offset" inputType="number" text="{{config.get('color_offset')}}" />
-          </vertical>
-          <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="解锁密码：" textColor="#666666" textSize="14sp" />
-            <input id="password" inputType="textPassword" text="{{config.get('password')}}" />
-          </vertical>
-          <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="最大等待时间（分钟）：" textColor="#666666" textSize="14sp" />
-            <input id="max_collect_wait_time" inputType="number" text="{{config.get('max_collect_wait_time')}}" />
-          </vertical>
-          <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="好友列表预加载时延：" textColor="#666666" textSize="14sp" />
-            <input id="timeoutLoadFriendList" inputType="number" text="{{config.get('timeoutLoadFriendList')}}" />
-          </vertical>
-          <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="解锁操作时延：" textColor="#666666" textSize="14sp" />
-            <input id="delay_unlock" inputType="number" text="{{config.get('delay_unlock')}}" />
-          </vertical>
-          <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="控件搜索超时：" textColor="#666666" textSize="14sp" />
-            <input id="timeout_findOne" inputType="number" text="{{config.get('timeout_findOne')}}" />
-          </vertical>
-          <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="白名单：" textColor="#666666" textSize="14sp" />
-            <text visibility="{{config.get('white_list').length == 0 ? 'visible' : 'gone'}}"  w="*" h="80" gravity="center" layout_gravity="center" text="白名单为空" textColor="#999999" textSize="18sp" margin="0 20" bg="#eeeeee" />
-            <frame>
-              <list id="white_list">
-                <horizontal w="*" h="40" gravity="left" bg="#efefef" margin="0 5">
-                  <text id="name" layout_weight='1' h="30" gravity="left|center" layout_gravity="left|center" textSize="16sp" text="{{name}}" margin="10 0" />
-                  <card id="delete" w="30" h = "30" cardBackgroundColor = "#fafafa" cardCornerRadius = "15dp" layout_gravity="center" marginRight="10">
-                    <text textSize = "16dp" textColor = "#555555" gravity="center">×</text>
-                  </card>
-                </horizontal>
-              </list>
-            </frame>
-            <button w="*" id="add" text="添加" gravity="center" layout_gravity="center" />
-          </vertical>
-          <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
-          <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-            <button w="*" id="clear" text="清除本地储存" gravity="center" layout_gravity="center" />
-          </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="颜色偏移量：" textColor="#666666" textSize="14sp" />
+          <input id="color_offset" inputType="number" text="{{config.get('color_offset')}}" />
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="解锁密码：" textColor="#666666" textSize="14sp" />
+          <input id="password" inputType="textPassword" text="{{config.get('password')}}" />
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="最大等待时间（分钟）：" textColor="#666666" textSize="14sp" />
+          <input id="max_collect_wait_time" inputType="number" text="{{config.get('max_collect_wait_time')}}" />
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="好友列表预加载时延：" textColor="#666666" textSize="14sp" />
+          <input id="timeoutLoadFriendList" inputType="number" text="{{config.get('timeoutLoadFriendList')}}" />
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="解锁操作时延：" textColor="#666666" textSize="14sp" />
+          <input id="delay_unlock" inputType="number" text="{{config.get('delay_unlock')}}" />
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="控件搜索超时：" textColor="#666666" textSize="14sp" />
+          <input id="timeout_findOne" inputType="number" text="{{config.get('timeout_findOne')}}" />
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="白名单：" textColor="#666666" textSize="14sp" />
+          <text visibility="{{config.get('white_list').length == 0 ? 'visible' : 'gone'}}" w="*" h="80" gravity="center" layout_gravity="center" text="白名单为空" textColor="#999999" textSize="18sp" margin="0 20" bg="#eeeeee" />
+          <frame>
+            <list id="white_list">
+              <horizontal w="*" h="40" gravity="left" bg="#efefef" margin="0 5">
+                <text id="name" layout_weight='1' h="30" gravity="left|center" layout_gravity="left|center" textSize="16sp" text="{{name}}" margin="10 0" />
+                <card id="delete" w="30" h="30" cardBackgroundColor="#fafafa" cardCornerRadius="15dp" layout_gravity="center" marginRight="10">
+                  <text textSize="16dp" textColor="#555555" gravity="center">×</text>
+                </card>
+              </horizontal>
+            </list>
+          </frame>
+          <button w="*" id="add" text="添加" gravity="center" layout_gravity="center" />
+        </vertical>
+        <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <button w="*" id="clear" text="清除本地储存" gravity="center" layout_gravity="center" />
+        </vertical>
       </vertical>
     </ScrollView>
   );
@@ -152,7 +169,7 @@ function draw_view() {
   }
 
   // 更新选中的执行方法
-  ui.exec_pattern.setOnCheckedChangeListener(function(radioGroup, id) {
+  ui.exec_pattern.setOnCheckedChangeListener(function (radioGroup, id) {
     let index = (id + 1) % radioGroup.getChildCount();
     //toast(radioGroup.getChildAt(index).getText());
     if (radioGroup.getChildAt(index).getText() == "循环") {
@@ -163,7 +180,7 @@ function draw_view() {
   });
 
   // 更新是否帮助好友
-  ui.is_help_fris.setOnCheckedChangeListener(function(radioGroup, id) {
+  ui.is_help_fris.setOnCheckedChangeListener(function (radioGroup, id) {
     let index = (id + 1) % radioGroup.getChildCount();
     //toast(radioGroup.getChildAt(index).getText());
     if (radioGroup.getChildAt(index).getText() == "是") {
@@ -174,7 +191,7 @@ function draw_view() {
   });
 
   // 更新是否显示debug日志
-  ui.show_debug_info.setOnCheckedChangeListener(function(radioGroup, id) {
+  ui.show_debug_info.setOnCheckedChangeListener(function (radioGroup, id) {
     let index = (id + 1) % radioGroup.getChildCount();
     //toast(radioGroup.getChildAt(index).getText());
     if (radioGroup.getChildAt(index).getText() == "是") {
@@ -197,12 +214,12 @@ function draw_view() {
   });
 
   // 白名单缓存
-  var list_temp = config.get("white_list").map(i => {return {name: i}});
+  var list_temp = config.get("white_list").map(i => { return { name: i } });
   // 生成白名单
   ui.white_list.setDataSource(list_temp);
   // 从白名单中删除
-  ui.white_list.on("item_bind", function(itemView, itemHolder){
-    itemView.delete.on("click", function() {
+  ui.white_list.on("item_bind", function (itemView, itemHolder) {
+    itemView.delete.on("click", function () {
       list_temp.splice(itemHolder.position, 1);
       update("white_list", list_temp.map(i => i['name']));
     });
@@ -212,7 +229,7 @@ function draw_view() {
     dialogs.rawInput("请输入好友昵称")
       .then(fri_name => {
         if (!fri_name) return;
-        list_temp.push({name: fri_name});
+        list_temp.push({ name: fri_name });
         update("white_list", list_temp.map(i => i['name']));
       });
   });
