@@ -6,27 +6,56 @@
  */
 
 "ui";
+let {
+  debugInfo, logInfo, infoLog, warnInfo, errorInfo
+} = require('./lib/LogUtils.js')
+
+var default_conf = {
+  color_offset: 50,
+  password: "",
+  help_friend: true,
+  is_cycle: false,
+  cycle_times: 10,
+  delay_unlock: 1000,
+  timeout_findOne: 1000,
+  max_collect_wait_time: 20,
+  white_list: [],
+  show_debug_info: true,
+  timeoutLoadFriendList: 6000,
+  friendListStableCount: 5
+};
+
+var ui_config = {
+  home_ui_content: '背包|通知', 
+  friend_home_ui_content: '浇水|发消息',
+  friend_list_ui_content: '好友排行榜',
+  no_more_ui_content: '没有更多了',
+  warting_widget_content: '浇水',
+  collectable_energy_ball_content: /.*克/
+}
 
 var config = storages.create("ant_forest_config");
 if (!config.contains("color_offset")) {
-  toastLog("使用默认配置");
+  logInfo("使用默认配置", true);
   // 默认执行配置
-  var default_conf = {
-    color_offset: 50,
-    password: "",
-    help_friend: true,
-    is_cycle: false,
-    cycle_times: 10,
-    delay_unlock: 1000,
-    timeout_findOne: 1000,
-    max_collect_wait_time: 20,
-    white_list: []
-  };
+  
   // 储存默认配置到本地
   Object.keys(default_conf).forEach(function(key) {
     config.put(key, default_conf[key]);
   });
+} else {
+  Object.keys(default_conf).forEach(key => {
+    let storedConfigItem = config.get(key)
+    if (storedConfigItem === undefined) {
+      storedConfigItem = default_conf[key]
+    }
+    config.put(key, storedConfigItem)
+  })
 }
+// UI配置直接设置到storages
+Object.keys(ui_config).forEach(key => {
+  config.put(key, ui_config[key])
+})
 
 function draw_view() {
   ui.layout(
@@ -56,6 +85,13 @@ function draw_view() {
             <radio text="否" checked="{{!config.get('help_friend')}}" marginLeft="20" />
           </radiogroup>
         </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="显示debug日志：" textColor="#666666" textSize="14sp" />
+          <radiogroup id="show_debug_info" orientation="horizontal" margin="0 10">
+            <radio text="是" checked="{{config.get('show_debug_info')}}" />
+            <radio text="否" checked="{{!config.get('show_debug_info')}}" marginLeft="20" />
+          </radiogroup>
+        </vertical>
         <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
           <vertical w="*" gravity="left" layout_gravity="left" margin="10">
             <text text="颜色偏移量：" textColor="#666666" textSize="14sp" />
@@ -68,6 +104,10 @@ function draw_view() {
           <vertical w="*" gravity="left" layout_gravity="left" margin="10">
             <text text="最大等待时间（分钟）：" textColor="#666666" textSize="14sp" />
             <input id="max_collect_wait_time" inputType="number" text="{{config.get('max_collect_wait_time')}}" />
+          </vertical>
+          <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+            <text text="好友列表预加载时延：" textColor="#666666" textSize="14sp" />
+            <input id="timeoutLoadFriendList" inputType="number" text="{{config.get('timeoutLoadFriendList')}}" />
           </vertical>
           <vertical w="*" gravity="left" layout_gravity="left" margin="10">
             <text text="解锁操作时延：" textColor="#666666" textSize="14sp" />
@@ -130,6 +170,17 @@ function draw_view() {
       update("help_friend", true);
     } else {
       update("help_friend", false);
+    }
+  });
+
+  // 更新是否显示debug日志
+  ui.show_debug_info.setOnCheckedChangeListener(function(radioGroup, id) {
+    let index = (id + 1) % radioGroup.getChildCount();
+    //toast(radioGroup.getChildAt(index).getText());
+    if (radioGroup.getChildAt(index).getText() == "是") {
+      update("show_debug_info", true);
+    } else {
+      update("show_debug_info", false);
     }
   });
 

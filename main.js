@@ -4,7 +4,11 @@
  * @Last Modified time: 2019-04-08 08:44:22
  * @Description: 蚂蚁森林自动收能量
  */
-
+let {
+  debugInfo, logInfo, infoLog, warnInfo, errorInfo
+} = require('./lib/LogUtils.js')
+let { commonFunctions } = require('./lib/CommonFunctions.js')
+let { WidgetUtils } = require('./lib/WidgetUtils.js')
 /***********************
  * 初始化
  ***********************/
@@ -12,18 +16,12 @@
 auto();
 
 // 请求截图权限
-if (! requestScreenCapture()) {
-  toast("请求截图失败");
+if (!requestScreenCapture()) {
+  errorInfo("请求截图失败", true);
   exit();
 }
 
-// 检查脚本是否重复运行
-engines.all().slice(1).forEach(script => {
-  if (script.getSource().getName().indexOf(engines.myEngine().getSource())) {
-    toastLog("脚本正在运行中");
-    engines.myEngine().forceStop();
-  }
-});
+commonFunctions.checkDuplicateRunning()
 
 /************************
  * 依赖加载
@@ -33,8 +31,8 @@ engines.execScriptFile("./update.js");
 
 // 加载本地配置
 var config = storages.create("ant_forest_config");
-if (!config.contains("color_offset")) {
-  toastLog("请完善配置后再运行");
+if (!config.contains("color_offset") || !config.contains('home_ui_content')) {
+  warnInfo("请完善配置后再运行", true);
   engines.execScriptFile("./config.js");
   engines.myEngine().forceStop();
 }

@@ -5,6 +5,10 @@
  * @Description: 脚本更新
  */
 
+let {
+  debugInfo, logInfo, infoLog, warnInfo, errorInfo
+} = require('./lib/LogUtils.js')
+
 importClass(java.io.File);
 importClass(java.io.IOException);
 importClass(java.io.InputStream);
@@ -149,13 +153,13 @@ function DownloadUtil(url, path, listener) {
       let dir = files.join(local, file).replace(files.getName(file), '');
       files.remove(files.join(local, file));
       if (files.isEmptyDir(dir)) files.removeDir(dir);
-      toastLog("更新完成");
+      infoLog("更新完成");
     });
   } else if (update_files.length) {
     let downloadDialog = null;
     let res = http.get(server + "/ant-forest/CHANGELOG.md");
     if (res.statusCode != 200) {
-      toastLog("请求失败: " + res.statusCode + " " + res.statusMessage);
+      errorLog("请求失败: " + res.statusCode + " " + res.statusMessage);
     } else {
       dialogs.build({ 
         title: "发现新版本",
@@ -186,7 +190,7 @@ function DownloadUtil(url, path, listener) {
             if (counter == update_files.length - 1) {
               downloadDialog.dismiss();
               downloadDialog = null;
-              toastLog("更新完成");
+              infoLog("更新完成");
             } else {
               counter++;
               new DownloadUtil(realurl[counter], abspath[counter], callback).download();
@@ -204,6 +208,6 @@ function DownloadUtil(url, path, listener) {
       }).show();
     } 
   } else {
-    toastLog("当前已经是最新版本了");
+    infoLog("当前已经是最新版本了");
   }
 })();
