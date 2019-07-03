@@ -48,7 +48,27 @@ var default_config = {
   lock_y: 970,
   // 设备高度 正常情况下device.height可以获取到
   // deviceHeight: 2160,
+  // 收集相关配置
+  timeoutLoadFriendList: 6000,
+  friendListStableCount: 5,
+  // 底部高度
+  bottomHeight: 100,
+  // 下滑速度 100毫秒
+  scrollDownSpeed: 100,
+  wateringBack: true,
+  wateringThresold: 30,
+  wateringBlackList: ['许凯峰']
 }
+
+var ui_config = {
+  home_ui_content: '背包|通知', 
+  friend_home_ui_content: '浇水|发消息',
+  friend_list_ui_content: '好友排行榜',
+  no_more_ui_content: '没有更多了',
+  warting_widget_content: '浇水',
+  collectable_energy_ball_content: /.*克/
+}
+
 // 配置缓存的key值
 const CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 var configStorage = storages.create(CONFIG_STORAGE_NAME)
@@ -62,7 +82,11 @@ if (!configStorage.contains('color_offset')) {
   config = default_config
 } else {
   Object.keys(default_config).forEach(key => {
-    config[key] = configStorage.get(key)
+    let storedConfigItem = configStorage.get(key)
+    if (storedConfigItem === undefined) {
+      storedConfigItem = default_config[key]
+    }
+    config[key] = storedConfigItem
   })
 }
 

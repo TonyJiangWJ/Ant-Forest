@@ -5,7 +5,6 @@
  * @Description: 蚂蚁森林操作集
  */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
-let { unlocker } = require('../lib/Unlock.js')
 let { automator } = require('../lib/Automator.js')
 let { commonFunctions } = require('../lib/CommonFunction.js')
 let { config } = require('../config.js')
@@ -293,6 +292,7 @@ function Ant_forest() {
       if (_current_time < config.cycle_times) {
         _has_next = true
       } else {
+        commonFunctions.log("达到最大循环次数")
         _has_next = false
       }
     } else {
@@ -307,6 +307,7 @@ function Ant_forest() {
       // 计时模式 超过最大循环次数 退出执行
       if (_current_time > config.max_collect_repeat) {
         _has_next = false
+        commonFunctions.log("达到最大循环次数")
         return
       }
       // 计时模式，超过最大等待时间 退出执行
@@ -316,6 +317,7 @@ function Ant_forest() {
       ) {
         _has_next = true
       } else {
+        commonFunctions.log(_min_countdown + "超过最大等待时间")
         _has_next = false
       }
     }
@@ -421,7 +423,7 @@ function Ant_forest() {
   // 收取能量
   const collectEnergy = function (own) {
     let isOwn = own || false
-    let ballCheckContainer = WidgetUtils.widgetGetAll(/.*克/, null, true)
+    let ballCheckContainer = WidgetUtils.widgetGetAll(config.collectable_energy_ball_content, null, true)
     if (ballCheckContainer !== null) {
       commonFunctions.debug('能量球存在')
       ballCheckContainer.target
@@ -550,6 +552,24 @@ function Ant_forest() {
           commonFunctions.debug("开始收集前:" + preGot + "收集后:" + postGet)
           if (gotEnergy) {
             commonFunctions.log("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
+            let watered = commonFunctions.recordFriendCollectInfo({
+              friendName: obj.name,
+              friendEnergy: postE,
+              postCollect: postGet,
+              preCollect: preGot,
+              helpCollect: 0,
+              watered: watered
+            })
+            try {
+              if (config.wateringBack && watered
+                // 不在浇水黑名单内
+                && (!config.wateringBlackList || config.wateringBlackList.indexOf(obj.name) === -1)) {
+                WidgetUtils.wateringFriends()
+                gotEnergy -= 10
+              }
+            } catch (e) {
+              commonFunctions.error('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + config.wateringThresold + ' 回馈浇水失败 ' + e)
+            }
             increasedEnergy += gotEnergy
             showCollectSummaryFloaty(increasedEnergy)
           } else {
@@ -561,6 +581,13 @@ function Ant_forest() {
           commonFunctions.debug("开始帮助前:" + preE + " 帮助后:" + postE)
           if (gotEnergy) {
             commonFunctions.log("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
+            commonFunctions.recordFriendCollectInfo({
+              friendName: obj.name,
+              friendEnergy: postE,
+              postCollect: postGet,
+              preCollect: preGot,
+              helpCollect: gotEnergy
+            })
           } else {
             commonFunctions.debug("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
           }
@@ -662,6 +689,7 @@ function Ant_forest() {
   const findAndCollect = function () {
     let lastCheckFriend = -1
     let friendListLength = -2
+    let totalVaildLength = 0
     commonFunctions.debug('加载好友列表')
     WidgetUtils.loadFriendList()
     if (!WidgetUtils.friendListWaiting()) {
@@ -670,10 +698,8 @@ function Ant_forest() {
     }
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     do {
-      sleep(100)
-      commonFunctions.debug('等待列表稳定')
+      sleep(50)
       WidgetUtils.waitRankListStable()
-      commonFunctions.debug('列表已经稳定')
       let screen = captureScreen()
       commonFunctions.debug('获取好友列表')
       let friends_list = WidgetUtils.getFriendList()
@@ -696,15 +722,20 @@ function Ant_forest() {
                   commonFunctions.debug('可收取 index:' + idx + ' name:' + container.name)
                 } else {
                   commonFunctions.debug('不可收取 index:' + idx + ' name:' + container.name)
+                  totalVaildLength = idx + 1
                 }
                 // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
                 lastCheckFriend = idx + 1
               } else {
-                // commonFunctions.debug('不在视野范围'+ idx + ' name:' + WidgetUtils.getFriendsName(fri))
+                commonFunctions.debug('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
+                totalVaildLength = idx + 1
               }
             } else {
               commonFunctions.debug('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
             }
+          } else {
+            commonFunctions.debug("不可见" + idx)
+            totalVaildLength = idx + 1
           }
         })
         commonFunctions.debug(
@@ -727,10 +758,10 @@ function Ant_forest() {
       automator.scrollDown(200)
       commonFunctions.debug('进入下一页')
     } while (
-      lastCheckFriend < friendListLength
+      lastCheckFriend < totalVaildLength
     )
     commonFunctions.addClosePlacehold(">>>><<<<")
-    commonFunctions.log('全部好友收集完成, last:' + lastCheckFriend + ' length:' + friendListLength)
+    commonFunctions.log('全部好友收集完成, last:' + lastCheckFriend + ' length:' + totalVaildLength)
   }
 
   /***********************
@@ -749,7 +780,7 @@ function Ant_forest() {
       commonFunctions.warn('程序未启动，尝试再次唤醒')
       automator.clickClose()
       commonFunctions.debug('关闭H5')
-      sleep(1500)
+      sleep(1000)
       // 解锁并启动
       unlocker.exec()
       startApp()
@@ -791,6 +822,21 @@ function Ant_forest() {
     getPostEnergy()
   }
 
+  /**
+   * 监听音量上键延迟执行
+   **/
+  const listenDelayCollect = function () {
+    threads.start(function () {
+      commonFunctions.info('即将收取能量，按音量下键延迟五分钟执行', true)
+      events.observeKey()
+      events.onceKeyDown('volume_down', function (event) {
+        commonFunctions.warn('延迟五分钟后启动脚本', true)
+        commonFunctions.setUpAutoStart(5)
+        engines.myEngine().forceStop()
+        exit()
+      })
+    })
+  }
 
   return {
     exec: function () {
@@ -802,7 +848,12 @@ function Ant_forest() {
         while (true) {
           _collect_any = false
           increasedEnergy = 0
+          if (_min_countdown > 0) {
+            // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
+            commonFunctions.setUpAutoStart(_min_countdown)
+          }
           commonFunctions.commonDelay(_min_countdown)
+          listenDelayCollect()
           commonFunctions.showEnergyInfo()
           let runTime = commonFunctions.increaseRunTimes()
           commonFunctions.info("========第" + runTime + "次运行========")

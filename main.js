@@ -9,6 +9,7 @@ let { config } = require('./config.js')
 let { commonFunctions } = require('./lib/CommonFunction.js')
 let { unlocker } = require('./lib/Unlock.js')
 let { antForestRunner } = require('./core/Ant_forest.js')
+let { scheduler } = require('./lib/scheduler.js')
 commonFunctions.log('======校验是否重复运行=======')
 // 检查脚本是否重复运行
 commonFunctions.checkDuplicateRunning()
