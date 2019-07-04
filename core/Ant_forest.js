@@ -128,10 +128,11 @@ function Ant_forest(automator, unlock) {
       }
     })
     // 获取结果
-    logInfo('阻塞等待toast结果')
+    debugInfo('阻塞等待toast结果')
     complete.await()
-    logInfo('阻塞等待结束，等待锁释放')
+    debugInfo('阻塞等待结束，等待锁释放')
     lock.unlock()
+    debugInfo('获取toast结果成功：' + result)
     thread.interrupt()
     return result
   }
@@ -160,6 +161,7 @@ function Ant_forest(automator, unlock) {
     if (target && target.exists()) {
       let ball = target.untilFind();
       let temp = [];
+      debugInfo('待收取球数' + ball.length)
       let toasts = _get_toast_async(_package_name, ball.length, function () {
         ball.forEach(function (obj) {
           _automator.clickCenter(obj);
