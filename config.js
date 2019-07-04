@@ -25,7 +25,7 @@ var default_conf = {
   // 预加载排行榜数据的超时时间 正常情况下100个好友约2000ms，超时时间配置为实际加载时间的2-3倍，具体自己计算
   timeoutLoadFriendList: 6000,
   // 等待列表稳定的计数，越大越慢但是越稳定，越小越快但是容易导致漏收
-  friendListStableCount: 5,
+  friendListStableCount: 3,
   // 滑动开始距离底部的高度
   bottomHeight: 150,
   // 最大重试次数

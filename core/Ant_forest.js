@@ -164,6 +164,7 @@ function Ant_forest(automator, unlock) {
       debugInfo('待收取球数' + ball.length)
       let toasts = _get_toast_async(_package_name, ball.length, function () {
         ball.forEach(function (obj) {
+          infoLog("触发能量球toast" + obj.bounds())
           _automator.clickCenter(obj);
           sleep(500);
         });
