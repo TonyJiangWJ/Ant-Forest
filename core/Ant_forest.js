@@ -382,7 +382,7 @@ function Ant_forest() {
       showCollectSummaryFloaty()
     }
     // 循环模式不返回home
-    if (!config.is_cycle) {
+    if (!config.is_cycle || !_has_next) {
       automator.clickClose()
       home()
     }
@@ -715,7 +715,6 @@ function Ant_forest() {
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     let errorCount = 0
     do {
-      sleep(50)
       WidgetUtils.waitRankListStable()
       let screen = null
       commonFunctions.waitFor(function () {
@@ -804,12 +803,15 @@ function Ant_forest() {
     let restartCount = 0
     let waitFlag
     startApp()
-    // 首次启动等待久一点
-    sleep(1500)
+    if (!config.is_cycle) {
+      // 首次启动等待久一点
+      sleep(1500)
+    }
     while (!(waitFlag = WidgetUtils.homePageWaiting()) && restartCount++ < 5) {
       warnInfo('程序未启动，尝试再次唤醒')
       automator.clickClose()
       debugInfo('关闭H5')
+      home()
       sleep(1000)
       // 解锁并启动
       unlocker.exec()
@@ -847,7 +849,9 @@ function Ant_forest() {
       return false
     }
     commonFunctions.addClosePlacehold("收集好友能量结束")
-    getMinCountdown()
+    if (!config.is_cycle) {
+      getMinCountdown()
+    }
     generateNext()
     getPostEnergy()
   }
@@ -878,7 +882,7 @@ function Ant_forest() {
         while (true) {
           _collect_any = false
           increasedEnergy = 0
-          if (_min_countdown > 0) {
+          if (_min_countdown > 0 && !config.is_cycle) {
             // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
             commonFunctions.setUpAutoStart(_min_countdown)
             commonFunctions.commonDelay(_min_countdown)

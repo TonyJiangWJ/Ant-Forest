@@ -46,11 +46,17 @@ var default_config = {
   // 配置锁屏按钮位置
   lock_x: 150,
   lock_y: 970,
+  
+}
+/**
+ * 非可视化控制的配置 通过手动修改config.js来实现配置
+ */
+let no_gui_config = {
   // 设备高度 正常情况下device.height可以获取到
   // deviceHeight: 2160,
   // 收集相关配置
   timeoutLoadFriendList: 6000,
-  friendListStableCount: 5,
+  friendListStableCount: 3,
   // 底部高度
   bottomHeight: 100,
   // 下滑速度 100毫秒
@@ -62,6 +68,7 @@ var default_config = {
   saveLogFile: true
 }
 
+// UI配置
 var ui_config = {
   home_ui_content: '背包|通知', 
   friend_home_ui_content: '浇水|发消息',
@@ -94,6 +101,10 @@ if (!configStorage.contains('color_offset')) {
 // UI配置直接设置到storages
 Object.keys(ui_config).forEach(key => {
   config[key] = ui_config[key]
+})
+// 非可视化配置
+Object.keys(no_gui_config).forEach(key => {
+  config[key] = no_gui_config[key]
 })
 module.exports = {
   config: config, 

@@ -30,7 +30,6 @@ try {
   auto()
 }
 logInfo('---前置校验完成;启动系统--->>>>')
-commonFunctions.clearLogFile()
 if (config.auto_start) {
   scheduler()
 }
