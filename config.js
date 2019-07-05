@@ -57,7 +57,8 @@ var default_config = {
   scrollDownSpeed: 100,
   wateringBack: true,
   wateringThresold: 30,
-  wateringBlackList: ['许凯峰']
+  wateringBlackList: ['许凯峰'],
+  helpBallColors: ['#f99236', '#f7af70']
 }
 
 var ui_config = {
@@ -89,7 +90,10 @@ if (!configStorage.contains('color_offset')) {
     config[key] = storedConfigItem
   })
 }
-
+// UI配置直接设置到storages
+Object.keys(ui_config).forEach(key => {
+  config[key] = ui_config[key]
+})
 module.exports = {
   config: config, 
   default_config: default_config,

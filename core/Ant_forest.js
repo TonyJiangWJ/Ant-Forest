@@ -379,8 +379,11 @@ function Ant_forest() {
     } else {
       showCollectSummaryFloaty()
     }
-    automator.clickClose()
-    home()
+    // 循环模式不返回home
+    if (!config.is_cycle) {
+      automator.clickClose()
+      home()
+    }
   }
 
   /***********************
@@ -436,10 +439,17 @@ function Ant_forest() {
   }
 
   // 收取能量同时帮好友收取
-  const collectAndHelp = function () {
-    let screen = captureScreen()
+  const collectAndHelp = function (needHelp) {
     // 收取好友能量
     collectEnergy()
+    let screen = null
+    commonFunctions.waitFor(function () {
+      screen = captureScreen()
+    }, 500)
+    if (!screen) {
+      commonFunctions.warn('获取截图失败，无法帮助收取能量')
+      return
+    }
     // 帮助好友收取能量
     let energyBalls
     if (
@@ -454,6 +464,7 @@ function Ant_forest() {
     if (energyBalls && energyBalls.length > 0) {
       let length = energyBalls.length
       let helped = false
+      let colors = config.helpBallColors || ['#f99236', '#f7af70']
       energyBalls.forEach(function (energy_ball) {
         let bounds = energy_ball.bounds()
         let o_x = bounds.left,
@@ -461,22 +472,24 @@ function Ant_forest() {
           o_w = bounds.width(),
           o_h = bounds.height(),
           threshold = config.color_offset
-        if (
-          images.findColor(screen, '#f99236', {
-            region: [o_x, o_y, o_w, o_h],
-            threshold: threshold
-          }) ||
-          images.findColor(screen, '#f7af70', {
-            region: [o_x, o_y, o_w, o_h],
-            threshold: threshold
-          })
-        ) {
-          automator.clickCenter(energy_ball)
-          helped = true
-          _collect_any = true
-          sleep(200)
-        }
+        for (let color of colors)
+          if (
+            images.findColor(screen, color, {
+              region: [o_x, o_y, o_w, o_h],
+              threshold: threshold
+            })
+          ) {
+            automator.clickCenter(energy_ball)
+            helped = true
+            _collect_any = true
+            sleep(200)
+            commonFunctions.info("找到帮收取能量球颜色匹配" + color)
+            break
+          }
       })
+      if (!helped && needHelp) {
+        commonFunctions.warn("未能找到帮收能量球需要增加匹配颜色组" + colors)
+      }
       // 当数量大于等于6且帮助收取后，重新进入
       if (helped && length >= 6) {
         return true
@@ -540,7 +553,7 @@ function Ant_forest() {
         preE = WidgetUtils.getFriendEnergy()
       } catch (e) { commonFunctions.error("[" + obj.name + "]获取收集前能量异常" + e) }
       if (config.help_friend) {
-        rentery = collectAndHelp()
+        rentery = collectAndHelp(obj.isHelp)
       } else {
         collectEnergy()
       }
@@ -612,15 +625,19 @@ function Ant_forest() {
       }
       if (rentery) {
         obj.isHelp = false
-        collectTargetFriend(obj)
+        return collectTargetFriend(obj)
       }
     }
+    return true
   }
 
   // 根据可收取列表收取好友
   const collectAvailableList = function () {
     while (_avil_list.length) {
-      collectTargetFriend(_avil_list.shift())
+      if (!collectTargetFriend(_avil_list.shift())) {
+        commonFunctions.warn('收取目标好友失败，向上抛出')
+        return false
+      }
     }
   }
 
@@ -697,10 +714,23 @@ function Ant_forest() {
       return false
     }
     commonFunctions.addOpenPlacehold("<<<<>>>>")
+    let errorCount = 0
     do {
       sleep(50)
       WidgetUtils.waitRankListStable()
-      let screen = captureScreen()
+      let screen = null
+      commonFunctions.waitFor(function () {
+        screen = captureScreen()
+      }, 500)
+      if (!screen) {
+        errorCount++
+        if (errorCount > 5) {
+          commonFunctions.error('获取截图失败多次, 操作失败')
+          return false
+        }
+        commonFunctions.warn('获取截图失败 再试一次')
+        continue
+      }
       commonFunctions.debug('获取好友列表')
       let friends_list = WidgetUtils.getFriendList()
       commonFunctions.debug('判断好友信息')
@@ -727,14 +757,14 @@ function Ant_forest() {
                 // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
                 lastCheckFriend = idx + 1
               } else {
-                commonFunctions.debug('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
+                //commonFunctions.debug('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
                 totalVaildLength = idx + 1
               }
             } else {
               commonFunctions.debug('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
             }
           } else {
-            commonFunctions.debug("不可见" + idx)
+            //commonFunctions.debug("不可见" + idx)
             totalVaildLength = idx + 1
           }
         })
@@ -757,6 +787,7 @@ function Ant_forest() {
       commonFunctions.debug('收集完成 last:' + lastCheckFriend + '，下滑进入下一页')
       automator.scrollDown(200)
       commonFunctions.debug('进入下一页')
+
     } while (
       lastCheckFriend < totalVaildLength
     )
@@ -851,8 +882,8 @@ function Ant_forest() {
           if (_min_countdown > 0) {
             // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
             commonFunctions.setUpAutoStart(_min_countdown)
+            commonFunctions.commonDelay(_min_countdown)
           }
-          commonFunctions.commonDelay(_min_countdown)
           listenDelayCollect()
           commonFunctions.showEnergyInfo()
           let runTime = commonFunctions.increaseRunTimes()
