@@ -57,8 +57,9 @@ var default_config = {
   scrollDownSpeed: 100,
   wateringBack: true,
   wateringThresold: 30,
-  wateringBlackList: ['许凯峰'],
-  helpBallColors: ['#f99236', '#f7af70']
+  wateringBlackList: [],
+  helpBallColors: ['#f99236', '#f7af70'],
+  saveLogFile: true
 }
 
 var ui_config = {
