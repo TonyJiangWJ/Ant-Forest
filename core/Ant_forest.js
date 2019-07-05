@@ -304,51 +304,49 @@ function Ant_forest(automator, unlock) {
     let screen = captureScreen();
     // 收取好友能量
     _collect();
-    if (needHelp) {
-      // 帮助好友收取能量
-      let energyBalls
-      if (
-        className('Button').descMatches(/\s/).exists()
-      ) {
-        energyBalls = className('Button').descMatches(/\s/).untilFind()
-      } else if (
-        className('Button').textMatches(/\s/).exists()
-      ) {
-        energyBalls = className('Button').textMatches(/\s/).untilFind()
-      }
-      if (energyBalls && energyBalls.length > 0) {
-        let length = energyBalls.length
-        let helped = false
-        let energyBallColors = _config.get('help_energy_ball_color') || ['#f99236']
-        energyBalls.forEach(function (ball) {
-          let x = ball.bounds().left,
-            y = ball.bounds().top,
-            w = ball.bounds().width(),
-            h = ball.bounds().height(),
-            t = _config.get("color_offset");
-          for (let i = 0; i < energyBallColors.length; i++) {
-            let color = energyBallColors[i]
-            if (images.findColor(screen, color, { region: [x, y, w, h], threshold: t })) {
-              debugInfo('帮助好友收取能量球，匹配颜色:' + color)
-              _automator.clickCenter(ball);
-              helped = true
-              sleep(250);
-              break;
-            }
-          }
-        });
-        if (!helped) {
-          warnInfo('未匹配到帮助收取能量球，建议增加颜色组，当前颜色组' + energyBallColors)
-        }
-        // 当数量大于等于6且帮助收取后，重新进入
-        if (helped && length >= 6) {
-          debugInfo('帮助好友收取过能量，且能量球有6个可以重新进入收取')
-          return true
-        }
-      }
-    } else {
-      debugInfo('不需要帮助收取，跳过可帮助能量球判断')
+
+    // 帮助好友收取能量
+    let energyBalls
+    if (
+      className('Button').descMatches(/\s/).exists()
+    ) {
+      energyBalls = className('Button').descMatches(/\s/).untilFind()
+    } else if (
+      className('Button').textMatches(/\s/).exists()
+    ) {
+      energyBalls = className('Button').textMatches(/\s/).untilFind()
     }
+    if (energyBalls && energyBalls.length > 0) {
+      let length = energyBalls.length
+      let helped = false
+      let energyBallColors = _config.get('help_energy_ball_color') || ['#f99236']
+      energyBalls.forEach(function (ball) {
+        let x = ball.bounds().left,
+          y = ball.bounds().top,
+          w = ball.bounds().width(),
+          h = ball.bounds().height(),
+          t = _config.get("color_offset");
+        for (let i = 0; i < energyBallColors.length; i++) {
+          let color = energyBallColors[i]
+          if (images.findColor(screen, color, { region: [x, y, w, h], threshold: t })) {
+            debugInfo('帮助好友收取能量球，匹配颜色:' + color)
+            _automator.clickCenter(ball);
+            helped = true
+            sleep(250);
+            break;
+          }
+        }
+      });
+      if (!helped && needHelp) {
+        warnInfo('未匹配到帮助收取能量球，建议增加颜色组，当前颜色组' + energyBallColors)
+      }
+      // 当数量大于等于6且帮助收取后，重新进入
+      if (helped && length >= 6) {
+        debugInfo('帮助好友收取过能量，且能量球有6个可以重新进入收取')
+        return true
+      }
+    }
+
   }
 
   // 判断是否可收取
