@@ -146,7 +146,7 @@ const collectTargetFriend = function (fri) {
       automator.back()
     }
     if (returnCount > 5) {
-      errorLog('返回好友排行榜失败，重新开始')
+      errorInfo('返回好友排行榜失败，重新开始')
       return false
     }
   }
@@ -160,7 +160,7 @@ try {
 }
 // 请求截图权限
 if (!requestScreenCapture()) {
-  errorLog('请求截图失败')
+  errorInfo('请求截图失败')
   exit()
 } else {
   logInfo('请求截图权限成功')

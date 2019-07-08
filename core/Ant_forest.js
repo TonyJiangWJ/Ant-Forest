@@ -816,6 +816,7 @@ function Ant_forest() {
       // 解锁并启动
       unlocker.exec()
       startApp()
+      sleep(1000)
     }
     if (!waitFlag && restartCount >= 5) {
       logInfo('退出脚本')
@@ -912,6 +913,9 @@ function Ant_forest() {
           events.removeAllListeners()
           if (_has_next === false || reTry > 5) {
             logInfo('收取结束')
+            setTimeout(() => {
+              exit()
+            }, 30000)
             break
           }
         }
