@@ -36,7 +36,11 @@ var default_conf = {
   // 帮助收取能量球颜色, 可以多增加几组以便全部能够找到，但是越多识别速度越慢
   help_energy_ball_color: ['#f99236', '#f7af70'],
   // 保存日志文件 文件名 log-verboses.log
-  save_log_file: false
+  save_log_file: false,
+  // 是否永不停止，仅计时模式有效
+  never_stop: false,
+  // 永不停止重新激活时间。当获取倒计时低于该值时睡眠reactive_time分钟
+  reactive_time: 30
 };
 
 var ui_config = {
@@ -92,6 +96,19 @@ function draw_view() {
           <vertical visibility="{{config.get('is_cycle') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left">
             <text text="循环次数：" textColor="#666666" textSize="14sp" />
             <input id="cycle_times" inputType="number" text="{{config.get('cycle_times')}}" />
+          </vertical>
+          <vertical  w="*" visibility="{{config.get('is_cycle') ? 'gone' : 'visible'}}" >
+            <text text="永不停止：" textColor="#666666" textSize="14sp" />
+            <radiogroup id="never_stop" orientation="horizontal" margin="0 10">
+              <radio text="是" checked="{{config.get('never_stop')}}" />
+              <radio text="否" checked="{{!config.get('never_stop')}}" marginLeft="20" />
+            </radiogroup>
+          </vertical>
+          <vertical visibility="{{(!config.get('is_cycle')) ? 'visible': 'gone'}}" w="*">
+            <vertical visibility="{{config.get('never_stop') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left">
+              <text text="重新激活等待时间：" textColor="#666666" textSize="14sp" />
+              <input id="reactive_time" inputType="number" text="{{config.get('reactive_time')}}" />
+            </vertical>
           </vertical>
         </vertical>
         <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
@@ -160,7 +177,7 @@ function draw_view() {
   // 更新本地配置同时重绘UI
   function update(target, new_val) {
     config.put(target, new_val);
-    if (target == "is_cycle" || target == "white_list") draw_view();
+    if (target == "is_cycle" || target == "white_list" || target == 'never_stop') draw_view();
   }
 
   // 格式化
@@ -198,6 +215,16 @@ function draw_view() {
       update("show_debug_info", true);
     } else {
       update("show_debug_info", false);
+    }
+  });
+
+  ui.never_stop.setOnCheckedChangeListener(function (radioGroup, id) {
+    let index = (id + 1) % radioGroup.getChildCount();
+    //toast(radioGroup.getChildAt(index).getText());
+    if (radioGroup.getChildAt(index).getText() == "是") {
+      update("never_stop", true);
+    } else {
+      update("never_stop", false);
     }
   });
 

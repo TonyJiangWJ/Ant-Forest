@@ -118,10 +118,10 @@ function Ant_forest(automator, unlock) {
         }
         if (!toastDone) {
           errorInfo('超时释放锁')
-        } else {
-          debugInfo('temp' + temp)
-          result = temp
         }
+        debugInfo('temp' + temp)
+        result = temp
+
       } finally {
         complete.signal()
         lock.unlock()
@@ -164,14 +164,18 @@ function Ant_forest(automator, unlock) {
       debugInfo('待收取球数' + ball.length)
       let toasts = _get_toast_async(_package_name, ball.length, function () {
         ball.forEach(function (obj) {
-          infoLog("触发能量球toast" + obj.bounds())
+          debugInfo("触发能量球toast" + obj.bounds())
           _automator.clickCenter(obj);
           sleep(500);
         });
       });
       toasts.forEach(function (toast) {
         let countdown = toast.match(/\d+/g);
-        temp.push(countdown[0] * 60 - (-countdown[1]));
+        if (countdown !== null && countdown.length >= 2) {
+          temp.push(countdown[0] * 60 - -countdown[1])
+        } else {
+          errorInfo('获取倒计时错误：' + countdown)
+        }
       });
       _min_countdown = Math.min.apply(null, temp);
       _timestamp = new Date();
@@ -218,10 +222,19 @@ function Ant_forest(automator, unlock) {
         _has_next = false;
       }
     } else {
-      if (_min_countdown != null && _min_countdown <= _config.get("max_collect_wait_time")) {
-        _has_next = true;
+      if (_config.get('never_stop')) {
+        _has_next = true
+        let reactiveTime = _config.get('reactive_time') || 30
+        if (_min_countdown == null || _min_countdown == '' || _min_countdown >= reactiveTime) {
+          warnInfo('获取倒计时时间[' + _min_countdown + ']大于设定的[' + _min_countdown + ']分钟')
+          _min_countdown = reactiveTime
+        }
       } else {
-        _has_next = false;
+        if (_min_countdown != null && _min_countdown <= _config.get("max_collect_wait_time")) {
+          _has_next = true;
+        } else {
+          _has_next = false;
+        }
       }
     }
   }
@@ -252,11 +265,13 @@ function Ant_forest(automator, unlock) {
 
   // 记录初始能量值
   const _get_pre_energy = function () {
-    if (_fisrt_running && _has_next) {
-      _pre_energy = _get_current_energy();
-      logInfo("当前能量：" + _pre_energy, true);
-      showCollectSummaryFloaty()
+    let cur = _get_current_energy()
+    if (_fisrt_running) {
+      _pre_energy = cur
     }
+    logInfo("当前能量：" + cur, true);
+    showCollectSummaryFloaty()
+
   }
 
   // 记录最终能量值
@@ -269,7 +284,7 @@ function Ant_forest(automator, unlock) {
     logInfo("当前能量：" + _post_energy);
     commonFunctions.showEnergyInfo()
     let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
-    if (!_fisrt_running && !_has_next) {
+    if (!_has_next) {
       _show_floaty("本次共收取：" + (_post_energy - _pre_energy) + "g 能量，今日累积收取" + energyInfo.totalIncrease + "g 能量");
     } else {
       showCollectSummaryFloaty()
@@ -293,6 +308,7 @@ function Ant_forest(automator, unlock) {
         .forEach(function (energy_ball) {
           debugInfo(ballCheckContainer.isDesc ? energy_ball.desc() : energy_ball.text())
           _automator.clickCenter(energy_ball)
+          sleep(300)
         })
     } else {
       debugInfo('无能量球可收取')
@@ -389,8 +405,12 @@ function Ant_forest(automator, unlock) {
     temp.target = container.bounds
     // 记录好友ID
     temp.name = container.name
-    // 记录是否有保护罩
-    temp.protect = commonFunctions.checkIsProtected(temp.name)
+    if (commonFunctions.checkIsProtected(temp.name)) {
+      // 记录是否有保护罩
+      temp.protect = true
+      warnInfo('[' + temp.name + ']有记录保护罩，不将其放入待收取列表')
+      return
+    }
     // 记录是否是帮助收取
     temp.isHelp = container.isHelp
     // 不在白名单的 添加到可收取列表
@@ -403,7 +423,9 @@ function Ant_forest(automator, unlock) {
   const _record_protected = function (toast) {
     if (toast.indexOf("能量罩") > 0) {
       let title = textContains("的蚂蚁森林").findOne(_config.get("timeout_findOne")).text();
-      commonFunctions.addNameToProtect(title.substring(0, title.indexOf('的')))
+      let name = title.substring(0, title.indexOf('的'))
+      warnInfo('[' + name + ']有保护罩罩着，将信息记录今日不再收取ta')
+      commonFunctions.addNameToProtect(name)
     }
   }
 

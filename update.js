@@ -159,7 +159,7 @@ function DownloadUtil(url, path, listener) {
     let downloadDialog = null;
     let res = http.get(server + "/ant-forest/CHANGELOG.md");
     if (res.statusCode != 200) {
-      errorLog("请求失败: " + res.statusCode + " " + res.statusMessage);
+      errorInfo("请求失败: " + res.statusCode + " " + res.statusMessage);
     } else {
       dialogs.build({ 
         title: "发现新版本",
