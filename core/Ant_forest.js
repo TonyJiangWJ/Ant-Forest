@@ -519,13 +519,18 @@ function Ant_forest(automator, unlock) {
     let friendListLength = -2
     let totalVaildLength = 0
     debugInfo('加载好友列表')
-    WidgetUtils.loadFriendList()
+    let isPreloadTimeout = WidgetUtils.loadFriendList()
     if (!WidgetUtils.friendListWaiting()) {
       errorInfo('崩了 当前不在好友列表 重新开始')
       return false
     }
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     let errorCount = 0
+    let friends_list = null
+    if (!isPreloadTimeout) {
+      debugInfo('预加载成功，获取好友列表')
+      friends_list = WidgetUtils.getFriendList()
+    }
     do {
       WidgetUtils.waitRankListStable()
       let screen = null
@@ -541,8 +546,10 @@ function Ant_forest(automator, unlock) {
         warnInfo('获取截图失败 再试一次')
         continue
       }
-      debugInfo('获取好友列表')
-      let friends_list = WidgetUtils.getFriendList()
+      if (isPreloadTimeout || !friends_list) {
+        debugInfo((isPreloadTimeout ? '预加载失败' : '获取好友列表失败') + ', 在循环中获取好友列表')
+        friends_list = WidgetUtils.getFriendList()
+      }
       debugInfo('判断好友信息')
       if (friends_list && friends_list.children) {
         friendListLength = friends_list.children().length
@@ -567,13 +574,14 @@ function Ant_forest(automator, unlock) {
                 // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
                 lastCheckFriend = idx + 1
               } else {
-                // debugInfo('不在视野范围'+ idx + ' name:' + WidgetUtils.getFriendsName(fri))
+                debugInfo('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
                 totalVaildLength = idx + 1
               }
             } else {
               debugInfo('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
             }
           } else {
+            //debugInfo('invisible 不在视野范围' + idx)
             totalVaildLength = idx + 1
           }
         })
