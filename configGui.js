@@ -6,7 +6,7 @@
  */
 'ui';
 // 读取并加载配置到storage
-var {default_config, storage_name} = require('./config.js')
+var { default_config, storage_name } = require('./config.js')
 var configStorage = storages.create(storage_name)
 
 function draw_view() {
@@ -28,20 +28,22 @@ function draw_view() {
             <text text="循环次数：" textColor="#666666" textSize="14sp" />
             <input id="cycle_times" inputType="number" text="{{configStorage.get('cycle_times')}}" />
           </vertical>
-          <vertical  w="*" visibility="{{configStorage.get('is_cycle') ? 'gone' : 'visible'}}" >
+          <vertical w="*" visibility="{{configStorage.get('is_cycle') ? 'gone' : 'visible'}}" >
             <text text="永不停止：" textColor="#666666" textSize="14sp" />
             <radiogroup id="never_stop" orientation="horizontal" margin="0 10">
               <radio text="是" checked="{{configStorage.get('never_stop')}}" />
               <radio text="否" checked="{{!configStorage.get('never_stop')}}" marginLeft="20" />
             </radiogroup>
           </vertical>
-          <vertical visibility="{{configStorage.get('never_stop') ? 'gone' : 'visible'}}" w="*" gravity="left" layout_gravity="left">
-            <text text="最大收集次数：" textColor="#666666" textSize="14sp" />
-            <input id="max_collect_repeat" inputType="number" text="{{configStorage.get('max_collect_repeat')}}" />
-          </vertical>
-          <vertical visibility="{{configStorage.get('never_stop') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left">
-            <text text="重新激活等待时间：" textColor="#666666" textSize="14sp" />
-            <input id="reactive_time" inputType="number" text="{{configStorage.get('reactive_time')}}" />
+          <vertical w="*" visibility="{{!configStorage.get('is_cycle') ? 'visible' : 'gone'}}">
+            <vertical visibility="{{configStorage.get('never_stop') ? 'gone' : 'visible'}}" w="*" gravity="left" layout_gravity="left">
+              <text text="最大收集次数：" textColor="#666666" textSize="14sp" />
+              <input id="max_collect_repeat" inputType="number" text="{{configStorage.get('max_collect_repeat')}}" />
+            </vertical>
+            <vertical visibility="{{configStorage.get('never_stop') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left">
+              <text text="重新激活等待时间：" textColor="#666666" textSize="14sp" />
+              <input id="reactive_time" inputType="number" text="{{configStorage.get('reactive_time')}}" />
+            </vertical>
           </vertical>
         </vertical>
         <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
@@ -59,12 +61,12 @@ function draw_view() {
             <radio text="否" checked="{{!configStorage.get('show_small_floaty')}}" marginLeft="20" />
           </radiogroup>
         </vertical>
-        <horizontal  visibility="{{configStorage.get('show_small_floaty') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
-          <text text="mini悬浮窗位置"/>
+        <horizontal visibility="{{configStorage.get('show_small_floaty') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="mini悬浮窗位置" />
         </horizontal>
-        <horizontal  visibility="{{configStorage.get('show_small_floaty') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
-          <text text="x:"/><input id="min_floaty_x" inputType="number" text="{{configStorage.get('min_floaty_x')}}" />
-          <text text="y:"/><input id="min_floaty_y" inputType="number" text="{{configStorage.get('min_floaty_y')}}" />
+        <horizontal visibility="{{configStorage.get('show_small_floaty') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="x:" /><input id="min_floaty_x" inputType="number" text="{{configStorage.get('min_floaty_x')}}" />
+          <text text="y:" /><input id="min_floaty_y" inputType="number" text="{{configStorage.get('min_floaty_y')}}" />
         </horizontal>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="定时自动启动：" textColor="#666666" textSize="14sp" />
@@ -73,28 +75,28 @@ function draw_view() {
             <radio text="否" checked="{{!configStorage.get('auto_start')}}" marginLeft="20" />
           </radiogroup>
           <vertical visibility="{{configStorage.get('auto_start') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left">
-          <text text="是否同一天：" textColor="#666666" textSize="14sp" />
-          <radiogroup id="auto_start_same_day" orientation="horizontal" margin="0 10">
-            <radio text="是" checked="{{configStorage.get('auto_start_same_day')}}" />
-            <radio text="否" checked="{{!configStorage.get('auto_start_same_day')}}" marginLeft="20" />
-          </radiogroup>
+            <text text="是否同一天：" textColor="#666666" textSize="14sp" />
+            <radiogroup id="auto_start_same_day" orientation="horizontal" margin="0 10">
+              <radio text="是" checked="{{configStorage.get('auto_start_same_day')}}" />
+              <radio text="否" checked="{{!configStorage.get('auto_start_same_day')}}" marginLeft="20" />
+            </radiogroup>
           </vertical>
         </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-          <text text="是否跳过小于等于5克的能量"/>
+          <text text="是否跳过小于等于5克的能量" />
           <radiogroup id="skip_five" orientation="horizontal" margin="0 10">
             <radio text="是" checked="{{configStorage.get('skip_five')}}" />
             <radio text="否" checked="{{!configStorage.get('skip_five')}}" marginLeft="20" />
           </radiogroup>
         </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-          <text text="是否显示调试日志信息"/>
+          <text text="是否显示调试日志信息" />
           <radiogroup id="show_debug_log" orientation="horizontal" margin="0 10">
             <radio text="是" checked="{{configStorage.get('show_debug_log')}}" />
             <radio text="否" checked="{{!configStorage.get('show_debug_log')}}" marginLeft="20" />
           </radiogroup>
           <vertical visibility="{{configStorage.get('show_debug_log') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="是否toast调试日志"/>
+            <text text="是否toast调试日志" />
             <radiogroup id="toast_debug_info" orientation="horizontal" margin="0 10">
               <radio text="是" checked="{{configStorage.get('toast_debug_info')}}" />
               <radio text="否" checked="{{!configStorage.get('toast_debug_info')}}" marginLeft="20" />
@@ -102,17 +104,17 @@ function draw_view() {
           </vertical>
         </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-          <text text="是否在收集完成后根据收集前状态判断是否锁屏"/>
+          <text text="是否在收集完成后根据收集前状态判断是否锁屏" />
           <radiogroup id="auto_lock" orientation="horizontal" margin="0 10">
             <radio text="是" checked="{{configStorage.get('auto_lock')}}" />
             <radio text="否" checked="{{!configStorage.get('auto_lock')}}" marginLeft="20" />
           </radiogroup>
-          <horizontal  visibility="{{configStorage.get('auto_lock') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="锁屏按钮位置"/>
+          <horizontal visibility="{{configStorage.get('auto_lock') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+            <text text="锁屏按钮位置" />
           </horizontal>
-          <horizontal  visibility="{{configStorage.get('auto_lock') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="x:"/><input id="lock_x" inputType="number" text="{{configStorage.get('lock_x')}}" />
-            <text text="y:"/><input id="lock_y" inputType="number" text="{{configStorage.get('lock_y')}}" />
+          <horizontal visibility="{{configStorage.get('auto_lock') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+            <text text="x:" /><input id="lock_x" inputType="number" text="{{configStorage.get('lock_x')}}" />
+            <text text="y:" /><input id="lock_y" inputType="number" text="{{configStorage.get('lock_y')}}" />
           </horizontal>
         </vertical>
         <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
@@ -138,13 +140,13 @@ function draw_view() {
         </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="白名单：" textColor="#666666" textSize="14sp" />
-          <text visibility="{{(!configStorage.get('white_list') || configStorage.get('white_list').length == 0) ? 'visible' : 'gone'}}"  w="*" h="80" gravity="center" layout_gravity="center" text="白名单为空" textColor="#999999" textSize="18sp" margin="0 20" bg="#eeeeee" />
+          <text visibility="{{(!configStorage.get('white_list') || configStorage.get('white_list').length == 0) ? 'visible' : 'gone'}}" w="*" h="80" gravity="center" layout_gravity="center" text="白名单为空" textColor="#999999" textSize="18sp" margin="0 20" bg="#eeeeee" />
           <frame>
             <list id="white_list">
               <horizontal w="*" h="40" gravity="left" bg="#efefef" margin="0 5">
                 <text id="name" layout_weight='1' h="30" gravity="left|center" layout_gravity="left|center" textSize="16sp" text="{{name}}" margin="10 0" />
-                <card id="delete" w="30" h = "30" cardBackgroundColor = "#fafafa" cardCornerRadius = "15dp" layout_gravity="center" marginRight="10">
-                  <text textSize = "16dp" textColor = "#555555" gravity="center">×</text>
+                <card id="delete" w="30" h="30" cardBackgroundColor="#fafafa" cardCornerRadius="15dp" layout_gravity="center" marginRight="10">
+                  <text textSize="16dp" textColor="#555555" gravity="center">×</text>
                 </card>
               </horizontal>
             </list>
@@ -185,21 +187,21 @@ function draw_view() {
   }
 
   // 更新选中的执行方法
-  ui.exec_pattern.setOnCheckedChangeListener(function(radioGroup, id) {
+  ui.exec_pattern.setOnCheckedChangeListener(function (radioGroup, id) {
     updateRadioValue(radioGroup, id, "is_cycle", "循环")
   });
 
   // 更新选中的执行方法
-  ui.never_stop.setOnCheckedChangeListener(function(radioGroup, id) {
+  ui.never_stop.setOnCheckedChangeListener(function (radioGroup, id) {
     updateRadioValue(radioGroup, id, "never_stop")
   });
 
-  ui.show_small_floaty.setOnCheckedChangeListener(function(radioGroup, id) {
+  ui.show_small_floaty.setOnCheckedChangeListener(function (radioGroup, id) {
     updateRadioValue(radioGroup, id, "show_small_floaty")
   })
 
   // 更新是否帮助好友
-  ui.is_help_fris.setOnCheckedChangeListener(function(radioGroup, id) {
+  ui.is_help_fris.setOnCheckedChangeListener(function (radioGroup, id) {
     updateRadioValue(radioGroup, id, "help_friend")
   });
 
@@ -252,12 +254,12 @@ function draw_view() {
   });
 
   // 白名单缓存
-  var list_temp = configStorage.get("white_list") ? configStorage.get("white_list").map(i => {return {name: i}}) : [];
+  var list_temp = configStorage.get("white_list") ? configStorage.get("white_list").map(i => { return { name: i } }) : [];
   // 生成白名单
   ui.white_list.setDataSource(list_temp);
   // 从白名单中删除
-  ui.white_list.on("item_bind", function(itemView, itemHolder){
-    itemView.delete.on("click", function() {
+  ui.white_list.on("item_bind", function (itemView, itemHolder) {
+    itemView.delete.on("click", function () {
       list_temp.splice(itemHolder.position, 1);
       update("white_list", list_temp.map(i => i['name']));
     });
@@ -267,7 +269,7 @@ function draw_view() {
     dialogs.rawInput("请输入好友昵称")
       .then(fri_name => {
         if (!fri_name) return;
-        list_temp.push({name: fri_name});
+        list_temp.push({ name: fri_name });
         update("white_list", list_temp.map(i => i['name']), true);
       });
   });
