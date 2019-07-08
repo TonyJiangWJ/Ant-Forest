@@ -377,8 +377,10 @@ function Ant_forest() {
     } else {
       showCollectSummaryFloaty()
     }
-    automator.clickClose()
-    home()
+    if (!config.is_cycle) {
+      automator.clickClose()
+      home()
+    }
   }
 
   /***********************
@@ -671,7 +673,6 @@ function Ant_forest() {
     }
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     do {
-      sleep(50)
       commonFunctions.debug('等待列表稳定')
       WidgetUtils.waitRankListStable()
       commonFunctions.debug('列表已经稳定')
@@ -701,7 +702,7 @@ function Ant_forest() {
                 // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
                 lastCheckFriend = idx + 1
                 // 记录总数其实会被下一次循环更新掉
-                totalVaildLength = idx +1
+                totalVaildLength = idx + 1
               } else {
                 // commonFunctions.debug('不在视野范围'+ idx + ' name:' + WidgetUtils.getFriendsName(fri))
                 totalVaildLength = idx + 1
@@ -710,7 +711,7 @@ function Ant_forest() {
               commonFunctions.debug('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
             }
           } else {
-            totalVaildLength=idx+1
+            totalVaildLength = idx + 1
           }
         })
         commonFunctions.debug(
@@ -792,7 +793,9 @@ function Ant_forest() {
       return false
     }
     commonFunctions.addClosePlacehold("收集好友能量结束")
-    getMinCountdown()
+    if (!config.is_cycle) {
+      getMinCountdown()
+    }
     generateNext()
     getPostEnergy()
   }
@@ -808,7 +811,9 @@ function Ant_forest() {
         while (true) {
           _collect_any = false
           increasedEnergy = 0
-          commonFunctions.commonDelay(_min_countdown)
+          if (!config.is_cycle) {
+            commonFunctions.commonDelay(_min_countdown)
+          }
           commonFunctions.showEnergyInfo()
           let runTime = commonFunctions.increaseRunTimes()
           commonFunctions.info("========第" + runTime + "次运行========")
