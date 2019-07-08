@@ -317,10 +317,16 @@ function Ant_forest(automator, unlock) {
 
   // 收取能量同时帮好友收取
   const _collect_and_help = function (needHelp) {
-    let screen = captureScreen();
     // 收取好友能量
     _collect();
-
+    let screen = null
+    commonFunctions.waitFor(function () {
+      screen = captureScreen()
+    }, 500)
+    if (!screen) {
+      warnInfo('获取截图失败，无法帮助收取能量')
+      return
+    }
     // 帮助好友收取能量
     let energyBalls
     if (
@@ -519,10 +525,22 @@ function Ant_forest(automator, unlock) {
       return false
     }
     commonFunctions.addOpenPlacehold("<<<<>>>>")
+    let errorCount = 0
     do {
-      sleep(50)
       WidgetUtils.waitRankListStable()
-      let screen = captureScreen()
+      let screen = null
+      commonFunctions.waitFor(function () {
+        screen = captureScreen()
+      }, 500)
+      if (!screen) {
+        errorCount++
+        if (errorCount >= 5) {
+          errorInfo('获取截图失败多次, 操作失败')
+          return false
+        }
+        warnInfo('获取截图失败 再试一次')
+        continue
+      }
       debugInfo('获取好友列表')
       let friends_list = WidgetUtils.getFriendList()
       debugInfo('判断好友信息')
