@@ -707,13 +707,19 @@ function Ant_forest() {
     let friendListLength = -2
     let totalVaildLength = 0
     debugInfo('加载好友列表')
-    WidgetUtils.loadFriendList()
+    let isPreloadTimeout = WidgetUtils.loadFriendList()
     if (!WidgetUtils.friendListWaiting()) {
       errorInfo('崩了 当前不在好友列表 重新开始')
       return false
     }
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     let errorCount = 0
+
+    let friends_list = null
+    if (!isPreloadTimeout) {
+      debugInfo('预加载成功，获取好友列表')
+      friends_list = WidgetUtils.getFriendList()
+    }
     do {
       WidgetUtils.waitRankListStable()
       let screen = null
@@ -729,8 +735,10 @@ function Ant_forest() {
         warnInfo('获取截图失败 再试一次')
         continue
       }
-      debugInfo('获取好友列表')
-      let friends_list = WidgetUtils.getFriendList()
+      if (isPreloadTimeout || !friends_list) {
+        debugInfo((isPreloadTimeout ? '预加载失败' : '获取好友列表失败') + '，循环中获取好友列表')
+        friends_list = WidgetUtils.getFriendList()
+      }
       debugInfo('判断好友信息')
       if (friends_list && friends_list.children) {
         friendListLength = friends_list.children().length
