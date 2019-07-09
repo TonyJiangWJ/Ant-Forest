@@ -5,47 +5,64 @@
  * @Description: 蚂蚁森林自动收能量
  */
 let {
-  debugInfo, logInfo, infoLog, warnInfo, errorInfo
+  debugInfo,
+  logInfo,
+  infoLog,
+  warnInfo,
+  errorInfo
 } = require('./lib/LogUtils.js')
 let { commonFunctions } = require('./lib/CommonFunctions.js')
 let { WidgetUtils } = require('./lib/WidgetUtils.js')
 /***********************
  * 初始化
  ***********************/
-// 检查手机是否开启无障碍服务
-auto();
+logInfo('======校验是否重复运行=======')
+// 检查脚本是否重复运行
+commonFunctions.checkDuplicateRunning()
 
+/***********************
+ * 初始化
+ ***********************/
+logInfo('======校验无障碍功能======')
+// 检查手机是否开启无障碍服务
+try {
+  auto.waitFor()
+} catch (e) {
+  warnInfo('auto.waitFor()不可用')
+  auto()
+}
+logInfo('======校验截图权限======')
 // 请求截图权限
 if (!requestScreenCapture()) {
-  errorInfo("请求截图失败", true);
-  exit();
+  errorInfo('请求截图失败', true)
+  exit()
 }
-
-commonFunctions.checkDuplicateRunning()
 
 /************************
  * 依赖加载
  ***********************/
+logInfo('======检查更新======')
 // 检查更新
-engines.execScriptFile("./update.js");
+engines.execScriptFile('./update.js')
 
 // 加载本地配置
-var config = storages.create("ant_forest_config");
-if (!config.contains("color_offset") || !config.contains('home_ui_content')) {
-  warnInfo("请完善配置后再运行", true);
-  engines.execScriptFile("./config.js");
-  engines.myEngine().forceStop();
+var config = storages.create('ant_forest_config')
+if (!config.contains('color_offset') || !config.contains('home_ui_content')) {
+  warnInfo('请完善配置后再运行', true)
+  engines.execScriptFile('./config.js')
+  engines.myEngine().forceStop()
 }
 
-var Automator = require("./lib/Automator.js");
-var Unlock = require("./lib/Unlock.js");
-var Ant_forest = require("./core/Ant_forest.js");
+var Automator = require('./lib/Automator.js')
+var Unlock = require('./lib/Unlock.js')
+var Ant_forest = require('./core/Ant_forest.js')
 
-var automator = Automator();
-var unlock = Unlock(automator);
-var ant_forest = Ant_forest(automator, unlock);
+var automator = Automator()
+var unlock = Unlock(automator)
+var ant_forest = Ant_forest(automator, unlock)
 
 /************************
  * 主程序
  ***********************/
-ant_forest.exec();
+infoLog('执行主程序')
+ant_forest.exec()

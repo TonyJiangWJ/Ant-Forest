@@ -782,6 +782,7 @@ function Ant_forest(automator, unlock) {
           logInfo("收取结束");
           break;
         }
+        logInfo('>>>>>>>>本轮结束<<<<<<<<')
       }
       thread.interrupt();
     }
