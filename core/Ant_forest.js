@@ -281,7 +281,9 @@ function Ant_forest() {
     if (temp.length === 0) {
       return
     }
-    return Math.min.apply(null, temp)
+    let min = Math.min.apply(null, temp)
+    debugInfo('获取倒计时最小值：[' + min + ']分')
+    return min
   }
 
 
@@ -926,6 +928,7 @@ function Ant_forest() {
             }, 30000)
             break
           }
+          logInfo('========本轮结束========')
         }
       } catch (e) {
         errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
