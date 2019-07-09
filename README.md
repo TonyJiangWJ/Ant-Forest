@@ -39,12 +39,23 @@
 - 控件搜索超时：控件搜索时最大搜索时间，找不到控件时可修改，默认为1000ms。
 - 白名单：将好友的昵称添加到白名单实现不收取特定好友的能量。
 - 清除本地储存：清除储存在本地的配置，相当于初始化。
-## 非可视化配置信息, 基本一次设置或者说默认设置就能运行的
+## 新增配置信息, 基本一次设置或者说默认设置就能运行的
 ```javascript
 vsr default_conf = {
   ...
+  // 是否显示debug详细日志
+  show_debug_info: true,
+  // 预加载排行榜数据的超时时间 正常情况下100个好友约2000ms，超时时间配置为实际加载时间的2-3倍，具体自己计算
+  timeoutLoadFriendList: 6000,
+  // 是否永不停止，仅计时模式有效
+  never_stop: false,
+  // 永不停止重新激活时间。当获取倒计时低于该值时睡眠reactive_time分钟
+  reactive_time: 30
+};
+// 不通过可视化配置的值，即需要直接修改config.js中的信息，而不是运行config.js之后配置
+var non_gui_config = {
   // 等待列表稳定的计数，越大越慢但是越稳定，越小越快但是容易导致漏收
-  friendListStableCount: 5,
+  friendListStableCount: 3,
   // 滑动开始距离底部的高度
   bottomHeight: 150,
   // 最大重试次数
@@ -53,8 +64,12 @@ vsr default_conf = {
   min_floaty_x: 145,
   min_floaty_y: 20,
   // 帮助收取能量球颜色, 可以多增加几组以便全部能够找到，但是越多识别速度越慢
-  help_energy_ball_color: ['#f99236', '#f7af70']
-};
+  help_energy_ball_color: ['#f99236', '#f7af70'],
+  // 保存日志文件 文件名 log-verboses.log
+  save_log_file: false,
+  // 列表下滑执行速度 毫秒
+  scroll_down_speed: 200
+}
 
 var ui_config = {
   // 是否进入个人页面用
