@@ -47,7 +47,7 @@ engines.execScriptFile('./update.js')
 
 // 加载本地配置
 var config = storages.create('ant_forest_config')
-if (!config.contains('color_offset') || !config.contains('home_ui_content')) {
+ if (!config.contains('color_offset') || !config.contains('home_ui_content')) {
   warnInfo('请完善配置后再运行', true)
   engines.execScriptFile('./config.js')
   engines.myEngine().forceStop()

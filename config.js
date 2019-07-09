@@ -24,6 +24,13 @@ var default_conf = {
   show_debug_info: true,
   // 预加载排行榜数据的超时时间 正常情况下100个好友约2000ms，超时时间配置为实际加载时间的2-3倍，具体自己计算
   timeoutLoadFriendList: 6000,
+  // 是否永不停止，仅计时模式有效
+  never_stop: false,
+  // 永不停止重新激活时间。当获取倒计时低于该值时睡眠reactive_time分钟
+  reactive_time: 30
+};
+
+var non_gui_config = {
   // 等待列表稳定的计数，越大越慢但是越稳定，越小越快但是容易导致漏收
   friendListStableCount: 3,
   // 滑动开始距离底部的高度
@@ -37,11 +44,9 @@ var default_conf = {
   help_energy_ball_color: ['#f99236', '#f7af70'],
   // 保存日志文件 文件名 log-verboses.log
   save_log_file: false,
-  // 是否永不停止，仅计时模式有效
-  never_stop: false,
-  // 永不停止重新激活时间。当获取倒计时低于该值时睡眠reactive_time分钟
-  reactive_time: 30
-};
+  // 列表下滑执行速度 毫秒
+  scroll_down_speed: 200
+}
 
 var ui_config = {
   // 是否进入个人页面用
@@ -76,6 +81,11 @@ if (!config.contains("color_offset")) {
 // UI配置直接设置到storages
 Object.keys(ui_config).forEach(key => {
   config.put(key, ui_config[key])
+})
+
+// 非GUI可配置的配置直接设置到storages
+Object.keys(non_gui_config).forEach(key => {
+  config.put(key, non_gui_config[key])
 })
 
 function draw_view() {

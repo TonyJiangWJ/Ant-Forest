@@ -19,7 +19,8 @@ function Ant_forest(automator, unlock) {
     _fisrt_running = true, // 是否第一次进入蚂蚁森林
     _has_next = true,      // 是否下一次运行
     _avil_list = [],       // 可收取好友列表
-    reTry = 0              // 重试次数
+    reTry = 0,              // 重试次数
+    _collect_any = false    // 是否收集过
 
   /***********************
    * 综合操作
@@ -184,29 +185,60 @@ function Ant_forest(automator, unlock) {
       warnInfo("无可收取能量");
     }
   }
-
   // 确定下一次收取倒计时
-  const _get_min_countdown = function () {
-    let temp = [];
+  const getMinCountdown = function () {
+    let countDownNow = calculateMinCountdown()
+    // 如果有收集过能量，那么先返回主页在进入排行榜，以获取最新的倒计时信息，避免收集过的倒计时信息不刷新，此过程可能导致执行过慢
+    if (_collect_any) {
+      if (!countDownNow || countDownNow >= 2) {
+        debugInfo('收集过能量，重新获取倒计时列表')
+        // 返回首页并重新进入好友列表 获取新刷新的倒计时数据
+        clickBack()
+        WidgetUtils.homePageWaiting()
+        enterFriendList()
+        WidgetUtils.friendListWaiting()
+        WidgetUtils.loadFriendList()
+        // 再次获取倒计时数据
+        countDownNow = calculateMinCountdown()
+      } else {
+        debugInfo('当前倒计时时间短，无需再次获取')
+      }
+    } else {
+      debugInfo('未收集能量直接获取倒计时列表')
+    }
+    _min_countdown = countDownNow
+  }
+
+  const calculateMinCountdown = function () {
+    let temp = []
     if (_min_countdown && _timestamp instanceof Date) {
-      let countdown_own = _min_countdown - Math.floor((new Date() - _timestamp) / 60000);
-      countdown_own >= 0 ? temp.push(countdown_own) : temp.push(0);
+      debugInfo('已记录自身倒计时：' + countdown_own + '分')
+      let passedTime = Math.round((new Date() - _timestamp) / 60000)
+      let countdown_own = _min_countdown - passedTime
+      debugInfo('本次收集经过了：' + passedTime + '分，最终记录自身倒计时：' + countdown_own + '分')
+      countdown_own >= 0 ? temp.push(countdown_own) : temp.push(0)
     }
-    if (descEndsWith("’").exists()) {
-      descEndsWith("’").untilFind().forEach(function (countdown) {
-        let countdown_fri = parseInt(countdown.desc().match(/\d+/));
-        temp.push(countdown_fri);
-      });
-    } else if (textEndsWith('’').exists()) {
-      textEndsWith('’')
-        .untilFind()
-        .forEach(function (countdown) {
-          let countdown_fri = parseInt(countdown.text().match(/\d+/))
+    let friCountDowmContainer = WidgetUtils.widgetGetAll('\\d+’', null, true)
+    if (friCountDowmContainer) {
+      let isDesc = friCountDowmContainer.isDesc
+      friCountDowmContainer.target.forEach(function (countdown) {
+        let countdown_fri = null
+        if (isDesc) {
+          countdown_fri = parseInt(countdown.desc().match(/\d+/))
+        } else if (countdown.text()) {
+          countdown_fri = parseInt(countdown.text().match(/\d+/))
+        }
+        if (countdown_fri) {
           temp.push(countdown_fri)
-        })
+        }
+      })
     }
-    if (!temp.length) return;
-    _min_countdown = Math.min.apply(null, temp);
+    if (temp.length === 0) {
+      return
+    }
+    let min = Math.min.apply(null, temp)
+    debugInfo('获取最小倒计时[' + min + ']分')
+    return min
   }
 
   /***********************
@@ -226,7 +258,7 @@ function Ant_forest(automator, unlock) {
         _has_next = true
         let reactiveTime = _config.get('reactive_time') || 30
         if (_min_countdown == null || _min_countdown == '' || _min_countdown >= reactiveTime) {
-          warnInfo('获取倒计时时间[' + _min_countdown + ']大于设定的[' + _min_countdown + ']分钟')
+          warnInfo('获取倒计时时间[' + _min_countdown + ']大于设定的[' + reactiveTime + ']分钟')
           _min_countdown = reactiveTime
         }
       } else {
@@ -300,7 +332,7 @@ function Ant_forest(automator, unlock) {
    ***********************/
 
   // 收取能量
-  const _collect = function () {
+  const _collect = function (isOwn) {
     let ballCheckContainer = WidgetUtils.widgetGetAll(config.collectable_energy_ball_content || /.*克/, null, true)
     if (ballCheckContainer !== null) {
       debugInfo('能量球存在')
@@ -309,6 +341,9 @@ function Ant_forest(automator, unlock) {
           debugInfo(ballCheckContainer.isDesc ? energy_ball.desc() : energy_ball.text())
           _automator.clickCenter(energy_ball)
           sleep(300)
+          if (!isOwn) {
+            _collect_any = true
+          }
         })
     } else {
       debugInfo('无能量球可收取')
@@ -354,6 +389,7 @@ function Ant_forest(automator, unlock) {
             debugInfo('帮助好友收取能量球，匹配颜色:' + color)
             _automator.clickCenter(ball);
             helped = true
+            _collect_any = true
             sleep(250);
             break;
           }
@@ -602,7 +638,7 @@ function Ant_forest(automator, unlock) {
       // 重置为空列表
       _avil_list = []
       debugInfo('收集完成 last:' + lastCheckFriend + '，下滑进入下一页')
-      scrollDown0(200)
+      scrollDown0(_config.get('scroll_down_speed') || 200)
       debugInfo('进入下一页')
     } while (
       lastCheckFriend < totalVaildLength
@@ -703,12 +739,15 @@ function Ant_forest(automator, unlock) {
   const _collect_own = function () {
     // 首先启动蚂蚁森林，然后开始等待背包
     _start_app();
+    // 首次启动等待时间加长
+    let firstDelay = 8000
     logInfo("开始收集自己能量");
     // 重试次数
     let retry = 0
     // 判断是否进入成功
     let enteredFlag
-    while (!(enteredFlag = WidgetUtils.homePageWaiting()) && ++retry <= (_config.get('maxRetryTime') || 3)) {
+    while (!(enteredFlag = WidgetUtils.homePageWaiting(firstDelay)) && ++retry <= (_config.get('maxRetryTime') || 3)) {
+      firstDelay = 6000
       warnInfo('进入个人主页失败, 关闭H5重进')
       if (!clickClose() && !clickBack()) {
         _automator.back()
@@ -748,7 +787,7 @@ function Ant_forest(automator, unlock) {
       // 重置失败次数
       reTry = 0
     }
-    if (!_config.get("is_cycle")) _get_min_countdown();
+    if (!_config.get("is_cycle")) getMinCountdown();
     commonFunctions.addClosePlacehold("收集好友能量结束")
     _generate_next();
     _get_post_energy();
@@ -762,6 +801,7 @@ function Ant_forest(automator, unlock) {
         events.observeToast();
       });
       while (true) {
+        _collect_any = false
         if (_min_countdown > 0) {
           commonFunctions.setUpAutoStart(_min_countdown)
           commonFunctions.commonDelay(_min_countdown)
