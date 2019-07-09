@@ -236,22 +236,28 @@ function Ant_forest() {
     let countDownNow = calculateMinCountdown()
     // 如果有收集过能量，那么先返回主页在进入排行榜，以获取最新的倒计时信息，避免收集过的倒计时信息不刷新，此过程可能导致执行过慢
     if (_collect_any) {
-      if (!countDownNow || countDownNow >= 2) {
-        debugInfo('收集过能量，重新获取倒计时列表')
+      if (!isFinite(countDownNow) || countDownNow >= 2) {
+        debugInfo('收集过能量，重新获取倒计时列表，原倒计时时间：[' + countDownNow + ']分')
         automator.clickBack()
         WidgetUtils.homePageWaiting()
         automator.enterFriendList()
         WidgetUtils.friendListWaiting()
         WidgetUtils.loadFriendList()
         // 再次获取倒计时数据
-        countDownNow = calculateMinCountdown()
+        let newCountDown = calculateMinCountdown()
+        debugInfo('第二次获取倒计时时间:[' + newCountDown + ']分')
+        if (isFinite(countDownNow)) {
+          countDownNow = isFinite(newCountDown) ? newCountDown : countDownNow
+        } else {
+          countDownNow = newCountDown
+        }
       } else {
         debugInfo('当前倒计时时间短，无需再次获取')
       }
     } else {
       debugInfo('未收集能量直接获取倒计时列表')
     }
-    _min_countdown = countDownNow
+    _min_countdown = isFinite(countDownNow) ? countDownNow : _min_countdown
   }
 
   const calculateMinCountdown = function () {

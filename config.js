@@ -75,7 +75,7 @@ var ui_config = {
   friend_list_ui_content: '好友排行榜',
   no_more_ui_content: '没有更多了',
   warting_widget_content: '浇水',
-  collectable_energy_ball_content: /.*克/
+  collectable_energy_ball_content: /.*\d+克/
 }
 
 // 配置缓存的key值
