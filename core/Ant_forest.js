@@ -190,8 +190,8 @@ function Ant_forest(automator, unlock) {
     let countDownNow = calculateMinCountdown()
     // 如果有收集过能量，那么先返回主页在进入排行榜，以获取最新的倒计时信息，避免收集过的倒计时信息不刷新，此过程可能导致执行过慢
     if (_collect_any) {
-      if (!countDownNow || countDownNow >= 2) {
-        debugInfo('收集过能量，重新获取倒计时列表')
+      if (!isFinite(countDownNow) || countDownNow >= 2) {
+        debugInfo('收集过能量，重新获取倒计时列表, 当前获取的倒计时[' + countDownNow + ']')
         // 返回首页并重新进入好友列表 获取新刷新的倒计时数据
         clickBack()
         WidgetUtils.homePageWaiting()
@@ -199,14 +199,21 @@ function Ant_forest(automator, unlock) {
         WidgetUtils.friendListWaiting()
         WidgetUtils.loadFriendList()
         // 再次获取倒计时数据
-        countDownNow = calculateMinCountdown()
+        let newCountDown = calculateMinCountdown()
+        debugInfo('二次获取倒计时数据[' + newCountDown + ']')
+        if (isFinite(countDownNow)) {
+          countDownNow = isFinite(newCountDown) && newCountDown < countDownNow ? newCountDown : countDownNow
+        } else {
+          countDownNow = newCountDown
+        }
       } else {
         debugInfo('当前倒计时时间短，无需再次获取')
       }
     } else {
       debugInfo('未收集能量直接获取倒计时列表')
     }
-    _min_countdown = countDownNow
+    _min_countdown = isFinite(countDownNow) ? countDownNow : _min_countdown
+    debugInfo('记录最终倒计时数据[' + _min_countdown + ']')
   }
 
   const calculateMinCountdown = function () {
@@ -333,7 +340,7 @@ function Ant_forest(automator, unlock) {
 
   // 收取能量
   const _collect = function (isOwn) {
-    let ballCheckContainer = WidgetUtils.widgetGetAll(config.collectable_energy_ball_content || /.*克/, null, true)
+    let ballCheckContainer = WidgetUtils.widgetGetAll(_config.get('collectable_energy_ball_content') || /.*克/, null, true)
     if (ballCheckContainer !== null) {
       debugInfo('能量球存在')
       ballCheckContainer.target
@@ -496,7 +503,7 @@ function Ant_forest(automator, unlock) {
         debugInfo('未能进入主页，尝试再次进入 count:' + count++)
         _automator.click(obj.target.centerX(), obj.target.centerY())
         sleep(1000)
-        let maxRetryTime = config.get('maxRetryTime') || 5
+        let maxRetryTime = _config.get('maxRetryTime') || 5
         if (count > maxRetryTime) {
           warnInfo('重试超过' + maxRetryTime + '次，取消操作')
           restartLoop = true
