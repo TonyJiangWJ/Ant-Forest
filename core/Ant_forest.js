@@ -340,7 +340,8 @@ function Ant_forest(automator, unlock) {
 
   // 收取能量
   const _collect = function (isOwn) {
-    let ballCheckContainer = WidgetUtils.widgetGetAll(_config.get('collectable_energy_ball_content') || /.*克/, null, true)
+    let regex = _config.get('collectable_energy_ball_content') || /.*克/
+    let ballCheckContainer = WidgetUtils.widgetGetAll(regex, null, true)
     if (ballCheckContainer !== null) {
       debugInfo('能量球存在')
       ballCheckContainer.target

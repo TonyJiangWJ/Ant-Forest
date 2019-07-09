@@ -48,6 +48,7 @@ var non_gui_config = {
   scroll_down_speed: 200
 }
 
+// 使用字符串方式的正则表达式 不要使用/pattern/方式 否则无法生效
 var ui_config = {
   // 是否进入个人页面用
   home_ui_content: '背包|通知',
@@ -58,7 +59,7 @@ var ui_config = {
   // 校验排行榜加载完毕用
   no_more_ui_content: '没有更多了',
   // 检测是否存在可收取能量球
-  collectable_energy_ball_content: /.*\d+克/
+  collectable_energy_ball_content: '.*\\d+克/'
 }
 
 var config = storages.create("ant_forest_config");
