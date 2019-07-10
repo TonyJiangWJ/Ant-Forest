@@ -35,7 +35,7 @@ function draw_view() {
               <radio text="否" checked="{{!configStorage.get('never_stop')}}" marginLeft="20" />
             </radiogroup>
           </vertical>
-          <vertical visibility="{{!configStorage.get('is_cycle') ? 'gone' : 'visible'}}" w="*">
+          <vertical visibility="{{configStorage.get('is_cycle') ? 'gone' : 'visible'}}" w="*">
             <vertical visibility="{{configStorage.get('never_stop') ? 'gone' : 'visible'}}" w="*" gravity="left" layout_gravity="left">
               <text text="最大收集次数：" textColor="#666666" textSize="14sp" />
               <input id="max_collect_repeat" inputType="number" text="{{configStorage.get('max_collect_repeat')}}" />
