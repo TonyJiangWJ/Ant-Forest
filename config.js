@@ -45,7 +45,7 @@ var non_gui_config = {
   // 保存日志文件 文件名 log-verboses.log
   save_log_file: false,
   // 列表下滑执行速度 毫秒
-  scroll_down_speed: 200
+  scroll_down_speed: 100
 }
 
 // 使用字符串方式的正则表达式 不要使用/pattern/方式 否则无法生效
