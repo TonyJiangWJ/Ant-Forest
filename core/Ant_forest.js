@@ -743,6 +743,7 @@ function Ant_forest() {
         warnInfo('获取截图失败 再试一次')
         continue
       }
+      let findStart = new Date().getTime()
       if (isPreloadTimeout || !friends_list) {
         debugInfo((isPreloadTimeout ? '预加载失败' : '获取好友列表失败') + '，循环中获取好友列表')
         friends_list = WidgetUtils.getFriendList()
@@ -785,6 +786,8 @@ function Ant_forest() {
         debugInfo(
           '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length
         )
+        let findEnd = new Date().getTime()
+        debugInfo('检测好友列表用时[' + (findEnd - findStart) + ']ms')
         if (false == collectAvailableList()) {
           errorInfo('流程出错 向上抛出')
           return false
