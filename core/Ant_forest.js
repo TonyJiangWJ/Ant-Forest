@@ -575,6 +575,7 @@ function Ant_forest(automator, unlock) {
       debugInfo('预加载成功，获取好友列表')
       friends_list = WidgetUtils.getFriendList()
     }
+    let iteratorStart = -1
     do {
       WidgetUtils.waitRankListStable()
       let screen = null
@@ -601,7 +602,12 @@ function Ant_forest(automator, unlock) {
         debugInfo(
           '读取好友列表完成，开始检查可收取列表 列表长度:' + friendListLength
         )
+        let iteratorEnd = -1
         friends_list.children().forEach(function (fri, idx) {
+          if (idx < iteratorStart || (iteratorEnd !== -1 && idx > iteratorEnd)) {
+            //debugInfo('[' + idx + ']跳出判断iteratorStart:[' + iteratorStart + '] iteratorEnd:[' + iteratorEnd + ']')
+            return
+          }
           if (fri.visibleToUser()) {
             if (fri.childCount() >= 3) {
               let bounds = fri.bounds()
@@ -618,9 +624,13 @@ function Ant_forest(automator, unlock) {
                 }
                 // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
                 lastCheckFriend = idx + 1
+                iteratorStart = idx
               } else {
                 //debugInfo('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
                 totalVaildLength = idx + 1
+                if (idx > iteratorStart && iteratorEnd === -1) {
+                  iteratorEnd = idx
+                }
               }
             } else {
               debugInfo('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
