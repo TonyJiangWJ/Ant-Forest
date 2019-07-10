@@ -728,6 +728,7 @@ function Ant_forest() {
       debugInfo('预加载成功，获取好友列表')
       friends_list = WidgetUtils.getFriendList()
     }
+    let iteratorStart = -1
     do {
       WidgetUtils.waitRankListStable()
       let screen = null
@@ -754,7 +755,12 @@ function Ant_forest() {
         debugInfo(
           '读取好友列表完成，开始检查可收取列表 列表长度:' + friendListLength
         )
+        let iteratorEnd = -1
         friends_list.children().forEach(function (fri, idx) {
+          if (idx < iteratorStart || (iteratorEnd !== -1 && idx > iteratorEnd)) {
+            debugInfo('[' + idx + ']跳出判断iteratorStart:[' + iteratorStart + '] iteratorEnd:[' + iteratorEnd + ']')
+            return
+          }
           if (fri.visibleToUser()) {
             if (fri.childCount() >= 3) {
               let bounds = fri.bounds()
@@ -771,9 +777,13 @@ function Ant_forest() {
                 }
                 // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
                 lastCheckFriend = idx + 1
+                iteratorStart = idx
               } else {
                 //debugInfo('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
                 totalVaildLength = idx + 1
+                if (idx > iteratorStart && iteratorEnd === -1) {
+                  iteratorEnd = idx
+                }
               }
             } else {
               debugInfo('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
@@ -787,7 +797,7 @@ function Ant_forest() {
           '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length
         )
         let findEnd = new Date().getTime()
-        debugInfo('检测好友列表用时[' + (findEnd - findStart) + ']ms')
+        debugInfo('检测好友列表可收取情况耗时[' + (findEnd - findStart) + ']ms')
         if (false == collectAvailableList()) {
           errorInfo('流程出错 向上抛出')
           return false
@@ -802,7 +812,7 @@ function Ant_forest() {
       // 重置为空列表
       _avil_list = []
       debugInfo('收集完成 last:' + lastCheckFriend + '，下滑进入下一页')
-      automator.scrollDown(200)
+      automator.scrollDown(config.scrollDownSpeed || 200)
       debugInfo('进入下一页')
 
     } while (
