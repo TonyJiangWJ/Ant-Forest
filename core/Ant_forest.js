@@ -616,11 +616,12 @@ function Ant_forest(automator, unlock) {
                   debugInfo('不可收取 index:' + idx + ' name:' + container.name)
                   totalVaildLength = idx + 1
                 }
+                // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
+                lastCheckFriend = idx + 1
               } else {
                 //debugInfo('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
+                totalVaildLength = idx + 1
               }
-              // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
-              lastCheckFriend = idx + 1
             } else {
               debugInfo('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
             }
