@@ -590,6 +590,7 @@ function Ant_forest(automator, unlock) {
         warnInfo('获取截图失败 再试一次')
         continue
       }
+      let findStart = new Date().getTime()
       if (isPreloadTimeout || !friends_list) {
         debugInfo((isPreloadTimeout ? '预加载失败' : '获取好友列表失败') + ', 在循环中获取好友列表')
         friends_list = WidgetUtils.getFriendList()
@@ -615,12 +616,11 @@ function Ant_forest(automator, unlock) {
                   debugInfo('不可收取 index:' + idx + ' name:' + container.name)
                   totalVaildLength = idx + 1
                 }
-                // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
-                lastCheckFriend = idx + 1
               } else {
-                debugInfo('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
-                totalVaildLength = idx + 1
+                //debugInfo('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
               }
+              // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
+              lastCheckFriend = idx + 1
             } else {
               debugInfo('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
             }
@@ -632,6 +632,8 @@ function Ant_forest(automator, unlock) {
         debugInfo(
           '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length
         )
+        let findEnd = new Date().getTime()
+        debugInfo('检测好友列表可收取情况耗时：[' + (findEnd - findStart) + ']ms')
         if (false == _collect_avil_list()) {
           errorInfo('流程出错 向上抛出')
           return false
