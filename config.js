@@ -43,7 +43,7 @@ var non_gui_config = {
   // 帮助收取能量球颜色, 可以多增加几组以便全部能够找到，但是越多识别速度越慢
   help_energy_ball_color: ['#f99236', '#f7af70'],
   // 保存日志文件 文件名 log-verboses.log
-  save_log_file: false,
+  save_log_file: true,
   // 列表下滑执行速度 毫秒
   scroll_down_speed: 100
 }

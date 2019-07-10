@@ -269,9 +269,13 @@ function Ant_forest(automator, unlock) {
           _min_countdown = reactiveTime
         }
       } else {
-        if (_min_countdown != null && _min_countdown <= _config.get("max_collect_wait_time")) {
+        let max_collect_wait_time = _config.get("max_collect_wait_time") || 20
+        if (_min_countdown != null && _min_countdown <= max_collect_wait_time) {
           _has_next = true;
         } else {
+          if (_min_countdown > max_collect_wait_time) {
+            infoLog('倒计时等待时间[' + _min_countdown + ']大于配置的最大等待时间[' + max_collect_wait_time + ']')
+          }
           _has_next = false;
         }
       }
@@ -559,24 +563,86 @@ function Ant_forest(automator, unlock) {
 
   // 识别可收取好友并记录
   const _find_and_collect = function () {
+    const FREE_STATUS = 0
+    // 判断加载状态用
+    const LOADING_STATUS = -1
+    const LOADED_STATUS = 1
+    const COLLECT_STATUS = 2
+    // 获取好友列表用
+    const ANALYZE_FRIENDS = 1
+    const GETTING_FRIENDS = 2
+
     let lastCheckFriend = -1
     let friendListLength = -2
     let totalVaildLength = 0
     debugInfo('加载好友列表')
-    let isPreloadTimeout = WidgetUtils.loadFriendList()
+    let atomic = threads.atomic()
+    let gettingAtomic = threads.atomic()
+    let loadThread = threads.start(function () {
+      while (atomic.get() !== LOADED_STATUS) {
+        while (!atomic.compareAndSet(FREE_STATUS, LOADING_STATUS)) {
+          if (atomic.get() === LOADED_STATUS) {
+            break
+          }
+          // wait
+        }
+        if ((more = idMatches(".*J_rank_list_more.*").findOne(200)) != null) {
+          debugInfo('点击加载更多，热身中 速度较慢')
+          more.click()
+        }
+        atomic.compareAndSet(LOADING_STATUS, FREE_STATUS)
+      }
+    })
+
+    let friends_list = null
+    let foundNoMoreThread = threads.start(function () {
+      while (atomic.get() !== LOADED_STATUS) {
+        if (atomic.get() !== FREE_STATUS) {
+          continue
+        }
+        if (WidgetUtils.widgetCheck(config.get('no_more_ui_content'), 1000)) {
+          debugInfo('找到了没有更多')
+          atomic.getAndSet(LOADED_STATUS)
+          // 加载完之后立即获取好友列表
+          while (!gettingAtomic.compareAndSet(FREE_STATUS, GETTING_FRIENDS)) {
+            // wait
+          }
+          friends_list = WidgetUtils.getFriendList()
+          gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
+          let listLength = (friends_list && friends_list.children()) ? friends_list.children().length : undefined
+          debugInfo('加载完毕！热身完毕！列表长度：' + listLength, true)
+          if (listLength) {
+            // 动态修改预加载超时时间
+            let dynamicTimeout = listLength * 30
+            _config.put('timeoutLoadFriendList', dynamicTimeout)
+            debugInfo('动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + _config.get('timeoutLoadFriendList'))
+          }
+        } else {
+          debugInfo('未找到没有更多')
+        }
+      }
+    })
+    let preGetFriendListThread = threads.start(function () {
+      while (atomic.get() !== LOADED_STATUS) {
+        while (!gettingAtomic.compareAndSet(FREE_STATUS, GETTING_FRIENDS)) {
+          // wait
+        }
+        friends_list = WidgetUtils.getFriendList()
+        gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
+      }
+    })
+    // let isPreloadTimeout = WidgetUtils.loadFriendList()
     if (!WidgetUtils.friendListWaiting()) {
       errorInfo('崩了 当前不在好友列表 重新开始')
       return false
     }
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     let errorCount = 0
-    let friends_list = null
-    if (!isPreloadTimeout) {
-      debugInfo('预加载成功，获取好友列表')
-      friends_list = WidgetUtils.getFriendList()
-    }
     let iteratorStart = -1
+    let QUEUE_SIZE = 10
+    let queue = commonFunctions.createQueue(QUEUE_SIZE)
     do {
+      let pageStartPoint = new Date().getTime()
       WidgetUtils.waitRankListStable()
       let screen = null
       commonFunctions.waitFor(function () {
@@ -592,9 +658,8 @@ function Ant_forest(automator, unlock) {
         continue
       }
       let findStart = new Date().getTime()
-      if (isPreloadTimeout || !friends_list) {
-        debugInfo((isPreloadTimeout ? '预加载失败' : '获取好友列表失败') + ', 在循环中获取好友列表')
-        friends_list = WidgetUtils.getFriendList()
+      while (!gettingAtomic.compareAndSet(FREE_STATUS, ANALYZE_FRIENDS)) {
+        // 等待获取完好友列表
       }
       debugInfo('判断好友信息')
       if (friends_list && friends_list.children) {
@@ -643,12 +708,29 @@ function Ant_forest(automator, unlock) {
         debugInfo(
           '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length
         )
+        debugInfo('检测完：' + gettingAtomic.getAndSet(FREE_STATUS))
         let findEnd = new Date().getTime()
         debugInfo('检测好友列表可收取情况耗时：[' + (findEnd - findStart) + ']ms')
-        if (false == _collect_avil_list()) {
-          errorInfo('流程出错 向上抛出')
-          return false
+        while (!atomic.compareAndSet(FREE_STATUS, COLLECT_STATUS)) {
+          if (atomic.get() === LOADED_STATUS) {
+            debugInfo('加载完毕直接退出等待')
+            break
+          }
+          // wait
         }
+        let loaded = atomic.get() === LOADED_STATUS
+        let loadStatStr = loaded ? '加载完毕' : '未加载完毕'
+        debugInfo('准备开始收集，列表加载状态：' + loadStatStr)
+        if (_avil_list.length > 0) {
+          if (false == _collect_avil_list()) {
+            errorInfo('流程出错 向上抛出')
+            return false
+          }
+        } else {
+          debugInfo('无好友可收集能量')
+        }
+        let setResult = atomic.compareAndSet(COLLECT_STATUS, FREE_STATUS)
+        debugInfo('收取好友后设置atomic：' + setResult)
       } else {
         logInfo('好友列表不存在')
       }
@@ -660,12 +742,17 @@ function Ant_forest(automator, unlock) {
       _avil_list = []
       debugInfo('收集完成 last:' + lastCheckFriend + '，下滑进入下一页')
       scrollDown0(_config.get('scroll_down_speed') || 200)
-      debugInfo('进入下一页')
+      debugInfo('进入下一页, 本页耗时：[' + (new Date().getTime() - pageStartPoint) + ']ms')
+      debugInfo('add [' + lastCheckFriend + '] into queue')
+      commonFunctions.pushQueue(queue, QUEUE_SIZE, lastCheckFriend)
     } while (
-      lastCheckFriend < totalVaildLength
+      atomic.get() !== LOADED_STATUS || lastCheckFriend < totalVaildLength && commonFunctions.getQueueDistinctSize(queue) > 1
     )
     commonFunctions.addClosePlacehold(">>>><<<<")
-    logInfo('全部好友收集完成, last:' + lastCheckFriend + ' length:' + totalVaildLength)
+    logInfo('全部好友收集完成, last:' + lastCheckFriend + ' length:' + totalVaildLength + ' queueSize:' + commonFunctions.getQueueDistinctSize(queue))
+    loadThread.interrupt()
+    foundNoMoreThread.interrupt()
+    preGetFriendListThread.interrupt()
   }
 
 
