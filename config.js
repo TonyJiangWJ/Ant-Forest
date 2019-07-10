@@ -59,7 +59,7 @@ var ui_config = {
   // 校验排行榜加载完毕用
   no_more_ui_content: '没有更多了',
   // 检测是否存在可收取能量球
-  collectable_energy_ball_content: '.*\\d+克/'
+  collectable_energy_ball_content: '.*\\d+克'
 }
 
 var config = storages.create("ant_forest_config");
