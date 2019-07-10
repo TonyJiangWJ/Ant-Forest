@@ -248,6 +248,8 @@ function draw_view() {
       update("max_collect_wait_time", format(ui.max_collect_wait_time.getText()));
       update("delay_unlock", format(ui.delay_unlock.getText()));
       update("timeout_findOne", format(ui.timeout_findOne.getText()));
+      update("timeoutLoadFriendList", format(ui.timeoutLoadFriendList.getText()));
+      update("reactive_time", format(ui.reactive_time.getText()));
     }
   });
 
