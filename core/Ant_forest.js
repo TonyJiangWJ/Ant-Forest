@@ -591,11 +591,13 @@ function Ant_forest(automator, unlock) {
           more.click()
         }
         atomic.compareAndSet(LOADING_STATUS, FREE_STATUS)
+        sleep(150)
       }
     })
 
     let friends_list = null
     let foundNoMoreThread = threads.start(function () {
+      let preLoadStart = new Date().getTime()
       while (atomic.get() !== LOADED_STATUS) {
         if (atomic.get() !== FREE_STATUS) {
           continue
@@ -610,7 +612,7 @@ function Ant_forest(automator, unlock) {
           friends_list = WidgetUtils.getFriendList()
           gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
           let listLength = (friends_list && friends_list.children()) ? friends_list.children().length : undefined
-          debugInfo('加载完毕！热身完毕！列表长度：' + listLength, true)
+          debugInfo('热身加载完毕！列表长度：[' + listLength + '] 总耗时：[' + (new Date().getTime() - preLoadStart) + ']ms', true)
           if (listLength) {
             // 动态修改预加载超时时间
             let dynamicTimeout = listLength * 30
@@ -669,7 +671,7 @@ function Ant_forest(automator, unlock) {
         )
         let iteratorEnd = -1
         friends_list.children().forEach(function (fri, idx) {
-          if (idx < iteratorStart || (iteratorEnd !== -1 && idx > iteratorEnd)) {
+          if (idx <= iteratorStart || (iteratorEnd !== -1 && idx > iteratorEnd)) {
             //debugInfo('[' + idx + ']跳出判断iteratorStart:[' + iteratorStart + '] iteratorEnd:[' + iteratorEnd + ']')
             return
           }
@@ -703,6 +705,9 @@ function Ant_forest(automator, unlock) {
           } else {
             //debugInfo('invisible 不在视野范围' + idx)
             totalVaildLength = idx + 1
+            if (idx > iteratorStart && iteratorEnd === -1) {
+              iteratorEnd = idx
+            }
           }
         })
         debugInfo(
@@ -817,7 +822,7 @@ function Ant_forest(automator, unlock) {
   /*********控件操作***********/
   /**
    * 显示mini悬浮窗
-   * @param {*} increased 
+   * @param {*} increased
    */
   const showCollectSummaryFloaty = function (increased) {
     increased = increased || 0
