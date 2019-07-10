@@ -243,6 +243,7 @@ function Ant_forest() {
         automator.enterFriendList()
         WidgetUtils.friendListWaiting()
         WidgetUtils.loadFriendList()
+        sleep(100)
         // 再次获取倒计时数据
         let newCountDown = calculateMinCountdown()
         debugInfo('第二次获取倒计时时间:[' + newCountDown + ']分')
@@ -263,13 +264,14 @@ function Ant_forest() {
   const calculateMinCountdown = function () {
     let temp = []
     if (_min_countdown && _timestamp instanceof Date) {
-      debugInfo('已记录自身倒计时：' + countdown_own + '分')
+      debugInfo('已记录自身倒计时：' + _countdown_own + '分')
       let passedTime = Math.round((new Date() - _timestamp) / 60000)
       let countdown_own = _min_countdown - passedTime
       debugInfo('本次收集经过了：' + passedTime + '分，最终记录自身倒计时：' + countdown_own + '分')
       countdown_own >= 0 ? temp.push(countdown_own) : temp.push(0)
     }
     let friCountDowmContainer = WidgetUtils.widgetGetAll('\\d+’', null, true)
+    debugInfo('get \\d+` container:' + friCountDowmContainer)
     if (friCountDowmContainer) {
       let isDesc = friCountDowmContainer.isDesc
       friCountDowmContainer.target.forEach(function (countdown) {
@@ -287,6 +289,7 @@ function Ant_forest() {
     if (temp.length === 0) {
       return
     }
+    temp = temp.filter(i => isFinite(i))
     let min = Math.min.apply(null, temp)
     debugInfo('获取倒计时最小值：[' + min + ']分')
     return min
@@ -711,25 +714,91 @@ function Ant_forest() {
 
   // 识别可收取好友并记录
   const findAndCollect = function () {
+    const FREE_STATUS = 0
+    // 判断加载状态用
+    const LOADING_STATUS = -1
+    const LOADED_STATUS = 1
+    const COLLECT_STATUS = 2
+    // 获取好友列表用
+    const ANALYZE_FRIENDS = 1
+    const GETTING_FRIENDS = 2
     let lastCheckFriend = -1
     let friendListLength = -2
     let totalVaildLength = 0
     debugInfo('加载好友列表')
-    let isPreloadTimeout = WidgetUtils.loadFriendList()
+    let atomic = threads.atomic()
+    let gettingAtomic = threads.atomic()
+    let loadThread = threads.start(function () {
+      while (atomic.get() !== LOADED_STATUS) {
+        while (!atomic.compareAndSet(FREE_STATUS, LOADING_STATUS)) {
+          if (atomic.get() === LOADED_STATUS) {
+            break
+          }
+          // wait
+        }
+        if ((more = idMatches(".*J_rank_list_more.*").findOne(200)) != null) {
+          debugInfo('点击加载更多，热身中 速度较慢')
+          more.click()
+        }
+        atomic.compareAndSet(LOADING_STATUS, FREE_STATUS)
+        sleep(150)
+      }
+    })
+
+    let friends_list = null
+    let foundNoMoreThread = threads.start(function () {
+      let preLoadStart = new Date().getTime()
+      while (atomic.get() !== LOADED_STATUS) {
+        if (atomic.get() !== FREE_STATUS) {
+          continue
+        }
+        if (WidgetUtils.widgetCheck(config.no_more_ui_content, 1000)) {
+          debugInfo('找到了没有更多 old atomic status:[' + atomic.getAndSet(LOADED_STATUS) + ']')
+          // 加载完之后立即获取好友列表
+          while (!gettingAtomic.compareAndSet(FREE_STATUS, GETTING_FRIENDS)) {
+            // wait
+          }
+          friends_list = WidgetUtils.getFriendList()
+          gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
+          let listLength = (friends_list && friends_list.children()) ? friends_list.children().length : undefined
+          debugInfo('热身加载完毕！列表长度：' + listLength, true)
+          infoLog('预加载好友列表完成，耗时[' + (new Date().getTime() - preLoadStart) + ']ms', true)
+          if (listLength) {
+            // 动态修改预加载超时时间
+            let dynamicTimeout = listLength * 30
+            config.timeoutLoadFriendList = dynamicTimeout
+            let { storage_name } = require('../config.js')
+            var configStorage = storages.create(storage_name)
+            configStorage.put('timeoutLoadFriendList', dynamicTimeout)
+            // let { config: anotherConfig } = require('../config.js')
+            // debugInfo('another config\'s timeoutLoadFriendList:[' + anotherConfig.timeoutLoadFriendList + ']')
+            debugInfo('动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + config.timeoutLoadFriendList)
+          }
+        } else {
+          debugInfo('未找到没有更多')
+        }
+      }
+    })
+    let preGetFriendListThread = threads.start(function () {
+      while (atomic.get() !== LOADED_STATUS) {
+        while (!gettingAtomic.compareAndSet(FREE_STATUS, GETTING_FRIENDS)) {
+          // wait
+        }
+        friends_list = WidgetUtils.getFriendList()
+        gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
+      }
+    })
     if (!WidgetUtils.friendListWaiting()) {
       errorInfo('崩了 当前不在好友列表 重新开始')
       return false
     }
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     let errorCount = 0
-
-    let friends_list = null
-    if (!isPreloadTimeout) {
-      debugInfo('预加载成功，获取好友列表')
-      friends_list = WidgetUtils.getFriendList()
-    }
     let iteratorStart = -1
+    let QUEUE_SIZE = 10
+    let queue = commonFunctions.createQueue(QUEUE_SIZE)
     do {
+      let pageStartPoint = new Date().getTime()
       WidgetUtils.waitRankListStable()
       let screen = null
       commonFunctions.waitFor(function () {
@@ -745,9 +814,8 @@ function Ant_forest() {
         continue
       }
       let findStart = new Date().getTime()
-      if (isPreloadTimeout || !friends_list) {
-        debugInfo((isPreloadTimeout ? '预加载失败' : '获取好友列表失败') + '，循环中获取好友列表')
-        friends_list = WidgetUtils.getFriendList()
+      while (!gettingAtomic.compareAndSet(FREE_STATUS, ANALYZE_FRIENDS)) {
+        // 等待获取完好友列表
       }
       debugInfo('判断好友信息')
       if (friends_list && friends_list.children) {
@@ -757,8 +825,8 @@ function Ant_forest() {
         )
         let iteratorEnd = -1
         friends_list.children().forEach(function (fri, idx) {
-          if (idx < iteratorStart || (iteratorEnd !== -1 && idx > iteratorEnd)) {
-            debugInfo('[' + idx + ']跳出判断iteratorStart:[' + iteratorStart + '] iteratorEnd:[' + iteratorEnd + ']')
+          if (idx <= iteratorStart || (iteratorEnd !== -1 && idx > iteratorEnd)) {
+            //debugInfo('[' + idx + ']跳出判断iteratorStart:[' + iteratorStart + '] iteratorEnd:[' + iteratorEnd + ']')
             return
           }
           if (fri.visibleToUser()) {
@@ -791,17 +859,37 @@ function Ant_forest() {
           } else {
             //debugInfo("不可见" + idx)
             totalVaildLength = idx + 1
+            if (idx > iteratorStart && iteratorEnd === -1) {
+              iteratorEnd = idx
+            }
           }
         })
         debugInfo(
           '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length
         )
+        debugInfo('检测完：' + gettingAtomic.getAndSet(FREE_STATUS))
         let findEnd = new Date().getTime()
-        debugInfo('检测好友列表可收取情况耗时[' + (findEnd - findStart) + ']ms')
-        if (false == collectAvailableList()) {
-          errorInfo('流程出错 向上抛出')
-          return false
+        debugInfo('检测好友列表可收取情况耗时：[' + (findEnd - findStart) + ']ms')
+        while (!atomic.compareAndSet(FREE_STATUS, COLLECT_STATUS)) {
+          if (atomic.get() === LOADED_STATUS) {
+            debugInfo('加载完毕直接退出等待')
+            break
+          }
+          // wait
         }
+        let loaded = atomic.get() === LOADED_STATUS
+        let loadStatStr = loaded ? '加载完毕' : '未加载完毕'
+        debugInfo('准备开始收集，列表加载状态：' + loadStatStr)
+        if (_avil_list.length > 0) {
+          if (false == collectAvailableList()) {
+            errorInfo('流程出错 向上抛出')
+            return false
+          }
+        } else {
+          debugInfo('无好友可收集能量')
+        }
+        let setResult = atomic.compareAndSet(COLLECT_STATUS, FREE_STATUS)
+        debugInfo('收取好友后设置atomic：' + setResult)
       } else {
         logInfo('好友列表不存在')
       }
@@ -813,14 +901,19 @@ function Ant_forest() {
       _avil_list = []
       debugInfo('收集完成 last:' + lastCheckFriend + '，下滑进入下一页')
       automator.scrollDown(config.scrollDownSpeed || 200)
-      debugInfo('进入下一页')
-
+      debugInfo('进入下一页, 本页耗时：[' + (new Date().getTime() - pageStartPoint) + ']ms')
+      debugInfo('add [' + lastCheckFriend + '] into queue, distinct size:[' + commonFunctions.getQueueDistinctSize(queue) + ']')
+      commonFunctions.pushQueue(queue, QUEUE_SIZE, lastCheckFriend)
     } while (
-      lastCheckFriend < totalVaildLength
+      atomic.get() !== LOADED_STATUS || lastCheckFriend < totalVaildLength && commonFunctions.getQueueDistinctSize(queue) > 1
     )
     commonFunctions.addClosePlacehold(">>>><<<<")
-    logInfo('全部好友收集完成, last:' + lastCheckFriend + ' length:' + totalVaildLength)
+    logInfo('全部好友收集完成, last:' + lastCheckFriend + ' length:' + totalVaildLength + ' queueSize:' + commonFunctions.getQueueDistinctSize(queue))
+    loadThread.interrupt()
+    foundNoMoreThread.interrupt()
+    preGetFriendListThread.interrupt()
   }
+
 
   /***********************
    * 主要函数
@@ -840,7 +933,9 @@ function Ant_forest() {
       warnInfo('程序未启动，尝试再次唤醒')
       automator.clickClose()
       debugInfo('关闭H5')
-      home()
+      if (restartCount >= 3) {
+        home()
+      }
       sleep(1000)
       // 解锁并启动
       unlocker.exec()

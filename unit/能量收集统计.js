@@ -27,10 +27,11 @@ const checkFriends = function () {
   debugInfo('加载好友列表')
   WidgetUtils.loadFriendList()
   if (!WidgetUtils.friendListWaiting()) {
-    errorLog('崩了 当前不在好友列表 重新开始')
+    errorInfo('崩了 当前不在好友列表 重新开始')
     return false
   }
   commonFunctions.addOpenPlacehold("<<<<>>>>")
+  let queue = commonFunctions.createQueue(3)
   do {
     sleep(50)
     WidgetUtils.waitRankListStable()
@@ -65,14 +66,15 @@ const checkFriends = function () {
       logInfo('好友列表不存在')
     }
     if (!WidgetUtils.friendListWaiting()) {
-      errorLog('崩了 当前不在好友列表 重新开始')
+      errorInfo('崩了 当前不在好友列表 重新开始')
       return false
     }
     debugInfo('收集数据完成 last:' + lastCheckFriend + '，下滑进入下一页')
-    automator.scrollDown(config.scrollDownSpeed || 200)
+    automator.scrollDown(50)
     debugInfo('进入下一页')
+    commonFunctions.pushQueue(queue, 3, lastCheckFriend)
   } while (
-    lastCheckFriend < friendListLength
+    lastCheckFriend < friendListLength && commonFunctions.getQueueDistinctSize(queue) > 1
   )
   commonFunctions.addClosePlacehold(">>>><<<<")
   logInfo('全部好友数据收集完成, last:' + lastCheckFriend + ' length:' + friendListLength)
@@ -84,6 +86,10 @@ const collectTargetFriend = function (fri) {
   let name = WidgetUtils.getFriendsName(fri)
   if (name == 'TonyJiang') {
     logInfo('跳过自身', true)
+    return
+  }
+  if (fri.child(2).desc() === '邀请' || fri.child(2).text() === '邀请') {
+    logInfo('需要邀请好友:' + name)
     return
   }
   let obj = {
@@ -109,12 +115,12 @@ const collectTargetFriend = function (fri) {
     }
   }
   if (restartLoop) {
-    errorLog('页面流程出错，重新开始')
+    errorInfo('页面流程出错，重新开始')
     return false
   }
 
   if (WidgetUtils.widgetCheck('加为好友', 200)) {
-    errorLog(name + ' TA已经把你删啦')
+    errorInfo(name + ' TA已经把你删啦')
     // return
   } else {
     debugInfo('准备开始统计')
@@ -131,7 +137,7 @@ const collectTargetFriend = function (fri) {
         helpCollect: 0
       })
     } catch (e) {
-      errorLog("[" + obj.name + "]获取收集能量异常" + e)
+      errorInfo("[" + obj.name + "]获取收集能量异常" + e)
     }
   }
 
@@ -169,3 +175,5 @@ startApp(PACKAGE_NAME, START_DATA)
 checkFriends()
 commonFunctions.showCollectSummary()
 toastLog('done')
+automator.clickClose()
+home()
