@@ -602,22 +602,26 @@ function Ant_forest(automator, unlock) {
         if (atomic.get() !== FREE_STATUS) {
           continue
         }
-        if (WidgetUtils.widgetCheck(config.get('no_more_ui_content'), 1000)) {
-          debugInfo('找到了没有更多')
-          atomic.getAndSet(LOADED_STATUS)
-          // 加载完之后立即获取好友列表
-          while (!gettingAtomic.compareAndSet(FREE_STATUS, GETTING_FRIENDS)) {
-            // wait
-          }
-          friends_list = WidgetUtils.getFriendList()
-          gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
-          let listLength = (friends_list && friends_list.children()) ? friends_list.children().length : undefined
-          debugInfo('热身加载完毕！列表长度：[' + listLength + '] 总耗时：[' + (new Date().getTime() - preLoadStart) + ']ms', true)
-          if (listLength) {
-            // 动态修改预加载超时时间
-            let dynamicTimeout = listLength * 30
-            _config.put('timeoutLoadFriendList', dynamicTimeout)
-            debugInfo('动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + _config.get('timeoutLoadFriendList'))
+        if ((more = idMatches(".*J_rank_list_more.*").findOne(200)) != null) {
+          if ((more.desc().match(_config.get('no_more_ui_content') || more.text().match(_config.get('no_more_ui_content'))) {
+            debugInfo('发现没有更多按钮，获取好友列表')
+            // 加载完之后立即获取好友列表
+            while (!gettingAtomic.compareAndSet(FREE_STATUS, GETTING_FRIENDS)) {
+              // wait
+            }
+            friends_list = WidgetUtils.getFriendList()
+            gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
+            let listLength = (friends_list && friends_list.children()) ? friends_list.children().length : undefined
+            if (listLength) {
+              debugInfo('热身加载完毕！列表长度：[' + listLength + '] 总耗时：[' + (new Date().getTime() - preLoadStart) + ']ms', true)
+              atomic.getAndSet(LOADED_STATUS)
+              // 动态修改预加载超时时间
+              let dynamicTimeout = listLength * 30
+              _config.put('timeoutLoadFriendList', dynamicTimeout)
+              debugInfo('动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + _config.get('timeoutLoadFriendList'))
+            }
+          } else {
+            warnInfo('find target j_rank_list_more but desc/text is :' + more.desc() + ', ' + more.text())
           }
         } else {
           debugInfo('未找到没有更多')
@@ -641,7 +645,7 @@ function Ant_forest(automator, unlock) {
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     let errorCount = 0
     let iteratorStart = -1
-    let QUEUE_SIZE = 10
+    let QUEUE_SIZE = 4
     let queue = commonFunctions.createQueue(QUEUE_SIZE)
     do {
       let pageStartPoint = new Date().getTime()
