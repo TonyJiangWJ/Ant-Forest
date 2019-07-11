@@ -31,12 +31,6 @@ try {
   warnInfo('auto.waitFor()不可用')
   auto()
 }
-logInfo('======校验截图权限======')
-// 请求截图权限
-if (!requestScreenCapture()) {
-  errorInfo('请求截图失败', true)
-  exit()
-}
 
 /************************
  * 依赖加载
@@ -47,7 +41,7 @@ engines.execScriptFile('./update.js')
 
 // 加载本地配置
 var config = storages.create('ant_forest_config')
- if (!config.contains('color_offset') || !config.contains('home_ui_content')) {
+if (!config.contains('color_offset') || !config.contains('home_ui_content')) {
   warnInfo('请完善配置后再运行', true)
   engines.execScriptFile('./config.js')
   engines.myEngine().forceStop()
@@ -60,6 +54,17 @@ var Ant_forest = require('./core/Ant_forest.js')
 var automator = Automator()
 var unlock = Unlock(automator)
 var ant_forest = Ant_forest(automator, unlock)
+
+logInfo('======解锁并校验截图权限======')
+unlock.exec()
+logInfo('解锁成功')
+// 请求截图权限
+if (!requestScreenCapture()) {
+  errorInfo('请求截图失败')
+  exit()
+} else {
+  logInfo('请求截图权限成功')
+}
 
 /************************
  * 主程序
