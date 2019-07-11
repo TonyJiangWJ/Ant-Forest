@@ -603,7 +603,7 @@ function Ant_forest(automator, unlock) {
           continue
         }
         if ((more = idMatches(".*J_rank_list_more.*").findOne(200)) != null) {
-          if ((more.desc().match(_config.get('no_more_ui_content') || more.text().match(_config.get('no_more_ui_content'))) {
+          if (more.desc().match(_config.get('no_more_ui_content')) || more.text().match(_config.get('no_more_ui_content'))) {
             debugInfo('发现没有更多按钮，获取好友列表')
             // 加载完之后立即获取好友列表
             while (!gettingAtomic.compareAndSet(FREE_STATUS, GETTING_FRIENDS)) {
