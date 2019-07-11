@@ -35,7 +35,7 @@ function draw_view() {
               <radio text="否" checked="{{!configStorage.get('never_stop')}}" marginLeft="20" />
             </radiogroup>
           </vertical>
-          <vertical visibility="{{configStorage.get('is_cycle') ? 'gone' : 'visible'}}" w="*">
+          <vertical w="*" visibility="{{!configStorage.get('is_cycle') ? 'visible' : 'gone'}}">
             <vertical visibility="{{configStorage.get('never_stop') ? 'gone' : 'visible'}}" w="*" gravity="left" layout_gravity="left">
               <text text="最大收集次数：" textColor="#666666" textSize="14sp" />
               <input id="max_collect_repeat" inputType="number" text="{{configStorage.get('max_collect_repeat')}}" />
@@ -68,20 +68,6 @@ function draw_view() {
           <text text="x:" /><input id="min_floaty_x" inputType="number" text="{{configStorage.get('min_floaty_x')}}" />
           <text text="y:" /><input id="min_floaty_y" inputType="number" text="{{configStorage.get('min_floaty_y')}}" />
         </horizontal>
-        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
-          <text text="定时自动启动：" textColor="#666666" textSize="14sp" />
-          <radiogroup id="auto_start" orientation="horizontal" margin="0 10">
-            <radio text="是" checked="{{configStorage.get('auto_start')}}" />
-            <radio text="否" checked="{{!configStorage.get('auto_start')}}" marginLeft="20" />
-          </radiogroup>
-          <vertical visibility="{{configStorage.get('auto_start') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left">
-            <text text="是否同一天：" textColor="#666666" textSize="14sp" />
-            <radiogroup id="auto_start_same_day" orientation="horizontal" margin="0 10">
-              <radio text="是" checked="{{configStorage.get('auto_start_same_day')}}" />
-              <radio text="否" checked="{{!configStorage.get('auto_start_same_day')}}" marginLeft="20" />
-            </radiogroup>
-          </vertical>
-        </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="是否跳过小于等于5克的能量" />
           <radiogroup id="skip_five" orientation="horizontal" margin="0 10">
@@ -204,16 +190,6 @@ function draw_view() {
   ui.is_help_fris.setOnCheckedChangeListener(function (radioGroup, id) {
     updateRadioValue(radioGroup, id, "help_friend")
   });
-
-  // 是否定时启动
-  ui.auto_start.setOnCheckedChangeListener(function (radioGroup, id) {
-    updateRadioValue(radioGroup, id, "auto_start")
-  })
-
-  // 是否同一天
-  ui.auto_start_same_day.setOnCheckedChangeListener(function (radioGroup, id) {
-    updateRadioValue(radioGroup, id, "auto_start_same_day")
-  })
 
   // 是否跳过低于五克的能量
   ui.skip_five.setOnCheckedChangeListener(function (radioGroup, id) {
