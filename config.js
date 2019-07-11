@@ -59,6 +59,7 @@ let no_gui_config = {
   friendListStableCount: 3,
   // 底部高度
   bottomHeight: 100,
+  useCustomScrollDown: false,
   // 下滑速度 100毫秒
   scrollDownSpeed: 100,
   wateringBack: true,
@@ -74,6 +75,7 @@ var ui_config = {
   friend_home_ui_content: '浇水|发消息',
   friend_list_ui_content: '好友排行榜',
   no_more_ui_content: '没有更多了',
+  load_more_ui_content: '查看更多',
   warting_widget_content: '浇水',
   collectable_energy_ball_content: /.*\d+克/
 }
