@@ -585,8 +585,6 @@ function Ant_forest(automator, unlock) {
       errorInfo('崩了 当前不在好友列表 重新开始')
       return false
     }
-    // 进入好友排行榜后睡眠半秒钟 避免第一页漏收
-    sleep(500)
 
     const FREE_STATUS = 0
     // 判断加载状态用
@@ -702,6 +700,7 @@ function Ant_forest(automator, unlock) {
     }
     do {
       let pageStartPoint = new Date().getTime()
+      let lastCheckedIndex = lastCheckFriend
       WidgetUtils.waitRankListStable()
       let screen = null
       commonFunctions.waitFor(function () {
@@ -770,7 +769,7 @@ function Ant_forest(automator, unlock) {
           }
         })
         debugInfo(
-          '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length + ' 更新列表状态为已使用 old status:' + friendListAtomic.getAndSet(USED_STATUS)
+          '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length
         )
         debugInfo('检测完：' + gettingAtomic.getAndSet(FREE_STATUS))
         let findEnd = new Date().getTime()
@@ -805,11 +804,16 @@ function Ant_forest(automator, unlock) {
       }
       // 重置为空列表
       _avil_list = []
-      debugInfo('收集完成 last:' + lastCheckFriend + '，下滑进入下一页')
-      scrollDown0(_config.get('scroll_down_speed') || 200)
-      debugInfo('进入下一页, 本页耗时：[' + (new Date().getTime() - pageStartPoint) + ']ms')
-      debugInfo('add [' + lastCheckFriend + '] into queue')
-      commonFunctions.pushQueue(queue, QUEUE_SIZE, lastCheckFriend)
+      debugInfo('收集完成 last:' + lastCheckFriend)
+      if (lastCheckFriend - lastCheckedIndex < 5) {
+        debugInfo('校验数量[' + (lastCheckFriend - lastCheckedIndex) + '] 小于5 可能列表在加载中 不滑动')
+      } else {
+        debugInfo('下滑进入下一页 更新列表状态为已使用 old status:' + friendListAtomic.getAndSet(USED_STATUS))
+        scrollDown0(_config.get('scroll_down_speed') || 200)
+        debugInfo('进入下一页, 本页耗时：[' + (new Date().getTime() - pageStartPoint) + ']ms')
+        debugInfo('add [' + lastCheckFriend + '] into queue')
+        commonFunctions.pushQueue(queue, QUEUE_SIZE, lastCheckFriend)
+      }
     } while (
       atomic.get() !== LOADED_STATUS || lastCheckFriend < totalVaildLength && commonFunctions.getQueueDistinctSize(queue) > 1
     )
