@@ -412,7 +412,7 @@ function Ant_forest() {
 
   /**
    * 收集目标能量球能量
-   *
+   * 
    * @param {*} energy_ball 能量球对象
    * @param {boolean} isOwn 是否收集自身能量
    * @param {boolean} isDesc 是否是desc类型
@@ -693,7 +693,7 @@ function Ant_forest() {
 
   /**
    * 记录好友信息
-   * @param {Object} container
+   * @param {Object} container 
    */
   const recordAvailableList = function (container) {
     let temp = {}
@@ -713,8 +713,8 @@ function Ant_forest() {
 
   /**
    * 校验好友列表对象是否有效，有效则返回子控件长度
-   *
-   * @param {Object} friends_list
+   * 
+   * @param {Object} friends_list 
    */
   const whetherFriendListValidLength = function (friends_list) {
     return (friends_list && friends_list.children()) ? friends_list.children().length : undefined
@@ -722,6 +722,10 @@ function Ant_forest() {
 
   // 识别可收取好友并记录
   const findAndCollect = function () {
+    if (!WidgetUtils.friendListWaiting()) {
+      errorInfo('崩了 当前不在好友列表 重新开始')
+      return false
+    }
     const FREE_STATUS = 0
     // 判断加载状态用
     const LOADING_STATUS = -1
@@ -731,6 +735,7 @@ function Ant_forest() {
     const ANALYZE_FRIENDS = 1
     const GETTING_FRIENDS = 2
     // 好友列表有效性
+    const INIT_STATUS = -1
     const USED_STATUS = 0
     const UPDATED_STATUS = 1
 
@@ -738,11 +743,11 @@ function Ant_forest() {
     let friendListLength = -2
     let totalVaildLength = 0
     debugInfo('加载好友列表')
-    let atomic = threads.atomic()
+    let atomic = threads.atomic(FREE_STATUS)
     // 控制是否继续获取好友列表
-    let gettingAtomic = threads.atomic()
+    let gettingAtomic = threads.atomic(FREE_STATUS)
     // 用来控制好友列表的获取，避免无限循环获取影响性能
-    let friendListAtomic = threads.atomic()
+    let friendListAtomic = threads.atomic(INIT_STATUS)
     let friends_list = null
     let loadThread = threads.start(function () {
       let threadName = '[预加载线程]'
@@ -773,7 +778,9 @@ function Ant_forest() {
             let listLength = whetherFriendListValidLength(friends_list)
             if (listLength) {
               // 设置当前状态为已加载完成
-              debugInfo(threadName + '找到了没有更多 old atomic status:[' + atomic.getAndSet(LOADED_STATUS) + '] old friendListStatus:[' + friendListAtomic.getAndSet(UPDATED_STATUS) + ']')
+              debugInfo(threadName + '找到了没有更多 old atomic status:[' + atomic.getAndSet(LOADED_STATUS) + ']'
+                + ' old friendListAtomic status:[' + friendListAtomic.getAndSet(UPDATED_STATUS) + ']'
+              )
               infoLog(threadName + '预加载好友列表完成，耗时[' + (new Date().getTime() - preLoadStart) + ']ms 列表长度：' + listLength, true, true)
               // 动态修改预加载超时时间
               let dynamicTimeout = listLength * 30
@@ -785,7 +792,7 @@ function Ant_forest() {
               // debugInfo('another config\'s timeoutLoadFriendList:[' + anotherConfig.timeoutLoadFriendList + ']')
               debugInfo(threadName + '动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + config.timeoutLoadFriendList)
             }
-          } else if ((more.desc() && more.desc().match(loadMoreContent)) || (more.text() && more.text().match(loadMoreContent))) {
+          } else if ((more.desc().match(loadMoreContent) || more.text().match(loadMoreContent))) {
             debugInfo(threadName + '点击加载更多，热身中 速度较慢')
             more.click()
           } else {
@@ -821,25 +828,30 @@ function Ant_forest() {
         friends_list = WidgetUtils.getFriendList()
         if (whetherFriendListValidLength(friends_list)) {
           friendListAtomic.compareAndSet(USED_STATUS, UPDATED_STATUS)
+          friendListAtomic.compareAndSet(INIT_STATUS, UPDATED_STATUS)
         }
         gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
         sleep(100)
         debugInfo(threadName + '获取好友list完成')
       }
     })
-    if (!WidgetUtils.friendListWaiting()) {
-      errorInfo('崩了 当前不在好友列表 重新开始')
-      return false
-    }
+
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     let errorCount = 0
     let iteratorStart = -1
     let QUEUE_SIZE = 4
     let queue = commonFunctions.createQueue(QUEUE_SIZE)
-    // 判断前等待，避免第一页识别出错
-    sleep(500)
+    let step = 0
+    while (friendListAtomic.get() === INIT_STATUS) {
+      sleep(10)
+      if (step % 500 === 0) {
+        warnInfo('好友列表未加载完成，继续等待...')
+      }
+      step += 10
+    }
     do {
       let pageStartPoint = new Date().getTime()
+      let lastCheckedIndex = lastCheckFriend
       WidgetUtils.waitRankListStable()
       let screen = null
       commonFunctions.waitFor(function () {
@@ -908,7 +920,7 @@ function Ant_forest() {
           }
         })
         debugInfo(
-          '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length + ' 更新列表状态为已使用 old status:' + friendListAtomic.getAndSet(USED_STATUS)
+          '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length
         )
         debugInfo('检测完：' + gettingAtomic.getAndSet(FREE_STATUS))
         let findEnd = new Date().getTime()
@@ -944,10 +956,15 @@ function Ant_forest() {
       // 重置为空列表
       _avil_list = []
       debugInfo('收集完成 last:' + lastCheckFriend + '，下滑进入下一页')
-      automator.scrollDown(config.scrollDownSpeed || 200)
-      debugInfo('进入下一页, 本页耗时：[' + (new Date().getTime() - pageStartPoint) + ']ms')
-      debugInfo('add [' + lastCheckFriend + '] into queue, distinct size:[' + commonFunctions.getQueueDistinctSize(queue) + ']')
-      commonFunctions.pushQueue(queue, QUEUE_SIZE, lastCheckFriend)
+      if (lastCheckFriend - lastCheckedIndex < 5) {
+        debugInfo('校验数量[' + (lastCheckFriend - lastCheckedIndex) + '] 小于5 可能列表在加载中 不滑动')
+      } else {
+        debugInfo('下滑进入下一页 更新列表状态为已使用 old status:' + friendListAtomic.getAndSet(USED_STATUS))
+        automator.scrollDown(config.scrollDownSpeed || 200)
+        debugInfo('进入下一页, 本页耗时：[' + (new Date().getTime() - pageStartPoint) + ']ms')
+        debugInfo('add [' + lastCheckFriend + '] into queue, distinct size:[' + commonFunctions.getQueueDistinctSize(queue) + ']')
+        commonFunctions.pushQueue(queue, QUEUE_SIZE, lastCheckFriend)
+      }
     } while (
       (atomic.get() !== LOADED_STATUS || lastCheckFriend < totalVaildLength) && commonFunctions.getQueueDistinctSize(queue) > 1
     )
@@ -994,8 +1011,10 @@ function Ant_forest() {
     getPreEnergy()
     debugInfo('准备收集自己能量')
     collectEnergy(true)
-    debugInfo('准备计算最短时间')
-    getMinCountdownOwn()
+    if (!config.is_cycle) {
+      debugInfo('准备计算最短时间')
+      getMinCountdownOwn()
+    }
     commonFunctions.addClosePlacehold("收集自己的能量完毕")
     _fisrt_running = false
   }
