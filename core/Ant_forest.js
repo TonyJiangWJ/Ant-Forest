@@ -956,7 +956,7 @@ function Ant_forest() {
       // 重置为空列表
       _avil_list = []
       debugInfo('收集完成 last:' + lastCheckFriend + '，下滑进入下一页')
-      if (lastCheckFriend - lastCheckedIndex < 5) {
+      if (lastCheckFriend - lastCheckedIndex < 5 && atomic.get() !== LOADED_STATUS) {
         debugInfo('校验数量[' + (lastCheckFriend - lastCheckedIndex) + '] 小于5 可能列表在加载中 不滑动')
       } else {
         debugInfo('下滑进入下一页 更新列表状态为已使用 old status:' + friendListAtomic.getAndSet(USED_STATUS))
