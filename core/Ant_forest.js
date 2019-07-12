@@ -684,6 +684,8 @@ function Ant_forest(automator, unlock) {
     let iteratorStart = -1
     let QUEUE_SIZE = 4
     let queue = commonFunctions.createQueue(QUEUE_SIZE)
+    // 进入好友排行榜后睡眠半秒钟 避免第一页漏收
+    sleep(500)
     do {
       let pageStartPoint = new Date().getTime()
       WidgetUtils.waitRankListStable()
