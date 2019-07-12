@@ -163,11 +163,13 @@ function Ant_forest(automator, unlock) {
       let ball = target.untilFind();
       let temp = [];
       debugInfo('待收取球数' + ball.length)
+      // 等待1秒钟 防止脚本的toast挡住能量球toast
+      sleep(1000)
       let toasts = _get_toast_async(_package_name, ball.length, function () {
         ball.forEach(function (obj) {
+          sleep(500);
           debugInfo("触发能量球toast" + obj.bounds())
           _automator.clickCenter(obj);
-          sleep(500);
         });
       });
       toasts.forEach(function (toast) {
@@ -614,7 +616,7 @@ function Ant_forest(automator, unlock) {
         if ((more = idMatches(".*J_rank_list_more.*").findOne(200)) != null) {
           let loadMoreContent = _config.get('load_more_ui_content') || '查看更多'
           let noMoreContent = _config.get('no_more_ui_content') || '没有更多了'
-          if ((more.desc().match(noMoreContent) || more.text().match(noMoreContent))) {
+          if ((more.desc() && more.desc().match(noMoreContent)) || (more.text() && more.text().match(noMoreContent))) {
             debugInfo('发现没有更多按钮，获取好友列表')
             // 加载完之后立即获取好友列表
             while (!gettingAtomic.compareAndSet(FREE_STATUS, GETTING_FRIENDS)) {
