@@ -836,6 +836,8 @@ function Ant_forest() {
     let iteratorStart = -1
     let QUEUE_SIZE = 4
     let queue = commonFunctions.createQueue(QUEUE_SIZE)
+    // 判断前等待，避免第一页识别出错
+    sleep(500)
     do {
       let pageStartPoint = new Date().getTime()
       WidgetUtils.waitRankListStable()
