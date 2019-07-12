@@ -119,7 +119,7 @@ const collectTargetFriend = function (fri) {
     return false
   }
 
-  if (WidgetUtils.widgetCheck('加为好友', 200)) {
+  if (WidgetUtils.widgetCheck('加为好友|返回我的森林', 200)) {
     errorInfo(name + ' TA已经把你删啦')
     // return
   } else {
