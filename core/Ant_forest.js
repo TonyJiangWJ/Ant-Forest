@@ -636,7 +636,7 @@ function Ant_forest(automator, unlock) {
               _config.put('timeoutLoadFriendList', dynamicTimeout)
               debugInfo('动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + _config.get('timeoutLoadFriendList'))
             }
-          } else if ((more.desc().match(loadMoreContent) || more.text().match(loadMoreContent))){
+          } else if ((more.desc() && more.desc().match(loadMoreContent)) || (more.text() && more.text().match(loadMoreContent))) {
             debugInfo('点击加载更多，热身中 速度较慢')
             more.click()
           } else {
