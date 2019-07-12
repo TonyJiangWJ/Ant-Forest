@@ -37,7 +37,7 @@ try {
  ***********************/
 logInfo('======检查更新======')
 // 检查更新
-engines.execScriptFile('./update.js')
+//engines.execScriptFile('./update.js')
 
 // 加载本地配置
 var config = storages.create('ant_forest_config')

@@ -581,6 +581,13 @@ function Ant_forest(automator, unlock) {
 
   // 识别可收取好友并记录
   const _find_and_collect = function () {
+    if (!WidgetUtils.friendListWaiting()) {
+      errorInfo('崩了 当前不在好友列表 重新开始')
+      return false
+    }
+    // 进入好友排行榜后睡眠半秒钟 避免第一页漏收
+    sleep(500)
+
     const FREE_STATUS = 0
     // 判断加载状态用
     const LOADING_STATUS = -1
@@ -590,6 +597,7 @@ function Ant_forest(automator, unlock) {
     const ANALYZE_FRIENDS = 1
     const GETTING_FRIENDS = 2
     // 好友列表有效性
+    const INIT_STATUS = -1
     const USED_STATUS = 0
     const UPDATED_STATUS = 1
 
@@ -597,11 +605,11 @@ function Ant_forest(automator, unlock) {
     let friendListLength = -2
     let totalVaildLength = 0
     debugInfo('加载好友列表')
-    let atomic = threads.atomic()
+    let atomic = threads.atomic(FREE_STATUS)
     // 控制是否继续获取好友列表
-    let gettingAtomic = threads.atomic()
+    let gettingAtomic = threads.atomic(FREE_STATUS)
     // 用来控制好友列表的获取，避免无限循环获取影响性能
-    let friendListAtomic = threads.atomic()
+    let friendListAtomic = threads.atomic(INIT_STATUS)
     let friends_list = null
     let loadThread = threads.start(function () {
       let preLoadStart = new Date().getTime()
@@ -629,7 +637,9 @@ function Ant_forest(automator, unlock) {
             let listLength = whetherFriendListValidLength(friends_list)
             if (listLength) {
               // 设置当前状态为已加载完成
-              debugInfo('找到了没有更多 old atomic status:[' + atomic.getAndSet(LOADED_STATUS) + ']')
+              debugInfo('找到了没有更多 old atomic status:[' + atomic.getAndSet(LOADED_STATUS) + ']'
+                + ' old friendListAtomic status:[' + friendListAtomic.getAndSet(UPDATED_STATUS) + ']'
+              )
               infoLog('预加载好友列表完成，耗时[' + (new Date().getTime() - preLoadStart) + ']ms 列表长度：' + listLength, true, true)
               // 动态修改预加载超时时间
               let dynamicTimeout = listLength * 30
@@ -670,22 +680,26 @@ function Ant_forest(automator, unlock) {
         friends_list = WidgetUtils.getFriendList()
         if (whetherFriendListValidLength(friends_list)) {
           friendListAtomic.compareAndSet(USED_STATUS, UPDATED_STATUS)
+          friendListAtomic.compareAndSet(INIT_STATUS, UPDATED_STATUS)
         }
         gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
         sleep(100)
       }
     })
-    if (!WidgetUtils.friendListWaiting()) {
-      errorInfo('崩了 当前不在好友列表 重新开始')
-      return false
-    }
+
     commonFunctions.addOpenPlacehold("<<<<>>>>")
     let errorCount = 0
     let iteratorStart = -1
     let QUEUE_SIZE = 4
     let queue = commonFunctions.createQueue(QUEUE_SIZE)
-    // 进入好友排行榜后睡眠半秒钟 避免第一页漏收
-    sleep(500)
+    let step = 0
+    while (friendListAtomic.get() === INIT_STATUS) {
+      sleep(10)
+      if (step % 500 === 0) {
+        warnInfo('好友列表未加载完成，继续等待...')
+      }
+      step += 10
+    }
     do {
       let pageStartPoint = new Date().getTime()
       WidgetUtils.waitRankListStable()
