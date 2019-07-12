@@ -412,7 +412,7 @@ function Ant_forest() {
 
   /**
    * 收集目标能量球能量
-   * 
+   *
    * @param {*} energy_ball 能量球对象
    * @param {boolean} isOwn 是否收集自身能量
    * @param {boolean} isDesc 是否是desc类型
@@ -693,7 +693,7 @@ function Ant_forest() {
 
   /**
    * 记录好友信息
-   * @param {Object} container 
+   * @param {Object} container
    */
   const recordAvailableList = function (container) {
     let temp = {}
@@ -713,8 +713,8 @@ function Ant_forest() {
 
   /**
    * 校验好友列表对象是否有效，有效则返回子控件长度
-   * 
-   * @param {Object} friends_list 
+   *
+   * @param {Object} friends_list
    */
   const whetherFriendListValidLength = function (friends_list) {
     return (friends_list && friends_list.children()) ? friends_list.children().length : undefined
@@ -758,7 +758,7 @@ function Ant_forest() {
         if ((more = idMatches(".*J_rank_list_more.*").findOne(200)) != null) {
           let loadMoreContent = config.load_more_ui_content || '查看更多'
           let noMoreContent = config.no_more_ui_content || '没有更多了'
-          if ((more.desc().match(noMoreContent) || more.text().match(noMoreContent))) {
+          if ((more.desc() && more.desc().match(noMoreContent)) || (more.text() && more.text().match(noMoreContent))) {
             debugInfo(threadName + '发现没有更多按钮，获取好友列表')
             // 加载完之后立即获取好友列表
             while (!gettingAtomic.compareAndSet(FREE_STATUS, GETTING_FRIENDS)) {
@@ -785,7 +785,7 @@ function Ant_forest() {
               // debugInfo('another config\'s timeoutLoadFriendList:[' + anotherConfig.timeoutLoadFriendList + ']')
               debugInfo(threadName + '动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + config.timeoutLoadFriendList)
             }
-          } else if ((more.desc().match(loadMoreContent) || more.text().match(loadMoreContent))) {
+          } else if ((more.desc() && more.desc().match(loadMoreContent)) || (more.text() && more.text().match(loadMoreContent))) {
             debugInfo(threadName + '点击加载更多，热身中 速度较慢')
             more.click()
           } else {
