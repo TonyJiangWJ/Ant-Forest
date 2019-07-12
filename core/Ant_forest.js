@@ -792,7 +792,7 @@ function Ant_forest() {
               // debugInfo('another config\'s timeoutLoadFriendList:[' + anotherConfig.timeoutLoadFriendList + ']')
               debugInfo(threadName + '动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + config.timeoutLoadFriendList)
             }
-          } else if ((more.desc().match(loadMoreContent) || more.text().match(loadMoreContent))) {
+          } else if ((more.desc() && more.desc().match(loadMoreContent)) || (more.text() && more.text().match(loadMoreContent))) {
             debugInfo(threadName + '点击加载更多，热身中 速度较慢')
             more.click()
           } else {
