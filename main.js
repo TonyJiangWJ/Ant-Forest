@@ -9,17 +9,19 @@ let {
   logInfo,
   infoLog,
   warnInfo,
-  errorInfo
+  errorInfo,
+  clearLog
 } = require('./lib/LogUtils.js')
 let { commonFunctions } = require('./lib/CommonFunctions.js')
 let { WidgetUtils } = require('./lib/WidgetUtils.js')
+let { formatDate } = require('./lib/DateUtil.js')
 /***********************
  * 初始化
  ***********************/
 logInfo('======校验是否重复运行=======')
 // 检查脚本是否重复运行
 commonFunctions.checkDuplicateRunning()
-
+clearLog()
 /***********************
  * 初始化
  ***********************/
