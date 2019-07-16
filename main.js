@@ -13,7 +13,7 @@ let { commonFunctions } = require('./lib/CommonFunction.js')
 let { unlocker } = require('./lib/Unlock.js')
 let { antForestRunner } = require('./core/Ant_forest.js')
 let { scheduler } = require('./lib/scheduler.js')
-
+let { formatDate } = require('./lib/DateUtil.js')
 logInfo('======校验是否重复运行=======')
 // 检查脚本是否重复运行
 commonFunctions.checkDuplicateRunning()
@@ -21,7 +21,6 @@ commonFunctions.checkDuplicateRunning()
 /***********************
  * 初始化
  ***********************/
-logInfo('======校验无障碍功能======')
 // 检查手机是否开启无障碍服务
 try {
   auto.waitFor()
