@@ -145,6 +145,9 @@ function Ant_forest() {
         let startTimestamp = new Date().getTime()
         // 监控 toast
         events.onToast(function (toast) {
+          if (toastDone) {
+            return
+          }
           if (
             toast &&
             toast.getPackageName() &&
@@ -491,8 +494,8 @@ function Ant_forest() {
         let bounds = energy_ball.bounds()
         let o_x = bounds.left,
           o_y = bounds.top,
-          o_w = bounds.width(),
-          o_h = bounds.height(),
+          o_w = bounds.width() + 20,
+          o_h = bounds.height() + 20,
           threshold = config.color_offset
         for (let color of colors)
           if (
@@ -510,7 +513,7 @@ function Ant_forest() {
           }
       })
       if (!helped && needHelp) {
-        warnInfo("未能找到帮收能量球需要增加匹配颜色组" + colors)
+        warnInfo(['未能找到帮收能量球需要增加匹配颜色组 当前{}', colors])
       }
       // 当数量大于等于6且帮助收取后，重新进入
       if (helped && length >= 6) {
@@ -670,6 +673,32 @@ function Ant_forest() {
     }
 
     let len = obj.childCount()
+    if (!config.is_cycle && len > 5) {
+      let countDO = obj.child(5)
+      if (countDO.childCount() > 0) {
+        let cc = countDO.child(0)
+        debugInfo(['获取[{}] 倒计时数据[{}] ', container.name, (cc.desc() ? cc.desc() : cc.text())])
+        let num = null
+        if (cc.desc()) {
+          num = parseInt(cc.desc().match(/\d+/))
+        }
+        if (!num && cc.text()) {
+          num = parseInt(cc.text().match(/\d+/))
+        }
+        if (isFinite(num)) {
+          debugInfo([
+            '记录[{}] 倒计时[{}]分 time[{}]',
+            container.name, num, new Date().getTime()
+          ])
+          container.countdown = {
+            count: num,
+            stamp: new Date().getTime()
+          }
+          return container
+        }
+
+      }
+    }
     let o_x = obj.child(len - 3).bounds().right,
       o_y = obj.bounds().top,
       o_w = 5,
@@ -1218,16 +1247,16 @@ function Ant_forest() {
   }
 
   const checkRunningCountdown = function (countingDownContainers) {
-    if (countingDownContainers.length > 0) {
-      debugInfo("倒计时中的好友数[" + countingDownContainers.length + "]")
+    if (!config.is_cycle && countingDownContainers.length > 0) {
+      debugInfo(['倒计时中的好友数[{}]', countingDownContainers.length])
       countingDownContainers.forEach((item, idx) => {
         let now = new Date()
         let stamp = item.countdown.stamp
         let count = item.countdown.count
         let passed = Math.round((now - stamp) / 60000.0)
         debugInfo([
-          '[{}]倒计时[{}]经过了[{}] 需要计时[{}]',
-          item.name, stamp, passed, count
+          '[{}]\t需要计时[{}]分\t经过了[{}]分\t计时时间戳[{}]',
+          item.name, count, passed, stamp
         ])
         if (passed >= count) {
           infoLog('[' + item.name + ']倒计时结束')
