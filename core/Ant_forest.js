@@ -13,6 +13,7 @@ function Ant_forest() {
   const _package_name = 'com.eg.android.AlipayGphone'
 
   let _pre_energy = 0, // 记录收取前能量值
+    _post_energy = 0, // 记录收取后能量值
     _timestamp = 0, // 记录获取自身能量倒计时
     _min_countdown = 0, // 最小可收取倒计时
     _current_time = 0, // 当前收集次数
@@ -263,7 +264,7 @@ function Ant_forest() {
 
   const calculateMinCountdown = function (lastMin, lastTimestamp) {
     let temp = []
-    if (isFinite(_min_countdown) && _timestamp instanceof Date) {
+    if (_min_countdown && isFinite(_min_countdown) && _timestamp instanceof Date) {
       debugInfo('已记录自身倒计时：' + _min_countdown + '分')
       let passedTime = Math.round((new Date() - _timestamp) / 60000)
       let countdown_own = _min_countdown - passedTime
@@ -298,6 +299,7 @@ function Ant_forest() {
     }
     temp = temp.filter(i => isFinite(i))
     let min = Math.min.apply(null, temp)
+    min = isFinite(min) ? min : undefined
     debugInfo('获取倒计时最小值：[' + min + ']分')
     return min
   }
@@ -802,10 +804,14 @@ function Ant_forest() {
             let listLength = whetherFriendListValidLength(friends_list)
             if (listLength) {
               // 设置当前状态为已加载完成
-              debugInfo(threadName + '找到了没有更多 old atomic status:[' + atomic.getAndSet(LOADED_STATUS) + ']'
-                + ' old friendListAtomic status:[' + friendListAtomic.getAndSet(UPDATED_STATUS) + ']'
-              )
-              infoLog(threadName + '预加载好友列表完成，耗时[' + (new Date().getTime() - preLoadStart) + ']ms 列表长度：' + listLength, true, true)
+              debugInfo([
+                threadName + '找到了没有更多 old atomic status:[{}] old friendListAtomic status:[{}]',
+                LOADING_STATUS_MAP[atomic.getAndSet(LOADED_STATUS)], FRIEND_LIST_STATUS_MAP[friendListAtomic.getAndSet(UPDATED_STATUS)]
+              ])
+              debugInfo([
+                threadName + '预加载好友列表完成，耗时[{}]ms 列表长度：[{}]',
+                (new Date().getTime() - preLoadStart), listLength
+              ], true)
               // 动态修改预加载超时时间
               let dynamicTimeout = Math.ceil(listLength / 20) * 800
               config.timeoutLoadFriendList = dynamicTimeout
@@ -824,7 +830,9 @@ function Ant_forest() {
           }
         }
         if (!atomic.compareAndSet(LOADING_STATUS, FREE_STATUS)) {
-          debugInfo(threadName + '更新预加载状态失败old status：' + atomic.get())
+          debugInfo([
+            threadName + '更新预加载状态atomic失败old status：[{}]', LOADING_STATUS_MAP[atomic.get()]
+          ])
         }
         sleep(150)
       }
@@ -853,15 +861,14 @@ function Ant_forest() {
         if (whetherFriendListValidLength(friends_list) >= 9) {
 
           if (friendListAtomic.compareAndSet(USED_STATUS, UPDATED_STATUS)) {
-            infoLog(['刷新列表成功 长度[{}]', friends_list.children().length])
+            debugInfo(['{}刷新列表成功 长度[{}]', threadName, friends_list.children().length])
           }
           if (friendListAtomic.compareAndSet(INIT_STATUS, UPDATED_STATUS)) {
-            infoLog(['初始化获取列表成功 长度[{}]', friends_list.children().length])
+            debugInfo(['{}初始化获取列表成功 长度[{}]', threadName, friends_list.children().length])
           }
         }
-        gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
         sleep(100)
-        debugInfo(threadName + '获取好友list完成')
+        debugInfo(['{}获取好友list完成 释放加载线程变量，原状态：[{}]', threadName, GETTING_STATUS_MAP[gettingAtomic.getAndSet(FREE_STATUS)]])
       }
     })
 
@@ -881,11 +888,14 @@ function Ant_forest() {
     let lastCheckedIndex = iteratorStart
     let lastValidCheckIdx = iteratorStart
     let stuckCount = 0
+    // 重新滑动的次数
+    let reScrollTime = 0
 
     let checkedList = []
     let saveDebugImage = config.save_debug_image//|| true
     let rootpath = '/storage/emulated/0/脚本/debugImages/'
     let countingDownContainers = []
+
     do {
       let screenDebugName = rootpath + formatDate(new Date(), 'HHmmss.S') + '.png'
       let pageStartPoint = new Date().getTime()
@@ -907,17 +917,26 @@ function Ant_forest() {
       if (saveDebugImage) {
         let p = new Date()
         images.save(screen, screenDebugName)
-        infoLog('saved image[' + screenDebugName + '] cost time[' + (new Date() - p) + ']ms')
+        infoLog([
+          'saved image[{}] cost time[{}]ms',
+          screenDebugName, (new Date() - p)
+        ])
       }
       let findStart = new Date().getTime()
+      let recheck = false
       while (!gettingAtomic.compareAndSet(FREE_STATUS, ANALYZE_FRIENDS)) {
+        if (gettingAtomic.get() === ANALYZE_FRIENDS) {
+          warnInfo('上次分析中发现问题，进行二次校验')
+          recheck = true
+          break
+        }
         // 等待获取完好友列表
         sleep(10)
       }
       lastCheckedIndex = iteratorStart
-      debugInfo('判断好友信息 last[' + lastCheckedIndex + '] start[' + iteratorStart + '] ')
+      debugInfo(['判断好友信息 last[{}] start[{}] ', lastCheckedIndex, iteratorStart])
       if (iteratorStart < lastValidCheckIdx) {
-        infoLog([
+        warnInfo([
           '上一次检测加载中，再来一遍 start[{}] lastValid[{}]',
           iteratorStart, lastValidCheckIdx
         ])
@@ -928,12 +947,23 @@ function Ant_forest() {
           '读取好友列表完成，开始检查可收取列表 列表长度:' + friendListLength
         )
         let iteratorEnd = -1
-        friends_list.children().forEach(function (fri, idx) {
-
+        let validChildList = friends_list.children().filter((fri) => {
+          return fri.childCount() >= 3
+        })
+        if (!(validChildList && validChildList.length > 0)) {
+          warnInfo(['未能获取好友列表 释放gettingAtomic', gettingAtomic.compareAndSet(ANALYZE_FRIENDS, FREE_STATUS)])
+          continue
+        }
+        totalValidLength = validChildList.length
+        debugInfo(['获取有效好友列表长度为：{}', totalValidLength])
+        validChildList.forEach(function (fri, idx) {
           let gap = Math.abs(idx - iteratorStart)
           if (idx <= iteratorStart || (iteratorEnd !== -1 && idx > iteratorEnd)) {
             if (gap < 5) {
-              debugInfo('[' + idx + ']跳出判断iteratorStart:[' + iteratorStart + '] iteratorEnd:[' + iteratorEnd + ']')
+              debugInfo([
+                '[{}]跳出判断iteratorStart:[{}] iteratorEnd:[{}]',
+                idx, iteratorStart, iteratorEnd
+              ])
             }
             return
           }
@@ -945,81 +975,118 @@ function Ant_forest() {
             return
           }
           if (fri.visibleToUser()) {
-            if (fri.childCount() >= 3) {
-              let bounds = fri.bounds()
-              let fh = bounds.bottom - bounds.top
-              if (fh > 10) {
-                let container = isObtainable(fri, screen)
-                if (container.canDo) {
-                  container.bounds = bounds
-                  recordAvailableList(container)
-                  debugInfo([
-                    '可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
-                  ])
-                } else {
-                  debugInfo([
-                    '不可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
-                  ])
-                  //debugInfo('不可收取 index:' + idx + ' name:' + container.name)
-                  totalValidLength = idx + 1
-                  if (container.countdown) {
-                    countingDownContainers.push(container)
-                  }
-                }
-                checkedList.push(idx)
-                // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
-                lastCheckFriend = idx + 1
-                iteratorStart = idx
+            let bounds = fri.bounds()
+            let fh = bounds.bottom - bounds.top
+            if (fh > 10) {
+              let container = isObtainable(fri, screen)
+              if (container.canDo) {
+                container.bounds = bounds
+                recordAvailableList(container)
+                debugInfo([
+                  '可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
+                ])
               } else {
-                if (gap <= 5) {
-                  debugInfo([
-                    'start[{}] 不在视野范围[{}] name:[{}] bounds[{}].png',
-                    iteratorStart, idx, WidgetUtils.getFriendsName(fri)
-                    , fri.bounds()
-                  ])
-                }
-                totalValidLength = idx + 1
-                if (idx > iteratorStart && iteratorEnd === -1) {
-                  iteratorEnd = idx
-                  debugInfo(["set end[{}]", idx])
+                debugInfo([
+                  '不可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
+                ])
+                //debugInfo('不可收取 index:' + idx + ' name:' + container.name)
+                if (container.countdown) {
+                  countingDownContainers.push(container)
                 }
               }
+              checkedList.push(idx)
+              // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
+              lastCheckFriend = idx + 1
+              iteratorStart = idx
             } else {
-              debugInfo(['不符合好友列表条件 childCount:[{}] index[{}]', fri.childCount(), idx])
+              if (gap <= 5) {
+                let flag = ~~(Math.random() * 1000)
+                if (recheck && saveDebugImage) {
+                  screen = captureScreen()
+                  screenDebugName = rootpath + commonFunctions.formatString(
+                    'start[{}] 不在视野范围[{}] name:[{}] bounds[{}]{}.png',
+                    iteratorStart, idx, WidgetUtils.getFriendsName(fri)
+                    , fri.bounds()
+                  )
+                  images.save(screen, screenDebugName)
+                }
+                debugInfo([
+                  'start[{}] 不在视野范围[{}] name:[{}] bounds[{}]{}.png',
+                  iteratorStart, idx, WidgetUtils.getFriendsName(fri)
+                  , fri.bounds(), flag
+                ])
+              }
+              if (idx > iteratorStart && iteratorEnd === -1) {
+                iteratorEnd = idx
+                debugInfo(["set end[{}]", idx])
+              }
             }
           } else {
             if (gap < 5) {
-              debugInfo(['start[{}]invisible [{}]不在视野范围', iteratorStart, idx])
-              screenDebugName = rootpath + commonFunctions.formatString('start[{}]invisible [{}]不在视野范围.png', iteratorStart, idx)
-              images.save(screen, screenDebugName)
+              let randomFlag = ~~(Math.random() * 1000)
+              debugInfo(['start[{}]invisible [{}]不在视野范围{}', iteratorStart, idx, randomFlag])
+              if (recheck && saveDebugImage) {
+                screen = captureScreen()
+                screenDebugName = rootpath + commonFunctions.formatString(
+                  'start[{}]invisible [{}]不在视野范围{}.png', iteratorStart, idx, randomFlag
+                )
+                images.save(screen, screenDebugName)
+              }
             }
-            totalValidLength = idx + 1
             if (idx > iteratorStart && iteratorEnd === -1) {
               iteratorEnd = idx
               debugInfo(["set end[{}]", idx])
             }
           }
         })
-        if (Math.abs(lastValidCheckIdx - iteratorEnd) <= 1) {
-          if (saveDebugImage) {
-            screen = captureScreen()
-            screenDebugName = rootpath +
-              commonFunctions.formatString(
-                'error-start{}-end{}-lastV{}.png',
-                iteratorStart, iteratorEnd, lastValidCheckIdx
-              )
-            images.save(screen, screenDebugName)
-          }
-          errorInfo(commonFunctions.formatString(
-            '滑动异常 start{}-end{}-lastV{}',
-            iteratorStart, iteratorEnd, lastValidCheckIdx
-          ))
-        }
         debugInfo(
           ['可收取列表获取完成 校验数量[{}]，开始收集 待收取列表长度:[{}]', lastCheckFriend, _avil_list.length]
         )
         let findEnd = new Date().getTime()
-        debugInfo(['检测好友列表可收取情况耗时：[{}]ms 设置状态为FREE 原始状态[{}]', (findEnd - findStart), GETTING_STATUS_MAP[gettingAtomic.getAndSet(FREE_STATUS)]])
+        debugInfo(['检测好友列表可收取情况耗时：[{}]ms ', (findEnd - findStart)])
+      } else {
+        logInfo('好友列表不存在')
+      }
+      if (!WidgetUtils.friendListWaiting()) {
+        errorInfo('崩了 当前不在好友列表 重新开始')
+        return false
+      }
+
+      if (
+        iteratorStart - lastCheckedIndex < 5
+        && stuckCount <= 5
+      ) {
+        debugInfo([
+          '校验数量[{}] 小于5 可能列表在加载中 不滑动 stuckCount:[{}]',
+          (iteratorStart - lastCheckedIndex), stuckCount
+        ])
+        if (stuckCount >= 3 && reScrollTime++ <= 3) {
+          warnInfo('卡死3次，不正常，将页面上划重新开始', true)
+          scrollUp()
+          stuckCount = 0
+        }
+        // 重新获取好友列表
+        friends_list = WidgetUtils.getFriendList()
+        let regetLength = whetherFriendListValidLength(friends_list)
+        warnInfo(['重新获取好友列表，获得列表长度[{}]', regetLength])
+        if (regetLength) {
+          let tmp = regetIteratorStartIdx(friends_list, iteratorStart, lastValidCheckIdx)
+          if (tmp >= 0) {
+            iteratorStart = tmp
+          } else {
+            warnInfo('未能找到首个可见item')
+          }
+        }
+        stuckCount += 1
+        iteratorEnd = -1
+        debugInfo('开始第二次分析')
+      } else {
+        reScrollTime = 0
+        debugInfo([
+          '释放加载线程变量gettingAtomic 原值[{}]',
+          GETTING_STATUS_MAP[gettingAtomic.getAndSet(FREE_STATUS)]
+        ])
+        // -------准备收集好友列表-------
         while (!atomic.compareAndSet(FREE_STATUS, COLLECT_STATUS)) {
           if (atomic.get() === LOADED_STATUS) {
             debugInfo('加载完毕直接退出等待')
@@ -1039,36 +1106,16 @@ function Ant_forest() {
         } else {
           debugInfo('无好友可收集能量')
         }
-        let setResult = atomic.compareAndSet(COLLECT_STATUS, FREE_STATUS)
-        debugInfo('收取好友后设置atomic：' + setResult)
-      } else {
-        logInfo('好友列表不存在')
-      }
-      if (!WidgetUtils.friendListWaiting()) {
-        errorInfo('崩了 当前不在好友列表 重新开始')
-        return false
-      }
-      // 重置为空列表
-      _avil_list = []
-      debugInfo(['收集完 lastCheckedIndex[{}] iteratorStart[{}]', lastCheckedIndex, iteratorStart])
-      debugInfo(['更新列表状态为已使用 old status:[{}]', FRIEND_LIST_STATUS_MAP[friendListAtomic.getAndSet(USED_STATUS)]])
-
-      if (
-        iteratorStart - lastCheckedIndex < 5
-        && stuckCount <= 5
-      ) {
+        debugInfo('收取好友后设置atomic：' + atomic.compareAndSet(COLLECT_STATUS, FREE_STATUS))
+        // 重置为空列表
+        _avil_list = []
+        debugInfo(['收集完 lastCheckedIndex[{}] iteratorStart[{}]', lastCheckedIndex, iteratorStart])
         debugInfo([
-          '校验数量[{}] 小于5 可能列表在加载中 不滑动 stuckCount:[{}]',
-          (iteratorStart - lastCheckedIndex), stuckCount
+          '更新列表状态为已使用 old status:[{}]',
+          FRIEND_LIST_STATUS_MAP[friendListAtomic.getAndSet(USED_STATUS)]
         ])
-        sleep(400)
-        let tmp = regetIteratorStartIdx(friends_list, iteratorStart, lastValidCheckIdx)
-        if (tmp >= 0) {
-          iteratorStart = tmp
-        }
-        stuckCount += 1
-        iteratorEnd = -1
-      } else {
+        // -------收集好友列表完成-------
+
         debugInfo(['下滑进入下一页 「{}」', stuckCount])
         stuckCount = 0
         // automator.scrollDown(config.scrollDownSpeed || 200)
@@ -1094,27 +1141,37 @@ function Ant_forest() {
       lastCheckFriend, totalValidLength, commonFunctions.getQueueDistinctSize(queue)
       , LOADING_STATUS_MAP[atomic.get()]
     ])
+    if (lostSomeOne) {
+      clearLogFile()
+    }
     loadThread.interrupt()
     preGetFriendListThread.interrupt()
   }
 
   const regetIteratorStartIdx = function (friends_list, iteratorStart, lastValidCheckIdx) {
     let found = false
+    let findError = false
     friends_list.children().forEach(function (fri, idx) {
-      if (idx < iteratorStart - 10 || found) {
+      if (idx < iteratorStart - 10 || found || findError) {
         // skip
         return
       }
       let bounds = fri.bounds()
       let fh = bounds.bottom - bounds.top
       if (fri.visibleToUser() && fh > 50) {
-        iteratorStart = idx + 1
+        if (idx > lastValidCheckIdx) {
+          // 获取的值过大重新获取，划动到上一页再获取
+          warnInfo(['获取的值过大重新获取，划动到上一页再获取 idx:{} lastValidCheckIdx:{}', idx, lastValidCheckIdx], true)
+          scrollUp()
+          findError = true
+        }
+        iteratorStart = idx
         let randomFileName = ~~(Math.random() * 1000)
-        infoLog([
+        debugInfo([
           '找到首个可见索引[{}] 从[{}]开始二次校验 跳过已校验索引<=[{}]{}',
           idx, iteratorStart, lastValidCheckIdx, randomFileName
         ])
-        let saveDebugImage = config.save_debug_image || true
+        let saveDebugImage = config.save_debug_image //|| true
         if (saveDebugImage) {
           let screenDebugName = '/storage/emulated/0/脚本/debugImages/' +
             commonFunctions.formatString(
@@ -1127,6 +1184,10 @@ function Ant_forest() {
         found = true
       }
     })
+    if (findError) {
+      warnInfo(['重新获取可见item信息 currentStart:[{}] lastValidCheckIdx:[{}]', iteratorStart, lastValidCheckIdx])
+      return regetIteratorStartIdx(friends_list, iteratorStart, lastValidCheckIdx)
+    }
     if (found) {
       return iteratorStart
     } else {

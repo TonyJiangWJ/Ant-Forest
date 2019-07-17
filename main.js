@@ -7,7 +7,7 @@
 
 let { config } = require('./config.js')
 let {
-  debugInfo, logInfo, infoLog, warnInfo, errorInfo
+  debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile
 } = require('./lib/LogUtils.js')
 let { commonFunctions } = require('./lib/CommonFunction.js')
 let { unlocker } = require('./lib/Unlock.js')
@@ -21,6 +21,7 @@ commonFunctions.checkDuplicateRunning()
 /***********************
  * 初始化
  ***********************/
+logInfo('======校验无障碍功能======')
 // 检查手机是否开启无障碍服务
 try {
   auto.waitFor()

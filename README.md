@@ -3,43 +3,15 @@
 基于 Autojs 的蚂蚁森林自动收能量脚本，采用  4.1.1 Alpha 版本开发。解锁模块参考自：https://github.com/e1399579/autojs
 
 - 经过测试小米mix2s可以使用4.0.4alpha版本,4.0.5alpha会报错
-- 找到最新版了 经过测试可以执行。建议下载该版本，可以直接设置定时任务，而不需要通过脚本中的定时启动方式。[AutoJs 4.1.1 alpha2下载](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0)
+- 找到最新版了 经过测试可以执行。建议下载该版本，可以直接设置定时任务，而不需要通过脚本中的定时启动方式。自备梯子：[AutoJs 4.1.1 alpha2下载](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0)
 
 ## 更新记录
+- 本项目从https://github.com/Nick-Hopps/Ant-Forest-autoscript fork而来，但是经过了各种改动，和原版功能差异较大
+- 历史版本下载可前往[RELEASES页面](https://github.com/TonyJiangWJ/Ant-Forest-autoscript/releases)
 
-- 2019/1/31 
-  - ~~发现识别能量罩时采用的函数不合适~~（使用了同步获取 toast 的方法，会卡住，已修正）
-  - ~~帮助好友收取时，默认所有能量球都各点击一遍，效率太低~~（已修正）
-  - 重构代码，添加注释
-- 2019/2/1
-  - ~~Toast 监听器超过10过导致报错~~（已修正）
-  - ~~帮助好友收取时有时候会失败~~（因为控件下方文字闪烁导致，已修正）
-  - 不限制监听器数量并且每次运行完成后清空监听器
-- 2019/2/2
-  - ~~自己的倒计时减为0时会结束收取而不是立马收取下一次~~（已修正）
-- 2019/2/5
-  - ~~实际运行中安卓7.0以下会报错~~（已修正）
-- 2019/2/24
-  - 多语言问题，繁体或者英文环境下判断字符不同（取消）
-  - ~~当收取次数设置为 0 次时，收取行为出错~~（已修正）
-  - ~~初次进入蚂蚁森林弹窗提醒添加至首页和合种信息~~（已修正）
-- 2019/3/5
-  - 重构了一下 Unlock 的内容，方便添加设备
-  - 由于基本所有设备解锁都有滑动层，因此去掉了判断是否有滑动层的代码
-  - 目前看来新版本效果不错，因此去掉了 old 版本的脚本
-  - 增加循环收取的功能
-- 2019/3/7
-  - 增加白名单功能
-  - 计算颜色相似度，修改默认颜色偏移量为50
-- 2019/3/13
-  - 定时执行
-  - 优化锁屏后sleep优先级降低导致的时间不准确问题
-- 2019/4/1
-  - 设定收集后自动锁屏
-  - 
 # 使用
 
-- 下载安装 [Autojs](https://github.com/hyb1996/Auto.js/releases) 之后把整个脚本项目放进 __"/sdcard/脚本/"__ 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
+- 下载安装 [AutoJs 4.1.1 alpha2下载](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0) 之后把整个脚本项目放进 __"/sdcard/脚本/"__ 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
 
 # 功能
 
@@ -50,6 +22,8 @@
 - 默认使用倒计时收取，可通过配置打开循环收取；
 - 根据设置选择是否帮助好友收取能量；
 - 根据白名单实现不收取特定好友能量；
+- 脚本运行时可以显示悬浮窗展示当前状态
+- 开始收集的时候按音量减可以延迟五分钟再执行，适合需要使用手机的时候使用
 - 收取完毕后悬浮框显示收取的能量数量。
 
 # 配置
@@ -57,80 +31,92 @@
 打开 config.js 后可以看到如下配置：
 
 ```javascript
-var config = {
+// 执行配置
+var default_config = {
   color_offset: 50,
-  password: "123456",
+  password: '',
   help_friend: true,
   is_cycle: false,
   cycle_times: 10,
+  // 是否永不停止，即倒计时信息不存在时 睡眠reactive_time之后重新开始收集
+  never_stop: false,
+  // 重新激活等待时间 单位分钟
+  reactive_time: 60,
   timeout_unlock: 1000,
   timeout_findOne: 1000,
   max_collect_repeat: 20,
-  max_collect_wait_time: 20,
-  white_list: ["好友1", "好友2"],
-  // 是否定时启动
-  auto_start: false,
-  auto_start_same_day: false,
-  /**
-   * 设置自动启动时间为 6:55:00
-   */
-  auto_start_hours: 6,
-  auto_start_minutes: 55,
-  auto_start_seconds: 0,
-  // 是否跳过低于五克的能量，避免频繁偷别人的
-  skip_five: true,
+  // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
+  show_small_floaty: true,
+  // 设置悬浮窗的位置，避免遮挡时间之类的 或者被刘海挡住，一般异形屏的min_floaty_y值需要设为负值
+  min_floaty_x: 150,
+  min_floaty_y: 20,
+  // 计时模式下 收集能量的最大等待时间 分钟
+  max_collect_wait_time: 60,
+  // 白名单列表，即不去收取他们的能量
+  white_list: [],
+  // 是否跳过低于五克的能量，避免频繁偷别人的 这个其实不好用 不建议开启
+  skip_five: false,
   // 是否显示调试日志信息
   show_debug_log: true,
   // 是否toast调试日志
   toast_debug_info: false,
-  // 是否在收集完成后根据收集前状态判断是否锁屏，非ROOT设备通过下拉状态栏中的锁屏按钮实现 需要配置锁屏按钮位置
+  // 是否在收集完成后根据收集前状态判断是否锁屏，非ROOT设备通过下拉状态栏中的锁屏按钮实现 需要配置锁屏按钮位置，仅仅测试MIUI的 其他系统可能没法用
+  // 可以自己研究研究之后 修改Automator.js中的lockScreen方法
   auto_lock: false,
   // 配置锁屏按钮位置
   lock_x: 150,
-  lock_y: 970
-};
+  lock_y: 970,
+
+}
+/**
+ * 非可视化控制的配置 通过手动修改config.js来实现配置
+ */
+let no_gui_config = {
+  // 设备高度 正常情况下device.height可以获取到
+  // deviceHeight: 2160,
+  // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间
+  timeoutLoadFriendList: 6000,
+  // 这个用于控制列表滑动是否稳定 不用去修改它
+  friendListStableCount: 3,
+  // 底部高度，比如有虚拟按键就需要修改这个值 设置比虚拟按键高度高就可以了
+  bottomHeight: 100,
+  // 是否使用模拟的滑动，如果滑动有问题开启这个
+  useCustomScrollDown: false,
+  // 排行榜列表下滑速度 100毫秒 仅仅针对useCustomScrollDown=true的情况
+  scrollDownSpeed: 100,
+  // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
+  helpBallColors: ['#f99236', '#f7af70'],
+  // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
+  saveLogFile: true
+}
+
+// UI配置 针对多语言环境 英文界面替换成相应的英文内容即可 建议还是用中文界面比较好
+var ui_config = {
+  home_ui_content: '背包|通知',
+  friend_home_ui_content: '浇水|发消息',
+  friend_list_ui_content: '好友排行榜',
+  no_more_ui_content: '没有更多了',
+  load_more_ui_content: '查看更多',
+  warting_widget_content: '浇水',
+  collectable_energy_ball_content: /.*\d+克/
+}
 ```
 
 其中：
-
-- color_offset：设置颜色识别的偏移量，如果识别失败可以尝试增加该值，默认为50，即80%的相似度；
-- password：手机解锁密码，如果是图形解锁则为图形经过的点对应的数字；
-- help_friend：设定是否帮助好友收取能量；
-- is_cycle: false：设定是否循环执行，开启后 max_collect_repeat 无效；
-- cycle_times: 10：设定循环执行次数，开启循环执行后有效；
-- timeout_unlock：解锁模块的延时，解锁操作过快导致出错时可修改，默认为1s；
-- timeout_findOne：控件搜索时最大搜索时间，找不到控件时可修改，默认为1s；
-- max_collect_repeat：脚本重复收取的最大次数；
-- max_collect_wait_time：等待好友收取能量倒计时的最大值；
-- white_list：白名单，将好友的 ID 添加到白名单实现不收取特定好友的能量。
-
----------
-- 结合最新版AutoJs 4.1.1 alpha2，可以不设置该项，使用软件中提供的定时执行功能即可
-- auto_start: 是否定时启动
-- auto_start_same_day: 自动启动的时间是否同一天
-- auto_start_hours minutes seconds: 自动启动的时间 
-
-因为autojs某些版本有问题 无法自动启动定时脚本 只能用这个方式在前一天开始一直运行直到第二天开始执行能量收集
-
------------
-- show_debug_log: 是否打印调试日志
-- toast_debug_info: 是否将调试信息toast显示
-- skip_five: true, 是否跳过低于五克的能量
-- auto_lock: false, 是否在收集完成后根据收集前状态判断是否锁屏，非ROOT设备通过下拉状态栏中的锁屏按钮实现 需要配置锁屏按钮位置
-  - 配置锁屏按钮位置 lock_x: 150,  lock_y: 970
+- `default_config`中的配置可以运行configGui.js来可视化修改，其他两个配置`no_gui_config`和`ui_config`需要通过修改config.js文件中的值
 
 # 添加解锁设备
 
 在 Unlock.js 中，按照以下格式扩展：
 
 ```javascript
-var Devices = { 
+var Devices = {
   device_1: function(obj) {
     this.__proto__ = obj;
 
     this.unlock = function(password) {
       if (typeof password !== "string") throw new Error("密码应为字符串！");
-      
+
       // 此处为解锁的代码
 
       return this.check_unlock();
@@ -162,5 +148,4 @@ var MyDevice = Devices.device_1;
 
 # 目前存在的问题
 
-- ~~autojs 在锁屏状态下由于软件优先度被降低导致 sleep() 函数时间不准确~~ (已优化delay代码 可以降低延迟)
 - MIUI10 默认锁屏主题解锁失败，修改成第三方主题可以解决
