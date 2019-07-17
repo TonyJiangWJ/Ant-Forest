@@ -7,13 +7,13 @@
 
 let { config } = require('./config.js')
 let {
-  debugInfo, logInfo, infoLog, warnInfo, errorInfo
+  debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile
 } = require('./lib/LogUtils.js')
 let { commonFunctions } = require('./lib/CommonFunction.js')
 let { unlocker } = require('./lib/Unlock.js')
 let { antForestRunner } = require('./core/Ant_forest.js')
 let { scheduler } = require('./lib/scheduler.js')
-
+let { formatDate } = require('./lib/DateUtil.js')
 logInfo('======校验是否重复运行=======')
 // 检查脚本是否重复运行
 commonFunctions.checkDuplicateRunning()

@@ -22,7 +22,8 @@ function Ant_forest() {
     _avil_list = [], // 可收取好友列表
     _collect_any = false, // 收集过能量
     reTry = 0,
-    increasedEnergy = 0
+    increasedEnergy = 0,
+    lostSomeOne = false // 是否漏收
   /***********************
    * 综合操作
    ***********************/
@@ -224,11 +225,11 @@ function Ant_forest() {
         }
       })
       _min_countdown = Math.min.apply(null, temp)
-      _timestamp = new Date()
     } else {
       _min_countdown = null
       logInfo('无可收取能量')
     }
+    _timestamp = new Date()
   }
 
   // 确定下一次收取倒计时
@@ -263,7 +264,7 @@ function Ant_forest() {
 
   const calculateMinCountdown = function (lastMin, lastTimestamp) {
     let temp = []
-    if (isFinite(_min_countdown) && _timestamp instanceof Date) {
+    if (_min_countdown && isFinite(_min_countdown) && _timestamp instanceof Date) {
       debugInfo('已记录自身倒计时：' + _min_countdown + '分')
       let passedTime = Math.round((new Date() - _timestamp) / 60000)
       let countdown_own = _min_countdown - passedTime
@@ -298,6 +299,7 @@ function Ant_forest() {
     }
     temp = temp.filter(i => isFinite(i))
     let min = Math.min.apply(null, temp)
+    min = isFinite(min) ? min : undefined
     debugInfo('获取倒计时最小值：[' + min + ']分')
     return min
   }
@@ -720,6 +722,22 @@ function Ant_forest() {
     return (friends_list && friends_list.children()) ? friends_list.children().length : undefined
   }
 
+  const LOADING_STATUS_MAP = {
+    '0': '空闲',
+    '-1': '加载中',
+    '1': '加载完成',
+    '2': '收取中'
+  }
+  const GETTING_STATUS_MAP = {
+    '0': '空闲',
+    '1': '检测可收取状态中',
+    '2': '获取好友列表中'
+  }
+  const FRIEND_LIST_STATUS_MAP = {
+    '0': '已使用',
+    '-1': '初始化',
+    '1': '已更新'
+  }
   // 识别可收取好友并记录
   const findAndCollect = function () {
     if (!WidgetUtils.friendListWaiting()) {
@@ -741,7 +759,7 @@ function Ant_forest() {
 
     let lastCheckFriend = -1
     let friendListLength = -2
-    let totalVaildLength = 0
+    let totalValidLength = 0
     debugInfo('加载好友列表')
     let atomic = threads.atomic(FREE_STATUS)
     // 控制是否继续获取好友列表
@@ -778,12 +796,16 @@ function Ant_forest() {
             let listLength = whetherFriendListValidLength(friends_list)
             if (listLength) {
               // 设置当前状态为已加载完成
-              debugInfo(threadName + '找到了没有更多 old atomic status:[' + atomic.getAndSet(LOADED_STATUS) + ']'
-                + ' old friendListAtomic status:[' + friendListAtomic.getAndSet(UPDATED_STATUS) + ']'
-              )
-              infoLog(threadName + '预加载好友列表完成，耗时[' + (new Date().getTime() - preLoadStart) + ']ms 列表长度：' + listLength, true, true)
+              debugInfo([
+                threadName + '找到了没有更多 old atomic status:[{}] old friendListAtomic status:[{}]',
+                LOADING_STATUS_MAP[atomic.getAndSet(LOADED_STATUS)], FRIEND_LIST_STATUS_MAP[friendListAtomic.getAndSet(UPDATED_STATUS)]
+              ])
+              debugInfo([
+                threadName + '预加载好友列表完成，耗时[{}]ms 列表长度：[{}]',
+                (new Date().getTime() - preLoadStart), listLength
+              ], true)
               // 动态修改预加载超时时间
-              let dynamicTimeout = listLength * 30
+              let dynamicTimeout = Math.ceil(listLength / 20) * 800
               config.timeoutLoadFriendList = dynamicTimeout
               let { storage_name } = require('../config.js')
               var configStorage = storages.create(storage_name)
@@ -800,7 +822,9 @@ function Ant_forest() {
           }
         }
         if (!atomic.compareAndSet(LOADING_STATUS, FREE_STATUS)) {
-          debugInfo(threadName + '更新预加载状态失败old status：' + atomic.get())
+          debugInfo([
+            threadName + '更新预加载状态atomic失败old status：[{}]', LOADING_STATUS_MAP[atomic.get()]
+          ])
         }
         sleep(150)
       }
@@ -826,13 +850,17 @@ function Ant_forest() {
         }
         debugInfo(threadName + '正获取好友list中')
         friends_list = WidgetUtils.getFriendList()
-        if (whetherFriendListValidLength(friends_list)) {
-          friendListAtomic.compareAndSet(USED_STATUS, UPDATED_STATUS)
-          friendListAtomic.compareAndSet(INIT_STATUS, UPDATED_STATUS)
+        if (whetherFriendListValidLength(friends_list) >= 9) {
+
+          if (friendListAtomic.compareAndSet(USED_STATUS, UPDATED_STATUS)) {
+            debugInfo(['{}刷新列表成功 长度[{}]', threadName, friends_list.children().length])
+          }
+          if (friendListAtomic.compareAndSet(INIT_STATUS, UPDATED_STATUS)) {
+            debugInfo(['{}初始化获取列表成功 长度[{}]', threadName, friends_list.children().length])
+          }
         }
-        gettingAtomic.compareAndSet(GETTING_FRIENDS, FREE_STATUS)
         sleep(100)
-        debugInfo(threadName + '获取好友list完成')
+        debugInfo(['{}获取好友list完成 释放加载线程变量，原状态：[{}]', threadName, GETTING_STATUS_MAP[gettingAtomic.getAndSet(FREE_STATUS)]])
       }
     })
 
@@ -849,9 +877,20 @@ function Ant_forest() {
       }
       step += 10
     }
+    let lastCheckedIndex = iteratorStart
+    let lastValidCheckIdx = iteratorStart
+    let stuckCount = 0
+    // 重新滑动的次数
+    let reScrollTime = 0
+
+    let checkedList = []
+    let saveDebugImage = config.save_debug_image//|| true
+    let rootpath = '/storage/emulated/0/脚本/debugImages/'
+    let countingDownContainers = []
+
     do {
+      let screenDebugName = rootpath + formatDate(new Date(), 'HHmmss.S') + '.png'
       let pageStartPoint = new Date().getTime()
-      let lastCheckedIndex = lastCheckFriend
       WidgetUtils.waitRankListStable()
       let screen = null
       commonFunctions.waitFor(function () {
@@ -867,64 +906,179 @@ function Ant_forest() {
         warnInfo('获取截图失败 再试一次')
         continue
       }
+      if (saveDebugImage) {
+        let p = new Date()
+        images.save(screen, screenDebugName)
+        infoLog([
+          'saved image[{}] cost time[{}]ms',
+          screenDebugName, (new Date() - p)
+        ])
+      }
       let findStart = new Date().getTime()
+      let recheck = false
       while (!gettingAtomic.compareAndSet(FREE_STATUS, ANALYZE_FRIENDS)) {
+        if (gettingAtomic.get() === ANALYZE_FRIENDS) {
+          warnInfo('上次分析中发现问题，进行二次校验')
+          recheck = true
+          break
+        }
         // 等待获取完好友列表
         sleep(10)
       }
-      debugInfo('判断好友信息')
+      lastCheckedIndex = iteratorStart
+      debugInfo(['判断好友信息 last[{}] start[{}] ', lastCheckedIndex, iteratorStart])
+      if (iteratorStart < lastValidCheckIdx) {
+        warnInfo([
+          '上一次检测加载中，再来一遍 start[{}] lastValid[{}]',
+          iteratorStart, lastValidCheckIdx
+        ])
+      }
       if (friends_list && friends_list.children) {
         friendListLength = friends_list.children().length
         debugInfo(
           '读取好友列表完成，开始检查可收取列表 列表长度:' + friendListLength
         )
         let iteratorEnd = -1
-        friends_list.children().forEach(function (fri, idx) {
+        let validChildList = friends_list.children().filter((fri) => {
+          return fri.childCount() >= 3
+        })
+        if (!(validChildList && validChildList.length > 0)) {
+          warnInfo(['未能获取好友列表 释放gettingAtomic', gettingAtomic.compareAndSet(ANALYZE_FRIENDS, FREE_STATUS)])
+          continue
+        }
+        totalValidLength = validChildList.length
+        debugInfo(['获取有效好友列表长度为：{}', totalValidLength])
+        validChildList.forEach(function (fri, idx) {
+          let gap = Math.abs(idx - iteratorStart)
           if (idx <= iteratorStart || (iteratorEnd !== -1 && idx > iteratorEnd)) {
-            //debugInfo('[' + idx + ']跳出判断iteratorStart:[' + iteratorStart + '] iteratorEnd:[' + iteratorEnd + ']')
+            if (gap < 5) {
+              debugInfo([
+                '[{}]跳出判断iteratorStart:[{}] iteratorEnd:[{}]',
+                idx, iteratorStart, iteratorEnd
+              ])
+            }
+            return
+          }
+          if (idx <= lastValidCheckIdx) {
+            debugInfo([
+              '已经校验[{}] 跳过识别', idx
+            ])
+            iteratorStart = idx
             return
           }
           if (fri.visibleToUser()) {
-            if (fri.childCount() >= 3) {
-              let bounds = fri.bounds()
-              let fh = bounds.bottom - bounds.top
-              if (fh > 10) {
-                let container = isObtainable(fri, screen)
-                if (container.canDo) {
-                  container.bounds = bounds
-                  recordAvailableList(container)
-                  debugInfo('可收取 index:' + idx + ' name:' + container.name)
-                } else {
-                  debugInfo('不可收取 index:' + idx + ' name:' + container.name)
-                  totalVaildLength = idx + 1
-                }
-                // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
-                lastCheckFriend = idx + 1
-                iteratorStart = idx
+            let bounds = fri.bounds()
+            let fh = bounds.bottom - bounds.top
+            if (fh > 10) {
+              let container = isObtainable(fri, screen)
+              if (container.canDo) {
+                container.bounds = bounds
+                recordAvailableList(container)
+                debugInfo([
+                  '可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
+                ])
               } else {
-                //debugInfo('不在视野范围' + idx + ' name:' + WidgetUtils.getFriendsName(fri))
-                totalVaildLength = idx + 1
-                if (idx > iteratorStart && iteratorEnd === -1) {
-                  iteratorEnd = idx
+                debugInfo([
+                  '不可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
+                ])
+                //debugInfo('不可收取 index:' + idx + ' name:' + container.name)
+                if (container.countdown) {
+                  countingDownContainers.push(container)
                 }
               }
+              checkedList.push(idx)
+              // 记录最后一个校验的下标索引, 也就是最后出现在视野中的
+              lastCheckFriend = idx + 1
+              iteratorStart = idx
             } else {
-              debugInfo('不符合好友列表条件 childCount:' + fri.childCount() + ' index:' + idx)
+              if (gap <= 5) {
+                let flag = ~~(Math.random() * 1000)
+                if (recheck && saveDebugImage) {
+                  screen = captureScreen()
+                  screenDebugName = rootpath + commonFunctions.formatString(
+                    'start[{}] 不在视野范围[{}] name:[{}] bounds[{}]{}.png',
+                    iteratorStart, idx, WidgetUtils.getFriendsName(fri)
+                    , fri.bounds()
+                  )
+                  images.save(screen, screenDebugName)
+                }
+                debugInfo([
+                  'start[{}] 不在视野范围[{}] name:[{}] bounds[{}]{}.png',
+                  iteratorStart, idx, WidgetUtils.getFriendsName(fri)
+                  , fri.bounds(), flag
+                ])
+              }
+              if (idx > iteratorStart && iteratorEnd === -1) {
+                iteratorEnd = idx
+                debugInfo(["set end[{}]", idx])
+              }
             }
           } else {
-            //debugInfo("不可见" + idx)
-            totalVaildLength = idx + 1
+            if (gap < 5) {
+              let randomFlag = ~~(Math.random() * 1000)
+              debugInfo(['start[{}]invisible [{}]不在视野范围{}', iteratorStart, idx, randomFlag])
+              if (recheck && saveDebugImage) {
+                screen = captureScreen()
+                screenDebugName = rootpath + commonFunctions.formatString(
+                  'start[{}]invisible [{}]不在视野范围{}.png', iteratorStart, idx, randomFlag
+                )
+                images.save(screen, screenDebugName)
+              }
+            }
             if (idx > iteratorStart && iteratorEnd === -1) {
               iteratorEnd = idx
+              debugInfo(["set end[{}]", idx])
             }
           }
         })
         debugInfo(
-          '可收取列表获取完成 校验数量' + lastCheckFriend + '，开始收集 待收取列表长度:' + _avil_list.length
+          ['可收取列表获取完成 校验数量[{}]，开始收集 待收取列表长度:[{}]', lastCheckFriend, _avil_list.length]
         )
-        debugInfo('检测完：' + gettingAtomic.getAndSet(FREE_STATUS))
         let findEnd = new Date().getTime()
-        debugInfo('检测好友列表可收取情况耗时：[' + (findEnd - findStart) + ']ms')
+        debugInfo(['检测好友列表可收取情况耗时：[{}]ms ', (findEnd - findStart)])
+      } else {
+        logInfo('好友列表不存在')
+      }
+      if (!WidgetUtils.friendListWaiting()) {
+        errorInfo('崩了 当前不在好友列表 重新开始')
+        return false
+      }
+
+      if (
+        iteratorStart - lastCheckedIndex < 5
+        && stuckCount <= 5
+      ) {
+        debugInfo([
+          '校验数量[{}] 小于5 可能列表在加载中 不滑动 stuckCount:[{}]',
+          (iteratorStart - lastCheckedIndex), stuckCount
+        ])
+        if (stuckCount >= 3 && reScrollTime++ <= 3) {
+          warnInfo('卡死3次，不正常，将页面上划重新开始', true)
+          scrollUp()
+          stuckCount = 0
+        }
+        // 重新获取好友列表
+        friends_list = WidgetUtils.getFriendList()
+        let regetLength = whetherFriendListValidLength(friends_list)
+        warnInfo(['重新获取好友列表，获得列表长度[{}]', regetLength])
+        if (regetLength) {
+          let tmp = regetIteratorStartIdx(friends_list, iteratorStart, lastValidCheckIdx)
+          if (tmp >= 0) {
+            iteratorStart = tmp
+          } else {
+            warnInfo('未能找到首个可见item')
+          }
+        }
+        stuckCount += 1
+        iteratorEnd = -1
+        debugInfo('开始第二次分析')
+      } else {
+        reScrollTime = 0
+        debugInfo([
+          '释放加载线程变量gettingAtomic 原值[{}]',
+          GETTING_STATUS_MAP[gettingAtomic.getAndSet(FREE_STATUS)]
+        ])
+        // -------准备收集好友列表-------
         while (!atomic.compareAndSet(FREE_STATUS, COLLECT_STATUS)) {
           if (atomic.get() === LOADED_STATUS) {
             debugInfo('加载完毕直接退出等待')
@@ -944,35 +1098,136 @@ function Ant_forest() {
         } else {
           debugInfo('无好友可收集能量')
         }
-        let setResult = atomic.compareAndSet(COLLECT_STATUS, FREE_STATUS)
-        debugInfo('收取好友后设置atomic：' + setResult)
-      } else {
-        logInfo('好友列表不存在')
-      }
-      if (!WidgetUtils.friendListWaiting()) {
-        errorInfo('崩了 当前不在好友列表 重新开始')
-        return false
-      }
-      // 重置为空列表
-      _avil_list = []
-      debugInfo('收集完成 last:' + lastCheckFriend + '，下滑进入下一页')
-      if (lastCheckFriend - lastCheckedIndex < 5) {
-        debugInfo('校验数量[' + (lastCheckFriend - lastCheckedIndex) + '] 小于5 可能列表在加载中 不滑动')
-      } else {
-        debugInfo('下滑进入下一页 更新列表状态为已使用 old status:' + friendListAtomic.getAndSet(USED_STATUS))
-        automator.scrollDown(config.scrollDownSpeed || 200)
-        debugInfo('进入下一页, 本页耗时：[' + (new Date().getTime() - pageStartPoint) + ']ms')
-        debugInfo('add [' + lastCheckFriend + '] into queue, distinct size:[' + commonFunctions.getQueueDistinctSize(queue) + ']')
+        debugInfo('收取好友后设置atomic：' + atomic.compareAndSet(COLLECT_STATUS, FREE_STATUS))
+        // 重置为空列表
+        _avil_list = []
+        debugInfo(['收集完 lastCheckedIndex[{}] iteratorStart[{}]', lastCheckedIndex, iteratorStart])
+        debugInfo([
+          '更新列表状态为已使用 old status:[{}]',
+          FRIEND_LIST_STATUS_MAP[friendListAtomic.getAndSet(USED_STATUS)]
+        ])
+        // -------收集好友列表完成-------
+
+        debugInfo(['下滑进入下一页 「{}」', stuckCount])
+        stuckCount = 0
+        // automator.scrollDown(config.scrollDownSpeed || 200)
+        scrollDown()
+        debugInfo(['进入下一页, stuckCount[{}], 本页耗时：[{}]ms', stuckCount, (new Date().getTime() - pageStartPoint)])
+        debugInfo(['add [{}] into queue, distinct size:[{}]', lastCheckFriend, commonFunctions.getQueueDistinctSize(queue)])
         commonFunctions.pushQueue(queue, QUEUE_SIZE, lastCheckFriend)
+        lastValidCheckIdx = iteratorStart
       }
     } while (
-      (atomic.get() !== LOADED_STATUS || lastCheckFriend < totalVaildLength) && commonFunctions.getQueueDistinctSize(queue) > 1
+      (
+        atomic.get() !== LOADED_STATUS
+        || friendListLength !== whetherFriendListValidLength(friends_list)
+        || friendListAtomic.get() !== USED_STATUS
+        || lastCheckFriend < totalValidLength
+      ) && commonFunctions.getQueueDistinctSize(queue) > 1
     )
+    lostSomeOne = checkIsEveryFriendChecked(checkedList, totalValidLength)
+    checkRunningCountdown(countingDownContainers)
     commonFunctions.addClosePlacehold(">>>><<<<")
-    logInfo('全部好友收集完成, last:' + lastCheckFriend + ' length:' + totalVaildLength + ' queueSize:' + commonFunctions.getQueueDistinctSize(queue))
+    logInfo([
+      '全部好友收集完成, last:[{}] length:[{}] queueSize:[{}] finalLoadStatus[{}]',
+      lastCheckFriend, totalValidLength, commonFunctions.getQueueDistinctSize(queue)
+      , LOADING_STATUS_MAP[atomic.get()]
+    ])
+    if (lostSomeOne) {
+      clearLogFile()
+    }
     loadThread.interrupt()
     preGetFriendListThread.interrupt()
   }
+
+  const regetIteratorStartIdx = function (friends_list, iteratorStart, lastValidCheckIdx) {
+    let found = false
+    let findError = false
+    friends_list.children().forEach(function (fri, idx) {
+      if (idx < iteratorStart - 10 || found || findError) {
+        // skip
+        return
+      }
+      let bounds = fri.bounds()
+      let fh = bounds.bottom - bounds.top
+      if (fri.visibleToUser() && fh > 50) {
+        if (idx > lastValidCheckIdx) {
+          // 获取的值过大重新获取，划动到上一页再获取
+          warnInfo(['获取的值过大重新获取，划动到上一页再获取 idx:{} lastValidCheckIdx:{}', idx, lastValidCheckIdx], true)
+          scrollUp()
+          findError = true
+        }
+        iteratorStart = idx
+        let randomFileName = ~~(Math.random() * 1000)
+        debugInfo([
+          '找到首个可见索引[{}] 从[{}]开始二次校验 跳过已校验索引<=[{}]{}',
+          idx, iteratorStart, lastValidCheckIdx, randomFileName
+        ])
+        let saveDebugImage = config.save_debug_image //|| true
+        if (saveDebugImage) {
+          let screenDebugName = '/storage/emulated/0/脚本/debugImages/' +
+            commonFunctions.formatString(
+              '找到首个可见索引[{}] 从[{}]开始二次校验 跳过已校验索引<=[{}]{}.png',
+              idx, iteratorStart, lastValidCheckIdx, randomFileName
+            )
+          screen = captureScreen()
+          images.save(screen, screenDebugName)
+        }
+        found = true
+      }
+    })
+    if (findError) {
+      warnInfo(['重新获取可见item信息 currentStart:[{}] lastValidCheckIdx:[{}]', iteratorStart, lastValidCheckIdx])
+      return regetIteratorStartIdx(friends_list, iteratorStart, lastValidCheckIdx)
+    }
+    if (found) {
+      return iteratorStart
+    } else {
+      return -1
+    }
+  }
+
+  const checkIsEveryFriendChecked = function (checkedList, totalValidLength) {
+    debugInfo('校验好友数量[' + checkedList.length + ']')
+    checkedList = checkedList.reduce((a, b) => {
+      if (a.indexOf(b) < 0) {
+        a.push(b)
+      }
+      return a
+    }, [])
+    debugInfo('去重复后数量[' + checkedList.length + ']')
+    let vibrated = false
+    for (let i = 0; i < totalValidLength; i++) {
+      if (checkedList.indexOf(i) < 0) {
+        errorInfo('未校验[' + i + '] 可能存在漏收', !vibrated)
+        if (!vibrated) {
+          device.vibrate(200)
+          vibrated = true
+        }
+      }
+    }
+    return vibrated
+  }
+
+  const checkRunningCountdown = function (countingDownContainers) {
+    if (countingDownContainers.length > 0) {
+      debugInfo("倒计时中的好友数[" + countingDownContainers.length + "]")
+      countingDownContainers.forEach((item, idx) => {
+        let now = new Date()
+        let stamp = item.countdown.stamp
+        let count = item.countdown.count
+        let passed = Math.round((now - stamp) / 60000.0)
+        debugInfo([
+          '[{}]倒计时[{}]经过了[{}] 需要计时[{}]',
+          item.name, stamp, passed, count
+        ])
+        if (passed >= count) {
+          infoLog('[' + item.name + ']倒计时结束')
+        }
+      })
+    }
+  }
+
 
 
   /***********************
@@ -1069,10 +1324,14 @@ function Ant_forest() {
         while (true) {
           _collect_any = false
           increasedEnergy = 0
-          if (_min_countdown > 0 && !config.is_cycle) {
-            // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
-            commonFunctions.setUpAutoStart(_min_countdown)
-            commonFunctions.commonDelay(_min_countdown)
+          if (lostSomeOne) {
+            warnInfo('上一次收取有漏收，再次收集', true)
+          } else {
+            if (_min_countdown > 0 && !config.is_cycle) {
+              // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
+              commonFunctions.setUpAutoStart(_min_countdown)
+              commonFunctions.commonDelay(_min_countdown)
+            }
           }
           listenDelayCollect()
           commonFunctions.showEnergyInfo()
@@ -1092,7 +1351,7 @@ function Ant_forest() {
             _has_next = true
             reTry = 0
           }
-          if (config.auto_lock === true && unlocker.needRelock() === true) {
+          if (!config.is_cycle && !lostSomeOne && config.auto_lock === true && unlocker.needRelock() === true) {
             debugInfo('重新锁定屏幕')
             automator.lockScreen()
           }
