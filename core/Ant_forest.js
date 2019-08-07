@@ -21,9 +21,9 @@ function Ant_forest() {
     _has_next = true, // 是否下一次运行
     _avil_list = [], // 可收取好友列表
     _collect_any = false, // 收集过能量
-    reTry = 0,
-    increasedEnergy = 0,
-    lostSomeOne = false // 是否漏收
+    _re_try = 0,
+    _increased_energy = 0,
+    _lost_some_one = false // 是否漏收
   /***********************
    * 综合操作
    ***********************/
@@ -404,8 +404,8 @@ function Ant_forest() {
     } else {
       showCollectSummaryFloaty()
     }
-    // 循环模式不返回home
-    if (!config.is_cycle || !_has_next) {
+    // 循环模式、或者有漏收 不返回home
+    if ((!config.is_cycle || !_has_next) && !_lost_some_one) {
       automator.clickClose()
       home()
     }
@@ -525,11 +525,15 @@ function Ant_forest() {
   // 判断并记录保护罩
   const recordProtected = function (toast) {
     if (toast.indexOf('能量罩') > 0) {
-      let title = textContains('的蚂蚁森林')
-        .findOne(config.timeout_findOne)
-        .text()
-      commonFunctions.addNameToProtect(title.substring(0, title.indexOf('的')))
+      recordCurrentProtected()
     }
+  }
+
+  const recordCurrentProtected = function () {
+    let title = textContains('的蚂蚁森林')
+      .findOne(config.timeout_findOne)
+      .text()
+    commonFunctions.addNameToProtect(title.substring(0, title.indexOf('的')))
   }
 
   // 检测能量罩
@@ -543,6 +547,47 @@ function Ant_forest() {
       })
     })
   }
+
+  const protectInfoDetect = function () {
+  let usingInfo = WidgetUtils.widgetGetOne('使用了保护罩', 50, true)
+  if (usingInfo !== null) {
+    let target = usingInfo.target
+    debugInfo(['found using protect info, bounds:{}', target.bounds()], true)
+    let parent = target.parent().parent()
+    let targetRow = parent.row()
+    let time = parent.child(1).text()
+    if (!time) {
+      time = parent.child(1).desc()
+    }
+    let isToday = true
+    let yesterday = WidgetUtils.widgetGetOne('昨天', 50, true)
+    let yesterdayRow = null
+    if (yesterday !== null) {
+      yesterdayRow = yesterday.target.row()
+      // warnInfo(yesterday.target.indexInParent(), true)
+      isToday = yesterdayRow > targetRow
+    }
+    if (!isToday) {
+      // 获取前天的日期
+      let dateBeforeYesterday = formatDate(new Date(new Date().getTime() - 3600 * 24 * 1000 * 2), 'MM-dd')
+      let dayBeforeYesterday = WidgetUtils.widgetGetOne(dateBeforeYesterday, 50, true)
+      if (dayBeforeYesterday !== null) {
+        let dayBeforeYesterdayRow = dayBeforeYesterday.target.row()
+        if (dayBeforeYesterdayRow < targetRow) {
+          debugInfo('能量罩使用时间已超时，前天之前的数据')
+          return false
+        } else {
+          debugInfo(['前天row:{}', dayBeforeYesterdayRow])
+        }
+      }
+    }
+    debugInfo(['using time:{}-{} bottoms: y[{}] t[{}]', isToday ? '今天' : '昨天', time, yesterdayRow, targetRow], true)
+    return true
+  } else {
+    debugInfo('not found using protect info', true)
+  }
+  return false
+}
 
   const collectTargetFriend = function (obj) {
     let rentery = false
@@ -569,6 +614,10 @@ function Ant_forest() {
       if (restartLoop) {
         errorInfo('页面流程出错，重新开始')
         return false
+      }
+      if (protectInfoDetect()) {
+        warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
+        return
       }
       debugInfo('准备开始收取')
       let preGot
@@ -605,8 +654,8 @@ function Ant_forest() {
             } catch (e) {
               errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + config.wateringThresold + ' 回馈浇水失败 ' + e)
             }
-            increasedEnergy += gotEnergy
-            showCollectSummaryFloaty(increasedEnergy)
+            _increased_energy += gotEnergy
+            showCollectSummaryFloaty(_increased_energy)
           } else {
             debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
 
@@ -924,11 +973,23 @@ function Ant_forest() {
     let saveDebugImage = config.save_debug_image//|| true
     let rootpath = '/storage/emulated/0/脚本/debugImages/'
     let countingDownContainers = []
-
     do {
       let screenDebugName = rootpath + formatDate(new Date(), 'HHmmss.S') + '.png'
       let pageStartPoint = new Date().getTime()
       WidgetUtils.waitRankListStable()
+      
+      let findStart = new Date().getTime()
+      let recheck = false
+      while (!gettingAtomic.compareAndSet(FREE_STATUS, ANALYZE_FRIENDS)) {
+        if (gettingAtomic.get() === ANALYZE_FRIENDS) {
+          warnInfo('上次分析中发现问题，进行二次校验')
+          recheck = true
+          break
+        }
+        // 等待获取完好友列表
+        sleep(10)
+      }
+      // 获取截图 用于判断是否可收取
       let screen = null
       commonFunctions.waitFor(function () {
         screen = captureScreen()
@@ -950,17 +1011,6 @@ function Ant_forest() {
           'saved image[{}] cost time[{}]ms',
           screenDebugName, (new Date() - p)
         ])
-      }
-      let findStart = new Date().getTime()
-      let recheck = false
-      while (!gettingAtomic.compareAndSet(FREE_STATUS, ANALYZE_FRIENDS)) {
-        if (gettingAtomic.get() === ANALYZE_FRIENDS) {
-          warnInfo('上次分析中发现问题，进行二次校验')
-          recheck = true
-          break
-        }
-        // 等待获取完好友列表
-        sleep(10)
       }
       lastCheckedIndex = iteratorStart
       debugInfo(['判断好友信息 last[{}] start[{}] ', lastCheckedIndex, iteratorStart])
@@ -1162,7 +1212,18 @@ function Ant_forest() {
         || lastCheckFriend < totalValidLength
       ) && commonFunctions.getQueueDistinctSize(queue) > 1
     )
-    lostSomeOne = checkIsEveryFriendChecked(checkedList, totalValidLength)
+    debugInfo(['校验收尾'])
+    if (_avil_list.length > 0) {
+      debugInfo(['有未收集的可收取能量'])
+      if (false == collectAvailableList()) {
+        errorInfo('流程出错 向上抛出')
+        return false
+      }
+    } else {
+      debugInfo('无好友可收集能量')
+    }
+
+    _lost_some_one = checkIsEveryFriendChecked(checkedList, totalValidLength)
     checkRunningCountdown(countingDownContainers)
     commonFunctions.addClosePlacehold(">>>><<<<")
     logInfo([
@@ -1170,7 +1231,7 @@ function Ant_forest() {
       lastCheckFriend, totalValidLength, commonFunctions.getQueueDistinctSize(queue)
       , LOADING_STATUS_MAP[atomic.get()]
     ])
-    if (lostSomeOne) {
+    if (_lost_some_one) {
       clearLogFile()
     }
     loadThread.interrupt()
@@ -1260,6 +1321,8 @@ function Ant_forest() {
         ])
         if (passed >= count) {
           infoLog('[' + item.name + ']倒计时结束')
+          // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
+          _lost_some_one = true
         }
       })
     }
@@ -1276,6 +1339,7 @@ function Ant_forest() {
     commonFunctions.addOpenPlacehold('开始收集自己能量')
     let restartCount = 0
     let waitFlag
+    let startWait = 1000
     startApp()
     if (!config.is_cycle) {
       // 首次启动等待久一点
@@ -1286,13 +1350,14 @@ function Ant_forest() {
       automator.clickClose()
       debugInfo('关闭H5')
       if (restartCount >= 3) {
+        startWait += 200 * restartCount
         home()
       }
       sleep(1000)
       // 解锁并启动
       unlocker.exec()
       startApp()
-      sleep(1000)
+      sleep(startWait)
     }
     if (!waitFlag && restartCount >= 5) {
       logInfo('退出脚本')
@@ -1324,7 +1389,7 @@ function Ant_forest() {
       _has_next = true
       _current_time = _current_time == 0 ? 0 : _current_time - 1
       errorInfo('收集好友能量失败，重新开始')
-      reTry++
+      _re_try++
       return false
     }
     commonFunctions.addClosePlacehold("收集好友能量结束")
@@ -1360,8 +1425,8 @@ function Ant_forest() {
       try {
         while (true) {
           _collect_any = false
-          increasedEnergy = 0
-          if (lostSomeOne) {
+          _increased_energy = 0
+          if (_lost_some_one) {
             warnInfo('上一次收取有漏收，再次收集', true)
           } else {
             if (_min_countdown > 0 && !config.is_cycle) {
@@ -1386,14 +1451,14 @@ function Ant_forest() {
             _current_time = _current_time == 0 ? 0 : _current_time - 1
             _min_countdown = 0
             _has_next = true
-            reTry = 0
+            _re_try = 0
           }
-          if (!config.is_cycle && !lostSomeOne && config.auto_lock === true && unlocker.needRelock() === true) {
+          if (!config.is_cycle && !_lost_some_one && config.auto_lock === true && unlocker.needRelock() === true) {
             debugInfo('重新锁定屏幕')
             automator.lockScreen()
           }
           events.removeAllListeners()
-          if (_has_next === false || reTry > 5) {
+          if (_has_next === false || _re_try > 5) {
             logInfo('收取结束')
             setTimeout(() => {
               exit()
@@ -1404,6 +1469,7 @@ function Ant_forest() {
         }
       } catch (e) {
         errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
+        exit()
       }
       // 释放资源
       _avil_list = []

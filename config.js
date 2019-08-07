@@ -77,6 +77,7 @@ var ui_config = {
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   warting_widget_content: '浇水',
+  using_protect_content: '使用了保护罩',
   collectable_energy_ball_content: /.*\d+克/
 }
 
