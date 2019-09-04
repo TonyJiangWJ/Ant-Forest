@@ -9,7 +9,7 @@ let { automator } = require('../lib/Automator.js')
 let { commonFunctions } = require('../lib/CommonFunction.js')
 let { config } = require('../config.js')
 
-function Ant_forest() {
+function Ant_forest () {
   const _package_name = 'com.eg.android.AlipayGphone'
 
   let _pre_energy = 0, // 记录收取前能量值
@@ -549,45 +549,46 @@ function Ant_forest() {
   }
 
   const protectInfoDetect = function () {
-  let usingInfo = WidgetUtils.widgetGetOne('使用了保护罩', 50, true)
-  if (usingInfo !== null) {
-    let target = usingInfo.target
-    debugInfo(['found using protect info, bounds:{}', target.bounds()], true)
-    let parent = target.parent().parent()
-    let targetRow = parent.row()
-    let time = parent.child(1).text()
-    if (!time) {
-      time = parent.child(1).desc()
-    }
-    let isToday = true
-    let yesterday = WidgetUtils.widgetGetOne('昨天', 50, true)
-    let yesterdayRow = null
-    if (yesterday !== null) {
-      yesterdayRow = yesterday.target.row()
-      // warnInfo(yesterday.target.indexInParent(), true)
-      isToday = yesterdayRow > targetRow
-    }
-    if (!isToday) {
-      // 获取前天的日期
-      let dateBeforeYesterday = formatDate(new Date(new Date().getTime() - 3600 * 24 * 1000 * 2), 'MM-dd')
-      let dayBeforeYesterday = WidgetUtils.widgetGetOne(dateBeforeYesterday, 50, true)
-      if (dayBeforeYesterday !== null) {
-        let dayBeforeYesterdayRow = dayBeforeYesterday.target.row()
-        if (dayBeforeYesterdayRow < targetRow) {
-          debugInfo('能量罩使用时间已超时，前天之前的数据')
-          return false
-        } else {
-          debugInfo(['前天row:{}', dayBeforeYesterdayRow])
+    let usingInfo = WidgetUtils.widgetGetOne('使用了保护罩', 50, true)
+    if (usingInfo !== null) {
+      let target = usingInfo.target
+      debugInfo(['found using protect info, bounds:{}', target.bounds()], true)
+      let parent = target.parent().parent()
+      let targetRow = parent.row()
+      let time = parent.child(1).text()
+      if (!time) {
+        time = parent.child(1).desc()
+      }
+      let isToday = true
+      let yesterday = WidgetUtils.widgetGetOne('昨天', 50, true)
+      let yesterdayRow = null
+      if (yesterday !== null) {
+        yesterdayRow = yesterday.target.row()
+        // warnInfo(yesterday.target.indexInParent(), true)
+        isToday = yesterdayRow > targetRow
+      }
+      if (!isToday) {
+        // 获取前天的日期
+        let dateBeforeYesterday = formatDate(new Date(new Date().getTime() - 3600 * 24 * 1000 * 2), 'MM-dd')
+        let dayBeforeYesterday = WidgetUtils.widgetGetOne(dateBeforeYesterday, 50, true)
+        if (dayBeforeYesterday !== null) {
+          let dayBeforeYesterdayRow = dayBeforeYesterday.target.row()
+          if (dayBeforeYesterdayRow < targetRow) {
+            debugInfo('能量罩使用时间已超时，前天之前的数据')
+            return false
+          } else {
+            debugInfo(['前天row:{}', dayBeforeYesterdayRow])
+          }
         }
       }
+      debugInfo(['using time:{}-{} rows: yesterday[{}] target[{}]', (isToday ? '今天' : '昨天'), time, yesterdayRow, targetRow], true)
+      recordCurrentProtected()
+      return true
+    } else {
+      debugInfo('not found using protect info', true)
     }
-    debugInfo(['using time:{}-{} bottoms: y[{}] t[{}]', isToday ? '今天' : '昨天', time, yesterdayRow, targetRow], true)
-    return true
-  } else {
-    debugInfo('not found using protect info', true)
+    return false
   }
-  return false
-}
 
   const collectTargetFriend = function (obj) {
     let rentery = false
@@ -705,7 +706,7 @@ function Ant_forest() {
   // 根据可收取列表收取好友
   const collectAvailableList = function () {
     while (_avil_list.length) {
-      if (!collectTargetFriend(_avil_list.shift())) {
+      if (false === collectTargetFriend(_avil_list.shift())) {
         warnInfo('收取目标好友失败，向上抛出')
         return false
       }
@@ -977,7 +978,7 @@ function Ant_forest() {
       let screenDebugName = rootpath + formatDate(new Date(), 'HHmmss.S') + '.png'
       let pageStartPoint = new Date().getTime()
       WidgetUtils.waitRankListStable()
-      
+
       let findStart = new Date().getTime()
       let recheck = false
       while (!gettingAtomic.compareAndSet(FREE_STATUS, ANALYZE_FRIENDS)) {
