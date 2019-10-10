@@ -71,14 +71,14 @@ let no_gui_config = {
 
 // UI配置
 var ui_config = {
-  home_ui_content: '背包|通知', 
+  home_ui_content: '背包|通知|攻略', 
   friend_home_ui_content: '浇水|发消息',
   friend_list_ui_content: '好友排行榜',
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   warting_widget_content: '浇水',
   using_protect_content: '使用了保护罩',
-  collectable_energy_ball_content: /.*\d+克/
+  collectable_energy_ball_content: /收集能量\d+克/
 }
 
 // 配置缓存的key值
@@ -110,7 +110,7 @@ Object.keys(no_gui_config).forEach(key => {
   config[key] = no_gui_config[key]
 })
 module.exports = {
-  config: config, 
+  config: config,
   default_config: default_config,
   storage_name: CONFIG_STORAGE_NAME
 }

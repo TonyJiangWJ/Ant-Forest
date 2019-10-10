@@ -549,7 +549,7 @@ function Ant_forest () {
   }
 
   const protectInfoDetect = function () {
-    let usingInfo = WidgetUtils.widgetGetOne('使用了保护罩', 50, true)
+    let usingInfo = WidgetUtils.widgetGetOne(config.using_protect_content, 50, true)
     if (usingInfo !== null) {
       let target = usingInfo.target
       debugInfo(['found using protect info, bounds:{}', target.bounds()], true)
@@ -754,27 +754,38 @@ function Ant_forest () {
       o_w = 5,
       o_h = obj.bounds().height() - 10,
       threshold = config.color_offset
+    if (o_h > 50) {
+      o_h = 50
+    }
+    let tmp = ''
     if (o_h > 0 && !obj.child(len - 2).childCount()) {
-      if (
-        // 是否可收取
-        images.findColor(screen, '#1da06a', {
-          region: [o_x, o_y, o_w, o_h],
-          threshold: threshold
-        })
-      ) {
-        container.canDo = true
-        return container
-      } else if (
-        config.help_friend &&
-        // 是否可帮收取
-        images.findColor(screen, '#f99236', {
-          region: [o_x, o_y, o_w, o_h],
-          threshold: threshold
-        })
-      ) {
-        container.canDo = true
-        container.isHelp = true
-        return container
+      try {
+        if (
+          // 是否可收取
+          images.findColor(screen, '#1da06a', {
+            region: [o_x, o_y, o_w, o_h],
+            threshold: threshold
+          })
+        ) {
+          container.canDo = true
+        } else if (
+          config.help_friend &&
+          // 是否可帮收取
+          images.findColor(screen, '#f99236', {
+            region: [o_x, o_y, o_w, o_h],
+            threshold: threshold
+          })
+        ) {
+          container.canDo = true
+          container.isHelp = true
+        }
+        if (container.canDo || container.isHelp) {
+          // warnInfo(['剪切图片识别区域「x:{} y:{} w:{} h:{}」base64:[\ndata:image/png;base64, {}\n]', o_x, o_y, o_w, o_h, images.toBase64(images.clip(screen, o_x, o_y, o_w, o_h))])
+         // warnInfo(['原始图片信息 base64[\ndata:image/png;base64, {}\n]', images.toBase64(screen, 'png', 5)])
+        }
+      } catch (e) {
+        // errorInfo(['图片分析失败{} base64:[data:image/png;base64, {}]', e, images.toBase64(screen, 'png', 50)])
+        errorInfo(['图片分析失败{} imgsize:[w:{}, h:{}]', e, screen.getWidth(), screen.getHeight()])
       }
     }
     return container
@@ -1402,20 +1413,39 @@ function Ant_forest () {
   }
 
   /**
-   * 监听音量上键延迟执行
+   * 监听音量下键延迟执行
    **/
   const listenDelayCollect = function () {
     threads.start(function () {
       infoLog('即将收取能量，按音量下键延迟五分钟执行', true)
       events.observeKey()
       events.onceKeyDown('volume_down', function (event) {
+        device.setBrightnessMode(1)
         warnInfo('延迟五分钟后启动脚本', true)
         commonFunctions.setUpAutoStart(5)
         engines.myEngine().forceStop()
         exit()
       })
+      
     })
   }
+  /**
+   * 监听音量上键直接关闭
+   **/
+  const listenStopCollect = function () {
+    threads.start(function () {
+      infoLog('即将收取能量，按音量上键关闭')
+      events.observeKey()
+      events.onceKeyDown('volume_up', function (event) {
+        device.setBrightnessMode(1)
+        engines.myEngine().forceStop()
+        exit()
+      })
+      
+    })
+  }
+
+
 
   return {
     exec: function () {
@@ -1436,6 +1466,7 @@ function Ant_forest () {
               commonFunctions.commonDelay(_min_countdown)
             }
           }
+          listenStopCollect()
           listenDelayCollect()
           commonFunctions.showEnergyInfo()
           let runTime = commonFunctions.increaseRunTimes()
@@ -1446,10 +1477,17 @@ function Ant_forest () {
           try {
             _avil_list = []
             collectOwn()
-            collectFriend()
+            if (collectFriend() === false) {
+              // 收集失败，重新开始
+              _lost_some_one = true
+              _current_time = _current_time == 0 ? 0 : _current_time - 1
+              _min_countdown = 0
+              _has_next = true
+            }
           } catch (e) {
             errorInfo('发生异常 [' + e + '] [' + e.message + ']')
             _current_time = _current_time == 0 ? 0 : _current_time - 1
+            _lost_some_one = true
             _min_countdown = 0
             _has_next = true
             _re_try = 0
@@ -1457,6 +1495,7 @@ function Ant_forest () {
           if (!config.is_cycle && !_lost_some_one && config.auto_lock === true && unlocker.needRelock() === true) {
             debugInfo('重新锁定屏幕')
             automator.lockScreen()
+            device.setBrightnessMode(1)
           }
           events.removeAllListeners()
           if (_has_next === false || _re_try > 5) {
