@@ -465,8 +465,9 @@ function Ant_forest () {
   const findAndCollect = function () {
     let scanner = new FriendListScanner()
     scanner.init()
-    scanner.start()
+    _lost_some_one = scanner.start()
     scanner.destory()
+    return _lost_some_one
   }
 
 
@@ -524,7 +525,7 @@ function Ant_forest () {
     if (!enterFlag) {
       return false
     }
-    if (false == findAndCollect()) {
+    if (true === findAndCollect()) {
       _min_countdown = 0
       _has_next = true
       _current_time = _current_time == 0 ? 0 : _current_time - 1

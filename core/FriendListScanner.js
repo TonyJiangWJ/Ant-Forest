@@ -606,6 +606,9 @@ function FriendListScanner () {
     })
   }
 
+  /**
+   * 执行检索，失败返回true lostSomeOne 有收集遗漏，成功返回false
+   */
   this.collecting = function () {
 
     debugInfo("是否显示debug：" + config.show_debug_log)
@@ -707,12 +710,12 @@ function FriendListScanner () {
         }
         if (!WidgetUtils.friendListWaiting()) {
           errorInfo('崩了 当前不在好友列表 重新开始')
-          return false
+          return true
         }
         if (_avil_list.length > 0) {
           if (false == collectAvailableList()) {
             errorInfo('流程出错 向上抛出')
-            return false
+            return true
           }
         } else {
           debugInfo('无好友可收集能量')
@@ -742,7 +745,7 @@ function FriendListScanner () {
       debugInfo(['有未收集的可收取能量'])
       if (false == collectAvailableList()) {
         errorInfo('流程出错 向上抛出')
-        return false
+        return true
       }
     } else {
       debugInfo('无好友可收集能量')
@@ -764,7 +767,7 @@ function FriendListScanner () {
   this.start = function () {
     this.preloading()
     this.pregetting()
-    this.collecting()
+    return this.collecting()
   }
 }
 
