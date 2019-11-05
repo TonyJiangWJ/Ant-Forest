@@ -37,7 +37,7 @@ logInfo('======解锁并校验截图权限======')
 unlocker.exec()
 logInfo('解锁成功')
 // 请求截图权限
-if (!requestScreenCapture()) {
+if (!requestScreenCapture(false)) {
   errorInfo('请求截图失败')
   exit()
 } else {

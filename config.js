@@ -17,6 +17,7 @@ var default_config = {
   reactive_time: 60,
   timeout_unlock: 1000,
   timeout_findOne: 1000,
+  timeout_existing: 8000,
   max_collect_repeat: 20,
   // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
   show_small_floaty: true,
