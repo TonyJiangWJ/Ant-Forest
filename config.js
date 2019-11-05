@@ -17,6 +17,8 @@ var default_config = {
   reactive_time: 60,
   timeout_unlock: 1000,
   timeout_findOne: 1000,
+  // 检测是否存在的默认超时时间，8秒
+  timeout_existing: 8000,
   max_collect_repeat: 20,
   // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
   show_small_floaty: true,
@@ -39,7 +41,7 @@ var default_config = {
   // 配置锁屏按钮位置
   lock_x: 150,
   lock_y: 970,
-
+  
 }
 /**
  * 非可视化控制的配置 通过手动修改config.js来实现配置
@@ -47,32 +49,31 @@ var default_config = {
 let no_gui_config = {
   // 设备高度 正常情况下device.height可以获取到
   // deviceHeight: 2160,
-  // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间
+  // 收集相关配置
   timeoutLoadFriendList: 6000,
-  // 这个用于控制列表滑动是否稳定 不用去修改它
   friendListStableCount: 3,
-  // 底部高度，比如有虚拟按键就需要修改这个值 设置比虚拟按键高度高就可以了
+  // 底部高度
   bottomHeight: 100,
-  // 是否使用模拟的滑动，如果滑动有问题开启这个
   useCustomScrollDown: false,
-  // 排行榜列表下滑速度 100毫秒 仅仅针对useCustomScrollDown=true的情况
+  // 下滑速度 100毫秒
   scrollDownSpeed: 100,
-  // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
+  wateringBack: true,
+  wateringThresold: 30,
+  wateringBlackList: [],
   helpBallColors: ['#f99236', '#f7af70'],
-  // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
   saveLogFile: true
 }
 
-// UI配置 针对多语言环境 英文界面替换成相应的英文内容即可 建议还是用中文界面比较好
+// UI配置
 var ui_config = {
-  home_ui_content: '背包|通知',
+  home_ui_content: '背包|通知|攻略', 
   friend_home_ui_content: '浇水|发消息',
   friend_list_ui_content: '好友排行榜',
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   warting_widget_content: '浇水',
   using_protect_content: '使用了保护罩',
-  collectable_energy_ball_content: /.*\d+克/
+  collectable_energy_ball_content: /收集能量\d+克/
 }
 
 // 配置缓存的key值
