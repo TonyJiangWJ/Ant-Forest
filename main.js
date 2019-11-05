@@ -14,6 +14,7 @@ let { unlocker } = require('./lib/Unlock.js')
 let { antForestRunner } = require('./core/Ant_forest.js')
 let { scheduler } = require('./lib/scheduler.js')
 let { formatDate } = require('./lib/DateUtil.js')
+let { tryRequestScreenCapture } = require('./lib/TryRequestScreenCapture.js')
 logInfo('======校验是否重复运行=======')
 // 检查脚本是否重复运行
 commonFunctions.checkDuplicateRunning()
@@ -37,7 +38,14 @@ logInfo('======解锁并校验截图权限======')
 unlocker.exec()
 logInfo('解锁成功')
 // 请求截图权限
-if (!requestScreenCapture(false)) {
+let reqResult = false
+if (config.request_capture_permission) {
+  reqResult = tryRequestScreenCapture()
+} else {
+  reqResult = requestScreenCapture(false)
+}
+
+if (!reqResult) {
   errorInfo('请求截图失败')
   exit()
 } else {

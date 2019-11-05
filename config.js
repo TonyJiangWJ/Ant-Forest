@@ -33,15 +33,14 @@ var default_config = {
   skip_five: false,
   // 是否显示调试日志信息
   show_debug_log: true,
-  // 是否toast调试日志
-  toast_debug_info: false,
   // 是否在收集完成后根据收集前状态判断是否锁屏，非ROOT设备通过下拉状态栏中的锁屏按钮实现 需要配置锁屏按钮位置，仅仅测试MIUI的 其他系统可能没法用
   // 可以自己研究研究之后 修改Automator.js中的lockScreen方法
   auto_lock: false,
   // 配置锁屏按钮位置
   lock_x: 150,
   lock_y: 970,
-  
+  // 是否需要检测录屏弹窗
+  request_capture_permission: true
 }
 /**
  * 非可视化控制的配置 通过手动修改config.js来实现配置

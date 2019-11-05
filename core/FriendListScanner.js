@@ -511,7 +511,7 @@ function FriendListScanner () {
               debugInfo(threadName + '发现没有更多按钮，获取好友列表')
               debugInfo(threadName + '正获取好友list中')
               that.lock.lock()
-              infoLog(threadName + "获取锁")
+              debugInfo(threadName + "获取锁")
               that.friends_list = WidgetUtils.getFriendList()
               that.all_loaded = true
               sleep(100)
@@ -531,9 +531,9 @@ function FriendListScanner () {
               }
             } else if ((more.desc() && more.desc().match(loadMoreContent)) || (more.text() && more.text().match(loadMoreContent))) {
 
-              infoLog(threadName + '点击加载前等待锁')
+              debugInfo(threadName + '点击加载前等待锁')
               that.lock.lock()
-              infoLog(threadName + '点击加载前获得锁')
+              debugInfo(threadName + '点击加载前获得锁')
               debugInfo(threadName + '点击加载更多，热身中 速度较慢')
               more.click()
               that.condition.signal()
@@ -547,7 +547,7 @@ function FriendListScanner () {
         } finally {
           try {
             that.lock.unlock()
-            infoLog(threadName + "释放锁")
+            debugInfo(threadName + "释放锁")
           } catch (e) {
 
           }
@@ -565,9 +565,9 @@ function FriendListScanner () {
         debugInfo('预获取线程进入循环体')
         try {
 
-          infoLog('预获取线程等待锁')
+          debugInfo('预获取线程等待锁')
           that.lock.lock()
-          infoLog('预获取线程获取锁')
+          debugInfo('预获取线程获取锁')
           while (!that.emptyList && !that.usedList) {
             debugInfo('预获取线程等待信号')
             that.condition.await()
@@ -599,7 +599,7 @@ function FriendListScanner () {
           errorInfo('预获取异常' + e)
         } finally {
           that.lock.unlock()
-          infoLog('预获取线程释放锁')
+          debugInfo('预获取线程释放锁')
         }
       }
       debugInfo('预获取线程退出循环体')
@@ -626,9 +626,9 @@ function FriendListScanner () {
 
         let findStart = new Date().getTime()
 
-        infoLog('主流程等待锁')
+        debugInfo('主流程等待锁')
         this.lock.lock()
-        infoLog('主流程获取锁')
+        debugInfo('主流程获取锁')
         while (this.emptyList === true) {
           debugInfo('主流程等待信号')
           this.condition.await()
@@ -729,7 +729,7 @@ function FriendListScanner () {
       } catch (e) {
         errorInfo('主流程出错' + e)
       } finally {
-        infoLog('主流程释放锁')
+        debugInfo('主流程释放锁')
         this.lock.unlock()
       }
     } while (

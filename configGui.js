@@ -69,6 +69,13 @@ function draw_view() {
           <text text="y:" /><input id="min_floaty_y" inputType="number" text="{{configStorage.get('min_floaty_y')}}" />
         </horizontal>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="是否检测录屏权限" textColor="#666666" textSize="14sp" />
+          <radiogroup id="request_capture_permission" orientation="horizontal" margin="0 10">
+            <radio text="是" checked="{{configStorage.get('request_capture_permission')}}" />
+            <radio text="否" checked="{{!configStorage.get('request_capture_permission')}}" marginLeft="20" />
+          </radiogroup>
+        </vertical>
+        <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="是否跳过小于等于5克的能量" />
           <radiogroup id="skip_five" orientation="horizontal" margin="0 10">
             <radio text="是" checked="{{configStorage.get('skip_five')}}" />
@@ -81,13 +88,6 @@ function draw_view() {
             <radio text="是" checked="{{configStorage.get('show_debug_log')}}" />
             <radio text="否" checked="{{!configStorage.get('show_debug_log')}}" marginLeft="20" />
           </radiogroup>
-          <vertical visibility="{{configStorage.get('show_debug_log') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
-            <text text="是否toast调试日志" />
-            <radiogroup id="toast_debug_info" orientation="horizontal" margin="0 10">
-              <radio text="是" checked="{{configStorage.get('toast_debug_info')}}" />
-              <radio text="否" checked="{{!configStorage.get('toast_debug_info')}}" marginLeft="20" />
-            </radiogroup>
-          </vertical>
         </vertical>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="是否在收集完成后根据收集前状态判断是否锁屏" />
@@ -186,6 +186,11 @@ function draw_view() {
     updateRadioValue(radioGroup, id, "show_small_floaty")
   })
 
+  // 是否检测录屏权限
+  ui.request_capture_permission.setOnCheckedChangeListener(function (radioGroup, id) {
+    updateRadioValue(radioGroup, id, "request_capture_permission")
+  })
+
   // 更新是否帮助好友
   ui.is_help_fris.setOnCheckedChangeListener(function (radioGroup, id) {
     updateRadioValue(radioGroup, id, "help_friend")
@@ -199,11 +204,6 @@ function draw_view() {
   // 是否显示调试日志
   ui.show_debug_log.setOnCheckedChangeListener(function (radioGroup, id) {
     updateRadioValue(radioGroup, id, "show_debug_log")
-  })
-
-  // 是否toast调试日志
-  ui.toast_debug_info.setOnCheckedChangeListener(function (radioGroup, id) {
-    updateRadioValue(radioGroup, id, "toast_debug_info")
   })
 
   // 是否自动锁屏
