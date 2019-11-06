@@ -514,6 +514,8 @@ function FriendListScanner () {
               debugInfo(threadName + "获取锁")
               that.friends_list = WidgetUtils.getFriendList()
               that.all_loaded = true
+              that.usedList = false
+              debugInfo(threadName + "重新获取好友列表数据")
               sleep(100)
               that.condition.signal()
               debugInfo(threadName + '获取好友list完成')
@@ -571,6 +573,10 @@ function FriendListScanner () {
           while (!that.emptyList && !that.usedList) {
             debugInfo('预获取线程等待信号')
             that.condition.await()
+            if (that.all_loaded === true) {
+              // 在等待时列表可能已经获取完毕，直接退出
+              break
+            }
           }
           that.friends_list = WidgetUtils.getFriendList()
           let l = whetherFriendListValidLength(that.friends_list)
@@ -581,8 +587,7 @@ function FriendListScanner () {
             })
           }
           while (!l || !validChildList || validChildList.length === 0) {
-            warnInfo("首次获取列表数据不完整，再次获取", true)
-            
+            warnInfo("首次获取列表数据不完整，再次获取")
             that.friends_list = WidgetUtils.getFriendList()
             l = whetherFriendListValidLength(that.friends_list)
             if (l) {
@@ -610,12 +615,12 @@ function FriendListScanner () {
    * 执行检索，失败返回true lostSomeOne 有收集遗漏，成功返回false
    */
   this.collecting = function () {
-
-    debugInfo("是否显示debug：" + config.show_debug_log)
+    let totalAnalyzeTime = 0
+    let collectStart = new Date().getTime()
     let lastCheckFriend = -1
     let checkedList = []
     let totalValidLength = 0
-    let QUEUE_SIZE = 4
+    let QUEUE_SIZE = 2
     let queue = commonFunctions.createQueue(QUEUE_SIZE)
     let countingDownContainers = []
     let iterStart = -1
@@ -704,7 +709,9 @@ function FriendListScanner () {
             ['可收取列表获取完成 校验数量[{}]，开始收集 待收取列表长度:[{}]', lastCheckFriend, _avil_list.length]
           )
           let findEnd = new Date().getTime()
-          debugInfo(['检测好友列表可收取情况耗时：[{}]ms ', (findEnd - findStart)])
+          let currentAnalyzeCost = findEnd - findStart
+          totalAnalyzeTime += currentAnalyzeCost
+          debugInfo(['检测好友列表可收取情况耗时：[{}]ms ', currentAnalyzeCost])
         } else {
           logInfo('好友列表不存在')
         }
@@ -724,11 +731,14 @@ function FriendListScanner () {
         _avil_list = []
 
         // -------收集好友列表完成-------
-        scrollDown()
+        automator.scrollDown()
         debugInfo(['add [{}] into queue, distinct size:[{}]', lastCheckFriend, commonFunctions.getQueueDistinctSize(queue)])
         commonFunctions.pushQueue(queue, QUEUE_SIZE, lastCheckFriend)
-        this.usedList = true
-        this.condition.signal()
+        // 当剩余未检测数量小于等于20时，通知重新获取列表数据
+        if (lastCheckFriend >= totalValidLength - 20) {
+          this.usedList = true
+          this.condition.signal()
+        }
       } catch (e) {
         errorInfo('主流程出错' + e)
       } finally {
@@ -754,9 +764,13 @@ function FriendListScanner () {
     _lost_some_one = checkIsEveryFriendChecked(checkedList, totalValidLength)
     checkRunningCountdown(countingDownContainers)
     commonFunctions.addClosePlacehold(">>>><<<<")
-    logInfo([
-      '全部好友收集完成, last:[{}] length:[{}] queueSize:[{}]',
+    debugInfo([
+      '全部收集完成, last:[{}] length:[{}] queueSize:[{}]',
       lastCheckFriend, totalValidLength, commonFunctions.getQueueDistinctSize(queue)
+    ])
+    logInfo([
+      '全部好友收集完成, 总分析耗时：[{}]ms 总收集耗时：[{}]ms',
+      totalAnalyzeTime, (new Date().getTime() - collectStart)
     ])
     if (_lost_some_one) {
       clearLogFile()
