@@ -22,7 +22,7 @@ function Ant_forest () {
     _has_next = true, // 是否下一次运行
     _collect_any = false, // 收集过能量
     _re_try = 0,
-    _lost_some_one = false // 是否漏收
+    _lost_someone = false // 是否漏收
   /***********************
    * 综合操作
    ***********************/
@@ -404,7 +404,7 @@ function Ant_forest () {
       showCollectSummaryFloaty()
     }
     // 循环模式、或者有漏收 不返回home
-    if ((!config.is_cycle || !_has_next) && !_lost_some_one) {
+    if ((!config.is_cycle || !_has_next) && !_lost_someone) {
       automator.clickClose()
       home()
     }
@@ -465,9 +465,15 @@ function Ant_forest () {
   const findAndCollect = function () {
     let scanner = new FriendListScanner()
     scanner.init()
-    _lost_some_one = scanner.start()
+    let executeResult = scanner.start()
+    if (executeResult === true) {
+      _lost_someone = true
+    } else {
+      _lost_someone = executeResult.loatSomeone
+      _collect_any = executeResult.collectAny
+    }
     scanner.destory()
-    return _lost_some_one
+    return _lost_someone
   }
 
 
@@ -534,7 +540,7 @@ function Ant_forest () {
       return false
     }
     commonFunctions.addClosePlacehold("收集好友能量结束")
-    if (!config.is_cycle && !_lost_some_one) {
+    if (!config.is_cycle && !_lost_someone) {
       getMinCountdown()
     }
     generateNext()
@@ -586,7 +592,7 @@ function Ant_forest () {
         while (true) {
           _collect_any = false
           _increased_energy = 0
-          if (_lost_some_one) {
+          if (_lost_someone) {
             warnInfo('上一次收取有漏收，再次收集', true)
           } else {
             if (_min_countdown > 0 && !config.is_cycle) {
@@ -608,7 +614,7 @@ function Ant_forest () {
             collectOwn()
             if (collectFriend() === false) {
               // 收集失败，重新开始
-              _lost_some_one = true
+              _lost_someone = true
               _current_time = _current_time == 0 ? 0 : _current_time - 1
               _min_countdown = 0
               _has_next = true
@@ -616,18 +622,18 @@ function Ant_forest () {
           } catch (e) {
             errorInfo('发生异常 [' + e + '] [' + e.message + ']')
             _current_time = _current_time == 0 ? 0 : _current_time - 1
-            _lost_some_one = true
+            _lost_someone = true
             _min_countdown = 0
             _has_next = true
             _re_try = 0
           }
-          if (!config.is_cycle && !_lost_some_one && config.auto_lock === true && unlocker.needRelock() === true) {
+          if (!config.is_cycle && !_lost_someone && config.auto_lock === true && unlocker.needRelock() === true) {
             debugInfo('重新锁定屏幕')
             automator.lockScreen()
             device.setBrightnessMode(1)
           }
           events.removeAllListeners()
-          if (!_lost_some_one && (_has_next === false || _re_try > 5)) {
+          if (!_lost_someone && (_has_next === false || _re_try > 5)) {
             logInfo('收取结束')
             setTimeout(() => {
               exit()

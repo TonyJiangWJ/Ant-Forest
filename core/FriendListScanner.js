@@ -6,6 +6,7 @@ let { FileUtils } = require('../lib/FileUtils.js')
 
 let _avil_list = []
 let _increased_energy = 0
+let _collect_any = false
 
 const _package_name = 'com.eg.android.AlipayGphone'
 
@@ -269,6 +270,7 @@ const collectTargetFriend = function (obj) {
           showCollectSummaryFloaty(_increased_energy)
         } else {
           debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
+
         }
       } else if (obj.isHelp && postE !== null && preE !== null) {
         let gotEnergy = postE - preE
@@ -321,6 +323,22 @@ const collectAvailableList = function () {
     }
   }
 }
+
+const cutAndSaveImage = function (screen, countdownInfo) {
+  threads.start(function () {
+    try {
+      let cutImg = images.clip(screen, countdownInfo.x, countdownInfo.y, countdownInfo.w, countdownInfo.h)
+      let path = FileUtils.getCurrentWorkPath() + "/countdownImgs"
+      files.ensureDir(path)
+      let saveImgPath = commonFunctions.formatString('{}/{}_{}_{}.png', path, countdownInfo.name, countdownInfo.countdown, countdownInfo.y)
+      images.save(cutImg, saveImgPath)
+      infoLog(['保存倒计时图片：{}', saveImgPath])
+    } catch (e) {
+      errorInfo('截取图片失败' + e)
+    }
+  })
+}
+
 // 判断是否可收取
 const isObtainable = function (obj, screen) {
   let container = {
@@ -349,6 +367,17 @@ const isObtainable = function (obj, screen) {
           '记录[{}] 倒计时[{}]分 time[{}]',
           container.name, num, new Date().getTime()
         ])
+        if (config.cutAndSaveCountdown) {
+          let countdownInfo = {
+            name: container.name,
+            x: obj.bounds().left,
+            y: obj.bounds().top,
+            h: obj.bounds().height(),
+            w: obj.bounds().width(),
+            countdown: num
+          }
+          cutAndSaveImage(screen, countdownInfo)
+        }
         container.countdown = {
           count: num,
           stamp: new Date().getTime()
@@ -460,7 +489,7 @@ const checkRunningCountdown = function (countingDownContainers) {
       if (passed >= count) {
         debugInfo('[' + item.name + ']倒计时结束')
         // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
-        _lost_some_one = true
+        _lost_someone = true
       }
     })
   }
@@ -812,7 +841,7 @@ function FriendListScanner () {
       debugInfo('无好友可收集能量')
     }
 
-    _lost_some_one = checkIsEveryFriendChecked(checkedList, totalValidLength)
+    _lost_someone = checkIsEveryFriendChecked(checkedList, totalValidLength)
     checkRunningCountdown(countingDownContainers)
     commonFunctions.addClosePlacehold(">>>><<<<")
     debugInfo([
@@ -823,10 +852,13 @@ function FriendListScanner () {
       '全部好友收集完成, 总分析耗时：[{}]ms 总收集耗时：[{}]ms',
       totalAnalyzeTime, (new Date().getTime() - collectStart)
     ])
-    if (_lost_some_one) {
+    if (_lost_someone) {
       clearLogFile()
     }
-    return _lost_some_one
+    return {
+      lostSomeone: _lost_someone,
+      collectAny: _collect_any
+    }
   }
 
   this.start = function () {
