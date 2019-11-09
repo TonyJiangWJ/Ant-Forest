@@ -4,6 +4,12 @@
  * @Last Modified time: 2019-04-01 14:15:55
  * @Description: 配置文件
  */
+let currentEngine = engines.myEngine().getSource() + ''
+if (currentEngine.endsWith('/config.js')) {
+  toast('请运行configGui.js')
+  exit()
+}
+
 // 执行配置
 var default_config = {
   color_offset: 50,

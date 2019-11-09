@@ -638,6 +638,8 @@ function Ant_forest () {
         }
       } catch (e) {
         errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
+        // 设置三分钟后重试
+        commonFunctions.setUpAutoStart(3)
         exit()
       }
       // 释放资源
