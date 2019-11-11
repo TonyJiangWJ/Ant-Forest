@@ -63,7 +63,7 @@ let no_gui_config = {
   // 下滑速度 100毫秒
   scrollDownSpeed: 100,
   wateringBack: true,
-  wateringThresold: 30,
+  wateringThresold: 40,
   wateringBlackList: [],
   helpBallColors: ['#f99236', '#f7af70'],
   saveLogFile: true

@@ -35,7 +35,13 @@ if (config.auto_start) {
   scheduler()
 }
 logInfo('======解锁并校验截图权限======')
-unlocker.exec()
+try {
+  unlocker.exec()
+} catch (e) {
+  errorInfo('解锁发生异常, 三分钟后重新开始' + e)
+  commonFunctions.setUpAutoStart(3)
+  exit()
+}
 logInfo('解锁成功')
 // 请求截图权限
 let reqResult = false
