@@ -14,11 +14,17 @@ const whetherFriendListValidLength = function (friends_list) {
   return (friends_list && friends_list.children()) ? friends_list.children().length : undefined
 }
 
+/**
+ * 展示当前累积收集能量信息，累加已记录的和当前运行轮次所增加的
+ * 
+ * @param {本次增加的能量值} increased
+ */
 const showCollectSummaryFloaty = function (increased) {
   increased = increased || 0
+  _increased_energy += increased
   let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
   let runTimes = commonFunctions.getTodaysRuntimeStorage('runTimes')
-  let content = '第 ' + runTimes.runTimes + ' 次运行, 累计已收集:' + ((energyInfo.totalIncrease || 0) + increased) + 'g'
+  let content = '第 ' + runTimes.runTimes + ' 次运行, 累计已收集:' + ((energyInfo.totalIncrease || 0) + _increased_energy) + 'g'
   commonFunctions.showTextFloaty(content)
 }
 
@@ -250,7 +256,6 @@ const collectTargetFriend = function (obj) {
         let gotEnergy = postGet - preGot
         debugInfo("开始收集前:" + preGot + "收集后:" + postGet)
         if (gotEnergy) {
-          logInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
           let needWaterback = commonFunctions.recordFriendCollectInfo({
             friendName: obj.name,
             friendEnergy: postE,
@@ -266,8 +271,11 @@ const collectTargetFriend = function (obj) {
           } catch (e) {
             errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + config.wateringThresold + ' 回馈浇水失败 ' + e)
           }
-          _increased_energy += gotEnergy
-          showCollectSummaryFloaty(_increased_energy)
+          logInfo([
+            "收取好友:{} 能量 {}g {}",
+            obj.name, gotEnergy, (needWaterback ? '其中浇水10g' : '')
+          ])
+          showCollectSummaryFloaty(gotEnergy)
         } else {
           debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
 
@@ -862,6 +870,7 @@ function FriendListScanner () {
   }
 
   this.start = function () {
+    _increased_energy = 0
     this.preloading()
     this.pregetting()
     return this.collecting()

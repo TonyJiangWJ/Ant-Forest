@@ -591,7 +591,6 @@ function Ant_forest () {
       try {
         while (true) {
           _collect_any = false
-          _increased_energy = 0
           if (_lost_someone) {
             warnInfo('上一次收取有漏收，再次收集', true)
           } else {
