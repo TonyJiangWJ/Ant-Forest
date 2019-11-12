@@ -59,7 +59,7 @@ let no_gui_config = {
   friendListStableCount: 3,
   // 底部高度
   bottomHeight: 100,
-  useCustomScrollDown: false,
+  useCustomScrollDown: true,
   // 下滑速度 100毫秒
   scrollDownSpeed: 100,
   wateringBack: true,
