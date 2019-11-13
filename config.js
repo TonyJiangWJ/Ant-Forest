@@ -66,7 +66,13 @@ let no_gui_config = {
   wateringThresold: 40,
   wateringBlackList: [],
   helpBallColors: ['#f99236', '#f7af70'],
-  saveLogFile: true
+  saveLogFile: true,
+  // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
+  autoSetBrightness: true,
+  // 是否延迟启动，即将开始前弹toast信息提醒，此时可以按音量下延迟5分钟后再启动收集
+  delayStart: false,
+  // 延迟启动时延 5秒
+  delayStartTime: 5000
 }
 
 // UI配置

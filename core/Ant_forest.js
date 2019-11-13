@@ -555,7 +555,9 @@ function Ant_forest () {
       infoLog('即将收取能量，按音量下键延迟五分钟执行', true)
       events.observeKey()
       events.onceKeyDown('volume_down', function (event) {
-        device.setBrightnessMode(1)
+        if (config.autoSetBrightness) {
+          device.setBrightnessMode(1)
+        }
         warnInfo('延迟五分钟后启动脚本', true)
         commonFunctions.setUpAutoStart(5)
         engines.myEngine().forceStop()
@@ -572,7 +574,9 @@ function Ant_forest () {
       infoLog('即将收取能量，按音量上键关闭')
       events.observeKey()
       events.onceKeyDown('volume_up', function (event) {
-        device.setBrightnessMode(1)
+        if (config.autoSetBrightness) {
+          device.setBrightnessMode(1)
+        }
         engines.myEngine().forceStop()
         exit()
       })
@@ -596,12 +600,20 @@ function Ant_forest () {
           } else {
             if (_min_countdown > 0 && !config.is_cycle) {
               // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
-              commonFunctions.setUpAutoStart(_min_countdown)
-              commonFunctions.commonDelay(_min_countdown)
+              let delayTime = 0
+              if (config.delayStart) {
+                delayTime = (config.delayStartTime || 5000) / 60000.0
+              }
+              commonFunctions.setUpAutoStart(_min_countdown - delayTime)
+              commonFunctions.commonDelay(_min_countdown - delayTime)
             }
           }
           listenStopCollect()
           listenDelayCollect()
+          // 延迟五秒启动，可以按音量下暂停或者音量上关闭
+          if (config.delayStart) {
+            sleep(config.delayStartTime)
+          }
           commonFunctions.showEnergyInfo()
           let runTime = commonFunctions.increaseRunTimes()
           infoLog("========第" + runTime + "次运行========")
@@ -626,10 +638,15 @@ function Ant_forest () {
             _has_next = true
             _re_try = 0
           }
-          if (!config.is_cycle && !_lost_someone && config.auto_lock === true && unlocker.needRelock() === true) {
-            debugInfo('重新锁定屏幕')
-            automator.lockScreen()
-            device.setBrightnessMode(1)
+          // 当前不在循环模式下，且没有遗漏
+          if (!config.is_cycle && !_lost_someone) {
+            if (config.auto_lock === true && unlocker.needRelock() === true) {
+              debugInfo('重新锁定屏幕')
+              automator.lockScreen()
+            }
+            if (config.autoSetBrightness) {
+              device.setBrightnessMode(1)
+            }
           }
           events.removeAllListeners()
           if (!_lost_someone && (_has_next === false || _re_try > 5)) {
