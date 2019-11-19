@@ -608,10 +608,9 @@ function Ant_forest () {
               }
             }
           }
-          listenStopCollect()
           runningQueueDispatcher.addRunningTask()
-          commonFunctions.showDialogAndWait(true)
           commonFunctions.recordCurrentPackage()
+          commonFunctions.showDialogAndWait(true)
           commonFunctions.showEnergyInfo()
           let runTime = commonFunctions.increaseRunTimes()
           infoLog("========第" + runTime + "次运行========")
