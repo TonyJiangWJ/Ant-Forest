@@ -7,6 +7,7 @@ let { FileUtils } = require('../lib/FileUtils.js')
 let _avil_list = []
 let _increased_energy = 0
 let _collect_any = false
+let _min_countdown = 10000
 
 const _package_name = 'com.eg.android.AlipayGphone'
 
@@ -162,7 +163,7 @@ const protectDetect = function (filter) {
 }
 
 const protectInfoDetect = function () {
-  let usingInfo = WidgetUtils.widgetGetOne(config.using_protect_content, 50, true)
+  let usingInfo = WidgetUtils.widgetGetOne(config.using_protect_content, 50, true, true)
   if (usingInfo !== null) {
     let target = usingInfo.target
     debugInfo(['found using protect info, bounds:{}', target.bounds()], true)
@@ -173,7 +174,7 @@ const protectInfoDetect = function () {
       time = parent.child(1).desc()
     }
     let isToday = true
-    let yesterday = WidgetUtils.widgetGetOne('昨天', 50, true)
+    let yesterday = WidgetUtils.widgetGetOne('昨天', 50, true, true)
     let yesterdayRow = null
     if (yesterday !== null) {
       yesterdayRow = yesterday.target.row()
@@ -183,7 +184,7 @@ const protectInfoDetect = function () {
     if (!isToday) {
       // 获取前天的日期
       let dateBeforeYesterday = formatDate(new Date(new Date().getTime() - 3600 * 24 * 1000 * 2), 'MM-dd')
-      let dayBeforeYesterday = WidgetUtils.widgetGetOne(dateBeforeYesterday, 50, true)
+      let dayBeforeYesterday = WidgetUtils.widgetGetOne(dateBeforeYesterday, 50, true, true)
       if (dayBeforeYesterday !== null) {
         let dayBeforeYesterdayRow = dayBeforeYesterday.target.row()
         if (dayBeforeYesterdayRow < targetRow) {
@@ -498,6 +499,9 @@ const checkRunningCountdown = function (countingDownContainers) {
         debugInfo('[' + item.name + ']倒计时结束')
         // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
         _lost_someone = true
+      } else {
+        let rest = count - passed
+        _min_countdown = rest < _min_countdown ? rest : _min_countdown
       }
     })
   }
@@ -674,7 +678,15 @@ function FriendListScanner () {
   }
 
   /**
-   * 执行检索，失败返回true lostSomeOne 有收集遗漏，成功返回false
+   * 执行检索，失败返回true 有收集遗漏，成功返回对象
+   * {
+   *   // 是否有漏收
+   *   lostSomeone: _lost_someone,
+   *   // 是否收集过任何人
+   *   collectAny: _collect_any,
+   *   // 记录的最小倒计时数据
+   *   minCountdown: _min_countdown
+   * }
    */
   this.collecting = function () {
     let totalAnalyzeTime = 0
@@ -827,6 +839,7 @@ function FriendListScanner () {
         }
       } catch (e) {
         errorInfo('主流程出错' + e)
+        return true
       } finally {
         debugInfo('主流程释放锁')
         this.lock.unlock()
@@ -865,12 +878,14 @@ function FriendListScanner () {
     }
     return {
       lostSomeone: _lost_someone,
-      collectAny: _collect_any
+      collectAny: _collect_any,
+      minCountdown: _min_countdown
     }
   }
 
   this.start = function () {
     _increased_energy = 0
+    _min_countdown = 10000
     this.preloading()
     this.pregetting()
     return this.collecting()

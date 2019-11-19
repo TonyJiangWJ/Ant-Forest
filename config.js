@@ -31,6 +31,8 @@ var default_config = {
   // 设置悬浮窗的位置，避免遮挡时间之类的 或者被刘海挡住，一般异形屏的min_floaty_y值需要设为负值
   min_floaty_x: 150,
   min_floaty_y: 20,
+  // mini悬浮窗字体颜色 当前默认为亮绿色
+  min_floaty_color: '#00FF00',
   // 计时模式下 收集能量的最大等待时间 分钟
   max_collect_wait_time: 60,
   // 白名单列表，即不去收取他们的能量
@@ -54,28 +56,35 @@ var default_config = {
 let no_gui_config = {
   // 设备高度 正常情况下device.height可以获取到
   // deviceHeight: 2160,
-  // 收集相关配置
+  // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间
   timeoutLoadFriendList: 6000,
+  // 这个用于控制列表滑动是否稳定 不用去修改它
   friendListStableCount: 3,
-  // 底部高度
+  // 底部高度，比如有虚拟按键就需要修改这个值 设置比虚拟按键高度高就可以了
   bottomHeight: 100,
+  // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认启用
   useCustomScrollDown: true,
-  // 下滑速度 100毫秒
+  // 排行榜列表下滑速度 100毫秒 仅仅针对useCustomScrollDown=true的情况
   scrollDownSpeed: 100,
-  wateringBack: true,
-  wateringThresold: 40,
-  wateringBlackList: [],
+  // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
   helpBallColors: ['#f99236', '#f7af70'],
+  // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
   saveLogFile: true,
+  // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
+  wateringBack: true,
+  // 浇水阈值40克
+  wateringThresold: 40,
+  // 配置不浇水的黑名单
+  wateringBlackList: [],
   // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
   autoSetBrightness: true,
-  // 是否延迟启动，即将开始前弹toast信息提醒，此时可以按音量下延迟5分钟后再启动收集
-  delayStart: false,
-  // 延迟启动时延 5秒
-  delayStartTime: 5000
+  // 延迟启动时延 5秒 悬浮窗中进行的倒计时时间
+  delayStartTime: 5000,
+  // 收集完一轮后不驻留悬浮窗
+  notLingeringFloatWindow: false
 }
 
-// UI配置
+// UI配置 针对多语言环境 英文界面替换成相应的英文内容即可 建议还是用中文界面比较好
 var ui_config = {
   home_ui_content: '背包|通知|攻略', 
   friend_home_ui_content: '浇水|发消息',

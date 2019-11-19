@@ -4,7 +4,8 @@
  * @Last Modified time: 2019-03-05 14:16:30
  * @Description: 蚂蚁森林自动收能量
  */
-
+let { runningQueueDispatcher } = require('./lib/RunningQueueDispatcher.js')
+runningQueueDispatcher.addRunningTask()
 let { config } = require('./config.js')
 let {
   debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile
@@ -24,11 +25,15 @@ commonFunctions.checkDuplicateRunning()
  ***********************/
 logInfo('======校验无障碍功能======')
 // 检查手机是否开启无障碍服务
-try {
-  auto.waitFor()
-} catch (e) {
-  warnInfo('auto.waitFor()不可用')
-  auto()
+// 当无障碍经常莫名消失时  可以传递true 强制开启无障碍
+// if (!commonFunctions.checkAccessibilityService(true)) {
+if (!commonFunctions.checkAccessibilityService()) {
+  try {
+    auto.waitFor()
+  } catch (e) {
+    warnInfo('auto.waitFor()不可用')
+    auto()
+  }  
 }
 logInfo('---前置校验完成;启动系统--->>>>')
 if (config.auto_start) {
@@ -40,9 +45,15 @@ try {
 } catch (e) {
   errorInfo('解锁发生异常, 三分钟后重新开始' + e)
   commonFunctions.setUpAutoStart(3)
+  runningQueueDispatcher.removeRunningTask()
   exit()
 }
 logInfo('解锁成功')
+if (config.fuck_miui11) {
+  commonFunctions.showDialogAndWait()
+  commonFunctions.launchAutoJs()
+}
+
 // 请求截图权限
 let reqResult = false
 if (config.request_capture_permission) {

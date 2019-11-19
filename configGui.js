@@ -9,6 +9,14 @@
 var { default_config, storage_name } = require('./config.js')
 var configStorage = storages.create(storage_name)
 
+Object.keys(default_config).forEach(key => {
+  let storedVal = configStorage.get(key)
+  if (typeof storedVal === 'undefined') {
+    // 不存在的值设置成默认值
+    configStorage.put(key, default_config[key])
+  }
+})
+
 function draw_view() {
   ui.layout(
     <ScrollView>
@@ -67,6 +75,9 @@ function draw_view() {
         <horizontal visibility="{{configStorage.get('show_small_floaty') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="x:" /><input id="min_floaty_x" inputType="number" text="{{configStorage.get('min_floaty_x')}}" />
           <text text="y:" /><input id="min_floaty_y" inputType="number" text="{{configStorage.get('min_floaty_y')}}" />
+        </horizontal>
+        <horizontal visibility="{{configStorage.get('show_small_floaty') ? 'visible' : 'gone'}}" w="*" gravity="left" layout_gravity="left" margin="10">
+          <text text="mini悬浮窗文本颜色 示例#00FF00:" /><input id="min_floaty_color" inputType="text" text="{{configStorage.get('min_floaty_color')}}" />
         </horizontal>
         <vertical w="*" gravity="left" layout_gravity="left" margin="10">
           <text text="是否检测录屏权限" textColor="#666666" textSize="14sp" />
@@ -224,6 +235,7 @@ function draw_view() {
       update("timeout_findOne", format(ui.timeout_findOne.getText()));
       update("min_floaty_x", format(ui.min_floaty_x.getText()));
       update("min_floaty_y", format(ui.min_floaty_y.getText()));
+      update("min_floaty_color", format(ui.min_floaty_color.getText()));
       update("lock_x", format(ui.lock_x.getText()));
       update("lock_y", format(ui.lock_y.getText()));
     }

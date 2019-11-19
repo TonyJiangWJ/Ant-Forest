@@ -7,6 +7,7 @@
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
 let { automator } = require('../lib/Automator.js')
 let { commonFunctions } = require('../lib/CommonFunction.js')
+let { runningQueueDispatcher } = require('../lib/RunningQueueDispatcher.js')
 let { config } = require('../config.js')
 let { FriendListScanner } = require('./FriendListScanner.js')
 
@@ -22,14 +23,15 @@ function Ant_forest () {
     _has_next = true, // 是否下一次运行
     _collect_any = false, // 收集过能量
     _re_try = 0,
-    _lost_someone = false // 是否漏收
+    _lost_someone = false // 是否漏收,
+  _friends_min_countdown = 0
   /***********************
    * 综合操作
    ***********************/
 
   // 进入蚂蚁森林主页
   const startApp = function () {
-    logInfo('启动支付宝应用')
+    commonFunctions.launchPackage(_package_name, false)
     app.startActivity({
       action: 'VIEW',
       data: 'alipays://platformapi/startapp?appId=60000002',
@@ -266,6 +268,9 @@ function Ant_forest () {
 
   const calculateMinCountdown = function (lastMin, lastTimestamp) {
     let temp = []
+    if (_friends_min_countdown && isFinite(_friends_min_countdown)) {
+      temp.push(_friends_min_countdown)
+    }
     if (_min_countdown && isFinite(_min_countdown) && _timestamp instanceof Date) {
       debugInfo('已记录自身倒计时：' + _min_countdown + '分')
       let passedTime = Math.round((new Date() - _timestamp) / 60000)
@@ -281,7 +286,14 @@ function Ant_forest () {
       lastMin >= 0 ? temp.push(lastMin) : temp.push(0)
     }
     let friCountDowmContainer = WidgetUtils.widgetGetAll('\\d+’', null, true)
-    debugInfo('get \\d+` container:' + friCountDowmContainer)
+    let peekCountdownContainer = function (container) {
+      if (container) {
+        return commonFunctions.formatString('倒计时数据总长度：{} 文本属性来自[{}]', container.target.length, (container.isDesc ? 'desc' : 'text'))
+      } else {
+        return null
+      }
+    }
+    debugInfo('get \\d+’ container:' + peekCountdownContainer(friCountDowmContainer))
     if (friCountDowmContainer) {
       let isDesc = friCountDowmContainer.isDesc
       friCountDowmContainer.target.forEach(function (countdown) {
@@ -385,6 +397,7 @@ function Ant_forest () {
     let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
     let runTimes = commonFunctions.getTodaysRuntimeStorage('runTimes')
     let content = '第 ' + runTimes.runTimes + ' 次运行, 累计已收集:' + ((energyInfo.totalIncrease || 0) + increased) + 'g'
+    debugInfo('展示悬浮窗内容：' + content)
     commonFunctions.showTextFloaty(content)
   }
 
@@ -406,7 +419,8 @@ function Ant_forest () {
     // 循环模式、或者有漏收 不返回home
     if ((!config.is_cycle || !_has_next) && !_lost_someone) {
       automator.clickClose()
-      home()
+      // 重新打开启动前的app
+      commonFunctions.reopenPackageBeforeRunning()
     }
   }
 
@@ -471,6 +485,7 @@ function Ant_forest () {
     } else {
       _lost_someone = executeResult.loatSomeone
       _collect_any = executeResult.collectAny
+      _friends_min_countdown = executeResult.minCountdown
     }
     scanner.destory()
     return _lost_someone
@@ -503,7 +518,7 @@ function Ant_forest () {
       sleep(1000)
       // 解锁并启动
       unlocker.exec()
-      startApp()
+      startApp(false)
       sleep(startWait)
     }
     if (!waitFlag && restartCount >= 5) {
@@ -548,30 +563,11 @@ function Ant_forest () {
   }
 
   /**
-   * 监听音量下键延迟执行
-   **/
-  const listenDelayCollect = function () {
-    threads.start(function () {
-      infoLog('即将收取能量，按音量下键延迟五分钟执行', true)
-      events.observeKey()
-      events.onceKeyDown('volume_down', function (event) {
-        if (config.autoSetBrightness) {
-          device.setBrightnessMode(1)
-        }
-        warnInfo('延迟五分钟后启动脚本', true)
-        commonFunctions.setUpAutoStart(5)
-        engines.myEngine().forceStop()
-        exit()
-      })
-
-    })
-  }
-  /**
    * 监听音量上键直接关闭
    **/
   const listenStopCollect = function () {
     threads.start(function () {
-      infoLog('即将收取能量，按音量上键关闭')
+      infoLog('即将收取能量，运行中可按音量上键关闭', true)
       events.observeKey()
       events.onceKeyDown('volume_up', function (event) {
         if (config.autoSetBrightness) {
@@ -580,7 +576,6 @@ function Ant_forest () {
         engines.myEngine().forceStop()
         exit()
       })
-
     })
   }
 
@@ -599,25 +594,29 @@ function Ant_forest () {
             warnInfo('上一次收取有漏收，再次收集', true)
           } else {
             if (_min_countdown > 0 && !config.is_cycle) {
+              // 提前10秒左右结束计时
+              let delayTime = 10 / 60.0
               // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
-              let delayTime = 0
-              if (config.delayStart) {
-                delayTime = (config.delayStartTime || 5000) / 60000.0
-              }
+              delayTime += (config.delayStartTime || 5000) / 60000.0
               commonFunctions.setUpAutoStart(_min_countdown - delayTime)
-              commonFunctions.commonDelay(_min_countdown - delayTime)
+              runningQueueDispatcher.removeRunningTask()
+              // 如果不驻留悬浮窗  则不延迟，直接关闭
+              if (config.notLingeringFloatWindow) {
+                exit()
+              } else {
+                commonFunctions.commonDelay(_min_countdown - delayTime)
+              }
             }
           }
           listenStopCollect()
-          listenDelayCollect()
-          // 延迟五秒启动，可以按音量下暂停或者音量上关闭
-          if (config.delayStart) {
-            sleep(config.delayStartTime)
-          }
+          runningQueueDispatcher.addRunningTask()
+          commonFunctions.showDialogAndWait(true)
+          commonFunctions.recordCurrentPackage()
           commonFunctions.showEnergyInfo()
           let runTime = commonFunctions.increaseRunTimes()
           infoLog("========第" + runTime + "次运行========")
           showCollectSummaryFloaty()
+          debugInfo('展示悬浮窗完毕')
           _current_time++
           unlocker.exec()
           try {
@@ -654,6 +653,7 @@ function Ant_forest () {
             setTimeout(() => {
               exit()
             }, 30000)
+            runningQueueDispatcher.removeRunningTask()
             break
           }
           logInfo('========本轮结束========')
@@ -662,6 +662,7 @@ function Ant_forest () {
         errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
         // 设置三分钟后重试
         commonFunctions.setUpAutoStart(3)
+        runningQueueDispatcher.removeRunningTask()
         exit()
       }
       // 释放资源

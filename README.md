@@ -26,6 +26,8 @@
 - 脚本运行时可以显示悬浮窗展示当前状态
 - 开始收集的时候按音量减可以延迟五分钟再执行，适合需要使用手机的时候使用
 - 收取完毕后悬浮框显示收取的能量数量。
+- 可以自动打开无障碍，需要配合adb赋权 `adb shell pm grant org.autojs.autojs android.permission.WRITE_SECURE_SETTINGS`
+- 可以自动打开脚本执行之前的APP 增强体验，但是偶尔会失效因为currentPackage获取到的并不准确
 
 # 配置
 
@@ -53,6 +55,8 @@ var default_config = {
   // 设置悬浮窗的位置，避免遮挡时间之类的 或者被刘海挡住，一般异形屏的min_floaty_y值需要设为负值
   min_floaty_x: 150,
   min_floaty_y: 20,
+  // mini悬浮窗字体颜色 当前默认为亮绿色
+  min_floaty_color: '#00FF00',
   // 计时模式下 收集能量的最大等待时间 分钟
   max_collect_wait_time: 60,
   // 白名单列表，即不去收取他们的能量
@@ -82,32 +86,38 @@ let no_gui_config = {
   friendListStableCount: 3,
   // 底部高度，比如有虚拟按键就需要修改这个值 设置比虚拟按键高度高就可以了
   bottomHeight: 100,
-  // 是否使用模拟的滑动，如果滑动有问题开启这个
-  useCustomScrollDown: false,
+  // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认启用
+  useCustomScrollDown: true,
   // 排行榜列表下滑速度 100毫秒 仅仅针对useCustomScrollDown=true的情况
   scrollDownSpeed: 100,
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
   helpBallColors: ['#f99236', '#f7af70'],
   // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
   saveLogFile: true,
-  // 是否开启自动浇水
+  // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
   wateringBack: true,
-  // 浇水阈值30克
-  wateringThresold: 30,
+  // 浇水阈值40克
+  wateringThresold: 40,
   // 配置不浇水的黑名单
-  wateringBlackList: []
+  wateringBlackList: [],
+  // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
+  autoSetBrightness: true,
+  // 延迟启动时延 5秒 悬浮窗中进行的倒计时时间
+  delayStartTime: 5000,
+  // 收集完一轮后不驻留悬浮窗
+  notLingeringFloatWindow: false
 }
 
 // UI配置 针对多语言环境 英文界面替换成相应的英文内容即可 建议还是用中文界面比较好
 var ui_config = {
-  home_ui_content: '背包|通知',
+  home_ui_content: '背包|通知|攻略', 
   friend_home_ui_content: '浇水|发消息',
   friend_list_ui_content: '好友排行榜',
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   warting_widget_content: '浇水',
   using_protect_content: '使用了保护罩',
-  collectable_energy_ball_content: /.*\d+克/
+  collectable_energy_ball_content: /收集能量\d+克/
 }
 ```
 
@@ -158,4 +168,5 @@ var MyDevice = Devices.device_1
 
 # 目前存在的问题
 
-- MIUI10 默认锁屏主题解锁失败，修改成第三方主题可以解决
+- 功能性问题暂无，兼容性问题有部分MIUI版本可能会死机 暂时没有找到合适的解决方法 可以先增加配置 `fuck_miui11: true`,放在no_gui_config中即可
+- 因为currentPackage获取的数据并不准确 自动打开APP偶尔会失效
