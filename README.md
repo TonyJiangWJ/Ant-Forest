@@ -27,7 +27,7 @@
 - 开始收集的时候按音量减可以延迟五分钟再执行，适合需要使用手机的时候使用
 - 收取完毕后悬浮框显示收取的能量数量。
 - 可以自动打开无障碍，需要配合adb赋权 `adb shell pm grant org.autojs.autojs android.permission.WRITE_SECURE_SETTINGS`
-- 可以自动打开脚本执行之前的APP 增强体验，但是偶尔会失效因为currentPackage获取到的并不准确
+- 可以自动打开脚本执行之前的APP 增强体验，获取失败时通过返回最小化支付宝实现同样效果
 
 # 配置
 
@@ -169,4 +169,3 @@ var MyDevice = Devices.device_1
 # 目前存在的问题
 
 - 功能性问题暂无，兼容性问题有部分MIUI版本可能会死机 暂时没有找到合适的解决方法 可以先增加配置 `fuck_miui11: true`,放在no_gui_config中即可
-- 因为currentPackage获取的数据并不准确 自动打开APP偶尔会失效

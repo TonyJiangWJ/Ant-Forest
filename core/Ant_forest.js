@@ -214,11 +214,13 @@ function Ant_forest () {
       let ball = target.untilFind()
       let temp = []
       debugInfo('待收取球数' + ball.length)
-      let toasts = getToastAsync(_package_name, ball.length, function () {
-        ball.forEach(function (obj) {
-          automator.clickCenter(obj)
+      let toasts = getToastAsync(_package_name, ball.length >= 2 ? 2 : ball.length, function () {
+        // 只需要点击两个球就够了
+        for (let i = 0; i < ball.length && i < 2; i++) {
+          let countDownBall = ball[i]
+          automator.clickCenter(countDownBall)
           sleep(500)
-        })
+        }
       })
       toasts.forEach(function (toast) {
         let countdown = toast.match(/\d+/g)
@@ -612,8 +614,14 @@ function Ant_forest () {
           }
           runningQueueDispatcher.addRunningTask()
           listenStopCollect()
-          commonFunctions.recordCurrentPackage()
-          commonFunctions.showDialogAndWait(true)
+          if (config.tryGetExactlyPackage) {
+            commonFunctions.showDialogAndWait(true)
+            commonFunctions.recordCurrentPackage()
+          } else {
+            commonFunctions.recordCurrentPackage()
+            commonFunctions.showDialogAndWait(true)
+          }
+          
           commonFunctions.showEnergyInfo()
           let runTime = commonFunctions.increaseRunTimes()
           infoLog("========第" + runTime + "次运行========")
