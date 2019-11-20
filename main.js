@@ -64,6 +64,7 @@ if (config.request_capture_permission) {
 
 if (!reqResult) {
   errorInfo('请求截图失败')
+  runningQueueDispatcher.removeRunningTask()
   exit()
 } else {
   logInfo('请求截图权限成功')

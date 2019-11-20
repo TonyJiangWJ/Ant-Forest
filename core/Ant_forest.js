@@ -567,12 +567,14 @@ function Ant_forest () {
    **/
   const listenStopCollect = function () {
     threads.start(function () {
+      sleep(1000)
       infoLog('即将收取能量，运行中可按音量上键关闭', true)
       events.observeKey()
       events.onceKeyDown('volume_up', function (event) {
         if (config.autoSetBrightness) {
           device.setBrightnessMode(1)
         }
+        runningQueueDispatcher.removeRunningTask()
         engines.myEngine().forceStop()
         exit()
       })
@@ -609,6 +611,7 @@ function Ant_forest () {
             }
           }
           runningQueueDispatcher.addRunningTask()
+          listenStopCollect()
           commonFunctions.recordCurrentPackage()
           commonFunctions.showDialogAndWait(true)
           commonFunctions.showEnergyInfo()

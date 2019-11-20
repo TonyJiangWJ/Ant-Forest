@@ -722,6 +722,7 @@ function FriendListScanner () {
           if (errorCount >= 5) {
             errorInfo('获取截图失败多次, 可能已经没有了截图权限，重新执行脚本')
             commonFunctions.setUpAutoStart(0.02)
+            runningQueueDispatcher.removeRunningTask()
             exit()
           }
           warnInfo('获取截图失败 再试一次')
