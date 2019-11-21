@@ -5,7 +5,6 @@
  * @Description: 蚂蚁森林自动收能量
  */
 let { runningQueueDispatcher } = require('./lib/RunningQueueDispatcher.js')
-runningQueueDispatcher.addRunningTask()
 let { config } = require('./config.js')
 let {
   debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile
@@ -19,7 +18,7 @@ let { tryRequestScreenCapture } = require('./lib/TryRequestScreenCapture.js')
 logInfo('======校验是否重复运行=======')
 // 检查脚本是否重复运行
 commonFunctions.checkDuplicateRunning()
-
+runningQueueDispatcher.addRunningTask()
 /***********************
  * 初始化
  ***********************/
