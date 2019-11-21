@@ -421,6 +421,7 @@ function Ant_forest () {
     // 循环模式、或者有漏收 不返回home
     if ((!config.is_cycle || !_has_next) && !_lost_someone) {
       automator.clickClose()
+      sleep(1000)
       // 重新打开启动前的app
       commonFunctions.reopenPackageBeforeRunning()
     }
