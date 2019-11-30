@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-04-01 14:15:55
+ * @Last Modified time: 2019-11-30 20:37:16
  * @Description: 蚂蚁森林操作集
  */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
@@ -243,13 +243,14 @@ function Ant_forest () {
     let countDownNow = calculateMinCountdown()
     // 如果有收集过能量，那么先返回主页在进入排行榜，以获取最新的倒计时信息，避免收集过的倒计时信息不刷新，此过程可能导致执行过慢
     if (_collect_any) {
+      /** TODO 暂时屏蔽
       if (!isFinite(countDownNow) || countDownNow >= 2) {
         debugInfo('收集过能量，重新获取倒计时列表，原倒计时时间：[' + countDownNow + ']分')
         automator.clickBack()
         WidgetUtils.homePageWaiting()
         automator.enterFriendList()
         WidgetUtils.friendListWaiting()
-        WidgetUtils.loadFriendList()
+        WidgetUtils.quickScrollDown()
         sleep(100)
         // 再次获取倒计时数据
         let newCountDown = calculateMinCountdown(countDownNow, new Date())
@@ -262,6 +263,7 @@ function Ant_forest () {
       } else {
         debugInfo('当前倒计时时间短，无需再次获取')
       }
+       */
     } else {
       debugInfo('未收集能量直接获取倒计时列表')
     }
@@ -610,19 +612,22 @@ function Ant_forest () {
                 exit()
               } else {
                 commonFunctions.commonDelay(_min_countdown - delayTime)
+                commonFunctions.checkCaptureScreenPermission()
               }
             }
           }
           runningQueueDispatcher.addRunningTask()
           listenStopCollect()
-          if (config.tryGetExactlyPackage) {
-            commonFunctions.showDialogAndWait(true)
-            commonFunctions.recordCurrentPackage()
-          } else {
-            commonFunctions.recordCurrentPackage()
-            commonFunctions.showDialogAndWait(true)
+          if (!config.is_cycle) {
+            if (config.tryGetExactlyPackage) {
+              commonFunctions.showDialogAndWait(true)
+              commonFunctions.recordCurrentPackage()
+            } else {
+              commonFunctions.recordCurrentPackage()
+              commonFunctions.showDialogAndWait(true)
+            }
           }
-          
+
           commonFunctions.showEnergyInfo()
           let runTime = commonFunctions.increaseRunTimes()
           infoLog("========第" + runTime + "次运行========")

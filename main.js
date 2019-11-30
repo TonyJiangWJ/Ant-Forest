@@ -7,7 +7,7 @@
 let { runningQueueDispatcher } = require('./lib/RunningQueueDispatcher.js')
 let { config } = require('./config.js')
 let {
-  debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile
+  debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile, appendLog
 } = require('./lib/LogUtils.js')
 let { commonFunctions } = require('./lib/CommonFunction.js')
 let { unlocker } = require('./lib/Unlock.js')

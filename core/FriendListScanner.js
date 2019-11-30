@@ -243,13 +243,11 @@ const collectTargetFriend = function (obj) {
       preGot = WidgetUtils.getYouCollectEnergy() || 0
       preE = WidgetUtils.getFriendEnergy()
     } catch (e) { errorInfo("[" + obj.name + "]获取收集前能量异常" + e) }
-    // /*TODO
     if (config.help_friend) {
       rentery = collectAndHelp(obj.isHelp)
     } else {
       collectEnergy()
     }
-    // */
     try {
       let postGet = WidgetUtils.getYouCollectEnergy() || 0
       let postE = WidgetUtils.getFriendEnergy()
@@ -358,45 +356,48 @@ const isObtainable = function (obj, screen) {
   }
 
   let len = obj.childCount()
-  if (!config.is_cycle && len > 5) {
-    let countDownIdx = len === 7 ? 5 : 4
-    let countDO = obj.child(countDownIdx)
-    if (countDO.childCount() > 0) {
-      let cc = countDO.child(0)
-      debugInfo(['获取[{}] 倒计时数据[{}] ', container.name, (cc.desc() ? cc.desc() : cc.text())])
-      let num = null
-      if (cc.desc()) {
-        num = parseInt(cc.desc().match(/\d+/))
-      }
-      if (!num && cc.text()) {
-        num = parseInt(cc.text().match(/\d+/))
-      }
-      if (isFinite(num)) {
-        debugInfo([
-          '记录[{}] 倒计时[{}]分 time[{}]',
-          container.name, num, new Date().getTime()
-        ])
-        if (config.cutAndSaveCountdown) {
-          let countdownInfo = {
-            name: container.name,
-            x: obj.bounds().left,
-            y: obj.bounds().top,
-            h: obj.bounds().height(),
-            w: obj.bounds().width(),
-            countdown: num
-          }
-          cutAndSaveImage(screen, countdownInfo)
-        }
-        container.countdown = {
-          count: num,
-          stamp: new Date().getTime()
-        }
-        return container
-      }
+  if (len < 5) {
+    return container
+  }
+  // 分析目标控件的索引
+  let targetIdx = 4
 
+  let countDO = obj.child(targetIdx)
+  if (countDO.childCount() > 0) {
+    let cc = countDO.child(0)
+    debugInfo(['获取[{}] 倒计时数据[{}] ', container.name, (cc.desc() ? cc.desc() : cc.text())])
+    let num = null
+    if (cc.desc()) {
+      num = parseInt(cc.desc().match(/\d+/))
+    }
+    if (!num && cc.text()) {
+      num = parseInt(cc.text().match(/\d+/))
+    }
+    if (isFinite(num)) {
+      debugInfo([
+        '记录[{}] 倒计时[{}]分 time[{}]',
+        container.name, num, new Date().getTime()
+      ])
+      if (config.cutAndSaveCountdown) {
+        let countdownInfo = {
+          name: container.name,
+          x: obj.bounds().left,
+          y: obj.bounds().top,
+          h: obj.bounds().height(),
+          w: obj.bounds().width(),
+          countdown: num
+        }
+        cutAndSaveImage(screen, countdownInfo)
+      }
+      container.countdown = {
+        count: num,
+        stamp: new Date().getTime()
+      }
+      return container
     }
   }
-  let o_x = obj.child(len - 3).bounds().right,
+
+  let o_x = obj.child(targetIdx).bounds().left,
     o_y = obj.bounds().top,
     o_w = 5,
     o_h = obj.bounds().height() - 10,
@@ -404,12 +405,11 @@ const isObtainable = function (obj, screen) {
   if (o_h > 50) {
     o_h = 50
   }
-  let tmp = ''
-  if (o_h > 0 && !obj.child(len - 2).childCount()) {
+  if (o_h > 0) {
     try {
       if (
         // 是否可收取
-        images.findColor(screen, '#1da06a', {
+        images.findColor(screen, config.can_collect_color || '#1da06a', {
           region: [o_x, o_y, o_w, o_h],
           threshold: threshold
         })
@@ -418,7 +418,7 @@ const isObtainable = function (obj, screen) {
       } else if (
         config.help_friend &&
         // 是否可帮收取
-        images.findColor(screen, '#f99236', {
+        images.findColor(screen, config.can_help_color || '#f99236', {
           region: [o_x, o_y, o_w, o_h],
           threshold: threshold
         })
@@ -531,12 +531,28 @@ const getFirstVisiable = function (friendList) {
   return firstIdx
 }
 
+const getValidChildList = function (friends_list_parent) {
+  return friends_list_parent.children().filter((fri) => {
+    if (fri.childCount() >= 4) {
+      let text = fri.child(3).child(0).text()
+      let desc = fri.child(3).child(0).desc()
+      let content = text || desc
+      let regex = /.*[tg]|(证书)$/
+      return regex.test(content)
+    } else {
+      let name = WidgetUtils.getFriendsName(fri)
+      warnInfo(name + "不是有效的列表")
+    }
+    return false
+  })
+}
 
 function FriendListScanner () {
   this.lock = null
   this.condition = null
 
   this.friends_list = null
+  this.valid_child_list = null
   this.all_loaded = false
   this.emptyList = true
   this.usedList = false
@@ -569,47 +585,46 @@ function FriendListScanner () {
       while (that.all_loaded === false) {
         debugInfo(threadName + '进入循环体')
         try {
-
-          if ((more = idMatches(".*J_rank_list_more.*").findOne(200)) != null) {
-            let loadMoreContent = config.load_more_ui_content || '查看更多'
-            let noMoreContent = config.no_more_ui_content || '没有更多了'
-            if ((more.desc() && more.desc().match(noMoreContent)) || (more.text() && more.text().match(noMoreContent))) {
-              debugInfo(threadName + '发现没有更多按钮，获取好友列表')
-              debugInfo(threadName + '正获取好友list中')
-              that.lock.lock()
-              debugInfo(threadName + "获取锁")
-              that.friends_list = WidgetUtils.getFriendList()
-              that.all_loaded = true
-              that.usedList = false
-              debugInfo(threadName + "重新获取好友列表数据")
-              sleep(100)
-              that.condition.signal()
-              debugInfo(threadName + '获取好友list完成')
-              let listLength = whetherFriendListValidLength(that.friends_list)
-              if (listLength) {
-                // 动态修改预加载超时时间
-                let dynamicTimeout = Math.ceil(listLength / 20) * 800
-                config.timeoutLoadFriendList = dynamicTimeout
-                let { storage_name } = require('../config.js')
-                var configStorage = storages.create(storage_name)
-                configStorage.put('timeoutLoadFriendList', dynamicTimeout)
-                // let { config: anotherConfig } = require('../config.js')
-                // debugInfo('another config\'s timeoutLoadFriendList:[' + anotherConfig.timeoutLoadFriendList + ']')
-                debugInfo(threadName + '动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + config.timeoutLoadFriendList)
-              }
-            } else if ((more.desc() && more.desc().match(loadMoreContent)) || (more.text() && more.text().match(loadMoreContent))) {
-
-              debugInfo(threadName + '点击加载前等待锁')
-              that.lock.lock()
-              debugInfo(threadName + '点击加载前获得锁')
-              debugInfo(threadName + '点击加载更多，热身中 速度较慢')
-              more.click()
-              that.condition.signal()
-            } else {
-              debugInfo(threadName + 'find target j_rank_list_more but desc/text is :' + more.desc() + ', ' + more.text())
+          // 500毫秒检测一次
+          sleep(500)
+          // 如果发现 没有更多 则更新状态为列表已经完全加载完毕 all_loaded = true
+          if (WidgetUtils.foundNoMoreWidget()) {
+            debugInfo(threadName + '发现没有更多按钮，获取好友列表')
+            debugInfo(threadName + '正获取好友list中')
+            that.lock.lock()
+            debugInfo(threadName + "获取锁")
+            that.friends_list = WidgetUtils.getFriendList()
+            that.valid_child_list = getValidChildList(that.friends_list)
+            that.all_loaded = true
+            that.usedList = false
+            debugInfo(threadName + "重新获取好友列表数据")
+            sleep(100)
+            that.condition.signal()
+            debugInfo(threadName + '获取好友list完成')
+            let listLength = whetherFriendListValidLength(that.friends_list)
+            if (listLength) {
+              // 动态修改预加载超时时间
+              let dynamicTimeout = Math.ceil(listLength / 20) * 800
+              config.timeoutLoadFriendList = dynamicTimeout
+              let { storage_name } = require('../config.js')
+              var configStorage = storages.create(storage_name)
+              configStorage.put('timeoutLoadFriendList', dynamicTimeout)
+              // let { config: anotherConfig } = require('../config.js')
+              // debugInfo('another config\'s timeoutLoadFriendList:[' + anotherConfig.timeoutLoadFriendList + ']')
+              debugInfo(threadName + '动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + config.timeoutLoadFriendList)
             }
+            // } else if ((more.desc() && more.desc().match(loadMoreContent)) || (more.text() && more.text().match(loadMoreContent))) {
+
+            //   debugInfo(threadName + '点击加载前等待锁')
+            //   that.lock.lock()
+            //   debugInfo(threadName + '点击加载前获得锁')
+            //   debugInfo(threadName + '点击加载更多，热身中 速度较慢')
+            //   more.click()
+            //   that.condition.signal()
+            // } else {
+            //   debugInfo(threadName + 'find target j_rank_list_more but desc/text is :' + more.desc() + ', ' + more.text())
+            // }
           }
-          sleep(100)
         } catch (e) {
           errorInfo('预载入异常' + e)
         } finally {
@@ -654,6 +669,7 @@ function FriendListScanner () {
           }
           while (!l || !validChildList || validChildList.length === 0) {
             warnInfo("首次获取列表数据不完整，再次获取")
+            debugInfo('好友列表总长度：' + l + " 有效长度：" + (validChildList ? validChildList.length : '0'))
             that.friends_list = WidgetUtils.getFriendList()
             l = whetherFriendListValidLength(that.friends_list)
             if (l) {
@@ -662,6 +678,7 @@ function FriendListScanner () {
               })
             }
           }
+          that.valid_child_list = getValidChildList(that.friends_list)
           that.emptyList = false
           that.usedList = false
           that.condition.signal()
@@ -696,7 +713,8 @@ function FriendListScanner () {
     let totalValidLength = 0
     let countingDownContainers = []
     let iterEnd = -1
-    let errorCount = 0
+    let QUEUE_SIZE = 5
+    let distinctQueue = commonFunctions.createQueue(QUEUE_SIZE)
     do {
       try {
         iterEnd = -1
@@ -712,43 +730,17 @@ function FriendListScanner () {
           debugInfo('主流程等待信号')
           this.condition.await()
         }
-        // 获取截图 用于判断是否可收取
-        let screen = null
-        commonFunctions.waitFor(function () {
-          screen = captureScreen()
-        }, 500)
-        if (!screen) {
-          errorCount++
-          if (errorCount >= 5) {
-            errorInfo('获取截图失败多次, 可能已经没有了截图权限，重新执行脚本')
-            commonFunctions.setUpAutoStart(0.02)
-            runningQueueDispatcher.removeRunningTask()
-            exit()
-          }
-          warnInfo('获取截图失败 再试一次')
-          continue
-        }
+        // 获取截图 用于判断是否可收取 截图失败时终止程序并几秒后重启，主要是因为丢失了截图权限
+        let screen = commonFunctions.checkCaptureScreenPermission(false, 5)
         if (this.friends_list && this.friends_list.children) {
           friendListLength = this.friends_list.children().length
           debugInfo(
             '读取好友列表完成，开始检查可收取列表 列表长度:' + friendListLength
           )
-          let validChildList = this.friends_list.children().filter((fri) => {
-            if (fri.childCount() > 4) {
-              let text = fri.child(3).text() || fri.child(4).text()
-              let desc = fri.child(3).desc() || fri.child(4).desc()
-              let content = text || desc
-              let regex = /.*[tg]|(证书)$/
-              return regex.test(content)
-            } else {
-              let name = WidgetUtils.getFriendsName(fri)
-              warnInfo(name + "不是有效的列表")
-            }
-            return false
-          })
+          let validChildList = getValidChildList(this.friends_list)
           let firstIdx = getFirstVisiable(validChildList)
           if (lastCheckedFriend > 0 && firstIdx > lastCheckedFriend) {
-            warnInfo('列表不正确，上划重新开始', true)
+            debugInfo(['列表不正确，上划重新开始 当前首个：{} 已校验到：{}', firstIdx, lastCheckedFriend])
             scrollUp()
             continue
           }
@@ -817,22 +809,41 @@ function FriendListScanner () {
         // 重置为空列表
         _avil_list = []
 
-        // -------收集好友列表完成-------
         let canScrollDown = true
-        // 当剩余未检测数量小于等于20时，通知重新获取列表数据
-        if (lastCheckedFriend >= totalValidLength - 15 && this.all_loaded === false) {
+        if ((lastCheckedFriend >= totalValidLength - 1 || commonFunctions.getQueueDistinctSize(distinctQueue) <= 3) && this.all_loaded === false) {
           canScrollDown = false
           this.usedList = true
           this.condition.signal()
-          while (lastCheckedFriend === totalValidLength - 1 && this.all_loaded === false && this.usedList === true) {
-            // 列表未加载完，但是已经检测完当前列表，网络较差的时候会发生，释放条件为重新获取列表 刷新usedList为false 或者加载完all_loaded = true
-            warnInfo([
-              '网络太差，继续等待, last:{} total:{} loaded:{} used:{}',
-              lastCheckedFriend, totalValidLength, this.all_loaded, this.usedList
-            ])
+          while (this.usedList === true) {
+            // 主流程等待
+            debugInfo(['主流程等待预获取线程获取好友列表数据'])
             this.condition.await()
+            let newValidList = this.valid_child_list
+            debugInfo(['主流程收到预获取线程获取好友列表数据的通知 已校验的长度：{} 新获取的长度：{}', totalValidLength, newValidList.length])
+            if (!this.usedList && newValidList && newValidList.length === totalValidLength) {
+              debugInfo('获取到的长度无变化，下拉加载')
+              canScrollDown = true
+            }
           }
         }
+        // -------收集好友列表完成-------
+        // let canScrollDown = true
+        // 当剩余未检测数量小于等于20时，通知重新获取列表数据
+        // 新版暂时没法预加载 去除
+        // if (lastCheckedFriend >= totalValidLength - 15 && this.all_loaded === false) {
+        //   debugInfo('未检测数量小于等于20时，通知重新获取列表数据')
+        //   canScrollDown = false
+        //   this.usedList = true
+        //   this.condition.signal()
+        //   while (lastCheckedFriend === totalValidLength - 1 && this.all_loaded === false && this.usedList === true) {
+        //     // 列表未加载完，但是已经检测完当前列表，网络较差的时候会发生，释放条件为重新获取列表 刷新usedList为false 或者加载完all_loaded = true
+        //     warnInfo([
+        //       '网络太差，继续等待, last:{} total:{} loaded:{} used:{}',
+        //       lastCheckedFriend, totalValidLength, this.all_loaded, this.usedList
+        //     ])
+        //     this.condition.await()
+        //   }
+        // }
 
         if (canScrollDown) {
           debugInfo('滑动进入下一页')
@@ -845,13 +856,14 @@ function FriendListScanner () {
         debugInfo('主流程释放锁')
         this.lock.unlock()
       }
+      commonFunctions.pushQueue(distinctQueue, QUEUE_SIZE, lastCheckedFriend)
     } while (
-      lastCheckedFriend < totalValidLength - 1 || this.all_loaded === false
+      lastCheckedFriend < this.valid_child_list.length - 1 || this.all_loaded === false && commonFunctions.getQueueDistinctSize(distinctQueue) > 1
     )
 
     debugInfo([
-      '校验收尾 state:{} lastCheck:{} total:{}',
-      this.all_loaded, lastCheckedFriend, totalValidLength
+      '校验收尾 state:{} lastCheck:{} total:{} queueSize:{}',
+      this.all_loaded, lastCheckedFriend, totalValidLength, commonFunctions.getQueueDistinctSize(distinctQueue)
     ])
     if (_avil_list.length > 0) {
       debugInfo(['有未收集的可收取能量'])

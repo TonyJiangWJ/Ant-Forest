@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-04-01 14:15:55
+ * @Last Modified time: 2019-11-30 15:10:14
  * @Description: 配置文件
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -56,7 +56,7 @@ var default_config = {
 let no_gui_config = {
   // 设备高度 正常情况下device.height可以获取到
   // deviceHeight: 2160,
-  // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间
+  // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间 @deprecated 新版蚂蚁森林没法使用
   timeoutLoadFriendList: 6000,
   // 这个用于控制列表滑动是否稳定 不用去修改它
   friendListStableCount: 3,
@@ -88,7 +88,7 @@ let no_gui_config = {
 var ui_config = {
   home_ui_content: '背包|通知|攻略', 
   friend_home_ui_content: '浇水|发消息',
-  friend_list_ui_content: '好友排行榜',
+  friend_list_ui_content: '(周|总)排行榜',
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   warting_widget_content: '浇水',
