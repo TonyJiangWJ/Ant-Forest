@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-30 11:34:59
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-11-30 21:16:09
+ * @Last Modified time: 2019-12-01 15:46:29
  * @Description: 测试功能用
  */
 let config = {
@@ -70,6 +70,10 @@ countdown = new Countdown()
 getFriendsList('TonyJiang')
 countdown.summary('获取好友列表Root0')
 
+/**
+ * 格式化参数
+ * @param {string|array} originContent 需要格式化参数数组或者不需要格式化的字符串
+ */
 function convertObjectContent (originContent) {
   if (typeof originContent === 'string') {
     return originContent

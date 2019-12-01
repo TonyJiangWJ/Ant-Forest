@@ -1,3 +1,10 @@
+/*
+ * @Author: TonyJiangWJ
+ * @Date: 2019-11-11 09:17:29
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2019-12-01 20:50:23
+ * @Description: 
+ */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
 let { automator } = require('../lib/Automator.js')
 let { commonFunctions } = require('../lib/CommonFunction.js')
@@ -346,12 +353,17 @@ const cutAndSaveImage = function (screen, countdownInfo) {
   })
 }
 
-// 判断是否可收取
-const isObtainable = function (obj, screen) {
+/**
+ * 判断是否可收取
+ * @param {Object} obj 好友控件对象
+ * @param {Object} screen 截图
+ * @param {string} name 好友名称
+ */
+const isObtainable = function (obj, screen, name) {
   let container = {
     fri: obj,
     isHelp: false,
-    name: WidgetUtils.getFriendsName(obj),
+    name: name || WidgetUtils.getFriendsName(obj),
     canDo: false
   }
 
@@ -531,8 +543,19 @@ const getFirstVisiable = function (friendList) {
   return firstIdx
 }
 
+const simpleCheckValidList = function (friends_list_parent) {
+  if (friends_list_parent) {
+    return friends_list_parent.children().filter((fri) => {
+      return fri && fri.childCount() >= 4
+    })
+  }
+}
+
 const getValidChildList = function (friends_list_parent) {
   return friends_list_parent.children().filter((fri) => {
+    if (!fri) {
+      return false
+    }
     if (fri.childCount() >= 4) {
       let text = fri.child(3).child(0).text()
       let desc = fri.child(3).child(0).desc()
@@ -663,19 +686,16 @@ function FriendListScanner () {
           let l = whetherFriendListValidLength(that.friends_list)
           let validChildList = null
           if (l) {
-            validChildList = that.friends_list.children().filter((fri) => {
-              return fri.childCount() >= 3
-            })
+            validChildList = simpleCheckValidList(that.friends_list)
           }
           while (!l || !validChildList || validChildList.length === 0) {
             warnInfo("首次获取列表数据不完整，再次获取")
             debugInfo('好友列表总长度：' + l + " 有效长度：" + (validChildList ? validChildList.length : '0'))
+            sleep(400)
             that.friends_list = WidgetUtils.getFriendList()
             l = whetherFriendListValidLength(that.friends_list)
             if (l) {
-              validChildList = that.friends_list.children().filter((fri) => {
-                return fri.childCount() >= 3
-              })
+              validChildList = simpleCheckValidList(that.friends_list)
             }
           }
           that.valid_child_list = getValidChildList(that.friends_list)
@@ -715,6 +735,8 @@ function FriendListScanner () {
     let iterEnd = -1
     let QUEUE_SIZE = 5
     let distinctQueue = commonFunctions.createQueue(QUEUE_SIZE)
+    let stock_idx = -1
+    let stock_count = 0
     do {
       try {
         iterEnd = -1
@@ -744,10 +766,12 @@ function FriendListScanner () {
             scrollUp()
             continue
           }
-          debugInfo('有效好友列表长度' + validChildList.length)
+
           totalValidLength = validChildList.length
+          debugInfo(['有效好友列表长度: {}', totalValidLength])
           for (let idx = (lastCheckedFriend > 0 ? lastCheckedFriend + 1 : 0); idx < totalValidLength; idx++) {
             let fri = validChildList[idx]
+            let friendName = WidgetUtils.getFriendsName(fri)
             if ((iterEnd !== -1 && idx > iterEnd)) {
               continue
             }
@@ -756,8 +780,8 @@ function FriendListScanner () {
               let bounds = fri.bounds()
               let fh = bounds.bottom - bounds.top
               if (fh > 10) {
-                debugInfo('识别好友信息， ' + idx)
-                let container = isObtainable(fri, screen)
+                debugInfo(['识别好友信息 idx:{} name: {}', idx, friendName])
+                let container = isObtainable(fri, screen, friendName)
                 if (container.canDo) {
                   container.bounds = bounds
                   recordAvailableList(container)
@@ -776,13 +800,24 @@ function FriendListScanner () {
                 lastCheckedFriend = idx
                 checkedList.push(idx)
               } else {
-                debugInfo(['好友[{}]信息不可见，控件高度[{}]低于10 top:{}', idx, fh, bounds.top])
-                iterEnd = idx
+                debugInfo(['好友[{}]信息不可见 stock:{}，控件高度[{}]低于10 top:{}', friendName ? friendName : idx, stock_idx, fh, bounds.top])
               }
             } else {
-              debugInfo(['好友[{}]信息不可见', idx])
-              iterEnd = idx
+              debugInfo(['好友[{}]信息不可见 stock:{}', idx, stock_idx])
             }
+          }
+          if (iterEnd !== -1 && iterEnd === stock_idx) {
+            stock_count++
+          } else {
+            stock_idx = iterEnd
+            stock_count = 0
+          }
+
+          if (stock_count > 2) {
+            debugInfo(['在控件位置：{} 卡住多次，上划', stock_idx], true)
+            stock_count = 0
+            scrollUp()
+            continue
           }
           debugInfo(
             ['可收取列表获取完成 校验数量[{}]，开始收集 待收取列表长度:[{}]', lastCheckedFriend + 1, _avil_list.length]
@@ -821,8 +856,9 @@ function FriendListScanner () {
             let newValidList = this.valid_child_list
             debugInfo(['主流程收到预获取线程获取好友列表数据的通知 已校验的长度：{} 新获取的长度：{}', totalValidLength, newValidList.length])
             if (!this.usedList && newValidList && newValidList.length === totalValidLength) {
-              debugInfo('获取到的长度无变化，下拉加载')
-              canScrollDown = true
+              debugInfo('获取到的长度无变化，上下滑动触发加载')
+              scrollUp()
+              automator.scrollDown()
             }
           }
         }

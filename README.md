@@ -112,7 +112,7 @@ let no_gui_config = {
 var ui_config = {
   home_ui_content: '背包|通知|攻略', 
   friend_home_ui_content: '浇水|发消息',
-  friend_list_ui_content: '好友排行榜',
+  friend_list_ui_content: '(周|总)排行榜',
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   warting_widget_content: '浇水',
