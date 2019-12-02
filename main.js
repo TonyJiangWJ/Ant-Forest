@@ -9,6 +9,7 @@ let { config } = require('./config.js')
 let {
   debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile, appendLog
 } = require('./lib/LogUtils.js')
+let FloatyInstance = require('./lib/FloatyUtil.js')
 let { commonFunctions } = require('./lib/CommonFunction.js')
 let { unlocker } = require('./lib/Unlock.js')
 let { antForestRunner } = require('./core/Ant_forest.js')

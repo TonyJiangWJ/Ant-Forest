@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-09 11:14:45
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-11-30 21:21:25
+ * @Last Modified time: 2019-12-02 23:17:47
  * @Description: 
  */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
@@ -24,3 +24,8 @@ errorInfo('error')
 
 // removeOldLogFiles()
 WidgetUtils.quickScrollDown()
+let count = 15
+while (count-- > 0) {
+  scrollUp()
+  sleep(10)
+}

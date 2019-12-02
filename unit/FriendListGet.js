@@ -2,32 +2,70 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-30 11:34:59
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-01 15:46:29
+ * @Last Modified time: 2019-12-02 23:27:10
  * @Description: 测试功能用
  */
 let config = {
   friend_list_ui_content: '(周|总)排行榜',
   help_friend: true
 }
-const whetherFriendListValidLength = function (friends_list) {
-  return (friends_list && friends_list.children()) ? friends_list.children().length : undefined
-}
-const getFriendsName = function (fri) {
-  try {
-    let nameContainer = fri.child(2).child(0).child(0)
-    return nameContainer.text() || nameContainer.desc()
-  } catch (e) {
-    log(e)
+
+console.show()
+
+checkList()
+
+
+function checkList () {
+  let countdown = new Countdown()
+  // let own = getOwntext()
+  // console.log('我自己的ID: ' + own + ' 耗时：' + countdown.getCost())
+
+  countdown = new Countdown()
+  let friendsList = getFriendRoot()
+  countdown.summary('获取好友列表Root_')
+  let isValidLength = whetherFriendListValidLength(friendsList)
+  if (isValidLength) {
+    console.log('好友列表初步判断有效 长度为：' + isValidLength)
+
+    let validList = getValidChildList(friendsList)
+    if (validList && validList.length > 0) {
+      console.log('好友列表确实有效：')
+    } else {
+      console.log('好友列表最终判断无效：')
+    }
+    for (let i = 0; i < (isValidLength > 10 ? 10 : isValidLength); i++) {
+      let target = friendsList.children()[i]
+      if (target && target.children()) {
+        if (target.children().length > 3) {
+          console.log('idx:' + i + ' 被检测的text: ' + target.child(3).child(0).text() + ' desc:' + target.child(3).child(0).desc())
+        } else {
+          console.log('idx:' + i + 'children长度不符合：' + target.children().length)
+        }
+      } else {
+        console.log('idx:' + i + '无法获取children')
+      }
+    }
+  } else {
+    console.log('好友列表初步判断无效 ' + isValidLength)
   }
 }
-console.show()
-const _own_text = 'TonyJiang'
 
-const getJRankSelfBottom = function () {
+
+
+
+
+
+
+
+
+
+// ...............
+
+function getJRankSelfBottom () {
   let maxTry = 50
   while (maxTry-- > 0) {
     try {
-        return textMatches(_own_text).findOnce(1).bounds().bottom;
+      return textMatches(_own_text).findOnce(1).bounds().bottom;
     } catch (e) {
       try {
         return descMatches(_own_text).findOnce(1).bounds().bottom;
@@ -39,7 +77,7 @@ const getJRankSelfBottom = function () {
   return null
 }
 
-const getH5RankSelfBottom = function () {
+function getH5RankSelfBottom () {
   let maxTry = 50
   while (maxTry-- > 0) {
     try {
@@ -51,25 +89,40 @@ const getH5RankSelfBottom = function () {
   return null
 }
 
-let countdown = new Countdown()
-// let count = 10
-// while (count-- > 0) {
-//   sleep(1000)
-//   countdown = new Countdown()
-//   log(getJRankSelfBottom())
-//   countdown.summary('获取个人控件底部')
-// }
-countdown = new Countdown()
-log(getH5RankSelfBottom())
-countdown.summary('获取h5_h_dividier')
+function getValidChildList (friends_list_parent) {
+  return friends_list_parent.children().filter((fri) => {
+    if (!fri) {
+      return false
+    }
+    if (fri.childCount() >= 4) {
+      let text = fri.child(3).child(0).text()
+      let desc = fri.child(3).child(0).desc()
+      let content = text || desc
+      let regex = /.*[tg]|(证书)$/
+      let checkResult = regex.test(content)
+      if (!checkResult) {
+        console.log(getFriendsName(fri) + '判断无效 控件的text:' + text + ' desc:' + desc)
+      }
+      return checkResult
+    } else {
+      let name = getFriendsName(fri)
+      console.log(name + "不是有效的列表")
+    }
+    return false
+  })
+}
 
-countdown = new Countdown()
-getFriendsList1('TonyJiang')
-countdown.summary('获取好友列表Root1')
-countdown = new Countdown()
-getFriendsList('TonyJiang')
-countdown.summary('获取好友列表Root0')
-
+function whetherFriendListValidLength (friends_list) {
+  return (friends_list && friends_list.children()) ? friends_list.children().length : undefined
+}
+function getFriendsName (fri) {
+  try {
+    let nameContainer = fri.child(2).child(0).child(0)
+    return nameContainer.text() || nameContainer.desc()
+  } catch (e) {
+    log(e)
+  }
+}
 /**
  * 格式化参数
  * @param {string|array} originContent 需要格式化参数数组或者不需要格式化的字符串
@@ -269,22 +322,45 @@ function getFriendsList (ownText) {
 
 function getFriendsList1 (ownText) {
   if (ownText) {
-    // log('我自己：' + ownText)
+    log('我自己：' + ownText)
     let self = textMatches(new RegExp('^' + ownText + '$')).findOnce(1)
     if (self) {
       try {
         let rootParent = self.parent().parent().parent().parent()
-        // log('列表总长度：' + rootParent.children().length)
+        log('列表总长度：' + rootParent.children().length)
         return rootParent
       } catch (e) {
         log(e)
       } finally {
-        // countdown.summary('获取好友列表根节点')
+        countdown.summary('获取好友列表根节点')
       }
     }
   }
 }
 
+
+function getFriendsList2 (ownText) {
+  let countdown = new Countdown()
+  if (ownText) {
+    log('我自己：' + ownText)
+    let regex = new RegExp('^' + ownText + '$')
+    let self = descMatches(regex).findOnce(1) || textMatches(regex).findOnce(1)
+    if (self) {
+      try {
+        let rootParent = self.parent().parent().parent().parent()
+        iteratorAllText(rootParent)
+        log('列表总长度：' + rootParent.children().length)
+        return rootParent
+      } catch (e) {
+        log(e)
+      } finally {
+        countdown.summary('获取好友列表根节点')
+      }
+    } else {
+      log('获取我自己的控件失败：' + ownText)
+    }
+  }
+}
 
 function Countdown () {
   this.start = new Date().getTime()
@@ -298,24 +374,49 @@ function Countdown () {
 
 }
 
+function getFriendRoot() {
+  let anyone = null
+  let regex = /[.\d]+[kgt]+$/
+  let countdown = new Countdown()
+  if (textMatches(regex).exists()) {
+    anyone = textMatches(regex).findOnce(1)
+    log('当前获取到的内容：' + anyone.text())
+  } else if (descMatches(regex).exists()) {
+    log('当前获取到的内容：' + anyone.desc())
+    anyone = descMatches(regex).findOnce(1)
+  } 
+  countdown.summary('获取能量值控件')
+  if (anyone) {
+    let root = anyone.parent().parent().parent()
+    return root
+  } else {
+    log('获取能量值控件失败')
+  }
+}
+
 function getOwntext () {
   let anyone = null
   let regex = /[.\d]+[kgt]+$/
   let countdown = new Countdown()
   if (textMatches(regex).exists()) {
-    anyone = textMatches(regex).findOne(1000)
+    anyone = textMatches(regex).findOnce(1000)
     log('当前获取到的内容：' + anyone.text())
   } else if (descMatches(regex).exists()) {
     log('当前获取到的内容：' + anyone.desc())
     anyone = descMatches(regex).findOne(1000)
+  } else {
+    log('获取能量值控件失败')
   }
   countdown.summary('获取能量值控件')
   if (anyone) {
     try {
       let ownElement = anyone.parent().parent().children()[2].children()[0].children()[0]
-      return ownElement.text() || ownElement.desc()
+      let text = ownElement.text()
+      let desc = ownElement.desc()
+      console.log('个人id控件文本 text:' + text + ' desc:' + desc)
+      return text || desc
     } catch (e) {
-      log(e)
+      log('获取个人id文本失败' + e)
       return null
     } finally {
       countdown.summary('分析自身id')

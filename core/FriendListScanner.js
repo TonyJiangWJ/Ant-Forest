@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-01 20:50:23
+ * @Last Modified time: 2019-12-02 23:53:34
  * @Description: 
  */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
@@ -18,8 +18,8 @@ let _min_countdown = 10000
 
 const _package_name = 'com.eg.android.AlipayGphone'
 
-const whetherFriendListValidLength = function (friends_list) {
-  return (friends_list && friends_list.children()) ? friends_list.children().length : undefined
+const whetherFriendListValidLength = function (friends_list_parent) {
+  return (friends_list_parent && friends_list_parent.children()) ? friends_list_parent.children().length : undefined
 }
 
 /**
@@ -574,7 +574,7 @@ function FriendListScanner () {
   this.lock = null
   this.condition = null
 
-  this.friends_list = null
+  this.friends_list_parent = null
   this.valid_child_list = null
   this.all_loaded = false
   this.emptyList = true
@@ -592,7 +592,7 @@ function FriendListScanner () {
   this.destory = function () {
     this.preloadingThread.interrupt()
     this.pregettingThread.interrupt()
-    this.friends_list = null
+    this.friends_list_parent = null
   }
 
 
@@ -616,15 +616,15 @@ function FriendListScanner () {
             debugInfo(threadName + '正获取好友list中')
             that.lock.lock()
             debugInfo(threadName + "获取锁")
-            that.friends_list = WidgetUtils.getFriendList()
-            that.valid_child_list = getValidChildList(that.friends_list)
+            that.friends_list_parent = WidgetUtils.getFriendListParent()
+            that.valid_child_list = getValidChildList(that.friends_list_parent)
             that.all_loaded = true
             that.usedList = false
             debugInfo(threadName + "重新获取好友列表数据")
             sleep(100)
             that.condition.signal()
             debugInfo(threadName + '获取好友list完成')
-            let listLength = whetherFriendListValidLength(that.friends_list)
+            let listLength = whetherFriendListValidLength(that.friends_list_parent)
             if (listLength) {
               // 动态修改预加载超时时间
               let dynamicTimeout = Math.ceil(listLength / 20) * 800
@@ -682,23 +682,23 @@ function FriendListScanner () {
               break
             }
           }
-          that.friends_list = WidgetUtils.getFriendList()
-          let l = whetherFriendListValidLength(that.friends_list)
+          that.friends_list_parent = WidgetUtils.getFriendListParent()
+          let l = whetherFriendListValidLength(that.friends_list_parent)
           let validChildList = null
           if (l) {
-            validChildList = simpleCheckValidList(that.friends_list)
+            validChildList = simpleCheckValidList(that.friends_list_parent)
           }
           while (!l || !validChildList || validChildList.length === 0) {
             warnInfo("首次获取列表数据不完整，再次获取")
             debugInfo('好友列表总长度：' + l + " 有效长度：" + (validChildList ? validChildList.length : '0'))
             sleep(400)
-            that.friends_list = WidgetUtils.getFriendList()
-            l = whetherFriendListValidLength(that.friends_list)
+            that.friends_list_parent = WidgetUtils.getFriendListParent()
+            l = whetherFriendListValidLength(that.friends_list_parent)
             if (l) {
-              validChildList = simpleCheckValidList(that.friends_list)
+              validChildList = simpleCheckValidList(that.friends_list_parent)
             }
           }
-          that.valid_child_list = getValidChildList(that.friends_list)
+          that.valid_child_list = getValidChildList(that.friends_list_parent)
           that.emptyList = false
           that.usedList = false
           that.condition.signal()
@@ -754,12 +754,12 @@ function FriendListScanner () {
         }
         // 获取截图 用于判断是否可收取 截图失败时终止程序并几秒后重启，主要是因为丢失了截图权限
         let screen = commonFunctions.checkCaptureScreenPermission(false, 5)
-        if (this.friends_list && this.friends_list.children) {
-          friendListLength = this.friends_list.children().length
+        if (this.friends_list_parent && this.friends_list_parent.children) {
+          friendListLength = this.friends_list_parent.children().length
           debugInfo(
             '读取好友列表完成，开始检查可收取列表 列表长度:' + friendListLength
           )
-          let validChildList = getValidChildList(this.friends_list)
+          let validChildList = getValidChildList(this.friends_list_parent)
           let firstIdx = getFirstVisiable(validChildList)
           if (lastCheckedFriend > 0 && firstIdx > lastCheckedFriend) {
             debugInfo(['列表不正确，上划重新开始 当前首个：{} 已校验到：{}', firstIdx, lastCheckedFriend])
@@ -801,9 +801,11 @@ function FriendListScanner () {
                 checkedList.push(idx)
               } else {
                 debugInfo(['好友[{}]信息不可见 stock:{}，控件高度[{}]低于10 top:{}', friendName ? friendName : idx, stock_idx, fh, bounds.top])
+                iterEnd = idx
               }
             } else {
               debugInfo(['好友[{}]信息不可见 stock:{}', idx, stock_idx])
+              iterEnd = idx
             }
           }
           if (iterEnd !== -1 && iterEnd === stock_idx) {

@@ -37,7 +37,7 @@ const checkFriends = function () {
     WidgetUtils.waitRankListStable()
     let screen = captureScreen()
     debugInfo('获取好友列表')
-    let friends_list = WidgetUtils.getFriendList()
+    let friends_list = WidgetUtils.getFriendListParent()
     debugInfo('判断好友信息')
     if (friends_list && friends_list.children) {
       friendListLength = friends_list.children().length

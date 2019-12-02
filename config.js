@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-11-30 15:10:14
+ * @Last Modified time: 2019-12-02 23:47:52
  * @Description: 配置文件
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -54,6 +54,8 @@ var default_config = {
  * 非可视化控制的配置 通过手动修改config.js来实现配置
  */
 let no_gui_config = {
+  // 只在AutoJS中能打开，定时不能打开时 尝试开启这个 设为true
+  fuck_miui11: false,
   // 设备高度 正常情况下device.height可以获取到
   // deviceHeight: 2160,
   // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间 @deprecated 新版蚂蚁森林没法使用
@@ -62,8 +64,8 @@ let no_gui_config = {
   friendListStableCount: 3,
   // 底部高度，比如有虚拟按键就需要修改这个值 设置比虚拟按键高度高就可以了
   bottomHeight: 100,
-  // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认启用
-  useCustomScrollDown: true,
+  // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认关闭 经常有人手机上有虚拟按键 然后又不看文档注释的
+  useCustomScrollDown: false,
   // 排行榜列表下滑速度 100毫秒 仅仅针对useCustomScrollDown=true的情况
   scrollDownSpeed: 100,
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
@@ -77,7 +79,7 @@ let no_gui_config = {
   // 配置不浇水的黑名单
   wateringBlackList: [],
   // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
-  autoSetBrightness: true,
+  autoSetBrightness: false,
   // 延迟启动时延 5秒 悬浮窗中进行的倒计时时间
   delayStartTime: 5000,
   // 收集完一轮后不驻留悬浮窗
