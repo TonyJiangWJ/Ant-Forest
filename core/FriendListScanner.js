@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-03 22:48:23
+ * @Last Modified time: 2019-12-03 23:07:41
  * @Description: 
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -767,9 +767,14 @@ function FriendListScanner () {
           let validChildList = getValidChildList(this.friends_list_parent)
           let firstIdx = getFirstVisiable(validChildList)
           if (lastCheckedFriend > 0 && firstIdx > lastCheckedFriend) {
-            debugInfo(['列表不正确，上划重新开始 当前首个：{} 已校验到：{}', firstIdx, lastCheckedFriend])
-            scrollUp()
-            continue
+            if (checkedList.indexOf(firstIdx) <= 0) {
+              debugInfo(['列表不正确，上划重新开始 当前首个：{} 已校验到：{}', firstIdx, lastCheckedFriend])
+              scrollUp()
+              continue
+            } else {
+              debugInfo(['重置lastChecked为当前首个可见item：{} ', firstIdx])
+              lastCheckedFriend = firstIdx
+            }
           }
 
           totalValidLength = validChildList.length
@@ -781,7 +786,7 @@ function FriendListScanner () {
           for (let idx = (lastCheckedFriend > 0 ? lastCheckedFriend + 1 : 0); idx < totalValidLength; idx++) {
             let fri = validChildList[idx]
             let friendName = _widgetUtils.getFriendsName(fri)
-            if ((iterEnd !== -1 && idx > iterEnd)) {
+            if ((iterEnd !== -1 && idx > iterEnd) || checkedList.indexOf(idx) > -1) {
               continue
             }
             debugInfo('校验' + idx + "开始")

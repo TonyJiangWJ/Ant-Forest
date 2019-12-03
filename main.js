@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-03 20:31:31
+ * @Last Modified time: 2019-12-03 23:23:44
  * @Description: 蚂蚁森林自动收能量
  */
 let runningQueueDispatcher = require('./lib/RunningQueueDispatcher.js')
@@ -19,6 +19,8 @@ let { tryRequestScreenCapture } = require('./lib/TryRequestScreenCapture.js')
 logInfo('======校验是否重复运行=======')
 // 检查脚本是否重复运行
 commonFunctions.checkDuplicateRunning()
+// 调试时强制清除任务队列
+// runningQueueDispatcher.clearAll()
 runningQueueDispatcher.addRunningTask()
 /***********************
  * 初始化
