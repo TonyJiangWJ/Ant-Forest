@@ -1,3 +1,5 @@
+# 其他脚本
+- [蚂蚁庄园传送门](https://github.com/TonyJiangWJ/Ant-Manor)
 # 简介
 
 基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha 版本开发。解锁模块参考自：https://github.com/e1399579/autojs
