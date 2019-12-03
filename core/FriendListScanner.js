@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-02 23:53:34
+ * @Last Modified time: 2019-12-03 16:29:13
  * @Description: 
  */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
@@ -15,6 +15,7 @@ let _avil_list = []
 let _increased_energy = 0
 let _collect_any = false
 let _min_countdown = 10000
+let _current_time = 0
 
 const _package_name = 'com.eg.android.AlipayGphone'
 
@@ -22,18 +23,19 @@ const whetherFriendListValidLength = function (friends_list_parent) {
   return (friends_list_parent && friends_list_parent.children()) ? friends_list_parent.children().length : undefined
 }
 
+
+
 /**
  * 展示当前累积收集能量信息，累加已记录的和当前运行轮次所增加的
  * 
  * @param {本次增加的能量值} increased
  */
 const showCollectSummaryFloaty = function (increased) {
-  increased = increased || 0
-  _increased_energy += increased
-  let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
-  let runTimes = commonFunctions.getTodaysRuntimeStorage('runTimes')
-  let content = '第 ' + runTimes.runTimes + ' 次运行, 累计已收集:' + ((energyInfo.totalIncrease || 0) + _increased_energy) + 'g'
-  commonFunctions.showTextFloaty(content)
+  if (config.is_cycle) {
+    commonFunctions.showCollectSummaryFloaty0(_increased_energy, _current_time, increased)
+  } else {
+    commonFunctions.showCollectSummaryFloaty0(null, null, increased)
+  }
 }
 
 /**
@@ -510,7 +512,7 @@ const checkRunningCountdown = function (countingDownContainers) {
       if (passed >= count) {
         debugInfo('[' + item.name + ']倒计时结束')
         // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
-        _lost_someone = true
+        return true
       } else {
         let rest = count - passed
         _min_countdown = rest < _min_countdown ? rest : _min_countdown
@@ -581,7 +583,9 @@ function FriendListScanner () {
   this.usedList = false
 
 
-  this.init = function () {
+  this.init = function (option) {
+    _current_time = option.currentTime || 0
+    _increased_energy = option.increasedEnergy || 0
     this.lock = threads.lock()
     this.condition = this.lock.newCondition()
     this.all_loaded = false
@@ -769,6 +773,10 @@ function FriendListScanner () {
 
           totalValidLength = validChildList.length
           debugInfo(['有效好友列表长度: {}', totalValidLength])
+          if (firstIdx >= 0 && lastCheckedFriend - firstIdx >= 6) {
+            debugInfo(['当前首个可见item index:{} 远小于上一次检测的index:{} 重置lastChecked', firstIdx, lastCheckedFriend])
+            lastCheckedFriend = firstIdx
+          }
           for (let idx = (lastCheckedFriend > 0 ? lastCheckedFriend + 1 : 0); idx < totalValidLength; idx++) {
             let fri = validChildList[idx]
             let friendName = WidgetUtils.getFriendsName(fri)
@@ -816,7 +824,11 @@ function FriendListScanner () {
           }
 
           if (stock_count > 2) {
-            debugInfo(['在控件位置：{} 卡住多次，上划', stock_idx], true)
+            if (firstIdx === -1) {
+              errorInfo(['在控件位置：{} 卡住多次, 且首个可见item获取失败，请尝试重启脚本', stock_idx], true)
+            } else {
+              debugInfo(['在控件位置：{} 卡住多次，上划 首个可见item:{}', stock_idx, firstIdx])
+            }
             stock_count = 0
             scrollUp()
             continue
@@ -914,7 +926,7 @@ function FriendListScanner () {
     }
 
     _lost_someone = checkIsEveryFriendChecked(checkedList, totalValidLength)
-    checkRunningCountdown(countingDownContainers)
+    _lost_someone = _lost_someone || checkRunningCountdown(countingDownContainers)
     commonFunctions.addClosePlacehold(">>>><<<<")
     debugInfo([
       '全部收集完成, last:[{}] length:[{}]',

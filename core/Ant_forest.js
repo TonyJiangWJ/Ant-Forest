@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-02 23:25:07
+ * @Last Modified time: 2019-12-03 16:31:17
  * @Description: 蚂蚁森林操作集
  */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
@@ -397,12 +397,11 @@ function Ant_forest () {
   }
 
   const showCollectSummaryFloaty = function (increased) {
-    increased = increased || 0
-    let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
-    let runTimes = commonFunctions.getTodaysRuntimeStorage('runTimes')
-    let content = '第 ' + runTimes.runTimes + ' 次运行, 累计已收集:' + ((energyInfo.totalIncrease || 0) + increased) + 'g'
-    debugInfo('展示悬浮窗内容：' + content)
-    commonFunctions.showTextFloaty(content)
+    if (config.is_cycle) {
+      commonFunctions.showCollectSummaryFloaty0(_post_energy - _pre_energy, _current_time, increased)
+    } else {
+      commonFunctions.showCollectSummaryFloaty0(null, null, increased)
+    }
   }
 
   // 记录最终能量值
@@ -415,7 +414,7 @@ function Ant_forest () {
     logInfo('当前能量：' + _post_energy)
     commonFunctions.showEnergyInfo()
     let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
-    if (!_fisrt_running && !_has_next) {
+    if (!_has_next) {
       showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共收取' + energyInfo.totalIncrease + 'g')
     } else {
       showCollectSummaryFloaty()
@@ -483,8 +482,9 @@ function Ant_forest () {
 
   const findAndCollect = function () {
     let scanner = new FriendListScanner()
-    scanner.init()
+    scanner.init({ currentTime: _current_time, increaseEnergy: _post_energy - _pre_energy })
     let executeResult = scanner.start()
+    // 执行失败 返回 true
     if (executeResult === true) {
       _lost_someone = true
     } else {
@@ -587,20 +587,125 @@ function Ant_forest () {
   }
 
 
-
-  return {
-    exec: function () {
-      let thread = threads.start(function () {
+  const Executor = function () {
+    this.eventSettingThread = null
+    this.needRestart = false
+    this.setupEventListeners = function () {
+      this.eventSettingThread = threads.start(function () {
         events.setMaxListeners(0)
         events.observeToast()
       })
+    }
+
+    this.readyForStart = function () {
+      // 解锁其实在main里面已经执行 这里是为了容错 觉得没必要可以注释掉
+      unlocker.exec()
+      runningQueueDispatcher.addRunningTask()
+      if (config.tryGetExactlyPackage) {
+        commonFunctions.showDialogAndWait(true)
+        commonFunctions.recordCurrentPackage()
+      } else {
+        commonFunctions.recordCurrentPackage()
+        commonFunctions.showDialogAndWait(true)
+      }
+      listenStopCollect()
+      commonFunctions.showEnergyInfo()
+    }
+
+    this.destory = function () {
+      runningQueueDispatcher.removeRunningTask()
+      events.removeAllListeners()
+      this.eventSettingThread.interrupt()
+      this.eventSettingThread = null
+
+      if (config.auto_lock === true && unlocker.needRelock() === true) {
+        debugInfo('重新锁定屏幕')
+        automator.lockScreen()
+      }
+      if (config.autoSetBrightness) {
+        device.setBrightnessMode(1)
+      }
+    }
+
+    this.checkRestart = function () {
+      logInfo('收取结束')
+      if (this.needRestart) {
+        // 设置三分钟后重试
+        commonFunctions.setUpAutoStart(3)
+        runningQueueDispatcher.removeRunningTask()
+        exit()
+      } else {
+        setTimeout(() => {
+          exit()
+        }, 30000)
+      }
+    }
+  }
+
+  /**
+   * 循环运行
+   */
+  const CycleExecutor = function () {
+    Executor.call(this)
+
+    this.execute = function () {
+      this.setupEventListeners()
+      this.needRestart = false
       try {
+        this.readyForStart()
+        _current_time = 0
+        while (true) {
+          _current_time++
+          commonFunctions.showEnergyInfo(_current_time)
+          // 增加当天运行总次数
+          commonFunctions.increaseRunTimes()
+          infoLog("========循环第" + _current_time + "次运行========")
+          showCollectSummaryFloaty()
+          try {
+            collectOwn()
+            if (collectFriend() === false) {
+              // 收集失败，重新开始
+              _lost_someone = true
+              _current_time = _current_time == 0 ? 0 : _current_time - 1
+              _has_next = true
+            }
+          } catch (e) {
+            errorInfo('发生异常 [' + e + '] [' + e.message + ']')
+            _current_time = _current_time == 0 ? 0 : _current_time - 1
+            _lost_someone = true
+            _has_next = true
+            _re_try = 0
+          }
+          if (!_lost_someone && (_has_next === false || _re_try > 5)) {
+            break
+          }
+          logInfo('========本轮结束========')
+        }
+      } catch (e) {
+        errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
+        this.needRestart = true
+      }
+      this.destory()
+      this.checkRestart()
+    }
+  }
+
+  /**
+   * 计时运行
+   */
+  const CountdownExecutor = function () {
+    Executor.call(this)
+
+    this.execute = function () {
+      this.setupEventListeners()
+      try {
+        _current_time = 0
         while (true) {
           _collect_any = false
           if (_lost_someone) {
             warnInfo('上一次收取有漏收，再次收集', true)
           } else {
-            if (_min_countdown > 0 && !config.is_cycle) {
+            if (_min_countdown > 0) {
               // 提前10秒左右结束计时
               let delayTime = 10 / 60.0
               // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
@@ -616,27 +721,13 @@ function Ant_forest () {
               }
             }
           }
-          runningQueueDispatcher.addRunningTask()
-          listenStopCollect()
-          if (!config.is_cycle) {
-            if (config.tryGetExactlyPackage) {
-              commonFunctions.showDialogAndWait(true)
-              commonFunctions.recordCurrentPackage()
-            } else {
-              commonFunctions.recordCurrentPackage()
-              commonFunctions.showDialogAndWait(true)
-            }
-          }
-
-          commonFunctions.showEnergyInfo()
+          this.readyForStart()
           let runTime = commonFunctions.increaseRunTimes()
           infoLog("========第" + runTime + "次运行========")
           showCollectSummaryFloaty()
           debugInfo('展示悬浮窗完毕')
           _current_time++
-          unlocker.exec()
           try {
-            _avil_list = []
             collectOwn()
             if (collectFriend() === false) {
               // 收集失败，重新开始
@@ -653,37 +744,32 @@ function Ant_forest () {
             _has_next = true
             _re_try = 0
           }
-          // 当前不在循环模式下，且没有遗漏
-          if (!config.is_cycle && !_lost_someone) {
-            if (config.auto_lock === true && unlocker.needRelock() === true) {
-              debugInfo('重新锁定屏幕')
-              automator.lockScreen()
-            }
-            if (config.autoSetBrightness) {
-              device.setBrightnessMode(1)
+          // 当前没有遗漏 准备结束当前循环
+          if (!_lost_someone) {
+            this.destory()
+            if (_has_next === false || _re_try > 5) {
+              break
             }
           }
-          events.removeAllListeners()
-          if (!_lost_someone && (_has_next === false || _re_try > 5)) {
-            logInfo('收取结束')
-            setTimeout(() => {
-              exit()
-            }, 30000)
-            runningQueueDispatcher.removeRunningTask()
-            break
-          }
-          logInfo('========本轮结束========')
         }
+        logInfo('========本轮结束========')
       } catch (e) {
         errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
-        // 设置三分钟后重试
-        commonFunctions.setUpAutoStart(3)
-        runningQueueDispatcher.removeRunningTask()
-        exit()
+        need_restart = true
       }
-      // 释放资源
-      _avil_list = []
-      thread.interrupt()
+      this.checkRestart()
+    }
+  }
+
+  return {
+    exec: function () {
+      let executor = null
+      if (config.is_cycle) {
+        executor = new CycleExecutor()
+      } else {
+        executor = new CountdownExecutor()
+      }
+      executor.execute()
     }
   }
 }
