@@ -1,5 +1,5 @@
-let { runningQueueDispatcher } = require('../../lib/RunningQueueDispatcher.js')
-let { commonFunctions } = require('../../lib/CommonFunction.js')
+let runningQueueDispatcher = require('../../lib/RunningQueueDispatcher.js')
+let commonFunctions = require('../../lib/CommonFunction.js')
 
 runningQueueDispatcher.addRunningTask()
 let count = 15

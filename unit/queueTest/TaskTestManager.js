@@ -1,4 +1,4 @@
-let { runningQueueDispatcher } = require('../../lib/RunningQueueDispatcher.js')
+let runningQueueDispatcher = require('../../lib/RunningQueueDispatcher.js')
 let pwd = files.cwd()
 
 let task1 = pwd + '/Task1.js'

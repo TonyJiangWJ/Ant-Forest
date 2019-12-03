@@ -1,15 +1,15 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-03 19:32:35
+ * @Last Modified time: 2019-12-03 22:29:09
  * @Description: 蚂蚁森林操作集
  */
-let { WidgetUtils } = require('../lib/WidgetUtils.js')
-let { automator } = require('../lib/Automator.js')
-let { commonFunctions } = require('../lib/CommonFunction.js')
-let { runningQueueDispatcher } = require('../lib/RunningQueueDispatcher.js')
-let { config } = require('../config.js')
-let { FriendListScanner } = require('./FriendListScanner.js')
+let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
+let automator = require('../lib/Automator.js')
+let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/CommonFunction.js') : commonFunctions
+let _runningQueueDispatcher = typeof runningQueueDispatcher === 'undefined' ? require('./RunningQueueDispatcher.js') : runningQueueDispatcher
+let _config = typeof config === 'undefined' ? require('../config.js').config : config
+let FriendListScanner = require('./FriendListScanner.js')
 
 function Ant_forest () {
   const _package_name = 'com.eg.android.AlipayGphone'
@@ -31,7 +31,7 @@ function Ant_forest () {
 
   // 进入蚂蚁森林主页
   const startApp = function () {
-    commonFunctions.launchPackage(_package_name, false)
+    _commonFunctions.launchPackage(_package_name, false)
     app.startActivity({
       action: 'VIEW',
       data: 'alipays://platformapi/startapp?appId=60000002',
@@ -46,7 +46,7 @@ function Ant_forest () {
     // 合种/添加快捷方式提醒
     threads.start(function () {
       let floty = idEndsWith('J_pop_treedialog_close').findOne(
-        config.timeout_findOne
+        _config.timeout_findOne
       )
       if (floty) {
         floty.click()
@@ -56,18 +56,18 @@ function Ant_forest () {
 
       let buttons = className('android.widget.Button')
         .desc('关闭').findOne(
-          config.timeout_findOne
+          _config.timeout_findOne
         )
       if (buttons) {
         buttons.click()
       }
     })
     threads.start(function () {
-      let floty = descEndsWith('关闭蒙层').findOne(config.timeout_findOne)
+      let floty = descEndsWith('关闭蒙层').findOne(_config.timeout_findOne)
       if (floty) {
         floty.click()
       }
-      floty = textEndsWith('关闭蒙层').findOne(config.timeout_findOne)
+      floty = textEndsWith('关闭蒙层').findOne(_config.timeout_findOne)
       if (floty) {
         floty.click()
       }
@@ -77,7 +77,7 @@ function Ant_forest () {
 
   // 显示文字悬浮窗
   const showFloaty = function (text) {
-    commonFunctions.closeFloatyWindow()
+    _commonFunctions.closeFloatyWindow()
     let window = floaty.window(
       <card cardBackgroundColor="#aa000000" cardCornerRadius="20dp">
         <horizontal w="250" h="40" paddingLeft="15" gravity="center">
@@ -247,10 +247,10 @@ function Ant_forest () {
       if (!isFinite(countDownNow) || countDownNow >= 2) {
         debugInfo('收集过能量，重新获取倒计时列表，原倒计时时间：[' + countDownNow + ']分')
         automator.clickBack()
-        WidgetUtils.homePageWaiting()
+        _widgetUtils.homePageWaiting()
         automator.enterFriendList()
-        WidgetUtils.friendListWaiting()
-        WidgetUtils.quickScrollDown()
+        _widgetUtils.friendListWaiting()
+        _widgetUtils.quickScrollDown()
         sleep(100)
         // 再次获取倒计时数据
         let newCountDown = calculateMinCountdown(countDownNow, new Date())
@@ -289,10 +289,10 @@ function Ant_forest () {
       debugInfo('重新获取倒计时经过了：[' + passedTime + ']分，最终记录上轮倒计时：[' + lastMin + ']分')
       lastMin >= 0 ? temp.push(lastMin) : temp.push(0)
     }
-    let friCountDowmContainer = WidgetUtils.widgetGetAll('\\d+’', null, true)
+    let friCountDowmContainer = _widgetUtils.widgetGetAll('\\d+’', null, true)
     let peekCountdownContainer = function (container) {
       if (container) {
-        return commonFunctions.formatString('倒计时数据总长度：{} 文本属性来自[{}]', container.target.length, (container.isDesc ? 'desc' : 'text'))
+        return _commonFunctions.formatString('倒计时数据总长度：{} 文本属性来自[{}]', container.target.length, (container.isDesc ? 'desc' : 'text'))
       } else {
         return null
       }
@@ -326,8 +326,8 @@ function Ant_forest () {
   // 构建下一次运行
   const generateNext = function () {
     // 循环模式，判断循环次数
-    if (config.is_cycle) {
-      if (_current_time < config.cycle_times) {
+    if (_config.is_cycle) {
+      if (_current_time < _config.cycle_times) {
         _has_next = true
       } else {
         logInfo("达到最大循环次数")
@@ -335,15 +335,15 @@ function Ant_forest () {
       }
     } else {
       // 永不终止模式，判断倒计时不存在，直接等待配置的激活时间
-      if (config.never_stop) {
-        if (commonFunctions.isEmpty(_min_countdown) || _min_countdown > config.reactive_time) {
-          _min_countdown = config.reactive_time || 60
+      if (_config.never_stop) {
+        if (_commonFunctions.isEmpty(_min_countdown) || _min_countdown > _config.reactive_time) {
+          _min_countdown = _config.reactive_time || 60
         }
         _has_next = true
         return
       }
       // 计时模式 超过最大循环次数 退出执行
-      if (_current_time > config.max_collect_repeat) {
+      if (_current_time > _config.max_collect_repeat) {
         _has_next = false
         logInfo("达到最大循环次数")
         return
@@ -351,7 +351,7 @@ function Ant_forest () {
       // 计时模式，超过最大等待时间 退出执行
       if (
         _min_countdown != null &&
-        _min_countdown <= config.max_collect_wait_time
+        _min_countdown <= _config.max_collect_wait_time
       ) {
         _has_next = true
       } else {
@@ -367,7 +367,7 @@ function Ant_forest () {
 
   // 记录当前能量
   const getCurrentEnergy = function () {
-    let currentEnergyWidgetContainer = WidgetUtils.widgetGetOne('\\d+g', null, true)
+    let currentEnergyWidgetContainer = _widgetUtils.widgetGetOne('\\d+g', null, true)
     let currentEnergy = undefined
     if (currentEnergyWidgetContainer) {
       let target = currentEnergyWidgetContainer.target
@@ -380,7 +380,7 @@ function Ant_forest () {
     }
     if (currentEnergy) {
       // 存储能量值数据
-      commonFunctions.storeEnergy(currentEnergy)
+      _commonFunctions.storeEnergy(currentEnergy)
     }
     return currentEnergy
   }
@@ -390,41 +390,41 @@ function Ant_forest () {
     let currentEnergy = getCurrentEnergy()
     if (_fisrt_running && _has_next) {
       _pre_energy = currentEnergy
-      commonFunctions.persistHistoryEnergy(currentEnergy)
+      _commonFunctions.persistHistoryEnergy(currentEnergy)
       logInfo('当前能量：' + currentEnergy)
     }
     showCollectSummaryFloaty()
   }
 
   const showCollectSummaryFloaty = function (increased) {
-    if (config.is_cycle) {
-      commonFunctions.showCollectSummaryFloaty0(_post_energy - _pre_energy, _current_time, increased)
+    if (_config.is_cycle) {
+      _commonFunctions.showCollectSummaryFloaty0(_post_energy - _pre_energy, _current_time, increased)
     } else {
-      commonFunctions.showCollectSummaryFloaty0(null, null, increased)
+      _commonFunctions.showCollectSummaryFloaty0(null, null, increased)
     }
   }
 
   // 记录最终能量值
   const getPostEnergy = function () {
     automator.clickBack()
-    WidgetUtils.homePageWaiting()
+    _widgetUtils.homePageWaiting()
     // 等待能量值稳定
     sleep(500)
     _post_energy = getCurrentEnergy()
     logInfo('当前能量：' + _post_energy)
-    commonFunctions.showEnergyInfo()
-    let energyInfo = commonFunctions.getTodaysRuntimeStorage('energy')
+    _commonFunctions.showEnergyInfo()
+    let energyInfo = _commonFunctions.getTodaysRuntimeStorage('energy')
     if (!_has_next) {
       showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共收取' + energyInfo.totalIncrease + 'g')
     } else {
       showCollectSummaryFloaty()
     }
     // 循环模式、或者有漏收 不返回home
-    if ((!config.is_cycle || !_has_next) && !_lost_someone) {
+    if ((!_config.is_cycle || !_has_next) && !_lost_someone) {
       automator.clickClose()
       sleep(1000)
-      // 重新打开启动前的app
-      commonFunctions.reopenPackageBeforeRunning()
+      // 返回最小化支付宝
+      _commonFunctions.minimize()
     }
   }
 
@@ -440,7 +440,7 @@ function Ant_forest () {
    * @param {boolean} isDesc 是否是desc类型
    */
   const collectBallEnergy = function (energy_ball, isOwn, isDesc) {
-    if (config.skip_five && !isOwn) {
+    if (_config.skip_five && !isOwn) {
       let regexCheck = /(\d+)克/
       let execResult
       if (isDesc) {
@@ -468,7 +468,7 @@ function Ant_forest () {
   // 收取能量
   const collectEnergy = function (own) {
     let isOwn = own || false
-    let ballCheckContainer = WidgetUtils.widgetGetAll(config.collectable_energy_ball_content, null, true)
+    let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, null, true)
     if (ballCheckContainer !== null) {
       debugInfo('能量球存在')
       ballCheckContainer.target
@@ -503,16 +503,16 @@ function Ant_forest () {
 
   // 收取自己的能量
   const collectOwn = function () {
-    commonFunctions.addOpenPlacehold('开始收集自己能量')
+    _commonFunctions.addOpenPlacehold('开始收集自己能量')
     let restartCount = 0
     let waitFlag
     let startWait = 1000
     startApp()
-    if (!config.is_cycle) {
+    if (!_config.is_cycle) {
       // 首次启动等待久一点
       sleep(1500)
     }
-    while (!(waitFlag = WidgetUtils.homePageWaiting()) && restartCount++ < 5) {
+    while (!(waitFlag = _widgetUtils.homePageWaiting()) && restartCount++ < 5) {
       warnInfo('程序未启动，尝试再次唤醒')
       automator.clickClose()
       debugInfo('关闭H5')
@@ -535,19 +535,19 @@ function Ant_forest () {
     getPreEnergy()
     debugInfo('准备收集自己能量')
     collectEnergy(true)
-    if (!config.is_cycle) {
+    if (!_config.is_cycle) {
       debugInfo('准备计算最短时间')
       getMinCountdownOwn()
     }
-    commonFunctions.addClosePlacehold("收集自己的能量完毕")
+    _commonFunctions.addClosePlacehold("收集自己的能量完毕")
     _fisrt_running = false
   }
 
   // 收取好友的能量
   const collectFriend = function () {
-    commonFunctions.addOpenPlacehold('开始收集好友能量')
+    _commonFunctions.addOpenPlacehold('开始收集好友能量')
     automator.enterFriendList()
-    let enterFlag = WidgetUtils.friendListWaiting()
+    let enterFlag = _widgetUtils.friendListWaiting()
     if (!enterFlag) {
       return false
     }
@@ -559,8 +559,8 @@ function Ant_forest () {
       _re_try++
       return false
     }
-    commonFunctions.addClosePlacehold("收集好友能量结束")
-    if (!config.is_cycle && !_lost_someone) {
+    _commonFunctions.addClosePlacehold("收集好友能量结束")
+    if (!_config.is_cycle && !_lost_someone) {
       getMinCountdown()
     }
     generateNext()
@@ -587,10 +587,10 @@ function Ant_forest () {
         infoLog('即将收取能量，运行中可按音量上键关闭', true)
         events.observeKey()
         events.onceKeyDown('volume_up', function (event) {
-          if (config.autoSetBrightness) {
+          if (_config.autoSetBrightness) {
             device.setBrightnessMode(1)
           }
-          runningQueueDispatcher.removeRunningTask()
+          _runningQueueDispatcher.removeRunningTask()
           engines.myEngine().forceStop()
           exit()
         })
@@ -600,27 +600,27 @@ function Ant_forest () {
     this.readyForStart = function () {
       // 解锁其实在main里面已经执行 这里是为了容错 觉得没必要可以注释掉
       unlocker.exec()
-      runningQueueDispatcher.addRunningTask()
-      if (config.tryGetExactlyPackage) {
-        commonFunctions.showDialogAndWait(true)
-        commonFunctions.recordCurrentPackage()
+      _runningQueueDispatcher.addRunningTask()
+      if (_config.tryGetExactlyPackage) {
+        _commonFunctions.showDialogAndWait(true)
+        _commonFunctions.recordCurrentPackage()
       } else {
-        commonFunctions.recordCurrentPackage()
-        commonFunctions.showDialogAndWait(true)
+        _commonFunctions.recordCurrentPackage()
+        _commonFunctions.showDialogAndWait(true)
       }
       this.listenStopCollect()
-      commonFunctions.showEnergyInfo()
+      _commonFunctions.showEnergyInfo()
     }
 
     this.endLoop = function () {
       this.interruptStopListenThread()
       events.removeAllListeners()
-      runningQueueDispatcher.removeRunningTask()
-      if (config.auto_lock === true && unlocker.needRelock() === true) {
+      _runningQueueDispatcher.removeRunningTask()
+      if (_config.auto_lock === true && unlocker.needRelock() === true) {
         debugInfo('重新锁定屏幕')
         automator.lockScreen()
       }
-      if (config.autoSetBrightness) {
+      if (_config.autoSetBrightness) {
         device.setBrightnessMode(1)
       }
     }
@@ -640,8 +640,8 @@ function Ant_forest () {
       }
       if (this.needRestart) {
         // 设置三分钟后重试
-        commonFunctions.setUpAutoStart(3)
-        runningQueueDispatcher.removeRunningTask()
+        _commonFunctions.setUpAutoStart(3)
+        _runningQueueDispatcher.removeRunningTask()
         exit()
       } else {
         setTimeout(() => {
@@ -665,9 +665,9 @@ function Ant_forest () {
         _current_time = 0
         while (true) {
           _current_time++
-          commonFunctions.showEnergyInfo(_current_time)
+          _commonFunctions.showEnergyInfo(_current_time)
           // 增加当天运行总次数
-          commonFunctions.increaseRunTimes()
+          _commonFunctions.increaseRunTimes()
           infoLog("========循环第" + _current_time + "次运行========")
           showCollectSummaryFloaty()
           try {
@@ -696,6 +696,8 @@ function Ant_forest () {
       }
       this.endLoop()
       this.checkRestart()
+      // 返回最小化支付宝
+      _commonFunctions.minimize()
     }
   }
 
@@ -718,20 +720,20 @@ function Ant_forest () {
               // 提前10秒左右结束计时
               let delayTime = 10 / 60.0
               // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
-              delayTime += (config.delayStartTime || 5000) / 60000.0
-              commonFunctions.setUpAutoStart(_min_countdown - delayTime)
-              runningQueueDispatcher.removeRunningTask()
+              delayTime += (_config.delayStartTime || 5000) / 60000.0
+              _commonFunctions.setUpAutoStart(_min_countdown - delayTime)
+              _runningQueueDispatcher.removeRunningTask()
               // 如果不驻留悬浮窗  则不延迟，直接关闭
-              if (config.notLingeringFloatWindow) {
+              if (_config.notLingeringFloatWindow) {
                 exit()
               } else {
-                commonFunctions.commonDelay(_min_countdown - delayTime)
-                commonFunctions.checkCaptureScreenPermission()
+                _commonFunctions.commonDelay(_min_countdown - delayTime)
+                _commonFunctions.checkCaptureScreenPermission()
               }
             }
           }
           this.readyForStart()
-          let runTime = commonFunctions.increaseRunTimes()
+          let runTime = _commonFunctions.increaseRunTimes()
           infoLog("========第" + runTime + "次运行========")
           showCollectSummaryFloaty()
           debugInfo('展示悬浮窗完毕')
@@ -773,7 +775,7 @@ function Ant_forest () {
   return {
     exec: function () {
       let executor = null
-      if (config.is_cycle) {
+      if (_config.is_cycle) {
         executor = new CycleExecutor()
       } else {
         executor = new CountdownExecutor()
@@ -783,6 +785,4 @@ function Ant_forest () {
   }
 }
 
-module.exports = {
-  antForestRunner: new Ant_forest()
-}
+module.exports = new Ant_forest()

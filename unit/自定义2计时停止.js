@@ -1,7 +1,7 @@
 var {default_config, storage_name} = require('../config.js')
 var configStorage = storages.create(storage_name)
-var { FileUtils } = require("../lib/FileUtils.js")
-var { commonFunctions } = require("../lib/CommonFunction.js")
+var FileUtils = require("../lib/FileUtils.js")
+var commonFunctions = require("../lib/CommonFunction.js")
 Object.keys(default_config).forEach((key)=>{
   log(key + ":" + configStorage.get(key))
 })

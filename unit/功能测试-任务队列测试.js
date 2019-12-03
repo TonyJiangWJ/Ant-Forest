@@ -1,4 +1,4 @@
-let { runningQueueDispatcher } = require('../lib/RunningQueueDispatcher.js')
+let runningQueueDispatcher = require('../lib/RunningQueueDispatcher.js')
 
 runningQueueDispatcher.showDispatchStatus()
 runningQueueDispatcher.addRunningTask()

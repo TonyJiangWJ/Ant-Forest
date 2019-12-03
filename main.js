@@ -1,20 +1,20 @@
 /*
  * @Author: NickHopps
- * @Last Modified by: NickHopps
- * @Last Modified time: 2019-03-05 14:16:30
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2019-12-03 20:31:31
  * @Description: 蚂蚁森林自动收能量
  */
-let { runningQueueDispatcher } = require('./lib/RunningQueueDispatcher.js')
+let runningQueueDispatcher = require('./lib/RunningQueueDispatcher.js')
 let { config } = require('./config.js')
+let LogUtils = require('./lib/LogUtils.js')
 let {
-  debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile, appendLog
-} = require('./lib/LogUtils.js')
+  debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile, appendLog, removeOldLogFiles
+} = LogUtils
 let FloatyInstance = require('./lib/FloatyUtil.js')
-let { commonFunctions } = require('./lib/CommonFunction.js')
-let { unlocker } = require('./lib/Unlock.js')
-let { antForestRunner } = require('./core/Ant_forest.js')
-let { scheduler } = require('./lib/scheduler.js')
-let { formatDate } = require('./lib/DateUtil.js')
+let commonFunctions = require('./lib/CommonFunction.js')
+let unlocker = require('./lib/Unlock.js')
+let antForestRunner = require('./core/Ant_forest.js')
+let formatDate = require('./lib/DateUtil.js')
 let { tryRequestScreenCapture } = require('./lib/TryRequestScreenCapture.js')
 logInfo('======校验是否重复运行=======')
 // 检查脚本是否重复运行
@@ -36,9 +36,6 @@ if (!commonFunctions.checkAccessibilityService()) {
   }  
 }
 logInfo('---前置校验完成;启动系统--->>>>')
-if (config.auto_start) {
-  scheduler()
-}
 logInfo('======解锁并校验截图权限======')
 try {
   unlocker.exec()

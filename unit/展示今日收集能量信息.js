@@ -1,5 +1,5 @@
 
-let { commonFunctions } = require('../lib/CommonFunction.js')
+let commonFunctions = require('../lib/CommonFunction.js')
 
 log('=============总收集排序==============')
 //commonFunctions.showCollectSummary()

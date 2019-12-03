@@ -1,4 +1,4 @@
-let { FileUtils } = require('../lib/FileUtils.js')
+let FileUtils = require('../lib/FileUtils.js')
 let loadingDialog = null
 try {
   importClass(com.tony.DownloaderListener)

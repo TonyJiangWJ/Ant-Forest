@@ -5,5 +5,5 @@
  * @Last Modified time: 2019-12-03 19:34:24
  * @Description: 
  */
-let { automator } = require('../lib/Automator.js')
+let automator = require('../lib/Automator.js')
 automator.scrollUpAndDown()
