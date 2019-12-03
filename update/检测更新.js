@@ -28,7 +28,8 @@ log('下载并解压文件到目录：' + targetOutputDir)
 downloader.setTargetReleasesApiUrl(apiUrl)
 downloader.setOutputDir(targetOutputDir)
 // 设置不需要解压覆盖的文件
-downloader.setUnzipSkipFiles(['.gitignore'])
+// 请勿移除'update/glb.dex' 否则引起报错
+downloader.setUnzipSkipFiles(['.gitignore', 'update/glb.dex'])
 // 设置不需要备份的文件
 downloader.setBackupIgnoreFiles([])
 
