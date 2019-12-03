@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-03 17:27:36
+ * @Last Modified time: 2019-12-03 19:32:35
  * @Description: 蚂蚁森林操作集
  */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
@@ -567,33 +567,33 @@ function Ant_forest () {
     getPostEnergy()
   }
 
-  /**
-   * 监听音量上键直接关闭
-   **/
-  const listenStopCollect = function () {
-    threads.start(function () {
-      sleep(1000)
-      infoLog('即将收取能量，运行中可按音量上键关闭', true)
-      events.observeKey()
-      events.onceKeyDown('volume_up', function (event) {
-        if (config.autoSetBrightness) {
-          device.setBrightnessMode(1)
-        }
-        runningQueueDispatcher.removeRunningTask()
-        engines.myEngine().forceStop()
-        exit()
-      })
-    })
-  }
-
-
   const Executor = function () {
     this.eventSettingThread = null
+    this.stopListenThread = null
     this.needRestart = false
     this.setupEventListeners = function () {
       this.eventSettingThread = threads.start(function () {
         events.setMaxListeners(0)
         events.observeToast()
+      })
+    }
+
+    /**
+    * 监听音量上键直接关闭
+    */
+    this.listenStopCollect = function () {
+      this.interruptStopListenThread()
+      this.stopListenThread = threads.start(function () {
+        infoLog('即将收取能量，运行中可按音量上键关闭', true)
+        events.observeKey()
+        events.onceKeyDown('volume_up', function (event) {
+          if (config.autoSetBrightness) {
+            device.setBrightnessMode(1)
+          }
+          runningQueueDispatcher.removeRunningTask()
+          engines.myEngine().forceStop()
+          exit()
+        })
       })
     }
 
@@ -608,18 +608,14 @@ function Ant_forest () {
         commonFunctions.recordCurrentPackage()
         commonFunctions.showDialogAndWait(true)
       }
-      listenStopCollect()
+      this.listenStopCollect()
       commonFunctions.showEnergyInfo()
     }
 
-    this.destory = function () {
-      runningQueueDispatcher.removeRunningTask()
+    this.endLoop = function () {
+      this.interruptStopListenThread()
       events.removeAllListeners()
-      if (this.eventSettingThread != null) {
-        this.eventSettingThread.interrupt()
-        this.eventSettingThread = null
-      }
-
+      runningQueueDispatcher.removeRunningTask()
       if (config.auto_lock === true && unlocker.needRelock() === true) {
         debugInfo('重新锁定屏幕')
         automator.lockScreen()
@@ -629,8 +625,19 @@ function Ant_forest () {
       }
     }
 
+    this.interruptStopListenThread = function () {
+      if (this.stopListenThread !== null) {
+        this.stopListenThread.interrupt()
+        this.stopListenThread = null
+      }
+    }
+
     this.checkRestart = function () {
       logInfo('收取结束')
+      if (this.eventSettingThread != null) {
+        this.eventSettingThread.interrupt()
+        this.eventSettingThread = null
+      }
       if (this.needRestart) {
         // 设置三分钟后重试
         commonFunctions.setUpAutoStart(3)
@@ -687,7 +694,7 @@ function Ant_forest () {
         errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
         this.needRestart = true
       }
-      this.destory()
+      this.endLoop()
       this.checkRestart()
     }
   }
@@ -748,7 +755,7 @@ function Ant_forest () {
           }
           // 当前没有遗漏 准备结束当前循环
           if (!_lost_someone) {
-            this.destory()
+            this.endLoop()
             if (_has_next === false || _re_try > 5) {
               break
             }

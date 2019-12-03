@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-03 16:29:13
+ * @Last Modified time: 2019-12-03 20:02:22
  * @Description: 
  */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
@@ -528,13 +528,13 @@ const getFirstVisiable = function (friendList) {
     if (found) {
       return
     }
-    if (item.visibleToUser()) {
-      let h = item.bounds().bottom - item.bounds().top
-      if (h > 10) {
-        found = true
-        firstIdx = idx
-      }
+    // if (item.visibleToUser()) {
+    let h = item.bounds().bottom - item.bounds().top
+    if (h > 10) {
+      found = true
+      firstIdx = idx
     }
+    // }
 
   })
   if (found) {
@@ -871,8 +871,7 @@ function FriendListScanner () {
             debugInfo(['主流程收到预获取线程获取好友列表数据的通知 已校验的长度：{} 新获取的长度：{}', totalValidLength, newValidList.length])
             if (!this.usedList && newValidList && newValidList.length === totalValidLength) {
               debugInfo('获取到的长度无变化，上下滑动触发加载')
-              scrollUp()
-              automator.scrollDown()
+              automator.scrollUpAndDown()
             }
           }
         }
