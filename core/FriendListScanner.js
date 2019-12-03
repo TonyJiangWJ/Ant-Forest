@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-03 23:07:41
+ * @Last Modified time: 2019-12-04 00:05:05
  * @Description: 
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -31,10 +31,12 @@ const whetherFriendListValidLength = function (friends_list_parent) {
  * @param {本次增加的能量值} increased
  */
 const showCollectSummaryFloaty = function (increased) {
+  increased = increased || 0
+  _increased_energy += increased
   if (_config.is_cycle) {
     _commonFunctions.showCollectSummaryFloaty0(_increased_energy, _current_time, increased)
   } else {
-    _commonFunctions.showCollectSummaryFloaty0(null, null, increased)
+    _commonFunctions.showCollectSummaryFloaty0(null, null, _increased_energy)
   }
 }
 
