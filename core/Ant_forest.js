@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-03 16:31:17
+ * @Last Modified time: 2019-12-03 17:27:36
  * @Description: 蚂蚁森林操作集
  */
 let { WidgetUtils } = require('../lib/WidgetUtils.js')
@@ -615,8 +615,10 @@ function Ant_forest () {
     this.destory = function () {
       runningQueueDispatcher.removeRunningTask()
       events.removeAllListeners()
-      this.eventSettingThread.interrupt()
-      this.eventSettingThread = null
+      if (this.eventSettingThread != null) {
+        this.eventSettingThread.interrupt()
+        this.eventSettingThread = null
+      }
 
       if (config.auto_lock === true && unlocker.needRelock() === true) {
         debugInfo('重新锁定屏幕')
