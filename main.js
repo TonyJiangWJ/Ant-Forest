@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-03 23:23:44
+ * @Last Modified time: 2019-12-04 10:46:59
  * @Description: 蚂蚁森林自动收能量
  */
 let runningQueueDispatcher = require('./lib/RunningQueueDispatcher.js')
@@ -19,8 +19,10 @@ let { tryRequestScreenCapture } = require('./lib/TryRequestScreenCapture.js')
 logInfo('======校验是否重复运行=======')
 // 检查脚本是否重复运行
 commonFunctions.checkDuplicateRunning()
-// 调试时强制清除任务队列
-// runningQueueDispatcher.clearAll()
+// 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
+if (config.single_script) {
+  runningQueueDispatcher.clearAll()
+}
 runningQueueDispatcher.addRunningTask()
 /***********************
  * 初始化
@@ -38,6 +40,12 @@ if (!commonFunctions.checkAccessibilityService()) {
   }  
 }
 logInfo('---前置校验完成;启动系统--->>>>')
+if (files.exists('version.json')) {
+  let content = JSON.parse(files.read('version.json'))
+  logInfo(['版本信息：{} nodeId:{}', content.version, content.nodeId])
+} else {
+  logInfo('无法获取脚本版本信息')
+}
 logInfo('======解锁并校验截图权限======')
 try {
   unlocker.exec()

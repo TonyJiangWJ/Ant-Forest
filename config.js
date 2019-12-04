@@ -56,6 +56,9 @@ var default_config = {
 let no_gui_config = {
   // 只在AutoJS中能打开，定时不能打开时 尝试开启这个 设为true
   fuck_miui11: false,
+  // 单脚本模式 是否只运行一个脚本 不会同时使用其他的 开启单脚本模式 会取消任务队列的功能。
+  // 比如同时使用蚂蚁庄园 则保持默认 false 否则设置为true 无视其他运行中的脚本
+  single_script: false,
   // 设备高度 正常情况下device.height可以获取到
   // deviceHeight: 2160,
   // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间 @deprecated 新版蚂蚁森林没法使用
@@ -88,9 +91,14 @@ let no_gui_config = {
 
 // UI配置 针对多语言环境 英文界面替换成相应的英文内容即可 建议还是用中文界面比较好
 var ui_config = {
-  home_ui_content: '背包|通知|攻略', 
+  home_ui_content: '背包|通知|攻略',
   friend_home_ui_content: '浇水|发消息',
+  // 废弃
   friend_list_ui_content: '(周|总)排行榜',
+  // 用于判断是否在好友排行榜
+  friend_list_id: '.*react-content.*',
+  // 查看更多好友的按钮
+  enter_friend_list_ui_content: '查看更多好友',
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   warting_widget_content: '浇水',
