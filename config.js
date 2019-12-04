@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-02 23:47:52
+ * @Last Modified time: 2019-12-04 13:16:01
  * @Description: 配置文件
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -66,7 +66,7 @@ let no_gui_config = {
   // 这个用于控制列表滑动是否稳定 不用去修改它
   friendListStableCount: 3,
   // 底部高度，比如有虚拟按键就需要修改这个值 设置比虚拟按键高度高就可以了
-  bottomHeight: 100,
+  bottomHeight: 200,
   // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认关闭 经常有人手机上有虚拟按键 然后又不看文档注释的
   useCustomScrollDown: false,
   // 排行榜列表下滑速度 100毫秒 仅仅针对useCustomScrollDown=true的情况

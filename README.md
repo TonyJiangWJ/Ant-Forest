@@ -81,16 +81,21 @@ var default_config = {
  * 非可视化控制的配置 通过手动修改config.js来实现配置
  */
 let no_gui_config = {
+  // 只在AutoJS中能打开，定时不能打开时 尝试开启这个 设为true
+  fuck_miui11: false,
+  // 单脚本模式 是否只运行一个脚本 不会同时使用其他的 开启单脚本模式 会取消任务队列的功能。
+  // 比如同时使用蚂蚁庄园 则保持默认 false 否则设置为true 无视其他运行中的脚本
+  single_script: false,
   // 设备高度 正常情况下device.height可以获取到
   // deviceHeight: 2160,
-  // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间
+  // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间 @deprecated 新版蚂蚁森林没法使用
   timeoutLoadFriendList: 6000,
   // 这个用于控制列表滑动是否稳定 不用去修改它
   friendListStableCount: 3,
   // 底部高度，比如有虚拟按键就需要修改这个值 设置比虚拟按键高度高就可以了
-  bottomHeight: 100,
-  // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认启用
-  useCustomScrollDown: true,
+  bottomHeight: 200,
+  // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认关闭 经常有人手机上有虚拟按键 然后又不看文档注释的
+  useCustomScrollDown: false,
   // 排行榜列表下滑速度 100毫秒 仅仅针对useCustomScrollDown=true的情况
   scrollDownSpeed: 100,
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
@@ -104,7 +109,7 @@ let no_gui_config = {
   // 配置不浇水的黑名单
   wateringBlackList: [],
   // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
-  autoSetBrightness: true,
+  autoSetBrightness: false,
   // 延迟启动时延 5秒 悬浮窗中进行的倒计时时间
   delayStartTime: 5000,
   // 收集完一轮后不驻留悬浮窗
@@ -113,15 +118,21 @@ let no_gui_config = {
 
 // UI配置 针对多语言环境 英文界面替换成相应的英文内容即可 建议还是用中文界面比较好
 var ui_config = {
-  home_ui_content: '背包|通知|攻略', 
+  home_ui_content: '背包|通知|攻略',
   friend_home_ui_content: '浇水|发消息',
+  // 废弃
   friend_list_ui_content: '(周|总)排行榜',
+  // 用于判断是否在好友排行榜
+  friend_list_id: '.*react-content.*',
+  // 查看更多好友的按钮
+  enter_friend_list_ui_content: '查看更多好友',
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   warting_widget_content: '浇水',
   using_protect_content: '使用了保护罩',
   collectable_energy_ball_content: /收集能量\d+克/
 }
+
 ```
 
 其中：
