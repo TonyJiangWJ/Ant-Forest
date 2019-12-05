@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-04 00:05:05
+ * @Last Modified time: 2019-12-05 12:32:00
  * @Description: 
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -584,10 +584,12 @@ function FriendListScanner () {
   this.emptyList = true
   this.usedList = false
 
+  this.errorCount = 0
 
   this.init = function (option) {
     _current_time = option.currentTime || 0
     _increased_energy = option.increasedEnergy || 0
+    this.errorCount = 0
     this.lock = threads.lock()
     this.condition = this.lock.newCondition()
     this.all_loaded = false
@@ -788,7 +790,7 @@ function FriendListScanner () {
           for (let idx = (lastCheckedFriend > 0 ? lastCheckedFriend + 1 : 0); idx < totalValidLength; idx++) {
             let fri = validChildList[idx]
             let friendName = _widgetUtils.getFriendsName(fri)
-            if ((iterEnd !== -1 && idx > iterEnd) || checkedList.indexOf(idx) > -1) {
+            if ((iterEnd !== -1 && idx > iterEnd)) {
               continue
             }
             debugInfo('校验' + idx + "开始")
@@ -796,25 +798,29 @@ function FriendListScanner () {
               let bounds = fri.bounds()
               let fh = bounds.bottom - bounds.top
               if (fh > 10) {
-                debugInfo(['识别好友信息 idx:{} name: {}', idx, friendName])
-                let container = isObtainable(fri, screen, friendName)
-                if (container.canDo) {
-                  container.bounds = bounds
-                  recordAvailableList(container)
-                  debugInfo([
-                    '可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
-                  ])
+                if (checkedList.indexOf(idx) > -1) {
+                  debugInfo(['当前可见好友信息已经判断过，直接跳过 idx:{} name: {} 开始识别下一个', idx, friendName])
                 } else {
-                  debugInfo([
-                    '不可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
-                  ])
-                  //debugInfo('不可收取 index:' + idx + ' name:' + container.name)
-                  if (container.countdown) {
-                    countingDownContainers.push(container)
+                  debugInfo(['识别好友信息 idx:{} name: {}', idx, friendName])
+                  let container = isObtainable(fri, screen, friendName)
+                  if (container.canDo) {
+                    container.bounds = bounds
+                    recordAvailableList(container)
+                    debugInfo([
+                      '可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
+                    ])
+                  } else {
+                    debugInfo([
+                      '不可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
+                    ])
+                    //debugInfo('不可收取 index:' + idx + ' name:' + container.name)
+                    if (container.countdown) {
+                      countingDownContainers.push(container)
+                    }
                   }
+                  lastCheckedFriend = idx
+                  checkedList.push(idx)
                 }
-                lastCheckedFriend = idx
-                checkedList.push(idx)
               } else {
                 debugInfo(['好友[{}]信息不可见 stock:{}，控件高度[{}]低于10 top:{}', friendName ? friendName : idx, stock_idx, fh, bounds.top])
                 iterEnd = idx
@@ -829,11 +835,13 @@ function FriendListScanner () {
           } else {
             stock_idx = iterEnd
             stock_count = 0
+            this.errorCount = 0
           }
 
           if (stock_count > 2) {
             if (firstIdx === -1) {
               errorInfo(['在控件位置：{} 卡住多次, 且首个可见item获取失败，请尝试重启脚本', stock_idx], true)
+              this.errorCount++
             } else {
               debugInfo(['在控件位置：{} 卡住多次，上划 首个可见item:{}', stock_idx, firstIdx])
             }
@@ -850,6 +858,10 @@ function FriendListScanner () {
           debugInfo(['检测好友列表可收取情况耗时：[{}]ms ', currentAnalyzeCost])
         } else {
           logInfo('好友列表不存在')
+        }
+        if (this.errorCount >= 5) {
+          errorInfo('列表识别失败达到5次 重新开始')
+          return true
         }
         if (!_widgetUtils.friendListWaiting()) {
           errorInfo('崩了 当前不在好友列表 重新开始')
@@ -883,7 +895,7 @@ function FriendListScanner () {
             this.condition.await()
             newValidList = this.valid_child_list || []
             debugInfo(['主流程收到预获取线程获取好友列表数据的通知 已校验的长度：{} 新获取的长度：{}', totalValidLength, newValidList.length])
-          } while(!this.usedList && newValidList && newValidList.length === totalValidLength && this.all_loaded === false)
+          } while (!this.usedList && newValidList && newValidList.length === totalValidLength && this.all_loaded === false)
           debugInfo(['主流程最终收到好友列表 已校验的长度：{} 新获取的长度：{} loadStatus:{}', totalValidLength, newValidList.length, this.all_loaded])
         }
         // -------收集好友列表完成-------
