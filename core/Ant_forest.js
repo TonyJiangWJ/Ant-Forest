@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-03 22:29:09
+ * @Last Modified time: 2019-12-05 11:33:57
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -766,7 +766,7 @@ function Ant_forest () {
         logInfo('========本轮结束========')
       } catch (e) {
         errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
-        need_restart = true
+        this.needRestart = true
       }
       this.checkRestart()
     }
