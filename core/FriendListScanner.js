@@ -884,9 +884,19 @@ function FriendListScanner () {
           this.usedList = true
           this.condition.signal()
           let newValidList = null
+          let tryReloadCount = 0
           do {
             if (newValidList !== null) {
               debugInfo('获取到的长度无变化，上下滑动触发加载')
+              tryReloadCount++
+              if (tryReloadCount === 3) {
+                // 尝试重新出发加载达到三次，上划一页
+                scrollUp()
+              } else if (tryReloadCount >= 5) {
+                // 多次出发失败，直接返回重新开始
+                errorInfo('出发加载失败，重新开始')
+                return true
+              }
               automator.scrollUpAndDown()
               this.usedList = true
             }
@@ -895,27 +905,10 @@ function FriendListScanner () {
             this.condition.await()
             newValidList = this.valid_child_list || []
             debugInfo(['主流程收到预获取线程获取好友列表数据的通知 已校验的长度：{} 新获取的长度：{}', totalValidLength, newValidList.length])
+
           } while (!this.usedList && newValidList && newValidList.length === totalValidLength && this.all_loaded === false)
           debugInfo(['主流程最终收到好友列表 已校验的长度：{} 新获取的长度：{} loadStatus:{}', totalValidLength, newValidList.length, this.all_loaded])
         }
-        // -------收集好友列表完成-------
-        // let canScrollDown = true
-        // 当剩余未检测数量小于等于20时，通知重新获取列表数据
-        // 新版暂时没法预加载 去除
-        // if (lastCheckedFriend >= totalValidLength - 15 && this.all_loaded === false) {
-        //   debugInfo('未检测数量小于等于20时，通知重新获取列表数据')
-        //   canScrollDown = false
-        //   this.usedList = true
-        //   this.condition.signal()
-        //   while (lastCheckedFriend === totalValidLength - 1 && this.all_loaded === false && this.usedList === true) {
-        //     // 列表未加载完，但是已经检测完当前列表，网络较差的时候会发生，释放条件为重新获取列表 刷新usedList为false 或者加载完all_loaded = true
-        //     warnInfo([
-        //       '网络太差，继续等待, last:{} total:{} loaded:{} used:{}',
-        //       lastCheckedFriend, totalValidLength, this.all_loaded, this.usedList
-        //     ])
-        //     this.condition.await()
-        //   }
-        // }
 
         if (canScrollDown) {
           debugInfo('滑动进入下一页')

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-04 10:46:59
+ * @Last Modified time: 2019-12-05 13:36:41
  * @Description: 蚂蚁森林自动收能量
  */
 let runningQueueDispatcher = require('./lib/RunningQueueDispatcher.js')
@@ -62,21 +62,36 @@ if (config.fuck_miui11) {
 }
 
 // 请求截图权限
-let reqResult = false
-if (config.request_capture_permission) {
-  reqResult = tryRequestScreenCapture()
-} else {
-  reqResult = requestScreenCapture(false)
-}
-
-if (!reqResult) {
-  errorInfo('请求截图失败')
+let screenPermission = false
+let actionSuccess = commonFunctions.waitFor(function () {
+  if (!requestScreenCapture(false)) {
+    screenPermission = false
+  } else {
+    screenPermission = true
+  }
+}, 1000)
+if (!actionSuccess || !screenPermission) {
+  errorInfo('请求截图失败, 设置6秒后重启')
   runningQueueDispatcher.removeRunningTask()
+  commonFunctions.setUpAutoStart(0.1)
   exit()
 } else {
-  logInfo('请求截图权限成功')
+  logInfo('请求截屏权限成功')
+}
+// 初始化悬浮窗
+if (!FloatyInstance.init()) {
+  runningQueueDispatcher.removeRunningTask()
+  // 悬浮窗初始化失败，6秒后重试
+  commonFunctions.setUpAutoStart(0.1)
 }
 /************************
  * 主程序
  ***********************/
-antForestRunner.exec()
+try {
+  antForestRunner.exec()
+} catch (e) {
+  commonFunctions.setUpAutoStart(1)
+  errorInfo('执行异常, 1分钟后重新开始' + e)
+} finally {
+  runningQueueDispatcher.removeRunningTask(true)
+}
