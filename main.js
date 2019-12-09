@@ -37,7 +37,7 @@ if (!commonFunctions.checkAccessibilityService()) {
   } catch (e) {
     warnInfo('auto.waitFor()不可用')
     auto()
-  }  
+  }
 }
 logInfo('---前置校验完成;启动系统--->>>>')
 if (files.exists('version.json')) {
@@ -64,12 +64,12 @@ if (config.fuck_miui11) {
 // 请求截图权限
 let screenPermission = false
 let actionSuccess = commonFunctions.waitFor(function () {
-  if (!requestScreenCapture(false)) {
-    screenPermission = false
+  if (config.request_capture_permission) {
+    screenPermission = tryRequestScreenCapture()
   } else {
-    screenPermission = true
+    screenPermission = requestScreenCapture(false)
   }
-}, 1000)
+}, 15000)
 if (!actionSuccess || !screenPermission) {
   errorInfo('请求截图失败, 设置6秒后重启')
   runningQueueDispatcher.removeRunningTask()
