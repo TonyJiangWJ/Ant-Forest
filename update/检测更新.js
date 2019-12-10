@@ -19,7 +19,7 @@ try {
 importClass(com.tony.Downloader)
 importClass(com.tony.DownloaderListener)
 
-let apiUrl = 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest-autoscript/releases/latest'
+let apiUrl = 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest'
 let targetOutputDir = FileUtils.getRealMainScriptPath(true)
 let downloader = new Downloader()
 log('下载并解压文件到目录：' + targetOutputDir)
