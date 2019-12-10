@@ -9,8 +9,8 @@
 
 ## 更新记录
 
-- 本项目从https://github.com/Nick-Hopps/Ant-Forest-autoscript fork 而来，但是经过了各种改动，和原版功能差异较大
-- 历史版本下载可前往[RELEASES 页面](https://github.com/TonyJiangWJ/Ant-Forest-autoscript/releases)
+- 本项目从https://github.com/Nick-Hopps/Ant-Forest-autoscript fork 而来，但是经过了各种改动，和原版功能差异较大 现在已经单独复制不再作为fork分支开发
+- 历史版本更新记录可前往[RELEASES 页面](https://github.com/TonyJiangWJ/Ant-Forest/releases) 查看
 
 # 使用
 
@@ -34,110 +34,15 @@
 
 # 配置
 
-打开 config.js 后可以看到如下配置：
+运行 config.js 后可以看到如下配置：
 
-```javascript
-// 执行配置
-var default_config = {
-  color_offset: 50,
-  password: '',
-  help_friend: true,
-  is_cycle: false,
-  cycle_times: 10,
-  // 是否永不停止，即倒计时信息不存在时 睡眠reactive_time之后重新开始收集
-  never_stop: false,
-  // 重新激活等待时间 单位分钟
-  reactive_time: 60,
-  timeout_unlock: 1000,
-  timeout_findOne: 1000,
-  // 检测是否存在的默认超时时间，8秒
-  timeout_existing: 8000,
-  max_collect_repeat: 20,
-  // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
-  show_small_floaty: true,
-  // 设置悬浮窗的位置，避免遮挡时间之类的 或者被刘海挡住，一般异形屏的min_floaty_y值需要设为负值
-  min_floaty_x: 150,
-  min_floaty_y: 20,
-  // mini悬浮窗字体颜色 当前默认为亮绿色
-  min_floaty_color: '#00FF00',
-  // 计时模式下 收集能量的最大等待时间 分钟
-  max_collect_wait_time: 60,
-  // 白名单列表，即不去收取他们的能量
-  white_list: [],
-  // 是否跳过低于五克的能量，避免频繁偷别人的 这个其实不好用 不建议开启
-  skip_five: false,
-  // 是否显示调试日志信息
-  show_debug_log: true,
-  // 是否在收集完成后根据收集前状态判断是否锁屏，非ROOT设备通过下拉状态栏中的锁屏按钮实现 需要配置锁屏按钮位置，仅仅测试MIUI的 其他系统可能没法用
-  // 可以自己研究研究之后 修改Automator.js中的lockScreen方法
-  auto_lock: false,
-  // 配置锁屏按钮位置
-  lock_x: 150,
-  lock_y: 970,
-  // 是否需要检测录屏弹窗
-  request_capture_permission: true
-}
-/**
- * 非可视化控制的配置 通过手动修改config.js来实现配置
- */
-let no_gui_config = {
-  // 只在AutoJS中能打开，定时不能打开时 尝试开启这个 设为true
-  fuck_miui11: false,
-  // 单脚本模式 是否只运行一个脚本 不会同时使用其他的 开启单脚本模式 会取消任务队列的功能。
-  // 比如同时使用蚂蚁庄园 则保持默认 false 否则设置为true 无视其他运行中的脚本
-  single_script: false,
-  // 设备高度 正常情况下device.height可以获取到
-  // deviceHeight: 2160,
-  // 预加载超时，其实可以不用管这个 该值会在运行中自动配置合适的时间 @deprecated 新版蚂蚁森林没法使用
-  timeoutLoadFriendList: 6000,
-  // 这个用于控制列表滑动是否稳定 不用去修改它
-  friendListStableCount: 3,
-  // 底部高度，比如有虚拟按键就需要修改这个值 设置比虚拟按键高度高就可以了
-  bottomHeight: 200,
-  // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认关闭 经常有人手机上有虚拟按键 然后又不看文档注释的
-  useCustomScrollDown: false,
-  // 排行榜列表下滑速度 100毫秒 仅仅针对useCustomScrollDown=true的情况
-  scrollDownSpeed: 100,
-  // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
-  helpBallColors: ['#f99236', '#f7af70'],
-  // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
-  saveLogFile: true,
-  // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
-  wateringBack: true,
-  // 浇水阈值40克
-  wateringThreshold: 40,
-  // 配置不浇水的黑名单
-  wateringBlackList: [],
-  // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
-  autoSetBrightness: false,
-  // 延迟启动时延 5秒 悬浮窗中进行的倒计时时间
-  delayStartTime: 5000,
-  // 收集完一轮后不驻留悬浮窗
-  notLingeringFloatWindow: false
-}
+- 常用配置都在基本配置中，可以设置悬浮窗颜色 位置等
 
-// UI配置 针对多语言环境 英文界面替换成相应的英文内容即可 建议还是用中文界面比较好
-var ui_config = {
-  home_ui_content: '背包|通知|攻略',
-  friend_home_ui_content: '浇水|发消息',
-  // 废弃
-  friend_list_ui_content: '(周|总)排行榜',
-  // 用于判断是否在好友排行榜
-  friend_list_id: '.*react-content.*',
-  // 查看更多好友的按钮
-  enter_friend_list_ui_content: '查看更多好友',
-  no_more_ui_content: '没有更多了',
-  load_more_ui_content: '查看更多',
-  watering_widget_content: '浇水',
-  using_protect_content: '使用了保护罩',
-  collectable_energy_ball_content: /收集能量\d+克/
-}
+![基本配置](./resources/config-1.jpg)
 
-```
+![进阶配置](./resources/config-2.jpg)
 
-其中：
-
-- `default_config`中的配置可以运行 configGui.js 来可视化修改，其他两个配置`no_gui_config`和`ui_config`需要通过修改 config.js 文件中的值
+![控件文本配置](./resources/config-3.jpg)
 
 # 添加解锁设备
 
@@ -182,4 +87,4 @@ var MyDevice = Devices.device_1
 
 # 目前存在的问题
 
-- 功能性问题暂无，兼容性问题有部分MIUI版本可能会死机 暂时没有找到合适的解决方法 可以先增加配置 `fuck_miui11: true`,放在no_gui_config中即可
+- 目前部分支付宝版本无法识别控件，因此无法使用
