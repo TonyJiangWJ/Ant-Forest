@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-05 11:33:57
+ * @Last Modified time: 2019-12-10 13:33:54
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils

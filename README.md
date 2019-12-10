@@ -105,7 +105,7 @@ let no_gui_config = {
   // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
   wateringBack: true,
   // 浇水阈值40克
-  wateringThresold: 40,
+  wateringThreshold: 40,
   // 配置不浇水的黑名单
   wateringBlackList: [],
   // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
@@ -128,7 +128,7 @@ var ui_config = {
   enter_friend_list_ui_content: '查看更多好友',
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
-  warting_widget_content: '浇水',
+  watering_widget_content: '浇水',
   using_protect_content: '使用了保护罩',
   collectable_energy_ball_content: /收集能量\d+克/
 }

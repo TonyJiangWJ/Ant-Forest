@@ -279,7 +279,7 @@ const collectTargetFriend = function (obj) {
               gotEnergy -= 10
             }
           } catch (e) {
-            errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThresold + ' 回馈浇水失败 ' + e)
+            errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
           }
           logInfo([
             "收取好友:{} 能量 {}g {}",
