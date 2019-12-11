@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-11 00:46:15
+ * @Last Modified time: 2019-12-11 09:11:47
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -695,14 +695,14 @@ function ImgBasedFriendListScanner () {
           point = calculator.getColorRegionCenter()
           debugInfo('设置悬浮窗位置：' + JSON.stringify(point))
           if (point.same < 2300) {
-            _FloatyInstance.setFloatyInfo(point, '\'可能可收取')
+            // _FloatyInstance.setFloatyInfo(point, '\'可能可收取')
             collectTargetFriend({
               point: point,
               isHelp: false
             })
             sleep(500)
           } else {
-            _FloatyInstance.setFloatyInfo(point, '\'倒计时中')
+            // _FloatyInstance.setFloatyInfo(point, '\'倒计时中')
           }
         })
       }
