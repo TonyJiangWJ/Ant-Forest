@@ -4,9 +4,11 @@
  * @Last Modified time: 2019-12-10 23:55:22
  * @Description: 蚂蚁森林自动收能量
  */
-runtime.loadDex('./lib/autojs-tools.dex')
-let runningQueueDispatcher = require('./lib/RunningQueueDispatcher.js')
 let { config } = require('./config.js')
+if (config.base_on_image) {
+  runtime.loadDex('./lib/autojs-tools.dex')
+}
+let runningQueueDispatcher = require('./lib/RunningQueueDispatcher.js')
 let LogUtils = require('./lib/LogUtils.js')
 let {
   debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile, appendLog, removeOldLogFiles

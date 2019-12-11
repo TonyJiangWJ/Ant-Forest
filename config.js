@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-10 23:46:19
+ * @Last Modified time: 2019-12-11 21:52:20
  * @Description: 
  */
 "ui";
@@ -29,6 +29,10 @@ let default_config = {
   is_cycle: false,
   collect_self_only: false,
   base_on_image: false,
+  // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
+  friendListScrollTime: 30,
+  // 可收取小手指绿色像素点个数，1080P分辨率是这个数值，其他分辨率请自己修改
+  finger_img_pixels: 2300,
   cycle_times: 10,
   never_stop: false,
   reactive_time: 60,
@@ -62,9 +66,9 @@ let default_config = {
   useCustomScrollDown: false,
   // 排行榜列表下滑速度 200毫秒 不要太低否则滑动不生效 仅仅针对useCustomScrollDown=true的情况
   scrollDownSpeed: 200,
-  // 基于图像分析是 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
-  friendListScrollTime: 30,
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
+  can_collect_color: '#1da06a',
+  can_help_color: '#f99236',
   helpBallColors: ['#f99236', '#f7af70'],
   // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
   wateringBack: true,
@@ -75,7 +79,7 @@ let default_config = {
   // 延迟启动时延 5秒 悬浮窗中进行的倒计时时间
   delayStartTime: 5,
 
-  home_ui_content: '背包|通知|攻略',
+  home_ui_content: '背包|通知|攻略|种树',
   friend_home_ui_content: '浇水|发消息',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
@@ -276,6 +280,11 @@ if (!inRunningMode) {
                       <text text="排行榜下拉次数:" />
                       <input layout_weight="70" inputType="number" id="friendListScrollTimeInpt" layout_weight="70" />
                     </horizontal>
+                    <text text="可收取小手指的绿色像素点个数，1080P时小于2300判定为可收取，其他分辨率需要自行修改=2300*缩小比例^2" textSize="10sp" />
+                    <horizontal gravity="center" >
+                      <text text="小手指像素点个数:" />
+                      <input layout_weight="70" inputType="number" id="fingerImgPixelsInpt" layout_weight="70" />
+                    </horizontal>
                   </vertical>
                   {/* 脚本延迟启动 */}
                   <horizontal gravity="center">
@@ -377,6 +386,15 @@ if (!inRunningMode) {
                     <text text="可收集能量球:" layout_weight="20" />
                     <input inputType="text" id="collectableEnergyBallContentInpt" layout_weight="80" />
                   </horizontal>
+                  <horizontal gravity="center">
+                    <text text="列表中可收取的颜色:" layout_weight="20" />
+                    <input inputType="text" id="canCollectColorInpt" layout_weight="80" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="列表中可帮助的颜色:" layout_weight="20" />
+                    <input inputType="text" id="canHelpColorInpt" layout_weight="80" />
+                  </horizontal>
+
                   <vertical w="*" gravity="left" layout_gravity="left" margin="10">
                     <text text="帮收取能量球颜色" textColor="#666666" textSize="14sp" />
                     <frame>
@@ -473,7 +491,8 @@ if (!inRunningMode) {
 
 
     ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
-    ui.friendListScrollTimeContainer.setVisibility(config.base_on_image ? View.VISIBLE: View.GONE)
+    ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
+    ui.friendListScrollTimeContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.delayStartTimeInpt.text(config.delayStartTime + '')
 
     // 控件文本配置
@@ -485,6 +504,17 @@ if (!inRunningMode) {
     ui.loadMoreUiContentInpt.text(config.load_more_ui_content)
     ui.wateringWidgetContentInpt.text(config.watering_widget_content)
     ui.usingProtectContentInpt.text(config.using_protect_content)
+
+    let collectColor = config.can_collect_color
+    ui.canCollectColorInpt.text(collectColor)
+    if (/^#[\dabcdef]{6}$/i.test(collectColor)) {
+      ui.canCollectColorInpt.setTextColor(colors.parseColor(collectColor))
+    }
+    let helpColor = config.can_help_color
+    ui.canHelpColorInpt.text(helpColor)
+    if (/^#[\dabcdef]{6}$/i.test(helpColor)) {
+      ui.canHelpColorInpt.setTextColor(colors.parseColor(helpColor))
+    }
     ui.collectableEnergyBallContentInpt.text(config.collectable_energy_ball_content)
 
     // 列表绑定
@@ -772,7 +802,13 @@ if (!inRunningMode) {
     })
     ui.baseOnImageChkBox.on('click', () => {
       config.base_on_image = ui.baseOnImageChkBox.isChecked()
-      ui.friendListScrollTimeContainer.setVisibility(config.base_on_image ? View.VISIBLE: View.GONE)
+      if (config.base_on_image) {
+        config.useCustomScrollDown = true
+        ui.useCustomScrollDownChkBox.setChecked(true)
+        ui.scrollDownContainer.setVisibility(View.VISIBLE)
+        ui.bottomHeightContainer.setVisibility(View.VISIBLE)
+      }
+      ui.friendListScrollTimeContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     })
 
     ui.useCustomScrollDownChkBox.on('click', () => {
@@ -802,6 +838,9 @@ if (!inRunningMode) {
     ui.friendListScrollTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.friendListScrollTime = parseInt(text) })
     )
+    ui.fingerImgPixelsInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.finger_img_pixels = parseInt(text) })
+    )
     ui.delayStartTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.delayStartTime = parseInt(text) })
     )
@@ -829,6 +868,30 @@ if (!inRunningMode) {
     )
     ui.usingProtectContentInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.using_protect_content = text + '' })
+    )
+    ui.canCollectColorInpt.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        let val = text + ''
+        if (val) {
+          val = val.trim()
+        }
+        if (/^#[\dabcdef]{6}$/i.test(val)) {
+          ui.canCollectColorInpt.setTextColor(colors.parseColor(val))
+          config.can_collect_color = val
+        }
+      })
+    )
+    ui.canHelpColorInpt.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        let val = text + ''
+        if (val) {
+          val = val.trim()
+        }
+        if (/^#[\dabcdef]{6}$/i.test(val)) {
+          ui.canHelpColorInpt.setTextColor(colors.parseColor(val))
+          config.can_help_color = val
+        }
+      })
     )
     ui.collectableEnergyBallContentInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.collectable_energy_ball_content = text + '' })
