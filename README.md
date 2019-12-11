@@ -1,3 +1,10 @@
+<!--
+ * @Author: TonyJiangWJ
+ * @Date: 2019-12-10 19:41:12
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2019-12-11 22:21:38
+ * @Description: 
+ -->
 # 其他脚本
 - [蚂蚁庄园传送门](https://github.com/TonyJiangWJ/Ant-Manor)
 # 简介
@@ -31,6 +38,7 @@
 - 可以自动打开无障碍，需要配合adb赋权 `adb shell pm grant org.autojs.autojs android.permission.WRITE_SECURE_SETTINGS`
 - 可以自动打开脚本执行之前的APP 增强体验，获取失败时通过返回最小化支付宝实现同样效果
 - 脚本更新 可以执行`update/检测更新.js`
+- 相对完善的基于图像分析的收取，但是无法获取列表中的倒计时，请通过永不停止模式来定时轮询
 
 # 配置
 

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-11 21:52:20
+ * @Last Modified time: 2019-12-11 22:11:30
  * @Description: 
  */
 "ui";
@@ -30,7 +30,7 @@ let default_config = {
   collect_self_only: false,
   base_on_image: false,
   // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
-  friendListScrollTime: 30,
+  // friendListScrollTime: 30,
   // 可收取小手指绿色像素点个数，1080P分辨率是这个数值，其他分辨率请自己修改
   finger_img_pixels: 2300,
   cycle_times: 10,
@@ -275,11 +275,11 @@ if (!inRunningMode) {
                   <checkbox id="baseOnImageChkBox" text="基于图像分析" />
                   {/* 排行榜中下拉次数 */}
                   <vertical id="friendListScrollTimeContainer">
-                    <text text="排行榜下拉的最大次数，使得所有数据都加载完，当前只能如此" textSize="10sp" />
+                    {/* <text text="排行榜下拉的最大次数，使得所有数据都加载完，当前只能如此" textSize="10sp" />
                     <horizontal gravity="center" >
                       <text text="排行榜下拉次数:" />
                       <input layout_weight="70" inputType="number" id="friendListScrollTimeInpt" layout_weight="70" />
-                    </horizontal>
+                    </horizontal> */}
                     <text text="可收取小手指的绿色像素点个数，1080P时小于2300判定为可收取，其他分辨率需要自行修改=2300*缩小比例^2" textSize="10sp" />
                     <horizontal gravity="center" >
                       <text text="小手指像素点个数:" />
@@ -490,7 +490,7 @@ if (!inRunningMode) {
     ui.wateringBlackListContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.GONE)
 
 
-    ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
+    // ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
     ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
     ui.friendListScrollTimeContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.delayStartTimeInpt.text(config.delayStartTime + '')
@@ -835,9 +835,9 @@ if (!inRunningMode) {
       TextWatcherBuilder(text => { config.wateringThreshold = parseInt(text) })
     )
 
-    ui.friendListScrollTimeInpt.addTextChangedListener(
-      TextWatcherBuilder(text => { config.friendListScrollTime = parseInt(text) })
-    )
+    // ui.friendListScrollTimeInpt.addTextChangedListener(
+    //   TextWatcherBuilder(text => { config.friendListScrollTime = parseInt(text) })
+    // )
     ui.fingerImgPixelsInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.finger_img_pixels = parseInt(text) })
     )

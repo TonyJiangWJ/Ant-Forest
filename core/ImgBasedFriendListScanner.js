@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-11 21:46:08
+ * @Last Modified time: 2019-12-11 22:13:48
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -440,8 +440,8 @@ function ColorRegionCenterCalculator (img, point, threshold) {
   // Java打包的位运算方式
   this.bitChecker = new BitCheck(BIT_MAX_VAL)
   let s = new Date().getTime()
-  // console.log("灰度化图片：" + grayImg)
-  this.img = images.grayscale(images.copy(img))
+  // 在外部灰度化
+  this.img = img
   // console.log('转换灰度颜色')
   this.color = img.getBitmap().getPixel(point.x, point.y) >> 8 & 0xFF
   // this.color = color
@@ -619,21 +619,32 @@ function ImgBasedFriendListScanner () {
     // TODO
   }
 
+  this.reachBottom = function (grayImg) {
+    let height = device.height
+    for (let startY = 1; startY < 50; startY++) {
+      let colorGreen = grayImg.getBitmap().getPixel(10, height - startY) >> 8 & 0xFF
+      if (Math.abs(colorGreen - 245) > 4) {
+        return false
+      }
+    }
+    return true
+  }
   this.collecting = function () {
     let screen = null
-    let collectTime = _config.friendListScrollTime || 30
+    let grayScreen = null
     // console.show()
     do {
       screen = _commonFunctions.checkCaptureScreenPermission()
       // 重新复制一份
       screen = images.copy(screen)
+      grayScreen = images.grayscale(images.copy(screen))
       debugInfo('获取到screen' + (screen === null ? '失败' : '成功'))
       // _FloatyInstance.setFloatyTextColor('#f9d100')
       if (_config.help_friend) {
         let helpPoints = this.sortAndReduce(this.detectHelp(screen))
         if (helpPoints && helpPoints.length > 0) {
           helpPoints.forEach(point => {
-            let calculator = new ColorRegionCenterCalculator(screen, point, _config.color_offset)
+            let calculator = new ColorRegionCenterCalculator(grayScreen, point, _config.color_offset)
             point = calculator.getColorRegionCenter()
             debugInfo('可帮助收取位置：' + JSON.stringify(point))
             // _FloatyInstance.setFloatyInfo(point, '\'可帮助收取')
@@ -641,31 +652,31 @@ function ImgBasedFriendListScanner () {
               point: point,
               isHelp: true
             })
-            sleep(500)
+            sleep(100)
           })
         }
       }
       let collectPoints = this.sortAndReduce(this.detectCollect(screen))
       if (collectPoints && collectPoints.length > 0) {
         collectPoints.forEach(point => {
-          let calculator = new ColorRegionCenterCalculator(screen, point, _config.color_offset)
+          let calculator = new ColorRegionCenterCalculator(grayScreen, point, _config.color_offset)
           point = calculator.getColorRegionCenter()
-          debugInfo('可能可收取位置：' + JSON.stringify(point))
           if (point.same < (_config.finger_img_pixels || 2300)) {
+            debugInfo('可能可收取位置：' + JSON.stringify(point))
             // _FloatyInstance.setFloatyInfo(point, '\'可能可收取')
             collectTargetFriend({
               point: point,
               isHelp: false
             })
-            sleep(500)
           } else {
+            debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.same)
             // _FloatyInstance.setFloatyInfo(point, '\'倒计时中')
           }
         })
       }
       automator.scrollDown()
       sleep(500)
-    } while (collectTime-- > 0)
+    } while (!this.reachBottom(grayScreen))
     automator.back()
     return {}
   }
