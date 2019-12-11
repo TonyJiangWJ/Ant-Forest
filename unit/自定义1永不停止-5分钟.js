@@ -15,7 +15,7 @@ Object.keys(default_config).forEach((key)=>{
 
 configStorage.put("never_stop", true)
 configStorage.put("is_cycle", false)
-configStorage.put("reactive_time", 30)
+configStorage.put("reactive_time", 5)
 configStorage.put("collect_self_only", false)
 toastLog("配置完毕done")
 commonFunctions.killRunningScript()

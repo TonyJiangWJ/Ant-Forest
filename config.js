@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-10 19:29:21
+ * @Last Modified time: 2019-12-10 23:46:19
  * @Description: 
  */
 "ui";
@@ -27,6 +27,8 @@ let default_config = {
   min_floaty_color: '#00ff00',
   help_friend: true,
   is_cycle: false,
+  collect_self_only: false,
+  base_on_image: false,
   cycle_times: 10,
   never_stop: false,
   reactive_time: 60,
@@ -58,8 +60,10 @@ let default_config = {
   bottomHeight: 200,
   // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认关闭 经常有人手机上有虚拟按键 然后又不看文档注释的
   useCustomScrollDown: false,
-  // 排行榜列表下滑速度 100毫秒 仅仅针对useCustomScrollDown=true的情况
-  scrollDownSpeed: 100,
+  // 排行榜列表下滑速度 200毫秒 不要太低否则滑动不生效 仅仅针对useCustomScrollDown=true的情况
+  scrollDownSpeed: 200,
+  // 基于图像分析是 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
+  friendListScrollTime: 30,
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
   helpBallColors: ['#f99236', '#f7af70'],
   // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
@@ -100,7 +104,8 @@ Object.keys(default_config).forEach(key => {
 if (!inRunningMode) {
   module.exports = {
     config: config,
-    STORAGE_NAME: CONFIG_STORAGE_NAME
+    default_config: default_config,
+    storage_name: CONFIG_STORAGE_NAME
   }
 } else {
 
@@ -260,12 +265,24 @@ if (!inRunningMode) {
                   {/* 单脚本使用，无视多任务队列 */}
                   <text text="当需要使用多个脚本时建议开启，避免抢占前台" textSize="12sp" />
                   <checkbox id="singleScriptChkBox" text="是否单脚本运行" />
+                  {/* 只收集自己的能量 */}
+                  <checkbox id="collectSelfOnlyChkBox" text="只收自己的能量" />
+                  {/* 基于图像分析 */}
+                  <checkbox id="baseOnImageChkBox" text="基于图像分析" />
+                  {/* 排行榜中下拉次数 */}
+                  <vertical id="friendListScrollTimeContainer">
+                    <text text="排行榜下拉的最大次数，使得所有数据都加载完，当前只能如此" textSize="10sp" />
+                    <horizontal gravity="center" >
+                      <text text="排行榜下拉次数:" />
+                      <input layout_weight="70" inputType="number" id="friendListScrollTimeInpt" layout_weight="70" />
+                    </horizontal>
+                  </vertical>
                   {/* 脚本延迟启动 */}
                   <horizontal gravity="center">
                     <text text="延迟启动时间（秒）:" />
                     <input layout_weight="70" inputType="number" id="delayStartTimeInpt" layout_weight="70" />
                   </horizontal>
-                  
+
                   {/* 使用模拟手势来实现上下滑动 */}
                   <horizontal gravity="center">
                     <checkbox id="useCustomScrollDownChkBox" text="是否启用模拟滑动" layout_weight="40" />
@@ -396,7 +413,7 @@ if (!inRunningMode) {
 
     let configColor = config.min_floaty_color
     ui.floatyColor.text(configColor)
-    if (/#[\dabcdef]{6}/i.test(configColor)) {
+    if (/^#[\dabcdef]{6}$/i.test(configColor)) {
       ui.floatyColor.setTextColor(colors.parseColor(configColor))
     }
     ui.floatyX.text(config.min_floaty_x + '')
@@ -421,7 +438,7 @@ if (!inRunningMode) {
     ui.saveLogFileChkBox.setChecked(config.saveLogFile)
     ui.fileSizeInpt.text(config.back_size + '')
     ui.fileSizeContainer.setVisibility(config.saveLogFile ? View.VISIBLE : View.INVISIBLE)
-    
+
     ui.requestCapturePermissionChkBox.setChecked(config.request_capture_permission)
 
     ui.lockX.text(config.lock_x + '')
@@ -432,6 +449,8 @@ if (!inRunningMode) {
     ui.lockPositionContainer.setVisibility(config.auto_lock && !hasRootPermission ? View.VISIBLE : View.INVISIBLE)
     ui.lockDescNoRoot.setVisibility(!hasRootPermission ? View.VISIBLE : View.INVISIBLE)
 
+    ui.autoSetBrightnessChkBox.setChecked(config.autoSetBrightness)
+
     ui.timeoutUnlockInpt.text(config.timeout_unlock + '')
     ui.timeoutFindOneInpt.text(config.timeout_findOne + '')
     ui.timeoutExistingInpt.text(config.timeout_existing + '')
@@ -439,6 +458,8 @@ if (!inRunningMode) {
 
     // 进阶配置
     ui.singleScriptChkBox.setChecked(config.single_script)
+    ui.collectSelfOnlyChkBox.setChecked(config.collect_self_only)
+    ui.baseOnImageChkBox.setChecked(config.base_on_image)
     ui.bottomHeightInpt.text(config.bottomHeight + '')
     ui.useCustomScrollDownChkBox.setChecked(config.useCustomScrollDown)
     ui.scrollDownContainer.setVisibility(config.useCustomScrollDown ? View.VISIBLE : View.INVISIBLE)
@@ -451,6 +472,8 @@ if (!inRunningMode) {
     ui.wateringBlackListContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.GONE)
 
 
+    ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
+    ui.friendListScrollTimeContainer.setVisibility(config.base_on_image ? View.VISIBLE: View.GONE)
     ui.delayStartTimeInpt.text(config.delayStartTime + '')
 
     // 控件文本配置
@@ -581,7 +604,7 @@ if (!inRunningMode) {
           if (color) {
             color = color.trim()
           }
-          if (/#[\dabcdef]{6}/i.test(color)) {
+          if (/^#[\dabcdef]{6}$/i.test(color)) {
             helpBallColorList.push({ color: color })
             config.helpBallColors.push(color)
           } else {
@@ -703,7 +726,7 @@ if (!inRunningMode) {
         if (val) {
           val = val.trim()
         }
-        if (/#[\dabcdef]{6}/i.test(val)) {
+        if (/^#[\dabcdef]{6}$/i.test(val)) {
           ui.floatyColor.setTextColor(colors.parseColor(val))
           config.min_floaty_color = val
         }
@@ -744,6 +767,13 @@ if (!inRunningMode) {
     ui.singleScriptChkBox.on('click', () => {
       config.single_script = ui.singleScriptChkBox.isChecked()
     })
+    ui.collectSelfOnlyChkBox.on('click', () => {
+      config.collect_self_only = ui.collectSelfOnlyChkBox.isChecked()
+    })
+    ui.baseOnImageChkBox.on('click', () => {
+      config.base_on_image = ui.baseOnImageChkBox.isChecked()
+      ui.friendListScrollTimeContainer.setVisibility(config.base_on_image ? View.VISIBLE: View.GONE)
+    })
 
     ui.useCustomScrollDownChkBox.on('click', () => {
       config.useCustomScrollDown = ui.useCustomScrollDownChkBox.isChecked()
@@ -769,6 +799,9 @@ if (!inRunningMode) {
       TextWatcherBuilder(text => { config.wateringThreshold = parseInt(text) })
     )
 
+    ui.friendListScrollTimeInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.friendListScrollTime = parseInt(text) })
+    )
     ui.delayStartTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.delayStartTime = parseInt(text) })
     )

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-10 13:33:54
+ * @Last Modified time: 2019-12-10 23:35:36
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -10,6 +10,7 @@ let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/
 let _runningQueueDispatcher = typeof runningQueueDispatcher === 'undefined' ? require('./RunningQueueDispatcher.js') : runningQueueDispatcher
 let _config = typeof config === 'undefined' ? require('../config.js').config : config
 let FriendListScanner = require('./FriendListScanner.js')
+let ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
 
 function Ant_forest () {
   const _package_name = 'com.eg.android.AlipayGphone'
@@ -405,9 +406,11 @@ function Ant_forest () {
   }
 
   // 记录最终能量值
-  const getPostEnergy = function () {
-    automator.clickBack()
-    _widgetUtils.homePageWaiting()
+  const getPostEnergy = function (collectedFriend) {
+    if (collectedFriend) {
+      automator.clickBack()
+      _widgetUtils.homePageWaiting()
+    }
     // 等待能量值稳定
     sleep(500)
     _post_energy = getCurrentEnergy()
@@ -481,14 +484,14 @@ function Ant_forest () {
   }
 
   const findAndCollect = function () {
-    let scanner = new FriendListScanner()
+    let scanner = _config.base_on_image ? new ImgBasedFriendListScanner() : new FriendListScanner()
     scanner.init({ currentTime: _current_time, increaseEnergy: _post_energy - _pre_energy })
     let executeResult = scanner.start()
     // 执行失败 返回 true
     if (executeResult === true) {
       _lost_someone = true
     } else {
-      _lost_someone = executeResult.loatSomeone
+      _lost_someone = executeResult.lostSomeone
       _collect_any = executeResult.collectAny
       _friends_min_countdown = executeResult.minCountdown
     }
@@ -507,8 +510,8 @@ function Ant_forest () {
     let restartCount = 0
     let waitFlag
     let startWait = 1000
-    startApp()
     if (!_config.is_cycle) {
+      startApp()
       // 首次启动等待久一点
       sleep(1500)
     }
@@ -549,8 +552,10 @@ function Ant_forest () {
     automator.enterFriendList()
     let enterFlag = _widgetUtils.friendListWaiting()
     if (!enterFlag) {
+      debugInfo('进入好友排行榜失败')
       return false
     }
+    debugInfo('进入好友排行榜成功')
     if (true === findAndCollect()) {
       _min_countdown = 0
       _has_next = true
@@ -560,11 +565,6 @@ function Ant_forest () {
       return false
     }
     _commonFunctions.addClosePlacehold("收集好友能量结束")
-    if (!_config.is_cycle && !_lost_someone) {
-      getMinCountdown()
-    }
-    generateNext()
-    getPostEnergy()
   }
 
   const Executor = function () {
@@ -672,11 +672,19 @@ function Ant_forest () {
           showCollectSummaryFloaty()
           try {
             collectOwn()
-            if (collectFriend() === false) {
-              // 收集失败，重新开始
-              _lost_someone = true
-              _current_time = _current_time == 0 ? 0 : _current_time - 1
-              _has_next = true
+            let runSuccess = true
+            if (!_config.collect_self_only) {
+              if (collectFriend() === false) {
+                // 收集失败，重新开始
+                _lost_someone = true
+                _current_time = _current_time == 0 ? 0 : _current_time - 1
+                _has_next = true
+                runSuccess = false
+              }
+            }
+            if (runSuccess) {
+              generateNext()
+              getPostEnergy(!_config.collect_self_only)
             }
           } catch (e) {
             errorInfo('发生异常 [' + e + '] [' + e.message + ']')
@@ -740,12 +748,23 @@ function Ant_forest () {
           _current_time++
           try {
             collectOwn()
-            if (collectFriend() === false) {
-              // 收集失败，重新开始
-              _lost_someone = true
-              _current_time = _current_time == 0 ? 0 : _current_time - 1
-              _min_countdown = 0
-              _has_next = true
+            let runSuccess = true
+            if (!_config.collect_self_only) {
+              if (collectFriend() === false) {
+                // 收集失败，重新开始
+                _lost_someone = true
+                _current_time = _current_time == 0 ? 0 : _current_time - 1
+                _min_countdown = 0
+                _has_next = true
+                runSuccess = false
+              }
+            }
+            if (runSuccess) {
+              if (!_config.is_cycle && !_lost_someone) {
+                getMinCountdown()
+              }
+              generateNext()
+              getPostEnergy(!_config.collect_self_only)
             }
           } catch (e) {
             errorInfo('发生异常 [' + e + '] [' + e.message + ']')

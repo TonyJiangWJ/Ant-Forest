@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-06 15:30:10
+ * @Last Modified time: 2019-12-11 00:46:15
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -136,7 +136,10 @@ const collectAndHelp = function (needHelp) {
     }
     // 当数量大于等于6且帮助收取后，重新进入
     if (helped && length >= 6) {
+      debugInfo('帮助了 且有六个球 重新进入')
       return true
+    } else {
+      debugInfo(['帮助了 但是只有{}个球 不重新进入', length])
     }
   }
 }
@@ -214,7 +217,7 @@ const collectTargetFriend = function (obj) {
   if (!obj.protect) {
     let temp = protectDetect(_package_name)
     //automator.click(obj.target.centerX(), obj.target.centerY())
-    debugInfo('等待进入好友主页：' + obj.name)
+    debugInfo('等待进入好友主页')
     let restartLoop = false
     let count = 1
     automator.click(obj.point.x, obj.point.y)
@@ -235,8 +238,24 @@ const collectTargetFriend = function (obj) {
       errorInfo('页面流程出错，重新开始')
       return false
     }
-    if (protectInfoDetect()) {
+    let title = textContains('的蚂蚁森林')
+      .findOne(_config.timeout_findOne)
+      .text()
+    obj.name = title.substring(0, title.indexOf('的'))
+    let skip = false
+    if (!skip && _config.white_list && _config.white_list.indexOf(obj.name) > 0) {
+      debugInfo(['{} 在白名单中不收取他', obj.name])
+      skip = true
+    }
+    if (!skip && _commonFunctions.checkIsProtected(obj.name)) {
+      debugInfo(['{} 使用了保护罩 不收取他'])
+      skip = true
+    }
+    if (!skip && protectInfoDetect()) {
       warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
+      skip = true
+    }
+    if (skip) {
       automator.back()
       return
     }
@@ -282,7 +301,6 @@ const collectTargetFriend = function (obj) {
           showCollectSummaryFloaty(gotEnergy)
         } else {
           debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
-
         }
       } else if (obj.isHelp && postE !== null && preE !== null) {
         let gotEnergy = postE - preE
@@ -304,6 +322,7 @@ const collectTargetFriend = function (obj) {
       errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
     }
     automator.back()
+    sleep(1000)
     temp.interrupt()
     debugInfo('好友能量收取完毕, 回到好友排行榜')
     let returnCount = 0
@@ -326,17 +345,6 @@ const collectTargetFriend = function (obj) {
   return true
 }
 
-// 根据可收取列表收取好友
-const collectAvailableList = function () {
-  while (_avil_list.length) {
-    if (false === collectTargetFriend(_avil_list.shift())) {
-      warnInfo('收取目标好友失败，向上抛出')
-      return false
-    }
-  }
-}
-
-
 /**
  * 记录好友信息
  * @param {Object} screen
@@ -355,46 +363,6 @@ const checkAvailiable = function (point, isHelp) {
   // 不在白名单的 添加到可收取列表
   if (_config.white_list.indexOf(temp.name) < 0) {
     _avil_list.push(temp)
-  }
-}
-
-function BFSColorCenterCalculator (img, color, point, threshold) {
-  this.img = img
-  this.color = color
-  this.point = point
-  this.threshold = threshold
-
-  this.nearbyNodes = new this.Queue()
-
-
-  this.init = function () {
-
-  }
-
-
-
-
-  this.Queue = function () {
-    this.nodes = []
-    this.size = 0
-    this.idxEnd = 0
-    this.idxStart = 0
-
-    this.dequeue = function () {
-      if (this.size > 0) {
-        return this.nodes[this.idxStart++]
-      }
-    }
-
-    this.push = function (item) {
-      this.size++
-      this.nodes.push(item)
-      this.idxEnd++
-    }
-
-    this.isEmpty = function () {
-      return this.size === 0
-    }
   }
 }
 
@@ -433,7 +401,7 @@ const Stack = function () {
       return
     }
     this.innerArray.forEach(val => {
-      console.log(val)
+      debugInfo(val)
     })
   }
 }
@@ -514,7 +482,7 @@ function ColorRegionCenterCalculator (img, color, point, threshold) {
 
     let nearlyColorPoints = this.getAllColorRegionPoints()
     if (nearlyColorPoints && nearlyColorPoints.length > 0) {
-      console.log('同色点总数：' + nearlyColorPoints.length)
+      debugInfo('同色点总数：' + nearlyColorPoints.length)
       let start = new Date().getTime()
       nearlyColorPoints.forEach((item, idx) => {
         if (maxX < item.x) {
@@ -539,7 +507,7 @@ function ColorRegionCenterCalculator (img, color, point, threshold) {
       // log('获取中心点位置为：' + JSON.stringify(center))
       return center
     } else {
-      console.log('没有找到同色点 原始位置：' + JSON.stringify(this.point))
+      debugInfo('没有找到同色点 原始位置：' + JSON.stringify(this.point))
       return this.point
     }
   }
@@ -660,9 +628,15 @@ function ColorRegionCenterCalculator (img, color, point, threshold) {
 
 function ImgBasedFriendListScanner () {
 
+  this.init = function (option) {
+    _current_time = option.currentTime || 0
+    _increased_energy = option.increasedEnergy || 0
+  }
+
   this.start = function () {
     _increased_energy = 0
     _min_countdown = 10000
+    debugInfo('图像分析即将开始')
     return this.collecting()
   }
 
@@ -686,42 +660,68 @@ function ImgBasedFriendListScanner () {
     return resultPoints
   }
 
+  this.destory = function () {
+    // TODO
+  }
+
   this.collecting = function () {
-    let screen = _commonFunctions.checkCaptureScreenPermission()
-    console.show()
-    console.log('获取到screen' + (screen === null ? '失败' : '成功'))
-    _FloatyInstance.setFloatyTextColor('#FF0000')
-    let helpPoints = this.sortAndReduce(this.detectHelp(screen))
-    if (helpPoints && helpPoints.length > 0) {
-      helpPoints.forEach(point => {
-        let calculator = new ColorRegionCenterCalculator(screen, _config.can_help_color || '#f99236', point, _config.color_offset)
-        point = calculator.getColorRegionCenter()
-        console.log('设置悬浮窗位置：' + JSON.stringify(point))
-        _FloatyInstance.setFloatyInfo(point, '\'可帮助收取')
-        sleep(5000)
-      })
-    }
-    let collectPoints = this.sortAndReduce(this.detectCollect(screen))
-    if (collectPoints && collectPoints.length > 0) {
-      collectPoints.forEach(point => {
-        let calculator = new ColorRegionCenterCalculator(screen, _config.can_collect_color || '#1da06a', point, _config.color_offset)
-        point = calculator.getColorRegionCenter()
-        console.log('设置悬浮窗位置：' + JSON.stringify(point))
-        _FloatyInstance.setFloatyInfo(point, '\'可能可收取')
-        sleep(5000)
-      })
-    }
+    let screen = null
+    let collectTime = _config.friendListScrollTime || 30
+    // console.show()
+    do {
+      screen = _commonFunctions.checkCaptureScreenPermission()
+      // 重新复制一份
+      screen = images.copy(screen)
+      debugInfo('获取到screen' + (screen === null ? '失败' : '成功'))
+      // _FloatyInstance.setFloatyTextColor('#f9d100')
+      let helpPoints = this.sortAndReduce(this.detectHelp(screen))
+      if (helpPoints && helpPoints.length > 0) {
+        helpPoints.forEach(point => {
+          let calculator = new ColorRegionCenterCalculator(screen, _config.can_help_color || '#f99236', point, _config.color_offset)
+          point = calculator.getColorRegionCenter()
+          // debugInfo('设置悬浮窗位置：' + JSON.stringify(point))
+          // _FloatyInstance.setFloatyInfo(point, '\'可帮助收取')
+          collectTargetFriend({
+            point: point,
+            isHelp: true
+          })
+          sleep(500)
+        })
+      }
+      let collectPoints = this.sortAndReduce(this.detectCollect(screen))
+      if (collectPoints && collectPoints.length > 0) {
+        collectPoints.forEach(point => {
+          let calculator = new ColorRegionCenterCalculator(screen, _config.can_collect_color || '#1da06a', point, _config.color_offset)
+          point = calculator.getColorRegionCenter()
+          debugInfo('设置悬浮窗位置：' + JSON.stringify(point))
+          if (point.same < 2300) {
+            _FloatyInstance.setFloatyInfo(point, '\'可能可收取')
+            collectTargetFriend({
+              point: point,
+              isHelp: false
+            })
+            sleep(500)
+          } else {
+            _FloatyInstance.setFloatyInfo(point, '\'倒计时中')
+          }
+        })
+      }
+      automator.scrollDown()
+      sleep(1000)
+    } while (collectTime-- > 0)
+    automator.back()
+    return {}
   }
 
   this.detectHelp = function (img) {
     let helpPoints = this.detectColors(img, _config.can_help_color || '#f99236')
-    console.log('可帮助的点：' + JSON.stringify(helpPoints))
+    debugInfo('可帮助的点：' + JSON.stringify(helpPoints))
     return helpPoints
   }
 
   this.detectCollect = function (img) {
     let collectPoints = this.detectColors(img, _config.can_collect_color || '#1da06a')
-    console.log('可收取的点：' + JSON.stringify(collectPoints))
+    debugInfo('可收取的点：' + JSON.stringify(collectPoints))
     return collectPoints
   }
 
@@ -761,7 +761,7 @@ function Countdown () {
   }
 
   this.summary = function (content) {
-    console.log(content + '耗时' + this.getCost() + 'ms')
+    debugInfo(content + '耗时' + this.getCost() + 'ms')
   }
 
   this.restart = function () {

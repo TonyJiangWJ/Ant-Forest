@@ -1,9 +1,10 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-05 13:36:41
+ * @Last Modified time: 2019-12-10 23:55:22
  * @Description: 蚂蚁森林自动收能量
  */
+runtime.loadDex('./lib/autojs-tools.dex')
 let runningQueueDispatcher = require('./lib/RunningQueueDispatcher.js')
 let { config } = require('./config.js')
 let LogUtils = require('./lib/LogUtils.js')
@@ -16,6 +17,9 @@ let unlocker = require('./lib/Unlock.js')
 let antForestRunner = require('./core/Ant_forest.js')
 let formatDate = require('./lib/DateUtil.js')
 let { tryRequestScreenCapture } = require('./lib/TryRequestScreenCapture.js')
+// let automator = require('./lib/Automator.js')
+// automator.scrollDown()
+// exit()
 logInfo('======校验是否重复运行=======')
 // 检查脚本是否重复运行
 commonFunctions.checkDuplicateRunning()

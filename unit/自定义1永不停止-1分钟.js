@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-10 19:41:12
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-10 23:07:44
+ * @Last Modified time: 2019-12-11 00:53:22
  * @Description: 
  */
 var {default_config, storage_name} = require('../config.js')
@@ -15,7 +15,7 @@ Object.keys(default_config).forEach((key)=>{
 
 configStorage.put("never_stop", true)
 configStorage.put("is_cycle", false)
-configStorage.put("reactive_time", 30)
+configStorage.put("reactive_time", 1)
 configStorage.put("collect_self_only", false)
 toastLog("配置完毕done")
 commonFunctions.killRunningScript()

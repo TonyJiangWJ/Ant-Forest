@@ -8,6 +8,7 @@ Object.keys(default_config).forEach((key)=>{
 
 configStorage.put("never_stop", false)
 configStorage.put("is_cycle", false)
+configStorage.put("collect_self_only", false)
 toastLog("配置完毕done")
 commonFunctions.killRunningScript()
 commonFunctions.setUpAutoStart(0.1)
