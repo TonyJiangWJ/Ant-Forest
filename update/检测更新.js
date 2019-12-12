@@ -28,8 +28,8 @@ log('下载并解压文件到目录：' + targetOutputDir)
 downloader.setTargetReleasesApiUrl(apiUrl)
 downloader.setOutputDir(targetOutputDir)
 // 设置不需要解压覆盖的文件
-// 请勿移除'update/glb.dex' 否则引起报错
-downloader.setUnzipSkipFiles(['.gitignore', 'update/glb.dex'])
+// 请勿移除'lib/autojs-tools.dex' 否则引起报错
+downloader.setUnzipSkipFiles(['.gitignore', 'lib/autojs-tools.dex'])
 // 设置不需要备份的文件
 downloader.setBackupIgnoreFiles([])
 
