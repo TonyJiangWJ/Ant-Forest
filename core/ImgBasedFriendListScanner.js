@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-11 22:13:48
+ * @Last Modified time: 2019-12-12 21:50:38
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -12,11 +12,12 @@ let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/
 let _FloatyInstance = typeof FloatyInstance === 'undefined' ? require('../lib/FloatyUtil.js') : FloatyInstance
 let _config = typeof config === 'undefined' ? require('../config.js').config : config
 let FileUtils = require('../lib/FileUtils.js')
-
+let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
 let _avil_list = []
 let _increased_energy = 0
 let _collect_any = false
 let _min_countdown = 10000
+let _lost_someone = false
 let _current_time = 0
 
 const _package_name = 'com.eg.android.AlipayGphone'
@@ -345,24 +346,27 @@ const collectTargetFriend = function (obj) {
   return true
 }
 
-/**
- * 记录好友信息
- * @param {Object} screen
- */
-const checkAvailiable = function (point, isHelp) {
-  automator.click(point.x, point.y)
-  let temp = {}
-  // TODO 获取好友名称
-  let container = ''
-  // 记录好友ID
-  temp.name = container.name
-  // 记录是否有保护罩
-  temp.protect = _commonFunctions.checkIsProtected(temp.name)
-  // 记录是否是帮助收取
-  temp.isHelp = isHelp
-  // 不在白名单的 添加到可收取列表
-  if (_config.white_list.indexOf(temp.name) < 0) {
-    _avil_list.push(temp)
+const checkRunningCountdown = function (countingDownContainers) {
+  if (!_config.is_cycle && countingDownContainers.length > 0) {
+    debugInfo(['倒计时中的好友数[{}]', countingDownContainers.length])
+    countingDownContainers.forEach((item, idx) => {
+      let now = new Date()
+      let stamp = item.stamp
+      let count = item.countdown
+      let passed = Math.round((now - stamp) / 60000.0)
+      debugInfo([
+        '需要计时[{}]分\t经过了[{}]分\t计时时间戳[{}]',
+        count, passed, stamp
+      ])
+      if (passed >= count) {
+        debugInfo('有一个记录倒计时结束')
+        // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
+        return true
+      } else {
+        let rest = count - passed
+        _min_countdown = rest < _min_countdown ? rest : _min_countdown
+      }
+    })
   }
 }
 
@@ -487,6 +491,10 @@ function ColorRegionCenterCalculator (img, point, threshold) {
       })
       debugInfo('计算中心点耗时' + (new Date().getTime() - start) + 'ms')
       let center = {
+        top: minY,
+        bottom: maxY,
+        left: minX,
+        right: maxX,
         x: parseInt((maxX + minX) / 2),
         y: parseInt((maxY + minY) / 2),
         same: nearlyColorPoints.length
@@ -621,7 +629,7 @@ function ImgBasedFriendListScanner () {
 
   this.reachBottom = function (grayImg) {
     let height = device.height
-    for (let startY = 1; startY < 50; startY++) {
+    for (let startY = 5; startY < 50; startY++) {
       let colorGreen = grayImg.getBitmap().getPixel(10, height - startY) >> 8 & 0xFF
       if (Math.abs(colorGreen - 245) > 4) {
         return false
@@ -633,6 +641,9 @@ function ImgBasedFriendListScanner () {
     let screen = null
     let grayScreen = null
     // console.show()
+    let countingDownContainers = []
+    let count = 0
+    let hasNext = true
     do {
       screen = _commonFunctions.checkCaptureScreenPermission()
       // 重新复制一份
@@ -670,15 +681,58 @@ function ImgBasedFriendListScanner () {
             })
           } else {
             debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.same)
+
+            if (_config.useOcr) {
+              let countdowmImg = images.clip(grayScreen, point.left, point.top, point.right - point.left, point.bottom - point.top)
+              let base64String = null
+              try {
+                base64String = images.toBase64(countdowmImg)
+                debugInfo(['倒计时图片：「{}」', base64String])
+              } catch (e) {
+                errorInfo('存储倒计时图片失败：' + e)
+              }
+              if (base64String) {
+                if (point.same > (_config.ocrThresold || 2900) && _min_countdown >= 2) {
+                  // 百度识图API获取文本
+                  let result = BaiduOcrUtil.recoginze(base64String)
+                  if (result && result.words_result_num > 0) {
+                    let filter = result.words_result.filter(r => isFinite(parseInt(r.words)))
+                    if (filter && filter.length > 0) {
+                      debugInfo('百度识图结果：' + JSON.stringify(filter))
+                      let countdown = parseInt(filter[0].words)
+                      if (countdown < _min_countdown) {
+                        debugInfo('设置最小倒计时：' + countdown)
+                        _min_countdown = countdown
+                      }
+                      countingDownContainers.push({
+                        countdown: countdown,
+                        stamp: new Date().getTime()
+                      })
+                    }
+                  }
+                }
+              }
+            }
             // _FloatyInstance.setFloatyInfo(point, '\'倒计时中')
           }
         })
       }
       automator.scrollDown()
       sleep(500)
-    } while (!this.reachBottom(grayScreen))
+      if (_config.checkBottomBaseImg ) {
+        hasNext = !this.reachBottom(grayScreen)
+      } else {
+        hasNext = count++ < (_config.friendListScrollTime || 30)
+      } 
+    } while (hasNext)
+    if (countingDownContainers.length > 0) {
+      _lost_someone = checkRunningCountdown(countingDownContainers)
+    }
     automator.back()
-    return {}
+    return {
+      minCountdown: _min_countdown,
+      lostSomeone: _lost_someone
+    }
   }
 
   this.detectHelp = function (img) {

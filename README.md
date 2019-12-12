@@ -18,6 +18,13 @@
 
 - 本项目从https://github.com/Nick-Hopps/Ant-Forest-autoscript fork 而来，但是经过了各种改动，和原版功能差异较大 现在已经单独复制不再作为fork分支开发
 - 历史版本更新记录可前往[RELEASES 页面](https://github.com/TonyJiangWJ/Ant-Forest/releases) 查看
+- 加入了基于百度文字识别的接口 来识别倒计时数据
+  - [通用文字识别](https://ai.baidu.com/tech/ocr/general)
+  - 进过测试通用文字识别没法识别，但是网络图片识别接口可用，但是可惜的是每天只有500次的免费调用机会
+  - 因此设置中加入了对倒计时绿色像素点的判断，像素点越多则代表倒计时的数值越小，这个时候可以进一步通过百度的接口判断实际的时间
+  - 具体运行config.js 勾选百度OCR识别然后填写你申请的APIKey和SecretKey即可，上面的阈值随你设置，反正记住每天只有500次就对了
+  - 注意APIKey和SecretKey一定要自己进入AI平台申请，不填写是无效的
+- 运行配置后右上角菜单可以重置所有配置信息为默认值
 
 # 使用
 

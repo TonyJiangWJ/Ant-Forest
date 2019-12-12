@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-11 22:11:30
+ * @Last Modified time: 2019-12-12 21:27:08
  * @Description: 
  */
 "ui";
@@ -29,8 +29,10 @@ let default_config = {
   is_cycle: false,
   collect_self_only: false,
   base_on_image: false,
+  // 是否基于图像分析是否到达底部
+  checkBottomBaseImg: true,
   // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
-  // friendListScrollTime: 30,
+  friendListScrollTime: 30,
   // 可收取小手指绿色像素点个数，1080P分辨率是这个数值，其他分辨率请自己修改
   finger_img_pixels: 2300,
   cycle_times: 10,
@@ -78,6 +80,14 @@ let default_config = {
   wateringBlackList: [],
   // 延迟启动时延 5秒 悬浮窗中进行的倒计时时间
   delayStartTime: 5,
+  // 是否使用百度的ocr识别倒计时
+  useOcr: false,
+  // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
+  ocrThreshold: 2900,
+  // ApiKey和SecretKey都来自百度AI平台 需要自己申请
+  apiKey: '',
+  // 秘钥
+  secretKey: '',
 
   home_ui_content: '背包|通知|攻略|种树',
   friend_home_ui_content: '浇水|发消息',
@@ -114,6 +124,144 @@ if (!inRunningMode) {
 } else {
 
   const hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
+
+  // 初始化list 为全局变量
+  let whiteList = wateringBlackList = helpBallColorList = []
+  const setScrollDownUiVal = function () {
+    ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
+    ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
+    ui.checkBottomBaseImgChkBox.setChecked(config.checkBottomBaseImg)
+    ui.baseOnImageContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
+    ui.friendListScrollTimeContainer.setVisibility(config.checkBottomBaseImg ? View.GONE : View.VISIBLE)
+    ui.delayStartTimeInpt.text(config.delayStartTime + '')
+
+    ui.useCustomScrollDownChkBox.setChecked(config.useCustomScrollDown)
+    ui.scrollDownContainer.setVisibility(config.useCustomScrollDown ? View.VISIBLE : View.INVISIBLE)
+    ui.bottomHeightContainer.setVisibility(config.useCustomScrollDown ? View.VISIBLE : View.GONE)
+    ui.scrollDownSpeedInpt.text(config.scrollDownSpeed + '')
+  }
+
+  const setOcrUiVal = function () {
+    ui.useOcrChkBox.setChecked(config.useOcr)
+    ui.ocrThresholdInpt.text(config.ocrThreshold + '')
+    ui.apiKeyInpt.text(config.apiKey + '')
+    ui.secretKeyInpt.text(config.secretKey + '')
+    ui.useOcrContainer.setVisibility(config.useOcr ? View.VISIBLE : View.GONE)
+  }
+
+  const resetUiValues = function () {
+    // 重置为默认
+    whiteList = wateringBlackList = helpBallColorList = []
+    // 基本配置
+    ui.password.text(config.password + '')
+    ui.colorThresholdInput.text('' + config.color_offset)
+    let precent = parseInt(config.color_offset / 255 * 100)
+    ui.colorThresholdSeekbar.setProgress(precent)
+
+    let configColor = config.min_floaty_color
+    ui.floatyColor.text(configColor)
+    if (/^#[\dabcdef]{6}$/i.test(configColor)) {
+      ui.floatyColor.setTextColor(colors.parseColor(configColor))
+    }
+    ui.floatyX.text(config.min_floaty_x + '')
+    ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / device.width * 100))
+    ui.floatyY.text(config.min_floaty_y + '')
+    ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / device.height * 100))
+    ui.notLingeringFloatWindowChkBox.setChecked(config.notLingeringFloatWindow)
+    ui.helpFriendChkBox.setChecked(config.help_friend)
+
+    ui.isCycleChkBox.setChecked(config.is_cycle)
+    ui.cycleTimeContainer.setVisibility(config.is_cycle ? View.VISIBLE : View.INVISIBLE)
+    ui.neverStopContainer.setVisibility(config.is_cycle ? View.GONE : View.VISIBLE)
+    ui.countdownContainer.setVisibility(config.is_cycle || config.never_stop ? View.GONE : View.VISIBLE)
+    ui.cycleTimeInpt.text(config.cycle_times + '')
+    ui.maxCollectWaitTimeInpt.text(config.max_collect_wait_time + '')
+    ui.maxCollectRepeatInpt.text(config.max_collect_repeat + '')
+    ui.isNeverStopChkBox.setChecked(config.never_stop)
+    ui.reactiveTimeContainer.setVisibility(config.never_stop ? View.VISIBLE : View.INVISIBLE)
+    ui.reactiveTimeInpt.text(config.reactive_time + '')
+
+    ui.showDebugLogChkBox.setChecked(config.show_debug_log)
+    ui.saveLogFileChkBox.setChecked(config.saveLogFile)
+    ui.fileSizeInpt.text(config.back_size + '')
+    ui.fileSizeContainer.setVisibility(config.saveLogFile ? View.VISIBLE : View.INVISIBLE)
+
+    ui.requestCapturePermissionChkBox.setChecked(config.request_capture_permission)
+
+    ui.lockX.text(config.lock_x + '')
+    ui.lockXSeekBar.setProgress(parseInt(config.lock_x / device.width * 100))
+    ui.lockY.text(config.lock_y + '')
+    ui.lockYSeekBar.setProgress(parseInt(config.lock_y / device.height * 100))
+    ui.autoLockChkBox.setChecked(config.auto_lock)
+    ui.lockPositionContainer.setVisibility(config.auto_lock && !hasRootPermission ? View.VISIBLE : View.INVISIBLE)
+    ui.lockDescNoRoot.setVisibility(!hasRootPermission ? View.VISIBLE : View.INVISIBLE)
+
+    ui.autoSetBrightnessChkBox.setChecked(config.autoSetBrightness)
+
+    ui.timeoutUnlockInpt.text(config.timeout_unlock + '')
+    ui.timeoutFindOneInpt.text(config.timeout_findOne + '')
+    ui.timeoutExistingInpt.text(config.timeout_existing + '')
+
+    // 进阶配置
+    ui.singleScriptChkBox.setChecked(config.single_script)
+    ui.collectSelfOnlyChkBox.setChecked(config.collect_self_only)
+    ui.baseOnImageChkBox.setChecked(config.base_on_image)
+    ui.bottomHeightInpt.text(config.bottomHeight + '')
+
+
+    ui.wateringBackChkBox.setChecked(config.wateringBack)
+    ui.wateringThresholdInpt.text(config.wateringThreshold + '')
+    ui.wateringThresholdContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.INVISIBLE)
+    ui.wateringBlackListContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.GONE)
+
+    setScrollDownUiVal()
+    setOcrUiVal()
+
+    // 控件文本配置
+    ui.homeUiContentInpt.text(config.home_ui_content)
+    ui.friendHomeUiContentInpt.text(config.friend_home_ui_content)
+    ui.friendListIdInpt.text(config.friend_list_id)
+    ui.enterFriendListUiContentInpt.text(config.enter_friend_list_ui_content)
+    ui.noMoreUiContentInpt.text(config.no_more_ui_content)
+    ui.loadMoreUiContentInpt.text(config.load_more_ui_content)
+    ui.wateringWidgetContentInpt.text(config.watering_widget_content)
+    ui.usingProtectContentInpt.text(config.using_protect_content)
+
+    let collectColor = config.can_collect_color
+    ui.canCollectColorInpt.text(collectColor)
+    if (/^#[\dabcdef]{6}$/i.test(collectColor)) {
+      ui.canCollectColorInpt.setTextColor(colors.parseColor(collectColor))
+    }
+    let helpColor = config.can_help_color
+    ui.canHelpColorInpt.text(helpColor)
+    if (/^#[\dabcdef]{6}$/i.test(helpColor)) {
+      ui.canHelpColorInpt.setTextColor(colors.parseColor(helpColor))
+    }
+    ui.collectableEnergyBallContentInpt.text(config.collectable_energy_ball_content)
+
+    // 列表绑定
+    if (config.white_list && config.white_list.length > 0) {
+      whiteList = config.white_list.map(r => {
+        return { name: r }
+      })
+    }
+    ui.whiteList.setDataSource(whiteList)
+
+    if (config.wateringBlackList && config.wateringBlackList.length > 0) {
+      wateringBlackList = config.wateringBlackList.map(r => {
+        return { name: r }
+      })
+    }
+    ui.blackList.setDataSource(wateringBlackList)
+
+    if (config.helpBallColors && config.helpBallColors.length > 0) {
+      helpBallColorList = config.helpBallColors.map(r => {
+        return { color: r }
+      })
+    }
+    ui.helpBallColorsList.setDataSource(helpBallColorList)
+
+  }
   let loadingDialog = null
   threads.start(function () {
     loadingDialog = dialogs.build({
@@ -130,7 +278,9 @@ if (!inRunningMode) {
 
   const TextWatcherBuilder = function (textCallback) {
     return new TextWatcher({
-      onTextChanged: textCallback,
+      onTextChanged: (text) => {
+        textCallback(text + '')
+      },
       beforeTextChanged: function (s) { }
       ,
       afterTextChanged: function (s) { }
@@ -144,6 +294,7 @@ if (!inRunningMode) {
       <drawer>
         <vertical>
           <appbar>
+            <toolbar id="toolbar" title="运行配置" />
             <tabs id="tabs" />
           </appbar>
           <viewpager id="viewpager">
@@ -273,24 +424,22 @@ if (!inRunningMode) {
                   <checkbox id="collectSelfOnlyChkBox" text="只收自己的能量" />
                   {/* 基于图像分析 */}
                   <checkbox id="baseOnImageChkBox" text="基于图像分析" />
-                  {/* 排行榜中下拉次数 */}
-                  <vertical id="friendListScrollTimeContainer">
-                    {/* <text text="排行榜下拉的最大次数，使得所有数据都加载完，当前只能如此" textSize="10sp" />
-                    <horizontal gravity="center" >
-                      <text text="排行榜下拉次数:" />
-                      <input layout_weight="70" inputType="number" id="friendListScrollTimeInpt" layout_weight="70" />
-                    </horizontal> */}
+                  <vertical id="baseOnImageContainer">
+                    <checkbox id="checkBottomBaseImgChkBox" text="基于图像判断列表底部" />
+                    {/* 排行榜中下拉次数 */}
+                    <vertical id="friendListScrollTimeContainer">
+                      <text text="排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像拍短无效只能如此" textSize="10sp" />
+                      <horizontal gravity="center" >
+                        <text text="排行榜下拉次数:" />
+                        <input layout_weight="70" inputType="number" id="friendListScrollTimeInpt" layout_weight="70" />
+                      </horizontal>
+                    </vertical>
                     <text text="可收取小手指的绿色像素点个数，1080P时小于2300判定为可收取，其他分辨率需要自行修改=2300*缩小比例^2" textSize="10sp" />
                     <horizontal gravity="center" >
                       <text text="小手指像素点个数:" />
                       <input layout_weight="70" inputType="number" id="fingerImgPixelsInpt" layout_weight="70" />
                     </horizontal>
                   </vertical>
-                  {/* 脚本延迟启动 */}
-                  <horizontal gravity="center">
-                    <text text="延迟启动时间（秒）:" />
-                    <input layout_weight="70" inputType="number" id="delayStartTimeInpt" layout_weight="70" />
-                  </horizontal>
 
                   {/* 使用模拟手势来实现上下滑动 */}
                   <horizontal gravity="center">
@@ -305,6 +454,20 @@ if (!inRunningMode) {
                     <text text="系统底部虚拟按键高度，全面屏设置为100即可" />
                     <input layout_weight="70" inputType="number" id="bottomHeightInpt" />
                   </horizontal>
+                  {/* 脚本延迟启动 */}
+                  <horizontal gravity="center">
+                    <text text="延迟启动时间（秒）:" />
+                    <input layout_weight="70" inputType="number" id="delayStartTimeInpt" layout_weight="70" />
+                  </horizontal>
+                  {/* 是否启用百度的OCR */}
+                  <checkbox id="useOcrChkBox" text="是否启用百度的OCR识别倒计时" />
+                  <vertical id="useOcrContainer">
+                    <text text="需要识别的倒计时绿色像素点数量，像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
+                    <input inputType="number" id="ocrThresholdInpt" w="*" />
+                    <text text="百度AI平台申请到的ApiKey和SecretKey" />
+                    <input id="apiKeyInpt" hint="apiKey" />
+                    <input id="secretKeyInpt" inputType="textPassword" hint="apiKey" />
+                  </vertical>
                   {/* 收取白名单列表 */}
                   <vertical w="*" gravity="left" layout_gravity="left" margin="10">
                     <text text="收取白名单：" textColor="#666666" textSize="14sp" />
@@ -419,131 +582,33 @@ if (!inRunningMode) {
       </drawer>
     )
 
-    // activity.setSupportActionBar(ui.toolbar)
+    // 创建选项菜单(右上角)
+    ui.emitter.on("create_options_menu", menu => {
+      menu.add("全部重置为默认")
+    })
+    // 监听选项菜单点击
+    ui.emitter.on("options_item_selected", (e, item) => {
+      switch (item.getTitle()) {
+        case "全部重置为默认":
+          confirm('确定要将所有配置重置为默认值吗？').then(ok => {
+            if (ok) {
+              Object.keys(default_config).forEach(key => {
+                let defaultValue = default_config[key]
+                config[key] = defaultValue
+                storageConfig.put(key, defaultValue)
+              })
+              resetUiValues()
+            }
+          })
+          break
+      }
+      e.consumed = true
+    })
+    activity.setSupportActionBar(ui.toolbar)
+
     ui.viewpager.setTitles(['基本配置', '进阶配置', '控件文本配置'])
     ui.tabs.setupWithViewPager(ui.viewpager)
-
-    // 基本配置
-    ui.password.text(config.password + '')
-    ui.colorThresholdInput.text('' + config.color_offset)
-    let precent = parseInt(config.color_offset / 255 * 100)
-    ui.colorThresholdSeekbar.setProgress(precent)
-
-    let configColor = config.min_floaty_color
-    ui.floatyColor.text(configColor)
-    if (/^#[\dabcdef]{6}$/i.test(configColor)) {
-      ui.floatyColor.setTextColor(colors.parseColor(configColor))
-    }
-    ui.floatyX.text(config.min_floaty_x + '')
-    ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / device.width * 100))
-    ui.floatyY.text(config.min_floaty_y + '')
-    ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / device.height * 100))
-    ui.notLingeringFloatWindowChkBox.setChecked(config.notLingeringFloatWindow)
-    ui.helpFriendChkBox.setChecked(config.help_friend)
-
-    ui.isCycleChkBox.setChecked(config.is_cycle)
-    ui.cycleTimeContainer.setVisibility(config.is_cycle ? View.VISIBLE : View.INVISIBLE)
-    ui.neverStopContainer.setVisibility(config.is_cycle ? View.GONE : View.VISIBLE)
-    ui.countdownContainer.setVisibility(config.is_cycle || config.never_stop ? View.GONE : View.VISIBLE)
-    ui.cycleTimeInpt.text(config.cycle_times + '')
-    ui.maxCollectWaitTimeInpt.text(config.max_collect_wait_time + '')
-    ui.maxCollectRepeatInpt.text(config.max_collect_repeat + '')
-    ui.isNeverStopChkBox.setChecked(config.never_stop)
-    ui.reactiveTimeContainer.setVisibility(config.never_stop ? View.VISIBLE : View.INVISIBLE)
-    ui.reactiveTimeInpt.text(config.reactive_time + '')
-
-    ui.showDebugLogChkBox.setChecked(config.show_debug_log)
-    ui.saveLogFileChkBox.setChecked(config.saveLogFile)
-    ui.fileSizeInpt.text(config.back_size + '')
-    ui.fileSizeContainer.setVisibility(config.saveLogFile ? View.VISIBLE : View.INVISIBLE)
-
-    ui.requestCapturePermissionChkBox.setChecked(config.request_capture_permission)
-
-    ui.lockX.text(config.lock_x + '')
-    ui.lockXSeekBar.setProgress(parseInt(config.lock_x / device.width * 100))
-    ui.lockY.text(config.lock_y + '')
-    ui.lockYSeekBar.setProgress(parseInt(config.lock_y / device.height * 100))
-    ui.autoLockChkBox.setChecked(config.auto_lock)
-    ui.lockPositionContainer.setVisibility(config.auto_lock && !hasRootPermission ? View.VISIBLE : View.INVISIBLE)
-    ui.lockDescNoRoot.setVisibility(!hasRootPermission ? View.VISIBLE : View.INVISIBLE)
-
-    ui.autoSetBrightnessChkBox.setChecked(config.autoSetBrightness)
-
-    ui.timeoutUnlockInpt.text(config.timeout_unlock + '')
-    ui.timeoutFindOneInpt.text(config.timeout_findOne + '')
-    ui.timeoutExistingInpt.text(config.timeout_existing + '')
-
-
-    // 进阶配置
-    ui.singleScriptChkBox.setChecked(config.single_script)
-    ui.collectSelfOnlyChkBox.setChecked(config.collect_self_only)
-    ui.baseOnImageChkBox.setChecked(config.base_on_image)
-    ui.bottomHeightInpt.text(config.bottomHeight + '')
-    ui.useCustomScrollDownChkBox.setChecked(config.useCustomScrollDown)
-    ui.scrollDownContainer.setVisibility(config.useCustomScrollDown ? View.VISIBLE : View.INVISIBLE)
-    ui.bottomHeightContainer.setVisibility(config.useCustomScrollDown ? View.VISIBLE : View.GONE)
-    ui.scrollDownSpeedInpt.text(config.scrollDownSpeed + '')
-
-    ui.wateringBackChkBox.setChecked(config.wateringBack)
-    ui.wateringThresholdInpt.text(config.wateringThreshold + '')
-    ui.wateringThresholdContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.INVISIBLE)
-    ui.wateringBlackListContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.GONE)
-
-
-    // ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
-    ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
-    ui.friendListScrollTimeContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
-    ui.delayStartTimeInpt.text(config.delayStartTime + '')
-
-    // 控件文本配置
-    ui.homeUiContentInpt.text(config.home_ui_content)
-    ui.friendHomeUiContentInpt.text(config.friend_home_ui_content)
-    ui.friendListIdInpt.text(config.friend_list_id)
-    ui.enterFriendListUiContentInpt.text(config.enter_friend_list_ui_content)
-    ui.noMoreUiContentInpt.text(config.no_more_ui_content)
-    ui.loadMoreUiContentInpt.text(config.load_more_ui_content)
-    ui.wateringWidgetContentInpt.text(config.watering_widget_content)
-    ui.usingProtectContentInpt.text(config.using_protect_content)
-
-    let collectColor = config.can_collect_color
-    ui.canCollectColorInpt.text(collectColor)
-    if (/^#[\dabcdef]{6}$/i.test(collectColor)) {
-      ui.canCollectColorInpt.setTextColor(colors.parseColor(collectColor))
-    }
-    let helpColor = config.can_help_color
-    ui.canHelpColorInpt.text(helpColor)
-    if (/^#[\dabcdef]{6}$/i.test(helpColor)) {
-      ui.canHelpColorInpt.setTextColor(colors.parseColor(helpColor))
-    }
-    ui.collectableEnergyBallContentInpt.text(config.collectable_energy_ball_content)
-
-    // 列表绑定
-    let whiteList = []
-    if (config.white_list && config.white_list.length > 0) {
-      whiteList = config.white_list.map(r => {
-        return { name: r }
-      })
-    }
-    ui.whiteList.setDataSource(whiteList)
-
-    let wateringBlackList = []
-    if (config.wateringBlackList && config.wateringBlackList.length > 0) {
-      wateringBlackList = config.wateringBlackList.map(r => {
-        return { name: r }
-      })
-    }
-    ui.blackList.setDataSource(wateringBlackList)
-
-
-    let helpBallColorList = []
-    if (config.helpBallColors && config.helpBallColors.length > 0) {
-      helpBallColorList = config.helpBallColors.map(r => {
-        return { color: r }
-      })
-    }
-    ui.helpBallColorsList.setDataSource(helpBallColorList)
-
-
+    resetUiValues()
     // 列表监听
     ui.whiteList.on('item_bind', function (itemView, itemHolder) {
       // 绑定删除事件
@@ -562,7 +627,7 @@ if (!inRunningMode) {
         if (event.getAction() == MotionEvent.ACTION_UP) {
           ui.parentScrollView2.requestDisallowInterceptTouchEvent(false)
         } else {
-          //屏蔽父控件的拦截事件  
+          // 屏蔽父控件的拦截事件  
           ui.parentScrollView2.requestDisallowInterceptTouchEvent(true)
         }
         return false
@@ -598,7 +663,7 @@ if (!inRunningMode) {
         if (event.getAction() == MotionEvent.ACTION_UP) {
           ui.parentScrollView2.requestDisallowInterceptTouchEvent(false)
         } else {
-          //屏蔽父控件的拦截事件  
+          // 屏蔽父控件的拦截事件  
           ui.parentScrollView2.requestDisallowInterceptTouchEvent(true)
         }
         return false
@@ -701,6 +766,7 @@ if (!inRunningMode) {
       config.is_cycle = ui.isCycleChkBox.isChecked()
       ui.cycleTimeContainer.setVisibility(config.is_cycle ? View.VISIBLE : View.INVISIBLE)
       ui.neverStopContainer.setVisibility(config.is_cycle ? View.GONE : View.VISIBLE)
+      ui.countdownContainer.setVisibility(config.is_cycle || config.never_stop ? View.GONE : View.VISIBLE)
     })
 
     ui.isNeverStopChkBox.on('click', () => {
@@ -800,15 +866,18 @@ if (!inRunningMode) {
     ui.collectSelfOnlyChkBox.on('click', () => {
       config.collect_self_only = ui.collectSelfOnlyChkBox.isChecked()
     })
+
     ui.baseOnImageChkBox.on('click', () => {
       config.base_on_image = ui.baseOnImageChkBox.isChecked()
+      setScrollDownUiVal()
       if (config.base_on_image) {
         config.useCustomScrollDown = true
-        ui.useCustomScrollDownChkBox.setChecked(true)
-        ui.scrollDownContainer.setVisibility(View.VISIBLE)
-        ui.bottomHeightContainer.setVisibility(View.VISIBLE)
+        setScrollDownUiVal()
       }
-      ui.friendListScrollTimeContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
+    })
+    ui.checkBottomBaseImgChkBox.on('click', () => {
+      config.checkBottomBaseImg = ui.checkBottomBaseImgChkBox.isChecked()
+      setScrollDownUiVal()
     })
 
     ui.useCustomScrollDownChkBox.on('click', () => {
@@ -825,6 +894,21 @@ if (!inRunningMode) {
       TextWatcherBuilder(text => { config.scrollDownSpeed = parseInt(text) })
     )
 
+    ui.useOcrChkBox.on('click', () => {
+      config.useOcr = ui.useOcrChkBox.isChecked()
+      setOcrUiVal()
+    })
+
+    ui.ocrThresholdInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.ocrThreshold = parseInt(text) })
+    )
+    ui.apiKeyInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.apiKey = text })
+    )
+    ui.secretKeyInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.secretKey = text })
+    )
+
     ui.wateringBackChkBox.on('click', () => {
       config.wateringBack = ui.wateringBackChkBox.isChecked()
       ui.wateringThresholdContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.INVISIBLE)
@@ -835,9 +919,9 @@ if (!inRunningMode) {
       TextWatcherBuilder(text => { config.wateringThreshold = parseInt(text) })
     )
 
-    // ui.friendListScrollTimeInpt.addTextChangedListener(
-    //   TextWatcherBuilder(text => { config.friendListScrollTime = parseInt(text) })
-    // )
+    ui.friendListScrollTimeInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.friendListScrollTime = parseInt(text) })
+    )
     ui.fingerImgPixelsInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.finger_img_pixels = parseInt(text) })
     )
@@ -920,6 +1004,13 @@ if (!inRunningMode) {
 
   ui.emitter.on('pause', () => {
     ui.finish()
+    let isBlank = function (val) {
+      return typeof val === 'undefined' || val === null || val === '' || ('' + val).trim() === ''
+    }
+    // 校验OCR配置是否有效
+    if (config.useOcr && (isBlank(config.apiKey) || isBlank(config.secretKey))) {
+      config.useOcr = false
+    }
     Object.keys(default_config).forEach(key => {
       let newVal = config[key]
       if (typeof newVal !== 'undefined') {
