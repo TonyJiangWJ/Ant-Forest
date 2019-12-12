@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-12 21:27:08
+ * @Last Modified time: 2019-12-12 22:05:53
  * @Description: 
  */
 "ui";
@@ -132,13 +132,16 @@ if (!inRunningMode) {
     ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
     ui.checkBottomBaseImgChkBox.setChecked(config.checkBottomBaseImg)
     ui.baseOnImageContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
+    ui.useOcrParentContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.friendListScrollTimeContainer.setVisibility(config.checkBottomBaseImg ? View.GONE : View.VISIBLE)
     ui.delayStartTimeInpt.text(config.delayStartTime + '')
+
 
     ui.useCustomScrollDownChkBox.setChecked(config.useCustomScrollDown)
     ui.scrollDownContainer.setVisibility(config.useCustomScrollDown ? View.VISIBLE : View.INVISIBLE)
     ui.bottomHeightContainer.setVisibility(config.useCustomScrollDown ? View.VISIBLE : View.GONE)
     ui.scrollDownSpeedInpt.text(config.scrollDownSpeed + '')
+
   }
 
   const setOcrUiVal = function () {
@@ -460,13 +463,15 @@ if (!inRunningMode) {
                     <input layout_weight="70" inputType="number" id="delayStartTimeInpt" layout_weight="70" />
                   </horizontal>
                   {/* 是否启用百度的OCR */}
-                  <checkbox id="useOcrChkBox" text="是否启用百度的OCR识别倒计时" />
-                  <vertical id="useOcrContainer">
-                    <text text="需要识别的倒计时绿色像素点数量，像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
-                    <input inputType="number" id="ocrThresholdInpt" w="*" />
-                    <text text="百度AI平台申请到的ApiKey和SecretKey" />
-                    <input id="apiKeyInpt" hint="apiKey" />
-                    <input id="secretKeyInpt" inputType="textPassword" hint="apiKey" />
+                  <vertical id="useOcrParentContainer">
+                    <checkbox id="useOcrChkBox" text="是否启用百度的OCR识别倒计时" />
+                    <vertical id="useOcrContainer">
+                      <text text="需要识别的倒计时绿色像素点数量，像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
+                      <input inputType="number" id="ocrThresholdInpt" w="*" />
+                      <text text="百度AI平台申请到的ApiKey和SecretKey" />
+                      <input id="apiKeyInpt" hint="apiKey" />
+                      <input id="secretKeyInpt" inputType="textPassword" hint="apiKey" />
+                    </vertical>
                   </vertical>
                   {/* 收取白名单列表 */}
                   <vertical w="*" gravity="left" layout_gravity="left" margin="10">
@@ -869,11 +874,10 @@ if (!inRunningMode) {
 
     ui.baseOnImageChkBox.on('click', () => {
       config.base_on_image = ui.baseOnImageChkBox.isChecked()
-      setScrollDownUiVal()
       if (config.base_on_image) {
         config.useCustomScrollDown = true
-        setScrollDownUiVal()
       }
+      setScrollDownUiVal()
     })
     ui.checkBottomBaseImgChkBox.on('click', () => {
       config.checkBottomBaseImg = ui.checkBottomBaseImgChkBox.isChecked()
