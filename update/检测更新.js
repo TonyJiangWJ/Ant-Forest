@@ -8,7 +8,7 @@ try {
     title: '正在加载dex',
     content: '请稍等...'
   }).show()
-  runtime.loadDex('./glb.dex')
+  runtime.loadDex('../lib/autojs-tools.dex')
   loadingDialog.setContent('加载完成！')
   sleep(1000)
   loadingDialog.dismiss()

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-10 23:35:36
+ * @Last Modified time: 2019-12-13 00:38:46
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -10,7 +10,10 @@ let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/
 let _runningQueueDispatcher = typeof runningQueueDispatcher === 'undefined' ? require('./RunningQueueDispatcher.js') : runningQueueDispatcher
 let _config = typeof config === 'undefined' ? require('../config.js').config : config
 let FriendListScanner = require('./FriendListScanner.js')
-let ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
+let ImgBasedFriendListScanner = null
+if (_config.base_on_image) {
+  ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
+}
 
 function Ant_forest () {
   const _package_name = 'com.eg.android.AlipayGphone'

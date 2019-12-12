@@ -1,6 +1,6 @@
 {
     "name": "Custom Ant Forest autoscript",
-    "main": "main.js",
+    "main": "config.js",
     "ignore": [
         "build"
     ],
