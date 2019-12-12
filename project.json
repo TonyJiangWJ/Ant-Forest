@@ -1,10 +1,10 @@
 {
     "name": "Custom Ant Forest autoscript",
-    "main": "config.js",
+    "main": "main.js",
     "ignore": [
         "build"
     ],
     "packageName": "com.ant-forest-autoscript",
-    "versionName": "1.2.0.1",
+    "versionName": "1.2.0.2",
     "versionCode": 1
 }
