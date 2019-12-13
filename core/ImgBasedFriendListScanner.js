@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-13 16:23:47
+ * @Last Modified time: 2019-12-13 22:00:28
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -415,35 +415,7 @@ const Stack = function () {
   }
 }
 
-function CheckBit (maxVal) {
-  this.BUFFER_LENGTH = Math.ceil(maxVal / 8)
-  this.BYTE_SIZE = 1 << 3
-  this.bytes = []
-  this.init()
-}
-
-CheckBit.prototype.init = function () {
-  this.bytes = Array(this.BUFFER_LENGTH + 1).join(0).split('')
-}
-
-CheckBit.prototype.setBit = function (val) {
-  let idx = ~~(val / this.BYTE_SIZE)
-  let posi = 1 << (val % this.BYTE_SIZE)
-  let unset = (this.bytes[idx] & posi) !== posi
-  this.bytes[idx] = this.bytes[idx] | posi
-  return unset
-}
-
-CheckBit.prototype.isUnchecked = function (point) {
-  if (point.x < 880) {
-    return false
-  }
-  // 1080 - 200 = 880
-  return this.setBit((point.x - 880) * 10000 + point.y)
-}
-
-
-const BIT_MAX_VAL = 200 * 10000 + 2160
+const BIT_MAX_VAL = device.height * 1000 + 200
 // 计算中心点
 function ColorRegionCenterCalculator (img, point, threshold) {
   // Java打包的位运算方式
@@ -470,9 +442,9 @@ function ColorRegionCenterCalculator (img, point, threshold) {
    */
   this.getColorRegionCenter = function () {
     let maxX = -1
-    let minX = 1080 + 10
+    let minX = device.width + 10
     let maxY = -1
-    let minY = 20000
+    let minY = device.height + 10
     debugInfo(['准备获取[{}]的同色[{}]点区域', JSON.stringify(this.point), colors.toString(this.color)])
     let nearlyColorPoints = this.getAllColorRegionPoints()
     if (nearlyColorPoints && nearlyColorPoints.length > 0) {
@@ -509,8 +481,8 @@ function ColorRegionCenterCalculator (img, point, threshold) {
 
 
   this.isOutofScreen = function (point) {
-    let width = 1080
-    let height = 2160
+    let width = device.width
+    let height = device.height
     if (point.x >= width || point.x < 0 || point.y < 0 || point.y >= height) {
       return true
     }
@@ -801,17 +773,23 @@ function ImgBasedFriendListScanner () {
 
   this.detectColors = function (img, color) {
     debugInfo('准备检测颜色：' + color)
-    let widthRate = device.width / 1080
-    let heightRate = device.height / 2160
-    let movingY = parseInt(200 * heightRate)
-    let movingX = parseInt(100 * widthRate)
-    let endY = device.height - movingY
-    let runningY = 370 * heightRate
+    let scaleRate = device.width / 1080
+    let movingY = parseInt(200 * scaleRate)
+    let movingX = parseInt(100 * scaleRate)
+    // 预留70左右的高度
+    let endY = device.height - movingY - 70 * scaleRate
+    let runningY = 440 * scaleRate
     let startX = device.width - movingX
-    let regionWindow = [startX, runningY, movingX, movingY]
+    let regionWindow = []
     let findColorPoints = []
     let countdown = new Countdown()
-    while (runningY < endY) {
+    let hasNext = true
+    do {
+      if (runningY > endY) {
+        runningY = endY
+        hasNext = false
+      }
+      regionWindow = [startX, runningY, movingX, movingY]
       debugInfo('检测区域：' + JSON.stringify(regionWindow))
       let point = images.findColor(img, color, {
         region: regionWindow,
@@ -822,12 +800,8 @@ function ImgBasedFriendListScanner () {
         findColorPoints.push(point)
       }
       runningY += movingY
-      if (runningY > endY) {
-        runningY = endY
-      }
-      regionWindow = [startX, runningY, movingX, movingY]
       countdown.restart()
-    }
+    } while (hasNext)
     return findColorPoints
   }
 }

@@ -18,7 +18,7 @@ importClass(android.view.MotionEvent)
 
 let default_config = {
   password: '',
-  color_offset: 40,
+  color_offset: 20,
   // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
   show_small_floaty: true,
   notLingeringFloatWindow: false,
