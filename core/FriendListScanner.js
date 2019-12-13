@@ -637,8 +637,8 @@ function FriendListScanner () {
               // 动态修改预加载超时时间
               let dynamicTimeout = Math.ceil(listLength / 20) * 800
               _config.timeoutLoadFriendList = dynamicTimeout
-              let { storage_name } = require('../config.js')
-              var configStorage = storages.create(storage_name)
+              let _storage_name = typeof storage_name === 'undefined' ? require('../config.js').storage_name : storage_name
+              var configStorage = storages.create(_storage_name)
               configStorage.put('timeoutLoadFriendList', dynamicTimeout)
               // let { config: anotherConfig } = require('../config.js')
               // debugInfo('another config\'s timeoutLoadFriendList:[' + anotherConfig.timeoutLoadFriendList + ']')

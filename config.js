@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-12 22:05:53
+ * @Last Modified time: 2019-12-13 09:19:11
  * @Description: 
  */
 "ui";
@@ -114,7 +114,8 @@ Object.keys(default_config).forEach(key => {
     config[key] = default_config[key]
   }
 })
-
+// 传递给commonFunction等
+const storage_name = CONFIG_STORAGE_NAME
 if (!inRunningMode) {
   module.exports = {
     config: config,
@@ -123,8 +124,9 @@ if (!inRunningMode) {
   }
 } else {
 
-  const hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
+  const _hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
 
+  let commonFunctions = require('./lib/CommonFunction.js')
   // 初始化list 为全局变量
   let whiteList = wateringBlackList = helpBallColorList = []
   const setScrollDownUiVal = function () {
@@ -149,6 +151,9 @@ if (!inRunningMode) {
     ui.ocrThresholdInpt.text(config.ocrThreshold + '')
     ui.apiKeyInpt.text(config.apiKey + '')
     ui.secretKeyInpt.text(config.secretKey + '')
+
+    let invokeStorage = commonFunctions.getBaiduInvokeCountStorage()
+    ui.ocrInvokeCount.text(invokeStorage.date + '已调用次数:' + invokeStorage.count + ' 剩余:' + (500 - invokeStorage.count))
     ui.useOcrContainer.setVisibility(config.useOcr ? View.VISIBLE : View.GONE)
   }
 
@@ -196,8 +201,8 @@ if (!inRunningMode) {
     ui.lockY.text(config.lock_y + '')
     ui.lockYSeekBar.setProgress(parseInt(config.lock_y / device.height * 100))
     ui.autoLockChkBox.setChecked(config.auto_lock)
-    ui.lockPositionContainer.setVisibility(config.auto_lock && !hasRootPermission ? View.VISIBLE : View.INVISIBLE)
-    ui.lockDescNoRoot.setVisibility(!hasRootPermission ? View.VISIBLE : View.INVISIBLE)
+    ui.lockPositionContainer.setVisibility(config.auto_lock && !_hasRootPermission ? View.VISIBLE : View.INVISIBLE)
+    ui.lockDescNoRoot.setVisibility(!_hasRootPermission ? View.VISIBLE : View.INVISIBLE)
 
     ui.autoSetBrightnessChkBox.setChecked(config.autoSetBrightness)
 
@@ -466,6 +471,7 @@ if (!inRunningMode) {
                   <vertical id="useOcrParentContainer">
                     <checkbox id="useOcrChkBox" text="是否启用百度的OCR识别倒计时" />
                     <vertical id="useOcrContainer">
+                      <text id="ocrInvokeCount" textSize="12sp" />
                       <text text="需要识别的倒计时绿色像素点数量，像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
                       <input inputType="number" id="ocrThresholdInpt" w="*" />
                       <text text="百度AI平台申请到的ApiKey和SecretKey" />
@@ -800,7 +806,7 @@ if (!inRunningMode) {
     ui.autoLockChkBox.on('click', () => {
       let checked = ui.autoLockChkBox.isChecked()
       config.auto_lock = checked
-      ui.lockPositionContainer.setVisibility(checked && !hasRootPermission ? View.VISIBLE : View.INVISIBLE)
+      ui.lockPositionContainer.setVisibility(checked && !_hasRootPermission ? View.VISIBLE : View.INVISIBLE)
     })
 
     ui.lockXSeekBar.on('touch', () => {

@@ -2,10 +2,14 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-12 21:50:38
+ * @Last Modified time: 2019-12-13 16:23:47
  * @Description: 
  */
 importClass(com.tony.BitCheck)
+importClass(java.util.concurrent.LinkedBlockingQueue)
+importClass(java.util.concurrent.ThreadPoolExecutor)
+importClass(java.util.concurrent.TimeUnit)
+importClass(java.util.concurrent.CountDownLatch)
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
 let automator = require('../lib/Automator.js')
 let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/CommonFunction.js') : commonFunctions
@@ -17,6 +21,7 @@ let _avil_list = []
 let _increased_energy = 0
 let _collect_any = false
 let _min_countdown = 10000
+let _min_countdown_pixels = 10
 let _lost_someone = false
 let _current_time = 0
 
@@ -446,7 +451,6 @@ function ColorRegionCenterCalculator (img, point, threshold) {
   let s = new Date().getTime()
   // 在外部灰度化
   this.img = img
-  // console.log('转换灰度颜色')
   this.color = img.getBitmap().getPixel(point.x, point.y) >> 8 & 0xFF
   // this.color = color
   this.point = point
@@ -456,7 +460,6 @@ function ColorRegionCenterCalculator (img, point, threshold) {
    * 获取所有同色区域的点集合
    */
   this.getAllColorRegionPoints = function () {
-    debugInfo('初始点：' + JSON.stringify(this.point))
     let nearlyColorPoints = this.getNearlyNorecursion(this.point)
     nearlyColorPoints = nearlyColorPoints || []
     return nearlyColorPoints
@@ -470,11 +473,9 @@ function ColorRegionCenterCalculator (img, point, threshold) {
     let minX = 1080 + 10
     let maxY = -1
     let minY = 20000
-    debugInfo('准备获取同色点区域')
+    debugInfo(['准备获取[{}]的同色[{}]点区域', JSON.stringify(this.point), colors.toString(this.color)])
     let nearlyColorPoints = this.getAllColorRegionPoints()
     if (nearlyColorPoints && nearlyColorPoints.length > 0) {
-      debugInfo('同色点总数：' + nearlyColorPoints.length)
-      let start = new Date().getTime()
       nearlyColorPoints.forEach((item, idx) => {
         if (maxX < item.x) {
           maxX = item.x
@@ -489,7 +490,6 @@ function ColorRegionCenterCalculator (img, point, threshold) {
           minY = item.y
         }
       })
-      debugInfo('计算中心点耗时' + (new Date().getTime() - start) + 'ms')
       let center = {
         top: minY,
         bottom: maxY,
@@ -502,7 +502,7 @@ function ColorRegionCenterCalculator (img, point, threshold) {
       // debugInfo('获取中心点位置为：' + JSON.stringify(center))
       return center
     } else {
-      debugInfo('没有找到同色点 原始位置：' + JSON.stringify(this.point))
+      debugInfo(['没有找到同色点 原始位置：「{}」 颜色：「{}」', JSON.stringify(this.point), colors.toString(this.color)])
       return this.point
     }
   }
@@ -530,40 +530,33 @@ function ColorRegionCenterCalculator (img, point, threshold) {
     this.isUncheckedBitJava(point)
     let step = 0
     let totalStart = new Date().getTime()
-    // let totalCheckAndCreate = 0
-    // let totalCheckColor = 0
-    // let timestamp = 0
     while (!stack.isEmpty()) {
       let target = stack.peek()
       let allChecked = true
       for (let i = 0; i < 4; i++) {
         let direction = directs[i]
-        // timestamp = new Date().getTime()
         let checkItem = this.getDirectionPoint(target, direction)
-        // totalCheckAndCreate += new Date().getTime() - timestamp
         if (!checkItem) {
           continue
         }
         step++
         allChecked = false
-        // timestamp = new Date().getTime()
-        // if (images.detectsColor(this.img, this.color, checkItem.x, checkItem.y, this.threshold)) {
         // 灰度化图片颜色比较
         let checkColor = img.getBitmap().getPixel(checkItem.x, checkItem.y) >> 8 & 0xFF
-        // log('像素点: ' + (JSON.stringify(checkItem)) + ' 颜色：' + checkColor)
         if (Math.abs(checkColor - this.color) < this.threshold) {
           nearlyPoints.push(checkItem)
           stack.push(checkItem)
         }
-        // totalCheckColor += new Date().getTime() - timestamp
       }
       if (allChecked) {
         stack.pop()
       }
     }
-    debugInfo('找了多个点 总计步数：' + step + '\n总耗时：' + (new Date().getTime() - totalStart) + 'ms')
-    // debugInfo('判断是否校验耗时：' + totalCheckAndCreate + 'ms')
-    // debugInfo('判断颜色耗时：' + totalCheckColor + 'ms')
+    debugInfo([
+      '原始点：{} 颜色：{}, 找了多个点 总计步数：{} 总耗时：{}ms 同色点个数：{}',
+      JSON.stringify(this.point), colors.toString(this.color), step,
+      new Date().getTime() - totalStart, nearlyPoints.length
+    ])
     return nearlyPoints
   }
 
@@ -591,14 +584,18 @@ function ColorRegionCenterCalculator (img, point, threshold) {
 
 function ImgBasedFriendListScanner () {
 
+  this.threadPool = null
+
   this.init = function (option) {
     _current_time = option.currentTime || 0
     _increased_energy = option.increasedEnergy || 0
+    this.threadPool = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(1024))
   }
 
   this.start = function () {
     _increased_energy = 0
     _min_countdown = 10000
+    _min_countdown_pixels = 10
     debugInfo('图像分析即将开始')
     return this.collecting()
   }
@@ -624,7 +621,8 @@ function ImgBasedFriendListScanner () {
   }
 
   this.destory = function () {
-    // TODO
+    this.threadPool.shutdownNow()
+    this.threadPool = null
   }
 
   this.reachBottom = function (grayImg) {
@@ -650,80 +648,134 @@ function ImgBasedFriendListScanner () {
       screen = images.copy(screen)
       grayScreen = images.grayscale(images.copy(screen))
       debugInfo('获取到screen' + (screen === null ? '失败' : '成功'))
-      // _FloatyInstance.setFloatyTextColor('#f9d100')
+      let countdown = new Countdown()
+      let waitForCheckPoints = []
       if (_config.help_friend) {
         let helpPoints = this.sortAndReduce(this.detectHelp(screen))
         if (helpPoints && helpPoints.length > 0) {
-          helpPoints.forEach(point => {
-            let calculator = new ColorRegionCenterCalculator(grayScreen, point, _config.color_offset)
-            point = calculator.getColorRegionCenter()
-            debugInfo('可帮助收取位置：' + JSON.stringify(point))
-            // _FloatyInstance.setFloatyInfo(point, '\'可帮助收取')
-            collectTargetFriend({
-              point: point,
-              isHelp: true
+          waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
+            helpPoint => {
+              return {
+                isHelp: true,
+                point: helpPoint
+              }
             })
-            sleep(100)
-          })
+          )
         }
       }
       let collectPoints = this.sortAndReduce(this.detectCollect(screen))
       if (collectPoints && collectPoints.length > 0) {
-        collectPoints.forEach(point => {
-          let calculator = new ColorRegionCenterCalculator(grayScreen, point, _config.color_offset)
-          point = calculator.getColorRegionCenter()
-          if (point.same < (_config.finger_img_pixels || 2300)) {
-            debugInfo('可能可收取位置：' + JSON.stringify(point))
-            // _FloatyInstance.setFloatyInfo(point, '\'可能可收取')
-            collectTargetFriend({
-              point: point,
-              isHelp: false
+        waitForCheckPoints = waitForCheckPoints.concat(collectPoints.map(
+          collectPoint => {
+            return {
+              isHelp: false,
+              point: collectPoint
+            }
+          })
+        )
+      }
+      countdown.summary('获取可帮助和可能可收取的点')
+      if (waitForCheckPoints.length > 0) {
+        countdown.restart()
+        let countdownLatch = new CountDownLatch(waitForCheckPoints.length)
+        let listWriteLock = threads.lock()
+        let countdownLock = threads.lock()
+        let collectOrHelpList = []
+        waitForCheckPoints.forEach(pointData => {
+          if (pointData.isHelp) {
+            this.threadPool.execute(function () {
+              let calculator = new ColorRegionCenterCalculator(images.copy(grayScreen), pointData.point, _config.color_offset)
+              let point = calculator.getColorRegionCenter()
+              debugInfo('可帮助收取位置：' + JSON.stringify(point))
+              listWriteLock.lock()
+              collectOrHelpList.push({
+                point: point,
+                isHelp: true
+              })
+              countdownLatch.countDown()
+              listWriteLock.unlock()
             })
           } else {
-            debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.same)
-
-            if (_config.useOcr) {
-              let countdowmImg = images.clip(grayScreen, point.left, point.top, point.right - point.left, point.bottom - point.top)
-              let base64String = null
-              try {
-                base64String = images.toBase64(countdowmImg)
-                debugInfo(['倒计时图片：「{}」', base64String])
-              } catch (e) {
-                errorInfo('存储倒计时图片失败：' + e)
-              }
-              if (base64String) {
-                if (point.same > (_config.ocrThresold || 2900) && _min_countdown >= 2) {
-                  // 百度识图API获取文本
-                  let result = BaiduOcrUtil.recoginze(base64String)
-                  if (result && result.words_result_num > 0) {
-                    let filter = result.words_result.filter(r => isFinite(parseInt(r.words)))
-                    if (filter && filter.length > 0) {
-                      debugInfo('百度识图结果：' + JSON.stringify(filter))
-                      let countdown = parseInt(filter[0].words)
-                      if (countdown < _min_countdown) {
-                        debugInfo('设置最小倒计时：' + countdown)
-                        _min_countdown = countdown
+            this.threadPool.execute(function () {
+              let calculator = new ColorRegionCenterCalculator(images.copy(grayScreen), pointData.point, _config.color_offset)
+              let point = calculator.getColorRegionCenter()
+              if (point.same < (_config.finger_img_pixels || 2300)) {
+                debugInfo('可能可收取位置：' + JSON.stringify(point))
+                listWriteLock.lock()
+                collectOrHelpList.push({ point: point, isHelp: false })
+                countdownLatch.countDown()
+                listWriteLock.unlock()
+              } else {
+                debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.same)
+                if (_config.useOcr) {
+                  let countdowmImg = images.clip(grayScreen, point.left, point.top, point.right - point.left, point.bottom - point.top)
+                  let base64String = null
+                  try {
+                    base64String = images.toBase64(countdowmImg)
+                    debugInfo(['倒计时图片：「{}」', base64String])
+                  } catch (e) {
+                    errorInfo('存储倒计时图片失败：' + e)
+                  }
+                  if (base64String) {
+                    if (point.same > (_config.ocrThresold || 2900) && _min_countdown >= 2) {
+                      // 百度识图API获取文本
+                      let result = BaiduOcrUtil.recoginze(base64String)
+                      if (result && result.words_result_num > 0) {
+                        let filter = result.words_result.filter(r => isFinite(parseInt(r.words)))
+                        if (filter && filter.length > 0) {
+                          debugInfo('百度识图结果：' + JSON.stringify(filter))
+                          countdownLock.lock()
+                          let countdown = parseInt(filter[0].words)
+                          if (countdown < _min_countdown) {
+                            debugInfo('设置最小倒计时：' + countdown)
+                            _min_countdown = countdown
+                            _min_countdown_pixels = point.same
+                          }
+                          countingDownContainers.push({
+                            countdown: countdown,
+                            stamp: new Date().getTime()
+                          })
+                          countdownLock.unlock()
+                        }
                       }
-                      countingDownContainers.push({
-                        countdown: countdown,
-                        stamp: new Date().getTime()
-                      })
                     }
                   }
                 }
+                listWriteLock.lock()
+                countdownLatch.countDown()
+                listWriteLock.unlock()
               }
-            }
-            // _FloatyInstance.setFloatyInfo(point, '\'倒计时中')
+            })
           }
         })
+        // 等待五秒
+        if (!countdownLatch.await(5, TimeUnit.SECONDS)) {
+          let activeCount = this.threadPool.getActiveCount()
+          errorInfo('有线程执行失败 运行中的线程数：' + activeCount)
+          if (activeCount > 0) {
+            debugInfo('将线程池关闭然后重建线程池')
+            this.threadPool.shutdownNow()
+            this.threadPool = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(1024))
+          }
+        }
+        countdown.summary('分析所有可帮助和可收取的点')
+        if (collectOrHelpList && collectOrHelpList.length > 0) {
+          debugInfo(['开始收集和帮助收取，总数：{}', collectOrHelpList.length])
+          collectOrHelpList.forEach(point => {
+            collectTargetFriend(point)
+            sleep(100)
+          })
+        } else {
+          debugInfo('无可收取或帮助的内容')
+        }
       }
       automator.scrollDown()
       sleep(500)
-      if (_config.checkBottomBaseImg ) {
+      if (_config.checkBottomBaseImg) {
         hasNext = !this.reachBottom(grayScreen)
       } else {
         hasNext = count++ < (_config.friendListScrollTime || 30)
-      } 
+      }
     } while (hasNext)
     if (countingDownContainers.length > 0) {
       _lost_someone = checkRunningCountdown(countingDownContainers)
