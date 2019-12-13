@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-13 22:00:28
+ * @Last Modified time: 2019-12-13 22:50:16
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -415,12 +415,15 @@ const Stack = function () {
   }
 }
 
-const BIT_MAX_VAL = device.height * 1000 + 200
+const SCALE_RATE = device.width / 1080
+const ANALYZE_WIDTH = parseInt(200 * SCALE_RATE)
+const BIT_MAX_VAL = device.height << 8 | ANALYZE_WIDTH
+debugInfo(['初始化 BitMap最大值为:{} 小手分析宽度:{} 缩放比例：{}', BIT_MAX_VAL, ANALYZE_WIDTH, SCALE_RATE])
 // 计算中心点
 function ColorRegionCenterCalculator (img, point, threshold) {
   // Java打包的位运算方式
   this.bitChecker = new BitCheck(BIT_MAX_VAL)
-  let s = new Date().getTime()
+
   // 在外部灰度化
   this.img = img
   this.color = img.getBitmap().getPixel(point.x, point.y) >> 8 & 0xFF
@@ -533,11 +536,11 @@ function ColorRegionCenterCalculator (img, point, threshold) {
   }
 
   this.isUncheckedBitJava = function (point) {
-    if (point.x < 880) {
+    let x_start = device.width - ANALYZE_WIDTH
+    if (point.x < x_start) {
       return false
     }
-    // 1080 - 200 = 880
-    return this.bitChecker.isUnchecked((point.x - 880) * 10000 + point.y)
+    return this.bitChecker.isUnchecked(point.y << 8 | (point.x - x_start))
   }
 
   this.getDirectionPoint = function (point, direct) {
@@ -773,12 +776,12 @@ function ImgBasedFriendListScanner () {
 
   this.detectColors = function (img, color) {
     debugInfo('准备检测颜色：' + color)
-    let scaleRate = device.width / 1080
-    let movingY = parseInt(200 * scaleRate)
-    let movingX = parseInt(100 * scaleRate)
+    
+    let movingY = parseInt(200 * SCALE_RATE)
+    let movingX = parseInt(100 * SCALE_RATE)
     // 预留70左右的高度
-    let endY = device.height - movingY - 70 * scaleRate
-    let runningY = 440 * scaleRate
+    let endY = device.height - movingY - 70 * SCALE_RATE
+    let runningY = 440 * SCALE_RATE
     let startX = device.width - movingX
     let regionWindow = []
     let findColorPoints = []

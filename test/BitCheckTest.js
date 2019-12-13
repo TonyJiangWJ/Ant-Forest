@@ -1,5 +1,5 @@
 const CheckBit = function () {
-  this.BUFFER_LENGTH = Math.ceil((1080 * 10000 + 2160) / 8)
+  this.BUFFER_LENGTH = Math.ceil((2160 << 11 | 1080) / 8)
   this.BYTE_SIZE = 1 << 3
   this.bytes = []
   this.init()
@@ -18,17 +18,26 @@ CheckBit.prototype.setBit = function (val) {
 }
 
 CheckBit.prototype.isUnchecked = function (point) {
-  return this.setBit(point.x * 10000 + point.y)
+  return this.setBit(point.y << 11 | point.x)
 }
 
 let checker = new CheckBit()
 //checker.init()
 let count = 0
+let error = false
 let s = new Date().getTime()
 for (let i = 0; i < 1080; i++) {
   for (let j = 0; j < 2160; j++) {
     count++
-    checker.isUnchecked({ x: i, y: j })
+    if (!checker.isUnchecked({ x: i, y: j })) {
+      console.log('异常：' + i + ',' + j)
+      error = true
+      break
+    }
+  }
+  if (error) {
+    break
   }
 }
 console.log("总数:" + count + " 总耗时:" + (new Date().getTime() - s) + 'ms')
+console.log('消耗内存：' + checker.BUFFER_LENGTH + 'b')

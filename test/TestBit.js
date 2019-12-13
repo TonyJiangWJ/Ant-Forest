@@ -2,13 +2,13 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-06 11:33:42
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-06 15:19:52
+ * @Last Modified time: 2019-12-13 22:52:07
  * @Description: 
  */
 runtime.loadDex('../lib/autojs-tools.dex')
 importClass(com.tony.BitCheck)
 importClass(java.util.HashMap)
-let checker = new BitCheck(1080 * 10000 + 2160)
+let checker = new BitCheck(2160 << 11 | 1080)
 let count = 0
 let start
 
@@ -18,12 +18,12 @@ start = new Date().getTime()
 for (let x = 0; x < 1080; x++) {
   for (let y = 0; y < 2160; y++) {
     count++
-    if (!checker.isUnchecked(x * 10000 + y)) {
+    if (!checker.isUnchecked(y << 11 | x)) {
       console.log('[' + x + ',' + y + '] 已经校验过')
     }
   }
 }
-console.log('位校验完成 总数:' + count + ' 耗时:' + (new Date().getTime() - start) + 'ms')
+console.log('Java位校验完成 总数:' + count + ' 耗时:' + (new Date().getTime() - start) + 'ms')
 
 let hashCheck = {}
 count = 0
@@ -31,7 +31,7 @@ start = new Date().getTime()
 for (let x = 0; x < 1080; x++) {
   for (let y = 0; y < 2160; y++) {
     count++
-    let key = x * 10000 + y
+    let key = y << 11 | x
     if (!hashCheck[key]) {
       hashCheck[key] = true
     }
@@ -46,7 +46,7 @@ start = new Date().getTime()
 for (let x = 0; x < 1080; x++) {
   for (let y = 0; y < 2160; y++) {
     count++
-    let key = x * 10000 + y
+    let key = y << 11 | x
     if (!hashMap.get(key)) {
       hashMap.put(key, true)
     }
