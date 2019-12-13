@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-10 19:41:12
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-11 22:21:38
+ * @Last Modified time: 2019-12-13 23:10:43
  * @Description: 
  -->
 # 其他脚本
@@ -25,6 +25,7 @@
   - 具体运行config.js 勾选百度OCR识别然后填写你申请的APIKey和SecretKey即可，上面的阈值随你设置，反正记住每天只有500次就对了
   - 注意APIKey和SecretKey一定要自己进入AI平台申请，不填写是无效的
 - 运行配置后右上角菜单可以重置所有配置信息为默认值
+- 运行配置后可以看到百度API调用总次数和剩余次数
 
 # 使用
 
