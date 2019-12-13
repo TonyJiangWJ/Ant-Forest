@@ -6,9 +6,7 @@ let Timers = require('../lib/Timers.js')(runtime, this)
 let {
   debugInfo, logInfo, infoLog, warnInfo, errorInfo
 } = require('../lib/LogUtils.js')
-let {
-  formatDate
-} = require('../lib/DateUtil.js')
+let formatDate = require('../lib/DateUtil.js')
 
 const protectInfoDetect = function () {
   let usingInfo = WidgetUtils.widgetGetOne('使用了保护罩', 50, true)
