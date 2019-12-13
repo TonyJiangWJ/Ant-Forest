@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-13 22:50:16
+ * @Last Modified time: 2019-12-14 00:11:27
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -218,6 +218,23 @@ const protectInfoDetect = function () {
   return false
 }
 
+const returnToListAndCheck = function () {
+  automator.back()
+  sleep(500)
+  let returnCount = 0
+  while (!_widgetUtils.friendListWaiting()) {
+    sleep(500)
+    if (returnCount++ === 2) {
+      // 等待两秒后再次触发
+      automator.back()
+    }
+    if (returnCount > 5) {
+      errorInfo('返回好友排行榜失败，重新开始')
+      return false
+    }
+  }
+}
+
 const collectTargetFriend = function (obj) {
   let rentery = false
   if (!obj.protect) {
@@ -262,8 +279,7 @@ const collectTargetFriend = function (obj) {
       skip = true
     }
     if (skip) {
-      automator.back()
-      return
+      return returnToListAndCheck()
     }
     debugInfo('准备开始收取')
 
@@ -327,21 +343,10 @@ const collectTargetFriend = function (obj) {
     } catch (e) {
       errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
     }
-    automator.back()
-    sleep(500)
     temp.interrupt()
     debugInfo('好友能量收取完毕, 回到好友排行榜')
-    let returnCount = 0
-    while (!_widgetUtils.friendListWaiting()) {
-      sleep(500)
-      if (returnCount++ === 2) {
-        // 等待两秒后再次触发
-        automator.back()
-      }
-      if (returnCount > 5) {
-        errorInfo('返回好友排行榜失败，重新开始')
-        return false
-      }
+    if (false === returnToListAndCheck()) {
+      return false
     }
     if (rentery) {
       obj.isHelp = false
@@ -738,7 +743,6 @@ function ImgBasedFriendListScanner () {
           debugInfo(['开始收集和帮助收取，总数：{}', collectOrHelpList.length])
           collectOrHelpList.forEach(point => {
             collectTargetFriend(point)
-            sleep(100)
           })
         } else {
           debugInfo('无可收取或帮助的内容')
@@ -776,7 +780,7 @@ function ImgBasedFriendListScanner () {
 
   this.detectColors = function (img, color) {
     debugInfo('准备检测颜色：' + color)
-    
+
     let movingY = parseInt(200 * SCALE_RATE)
     let movingX = parseInt(100 * SCALE_RATE)
     // 预留70左右的高度

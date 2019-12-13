@@ -5,8 +5,9 @@
  * @Last Modified time: 2019-12-10 23:07:44
  * @Description: 
  */
-var {default_config, storage_name} = require('../config.js')
-var configStorage = storages.create(storage_name)
+var {default_config} = require('../config.js')
+let _storage_name = typeof storage_name === 'undefined' ? require('../config.js').storage_name : storage_name
+var configStorage = storages.create(_storage_name)
 var FileUtils = require("../lib/FileUtils.js")
 var commonFunctions = require("../lib/CommonFunction.js")
 Object.keys(default_config).forEach((key)=>{
