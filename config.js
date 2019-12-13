@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-13 09:19:11
+ * @Last Modified time: 2019-12-13 23:15:37
  * @Description: 
  */
 "ui";
@@ -426,7 +426,7 @@ if (!inRunningMode) {
               <ScrollView id="parentScrollView2">
                 <vertical padding="24 12">
                   {/* 单脚本使用，无视多任务队列 */}
-                  <text text="当需要使用多个脚本时建议开启，避免抢占前台" textSize="12sp" />
+                  <text text="当需要使用多个脚本时不要勾选（如同时使用我写的蚂蚁庄园脚本），避免抢占前台" textSize="9sp" />
                   <checkbox id="singleScriptChkBox" text="是否单脚本运行" />
                   {/* 只收集自己的能量 */}
                   <checkbox id="collectSelfOnlyChkBox" text="只收自己的能量" />
