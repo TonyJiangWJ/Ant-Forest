@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-13 23:15:37
+ * @Last Modified time: 2019-12-14 12:32:36
  * @Description: 
  */
 "ui";
@@ -84,6 +84,8 @@ let default_config = {
   useOcr: false,
   // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
   ocrThreshold: 2900,
+  // 是否记录图片base64信息到日志中
+  saveBase64ImgInfo: false,
   // ApiKey和SecretKey都来自百度AI平台 需要自己申请
   apiKey: '',
   // 秘钥
@@ -114,6 +116,9 @@ Object.keys(default_config).forEach(key => {
     config[key] = default_config[key]
   }
 })
+if (typeof config.collectable_energy_ball_content !== 'string') {
+  config.collectable_energy_ball_content = default_config.collectable_energy_ball_content
+}
 // 传递给commonFunction等
 const storage_name = CONFIG_STORAGE_NAME
 if (!inRunningMode) {
@@ -149,6 +154,7 @@ if (!inRunningMode) {
   const setOcrUiVal = function () {
     ui.useOcrChkBox.setChecked(config.useOcr)
     ui.ocrThresholdInpt.text(config.ocrThreshold + '')
+    ui.saveBase64ImgInfoChkBox.setChecked(config.saveBase64ImgInfo)
     ui.apiKeyInpt.text(config.apiKey + '')
     ui.secretKeyInpt.text(config.secretKey + '')
 
@@ -320,6 +326,7 @@ if (!inRunningMode) {
                     <text id="colorThresholdInput" />
                     <seekbar id="colorThresholdSeekbar" progress="20" layout_weight="85" />
                   </horizontal>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 悬浮窗配置 不再提供关闭 */}
                   <horizontal margin="10 0" gravity="center">
                     <vertical padding="12" layout_weight="75">
@@ -343,6 +350,7 @@ if (!inRunningMode) {
                   </horizontal>
                   <text text="是否在执行完毕后不驻留前台，关闭悬浮窗" textSize="12sp" />
                   <checkbox id="notLingeringFloatWindowChkBox" text="不驻留前台" />
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 是否帮助收取 */}
                   <checkbox id="helpFriendChkBox" text="是否帮助收取" />
                   {/* 是否循环 */}
@@ -371,6 +379,11 @@ if (!inRunningMode) {
                       <input id="maxCollectRepeatInpt" inputType="number" layout_weight="60" />
                     </horizontal>
                   </vertical>
+                  {/* 脚本延迟启动 */}
+                  <horizontal gravity="center">
+                    <text text="延迟启动时间（秒）:" />
+                    <input layout_weight="70" inputType="number" id="delayStartTimeInpt" layout_weight="70" />
+                  </horizontal>
                   {/* 是否显示debug日志 */}
                   <checkbox id="showDebugLogChkBox" text="是否显示debug日志" />
                   <horizontal gravity="center">
@@ -383,6 +396,7 @@ if (!inRunningMode) {
                   </horizontal>
                   {/* 是否自动点击授权录屏权限 */}
                   <checkbox id="requestCapturePermissionChkBox" text="是否需要自动授权截图权限" />
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 收集一轮后自动锁屏 */}
                   <vertical id="lockDescNoRoot">
                     <text text="锁屏功能仅限于下拉状态栏中有锁屏按钮的情况下可用" textSize="12sp" />
@@ -406,7 +420,7 @@ if (!inRunningMode) {
                   {/* 是否自动设置最低亮度 */}
                   <checkbox id="autoSetBrightnessChkBox" text="锁屏启动设置最低亮度" />
                   {/* 基本不需要修改的 */}
-                  <horizontal w="*" h="1sp" bg="#cccccc" margin="10 0"></horizontal>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <horizontal gravity="center">
                     <text text="解锁超时（ms）:" />
                     <input id="timeoutUnlockInpt" inputType="number" layout_weight="60" />
@@ -430,6 +444,7 @@ if (!inRunningMode) {
                   <checkbox id="singleScriptChkBox" text="是否单脚本运行" />
                   {/* 只收集自己的能量 */}
                   <checkbox id="collectSelfOnlyChkBox" text="只收自己的能量" />
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 基于图像分析 */}
                   <checkbox id="baseOnImageChkBox" text="基于图像分析" />
                   <vertical id="baseOnImageContainer">
@@ -462,15 +477,12 @@ if (!inRunningMode) {
                     <text text="系统底部虚拟按键高度，全面屏设置为100即可" />
                     <input layout_weight="70" inputType="number" id="bottomHeightInpt" />
                   </horizontal>
-                  {/* 脚本延迟启动 */}
-                  <horizontal gravity="center">
-                    <text text="延迟启动时间（秒）:" />
-                    <input layout_weight="70" inputType="number" id="delayStartTimeInpt" layout_weight="70" />
-                  </horizontal>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 是否启用百度的OCR */}
                   <vertical id="useOcrParentContainer">
                     <checkbox id="useOcrChkBox" text="是否启用百度的OCR识别倒计时" />
                     <vertical id="useOcrContainer">
+                      <checkbox id="saveBase64ImgInfoChkBox" text="是否记录图片Base64数据到日志" />
                       <text id="ocrInvokeCount" textSize="12sp" />
                       <text text="需要识别的倒计时绿色像素点数量，像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
                       <input inputType="number" id="ocrThresholdInpt" w="*" />
@@ -479,6 +491,7 @@ if (!inRunningMode) {
                       <input id="secretKeyInpt" inputType="textPassword" hint="apiKey" />
                     </vertical>
                   </vertical>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 收取白名单列表 */}
                   <vertical w="*" gravity="left" layout_gravity="left" margin="10">
                     <text text="收取白名单：" textColor="#666666" textSize="14sp" />
@@ -494,6 +507,7 @@ if (!inRunningMode) {
                     </frame>
                     <button w="*" id="addWhite" text="添加" gravity="center" layout_gravity="center" />
                   </vertical>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 是否在收取到了一定阈值后自动浇水10克 */}
                   <horizontal gravity="center">
                     <checkbox id="wateringBackChkBox" text="是否浇水回馈" layout_weight="40" />
@@ -906,6 +920,11 @@ if (!inRunningMode) {
 
     ui.useOcrChkBox.on('click', () => {
       config.useOcr = ui.useOcrChkBox.isChecked()
+      setOcrUiVal()
+    })
+
+    ui.saveBase64ImgInfoChkBox.on('click', () => {
+      config.saveBase64ImgInfo = ui.saveBase64ImgInfoChkBox.isChecked()
       setOcrUiVal()
     })
 

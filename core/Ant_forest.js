@@ -541,7 +541,8 @@ function Ant_forest () {
     getPreEnergy()
     debugInfo('准备收集自己能量')
     collectEnergy(true)
-    if (!_config.is_cycle) {
+    // 计时模式和只收自己时都去点击倒计时能量球 避免只收自己时控件刷新不及时导致漏收
+    if (!_config.is_cycle || _config.collect_self_only) {
       debugInfo('准备计算最短时间')
       getMinCountdownOwn()
     }

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-14 00:11:27
+ * @Last Modified time: 2019-12-14 12:16:18
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -569,7 +569,7 @@ function ImgBasedFriendListScanner () {
   this.init = function (option) {
     _current_time = option.currentTime || 0
     _increased_energy = option.increasedEnergy || 0
-    this.threadPool = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(1024))
+    this.threadPool = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(256))
   }
 
   this.start = function () {
@@ -687,12 +687,16 @@ function ImgBasedFriendListScanner () {
                 listWriteLock.unlock()
               } else {
                 debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.same)
+                // 直接标记执行完毕 将OCR请求交给异步处理
+                countdownLatch.countDown()
                 if (_config.useOcr) {
                   let countdowmImg = images.clip(grayScreen, point.left, point.top, point.right - point.left, point.bottom - point.top)
                   let base64String = null
                   try {
                     base64String = images.toBase64(countdowmImg)
-                    debugInfo(['倒计时图片：「{}」', base64String])
+                    if (_config.saveBase64ImgInfo) {
+                      debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「{}」', point.same, base64String])
+                    }
                   } catch (e) {
                     errorInfo('存储倒计时图片失败：' + e)
                   }
@@ -721,9 +725,6 @@ function ImgBasedFriendListScanner () {
                     }
                   }
                 }
-                listWriteLock.lock()
-                countdownLatch.countDown()
-                listWriteLock.unlock()
               }
             })
           }
@@ -756,6 +757,19 @@ function ImgBasedFriendListScanner () {
         hasNext = count++ < (_config.friendListScrollTime || 30)
       }
     } while (hasNext)
+    let poolWaitCount = 0
+    while (this.threadPool.getActiveCount() > 0) {
+      debugInfo(['当前线程池还有工作线程未结束，继续等待。运行中数量：{}', this.threadPool.getActiveCount()])
+      sleep(100)
+      poolWaitCount++
+      // 当等待超过两秒时 结束线程池
+      if (poolWaitCount > 20) {
+        warnInfo(['线程池等待执行结束超时，当前剩余运行中数量：{} 强制结束', this.threadPool.getActiveCount()])
+        this.threadPool.shutdownNow()
+        this.threadPool = new ThreadPoolExecutor(4,8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(256))
+        break
+      }
+    }
     if (countingDownContainers.length > 0) {
       _lost_someone = checkRunningCountdown(countingDownContainers)
     }
