@@ -205,6 +205,16 @@ const protectInfoDetect = function () {
           debugInfo(['前天row:{}', dayBeforeYesterdayRow])
         }
       }
+      let timeRe = /(\d{2}:\d{2})/
+      if (timeRe.test(time)) {
+        time = timeRe.exec(time)[1]
+        let compare = new Date('1999/01/01 ' + time)
+        let usingFlag = compare.getHours() * 60 + compare.getMinutes()
+        let now = new Date().getHours() * 60 + new Date().getMinutes()
+        if (usingFlag < now) {
+          return false
+        }
+      }
     }
     debugInfo(['using time:{}-{} rows: yesterday[{}] target[{}]', (isToday ? '今天' : '昨天'), time, yesterdayRow, targetRow], true)
     recordCurrentProtected()
@@ -746,8 +756,12 @@ function FriendListScanner () {
     let distinctQueue = _commonFunctions.createQueue(QUEUE_SIZE)
     let stock_idx = -1
     let stock_count = 0
+    let screen = null
     do {
       try {
+        if (screen !== null) {
+          screen.recycle()
+        }
         iterEnd = -1
         iterStart = lastCheckedFriend
         _widgetUtils.waitRankListStable()
@@ -762,7 +776,7 @@ function FriendListScanner () {
           this.condition.await()
         }
         // 获取截图 用于判断是否可收取 截图失败时终止程序并几秒后重启，主要是因为丢失了截图权限
-        let screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
+        screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
         if (this.friends_list_parent && this.friends_list_parent.children) {
           friendListLength = this.friends_list_parent.children().length
           debugInfo(
@@ -859,21 +873,28 @@ function FriendListScanner () {
         } else {
           logInfo('好友列表不存在')
         }
+        let failed = false
         if (this.errorCount >= 5) {
           errorInfo('列表识别失败达到5次 重新开始')
-          return true
+          failed = true
         }
         if (!_widgetUtils.friendListWaiting()) {
           errorInfo('崩了 当前不在好友列表 重新开始')
-          return true
+          failed = true
         }
         if (_avil_list.length > 0) {
           if (false == collectAvailableList()) {
             errorInfo('流程出错 向上抛出')
-            return true
+            failed = true
           }
         } else {
           debugInfo('无好友可收集能量')
+        }
+        if (failed) {
+          if (screen !== null) {
+            screen.recycle()
+          }
+          return true
         }
         // 重置为空列表
         _avil_list = []
@@ -894,7 +915,10 @@ function FriendListScanner () {
                 scrollUp()
               } else if (tryReloadCount >= 5) {
                 // 多次出发失败，直接返回重新开始
-                errorInfo('出发加载失败，重新开始')
+                errorInfo('触发加载失败，重新开始')
+                if (screen !== null) {
+                  screen.recycle()
+                }
                 return true
               }
               automator.scrollUpAndDown()
@@ -916,6 +940,9 @@ function FriendListScanner () {
         }
       } catch (e) {
         errorInfo('主流程出错' + e)
+        if (screen !== null) {
+          screen.recycle()
+        }
         return true
       } finally {
         debugInfo('主流程释放锁')
@@ -934,6 +961,9 @@ function FriendListScanner () {
       debugInfo(['有未收集的可收取能量'])
       if (false == collectAvailableList()) {
         errorInfo('流程出错 向上抛出')
+        if (screen !== null) {
+          screen.recycle()
+        }
         return true
       }
     } else {
@@ -953,6 +983,9 @@ function FriendListScanner () {
     ])
     if (_lost_someone) {
       clearLogFile()
+    }
+    if (screen !== null) {
+      screen.recycle()
     }
     return {
       lostSomeone: _lost_someone,

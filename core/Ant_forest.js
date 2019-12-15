@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-13 00:38:46
+ * @Last Modified time: 2019-12-15 13:20:37
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -499,6 +499,7 @@ function Ant_forest () {
       _friends_min_countdown = executeResult.minCountdown
     }
     scanner.destory()
+    scanner = null
     return _lost_someone
   }
 
@@ -507,9 +508,10 @@ function Ant_forest () {
    * 主要函数
    ***********************/
 
-  // 收取自己的能量
-  const collectOwn = function () {
-    _commonFunctions.addOpenPlacehold('开始收集自己能量')
+  /**
+   * 打开支付宝蚂蚁森林 并等待
+   */
+  const openAndWaitForPersonalHome = function () {
     let restartCount = 0
     let waitFlag
     let startWait = 1000
@@ -534,11 +536,16 @@ function Ant_forest () {
     }
     if (!waitFlag && restartCount >= 5) {
       logInfo('退出脚本')
-      engines.myEngine().forceStop();
+      engines.myEngine().forceStop()
     }
     logInfo('进入个人首页成功')
     clearPopup()
     getPreEnergy()
+  }
+
+  // 收取自己的能量
+  const collectOwn = function () {
+    _commonFunctions.addOpenPlacehold('开始收集自己能量')
     debugInfo('准备收集自己能量')
     collectEnergy(true)
     // 计时模式和只收自己时都去点击倒计时能量球 避免只收自己时控件刷新不及时导致漏收
@@ -636,22 +643,15 @@ function Ant_forest () {
       }
     }
 
-    this.checkRestart = function () {
+    this.endCollect = function () {
       logInfo('收取结束')
       if (this.eventSettingThread != null) {
         this.eventSettingThread.interrupt()
         this.eventSettingThread = null
       }
-      if (this.needRestart) {
-        // 设置三分钟后重试
-        _commonFunctions.setUpAutoStart(3)
-        _runningQueueDispatcher.removeRunningTask()
-        exit()
-      } else {
-        setTimeout(() => {
-          exit()
-        }, 30000)
-      }
+      setTimeout(() => {
+        runningQueueDispatcher.removeRunningTask(true)
+      }, 30000)
     }
   }
 
@@ -663,51 +663,51 @@ function Ant_forest () {
 
     this.execute = function () {
       this.setupEventListeners()
-      this.needRestart = false
-      try {
-        this.readyForStart()
-        _current_time = 0
-        while (true) {
-          _current_time++
-          _commonFunctions.showEnergyInfo(_current_time)
-          // 增加当天运行总次数
-          _commonFunctions.increaseRunTimes()
-          infoLog("========循环第" + _current_time + "次运行========")
-          showCollectSummaryFloaty()
-          try {
+      this.readyForStart()
+      _current_time = 0
+      startApp()
+      // 首次启动等待久一点
+      sleep(1500)
+      while (true) {
+        _current_time++
+        _commonFunctions.showEnergyInfo(_current_time)
+        // 增加当天运行总次数
+        _commonFunctions.increaseRunTimes()
+        infoLog("========循环第" + _current_time + "次运行========")
+        showCollectSummaryFloaty()
+        try {
+          openAndWaitForPersonalHome()
+          if (!_config.not_collect_self) {
             collectOwn()
-            let runSuccess = true
-            if (!_config.collect_self_only) {
-              if (collectFriend() === false) {
-                // 收集失败，重新开始
-                _lost_someone = true
-                _current_time = _current_time == 0 ? 0 : _current_time - 1
-                _has_next = true
-                runSuccess = false
-              }
-            }
-            if (runSuccess) {
-              generateNext()
-              getPostEnergy(!_config.collect_self_only)
-            }
-          } catch (e) {
-            errorInfo('发生异常 [' + e + '] [' + e.message + ']')
-            _current_time = _current_time == 0 ? 0 : _current_time - 1
-            _lost_someone = true
-            _has_next = true
-            _re_try = 0
           }
-          if (!_lost_someone && (_has_next === false || _re_try > 5)) {
-            break
+          let runSuccess = true
+          if (!_config.collect_self_only) {
+            if (collectFriend() === false) {
+              // 收集失败，重新开始
+              _lost_someone = true
+              _current_time = _current_time == 0 ? 0 : _current_time - 1
+              _has_next = true
+              runSuccess = false
+            }
           }
-          logInfo('========本轮结束========')
+          if (runSuccess) {
+            generateNext()
+            getPostEnergy(!_config.collect_self_only)
+          }
+        } catch (e) {
+          errorInfo('发生异常 [' + e + '] [' + e.message + ']')
+          _current_time = _current_time == 0 ? 0 : _current_time - 1
+          _lost_someone = true
+          _has_next = true
+          _re_try = 0
         }
-      } catch (e) {
-        errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
-        this.needRestart = true
+        if (!_lost_someone && (_has_next === false || _re_try > 5)) {
+          break
+        }
+        logInfo('========本轮结束========')
       }
       this.endLoop()
-      this.checkRestart()
+      this.endCollect()
       // 返回最小化支付宝
       _commonFunctions.minimize()
     }
@@ -719,57 +719,65 @@ function Ant_forest () {
   const CountdownExecutor = function () {
     Executor.call(this)
 
+    this.doInLoop = function () {
+      openAndWaitForPersonalHome()
+      if (!_config.not_collect_self) {
+        collectOwn()
+      }
+      let runSuccess = true
+      if (!_config.collect_self_only) {
+        if (collectFriend() === false) {
+          // 收集失败，重新开始
+          _lost_someone = true
+          _current_time = _current_time == 0 ? 0 : _current_time - 1
+          _min_countdown = 0
+          _has_next = true
+          runSuccess = false
+        }
+      }
+      if (runSuccess) {
+        if (!_config.is_cycle && !_lost_someone) {
+          getMinCountdown()
+        }
+        generateNext()
+        getPostEnergy(!_config.collect_self_only)
+      }
+    }
+
     this.execute = function () {
       this.setupEventListeners()
-      try {
-        _current_time = 0
-        while (true) {
-          _collect_any = false
-          if (_lost_someone) {
-            warnInfo('上一次收取有漏收，再次收集', true)
-          } else {
-            if (_min_countdown > 0) {
-              // 提前10秒左右结束计时
-              let delayTime = 10 / 60.0
-              // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
-              delayTime += (_config.delayStartTime || 5000) / 60000.0
-              _commonFunctions.setUpAutoStart(_min_countdown - delayTime)
-              _runningQueueDispatcher.removeRunningTask()
-              // 如果不驻留悬浮窗  则不延迟，直接关闭
-              if (_config.notLingeringFloatWindow) {
-                exit()
-              } else {
-                _commonFunctions.commonDelay(_min_countdown - delayTime)
-                _commonFunctions.checkCaptureScreenPermission()
-              }
+      _current_time = 0
+      while (true) {
+        _collect_any = false
+        if (_lost_someone) {
+          warnInfo('上一次收取有漏收，再次收集', true)
+        } else {
+          if (_min_countdown > 0) {
+            // 提前10秒左右结束计时
+            let delayTime = 10 / 60.0
+            // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
+            delayTime += (_config.delayStartTime || 5000) / 60000.0
+            _commonFunctions.setUpAutoStart(_min_countdown - delayTime)
+            _runningQueueDispatcher.removeRunningTask()
+            // 如果不驻留悬浮窗  则不延迟，直接关闭
+            if (_config.notLingeringFloatWindow) {
+              exit()
+            } else {
+              _commonFunctions.commonDelay(_min_countdown - delayTime)
             }
           }
-          this.readyForStart()
-          let runTime = _commonFunctions.increaseRunTimes()
-          infoLog("========第" + runTime + "次运行========")
-          showCollectSummaryFloaty()
-          debugInfo('展示悬浮窗完毕')
-          _current_time++
+        }
+        this.readyForStart()
+        let runTime = _commonFunctions.increaseRunTimes()
+        infoLog("========第" + runTime + "次运行========")
+        showCollectSummaryFloaty()
+        debugInfo('展示悬浮窗完毕')
+        _current_time++
+        if (_config.develop_mode) {
+          this.doInLoop()
+        } else {
           try {
-            collectOwn()
-            let runSuccess = true
-            if (!_config.collect_self_only) {
-              if (collectFriend() === false) {
-                // 收集失败，重新开始
-                _lost_someone = true
-                _current_time = _current_time == 0 ? 0 : _current_time - 1
-                _min_countdown = 0
-                _has_next = true
-                runSuccess = false
-              }
-            }
-            if (runSuccess) {
-              if (!_config.is_cycle && !_lost_someone) {
-                getMinCountdown()
-              }
-              generateNext()
-              getPostEnergy(!_config.collect_self_only)
-            }
+            this.doInLoop()
           } catch (e) {
             errorInfo('发生异常 [' + e + '] [' + e.message + ']')
             _current_time = _current_time == 0 ? 0 : _current_time - 1
@@ -786,12 +794,9 @@ function Ant_forest () {
             }
           }
         }
-        logInfo('========本轮结束========')
-      } catch (e) {
-        errorInfo('发生异常，终止程序 [' + e + '] [' + e.message + ']')
-        this.needRestart = true
       }
-      this.checkRestart()
+      logInfo('========本轮结束========')
+      this.endCollect()
     }
   }
 

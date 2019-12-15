@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-14 12:16:18
+ * @Last Modified time: 2019-12-15 17:24:06
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -92,10 +92,7 @@ const collectEnergy = function (own) {
 const collectAndHelp = function (needHelp) {
   // 收取好友能量
   collectEnergy()
-  let screen = null
-  _commonFunctions.waitFor(function () {
-    screen = captureScreen()
-  }, 500)
+  let screen = _commonFunctions.checkCaptureScreenPermission()
   if (!screen) {
     warnInfo('获取截图失败，无法帮助收取能量')
     return
@@ -140,6 +137,7 @@ const collectAndHelp = function (needHelp) {
     if (!helped && needHelp) {
       warnInfo(['未能找到帮收能量球需要增加匹配颜色组 当前{}', colors])
     }
+    screen.recycle()
     // 当数量大于等于6且帮助收取后，重新进入
     if (helped && length >= 6) {
       debugInfo('帮助了 且有六个球 重新进入')
@@ -206,6 +204,16 @@ const protectInfoDetect = function () {
           return false
         } else {
           debugInfo(['前天row:{}', dayBeforeYesterdayRow])
+        }
+      }
+      let timeRe = /(\d{2}:\d{2})/
+      if (timeRe.test(time)) {
+        time = timeRe.exec(time)[1]
+        let compare = new Date('1999/01/01 ' + time)
+        let usingFlag = compare.getHours() * 60 + compare.getMinutes()
+        let now = new Date().getHours() * 60 + new Date().getMinutes()
+        if (usingFlag < now) {
+          return false
         }
       }
     }
@@ -430,11 +438,13 @@ function ColorRegionCenterCalculator (img, point, threshold) {
   this.bitChecker = new BitCheck(BIT_MAX_VAL)
 
   // 在外部灰度化
-  this.img = img
+  this.img = images.copy(img)
   this.color = img.getBitmap().getPixel(point.x, point.y) >> 8 & 0xFF
   // this.color = color
   this.point = point
   this.threshold = threshold
+  // 回收原始图像
+  img.recycle()
 
   /**
    * 获取所有同色区域的点集合
@@ -442,6 +452,8 @@ function ColorRegionCenterCalculator (img, point, threshold) {
   this.getAllColorRegionPoints = function () {
     let nearlyColorPoints = this.getNearlyNorecursion(this.point)
     nearlyColorPoints = nearlyColorPoints || []
+    // 回收图像资源
+    this.img.recycle()
     return nearlyColorPoints
   }
 
@@ -522,7 +534,7 @@ function ColorRegionCenterCalculator (img, point, threshold) {
         step++
         allChecked = false
         // 灰度化图片颜色比较
-        let checkColor = img.getBitmap().getPixel(checkItem.x, checkItem.y) >> 8 & 0xFF
+        let checkColor = this.img.getBitmap().getPixel(checkItem.x, checkItem.y) >> 8 & 0xFF
         if (Math.abs(checkColor - this.color) < this.threshold) {
           nearlyPoints.push(checkItem)
           stack.push(checkItem)
@@ -625,8 +637,9 @@ function ImgBasedFriendListScanner () {
     do {
       screen = _commonFunctions.checkCaptureScreenPermission()
       // 重新复制一份
-      screen = images.copy(screen)
-      grayScreen = images.grayscale(images.copy(screen))
+      let tmpImg = images.copy(screen)
+      grayScreen = images.grayscale(tmpImg)
+      tmpImg.recycle()
       debugInfo('获取到screen' + (screen === null ? '失败' : '成功'))
       let countdown = new Countdown()
       let waitForCheckPoints = []
@@ -674,6 +687,7 @@ function ImgBasedFriendListScanner () {
               })
               countdownLatch.countDown()
               listWriteLock.unlock()
+              calculator = null
             })
           } else {
             this.threadPool.execute(function () {
@@ -690,10 +704,11 @@ function ImgBasedFriendListScanner () {
                 // 直接标记执行完毕 将OCR请求交给异步处理
                 countdownLatch.countDown()
                 if (_config.useOcr) {
-                  let countdowmImg = images.clip(grayScreen, point.left, point.top, point.right - point.left, point.bottom - point.top)
+                  let countdownImg = images.clip(grayScreen, point.left, point.top, point.right - point.left, point.bottom - point.top)
                   let base64String = null
                   try {
-                    base64String = images.toBase64(countdowmImg)
+                    base64String = images.toBase64(countdownImg)
+                    countdownImg.recycle()
                     if (_config.saveBase64ImgInfo) {
                       debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「{}」', point.same, base64String])
                     }
@@ -726,6 +741,7 @@ function ImgBasedFriendListScanner () {
                   }
                 }
               }
+              calculator = null
             })
           }
         })
@@ -756,6 +772,8 @@ function ImgBasedFriendListScanner () {
       } else {
         hasNext = count++ < (_config.friendListScrollTime || 30)
       }
+      screen.recycle()
+      grayScreen.recycle()
     } while (hasNext)
     let poolWaitCount = 0
     while (this.threadPool.getActiveCount() > 0) {
@@ -766,7 +784,7 @@ function ImgBasedFriendListScanner () {
       if (poolWaitCount > 20) {
         warnInfo(['线程池等待执行结束超时，当前剩余运行中数量：{} 强制结束', this.threadPool.getActiveCount()])
         this.threadPool.shutdownNow()
-        this.threadPool = new ThreadPoolExecutor(4,8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(256))
+        this.threadPool = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(256))
         break
       }
     }

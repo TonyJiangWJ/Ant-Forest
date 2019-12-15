@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-10 23:55:22
+ * @Last Modified time: 2019-12-15 13:15:39
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')
@@ -93,11 +93,15 @@ if (!FloatyInstance.init()) {
 /************************
  * 主程序
  ***********************/
-try {
+if (config.develop_mode) {
   antForestRunner.exec()
-} catch (e) {
-  commonFunctions.setUpAutoStart(1)
-  errorInfo('执行异常, 1分钟后重新开始' + e)
-} finally {
-  runningQueueDispatcher.removeRunningTask(true)
+} else {
+  try {
+    antForestRunner.exec()
+  } catch (e) {
+    commonFunctions.setUpAutoStart(1)
+    errorInfo('执行异常, 1分钟后重新开始' + e)
+  } finally {
+    runningQueueDispatcher.removeRunningTask(true)
+  }
 }

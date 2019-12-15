@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-14 12:32:36
+ * @Last Modified time: 2019-12-15 18:50:01
  * @Description: 
  */
 "ui";
@@ -17,6 +17,7 @@ importClass(android.view.View)
 importClass(android.view.MotionEvent)
 
 let default_config = {
+  develop_mode: true,
   password: '',
   color_offset: 20,
   // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
@@ -28,6 +29,7 @@ let default_config = {
   help_friend: true,
   is_cycle: false,
   collect_self_only: false,
+  not_collect_self: false,
   base_on_image: false,
   // 是否基于图像分析是否到达底部
   checkBottomBaseImg: true,
@@ -133,7 +135,7 @@ if (!inRunningMode) {
 
   let commonFunctions = require('./lib/CommonFunction.js')
   // 初始化list 为全局变量
-  let whiteList = wateringBlackList = helpBallColorList = []
+  let whiteList = [], wateringBlackList = [], helpBallColorList = []
   const setScrollDownUiVal = function () {
     ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
     ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
@@ -165,7 +167,9 @@ if (!inRunningMode) {
 
   const resetUiValues = function () {
     // 重置为默认
-    whiteList = wateringBlackList = helpBallColorList = []
+    whiteList = []
+    wateringBlackList = []
+    helpBallColorList = []
     // 基本配置
     ui.password.text(config.password + '')
     ui.colorThresholdInput.text('' + config.color_offset)
@@ -219,6 +223,10 @@ if (!inRunningMode) {
     // 进阶配置
     ui.singleScriptChkBox.setChecked(config.single_script)
     ui.collectSelfOnlyChkBox.setChecked(config.collect_self_only)
+    ui.notCollectSelfChkBox.setChecked(config.not_collect_self)
+    if (config.collect_self_only) {
+      ui.notCollectSelfChkBox.setVisibility(View.GONE)
+    }
     ui.baseOnImageChkBox.setChecked(config.base_on_image)
     ui.bottomHeightInpt.text(config.bottomHeight + '')
 
@@ -228,6 +236,7 @@ if (!inRunningMode) {
     ui.wateringThresholdContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.INVISIBLE)
     ui.wateringBlackListContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.GONE)
 
+    ui.developModeChkBox.setChecked(config.develop_mode)
     setScrollDownUiVal()
     setOcrUiVal()
 
@@ -444,6 +453,7 @@ if (!inRunningMode) {
                   <checkbox id="singleScriptChkBox" text="是否单脚本运行" />
                   {/* 只收集自己的能量 */}
                   <checkbox id="collectSelfOnlyChkBox" text="只收自己的能量" />
+                  <checkbox id="notCollectSelfChkBox" text="不收自己的能量" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 基于图像分析 */}
                   <checkbox id="baseOnImageChkBox" text="基于图像分析" />
@@ -531,6 +541,7 @@ if (!inRunningMode) {
                     </frame>
                     <button w="*" id="addBlack" text="添加" gravity="center" layout_gravity="center" />
                   </vertical>
+                  <checkbox id="developModeChkBox" text="开发模式" />
                 </vertical>
               </ScrollView>
             </frame>
@@ -890,6 +901,16 @@ if (!inRunningMode) {
     })
     ui.collectSelfOnlyChkBox.on('click', () => {
       config.collect_self_only = ui.collectSelfOnlyChkBox.isChecked()
+      if (config.collect_self_only) {
+        config.not_collect_self = false
+        ui.notCollectSelfChkBox.setChecked(false)
+        ui.notCollectSelfChkBox.setVisibility(View.GONE)
+      } else {
+        ui.notCollectSelfChkBox.setVisibility(View.VISIBLE)
+      }
+    })
+    ui.notCollectSelfChkBox.on('click', () => {
+      config.not_collect_self = ui.notCollectSelfChkBox.isChecked()
     })
 
     ui.baseOnImageChkBox.on('click', () => {
@@ -944,6 +965,9 @@ if (!inRunningMode) {
       ui.wateringBlackListContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.GONE)
     })
 
+    ui.developModeChkBox.on('click', () => {
+      config.develop_mode = ui.developModeChkBox.isChecked()
+    })
     ui.wateringThresholdInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.wateringThreshold = parseInt(text) })
     )
