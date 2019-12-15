@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-15 18:50:01
+ * @Last Modified time: 2019-12-15 20:07:43
  * @Description: 
  */
 "ui";
@@ -17,7 +17,7 @@ importClass(android.view.View)
 importClass(android.view.MotionEvent)
 
 let default_config = {
-  develop_mode: true,
+  develop_mode: false,
   password: '',
   color_offset: 20,
   // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
