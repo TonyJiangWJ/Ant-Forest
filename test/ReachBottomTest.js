@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-12 19:18:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-12 19:24:48
+ * @Last Modified time: 2019-12-16 16:14:26
  * @Description: 
  */
 requestScreenCapture()

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-15 17:24:06
+ * @Last Modified time: 2019-12-16 20:34:41
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -829,12 +829,14 @@ function ImgBasedFriendListScanner () {
         hasNext = false
       }
       regionWindow = [startX, runningY, movingX, movingY]
-      debugInfo('检测区域：' + JSON.stringify(regionWindow))
+      debugForDev('检测区域：' + JSON.stringify(regionWindow))
       let point = images.findColor(img, color, {
         region: regionWindow,
         threshold: _config.color_offset || 20
       })
-      countdown.summary('检测初始点')
+      if (_config.develop_mode) {
+        countdown.summary('检测初始点')
+      }
       if (point) {
         findColorPoints.push(point)
       }

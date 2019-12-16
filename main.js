@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-15 13:15:39
+ * @Last Modified time: 2019-12-16 13:38:16
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')
@@ -11,7 +11,7 @@ if (config.base_on_image) {
 let runningQueueDispatcher = require('./lib/RunningQueueDispatcher.js')
 let LogUtils = require('./lib/LogUtils.js')
 let {
-  debugInfo, logInfo, infoLog, warnInfo, errorInfo, clearLogFile, appendLog, removeOldLogFiles
+  debugInfo, debugForDev, logInfo, infoLog, warnInfo, errorInfo, clearLogFile, appendLog, removeOldLogFiles
 } = LogUtils
 let FloatyInstance = require('./lib/FloatyUtil.js')
 let commonFunctions = require('./lib/CommonFunction.js')
@@ -103,5 +103,6 @@ if (config.develop_mode) {
     errorInfo('执行异常, 1分钟后重新开始' + e)
   } finally {
     runningQueueDispatcher.removeRunningTask(true)
+    exit()
   }
 }
