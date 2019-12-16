@@ -1,4 +1,11 @@
 /*
+ * @Author: TonyJiangWJ
+ * @Date: 2019-12-11 21:42:23
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2019-12-16 20:30:36
+ * @Description: 
+ */
+/*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
  * @Last Modified time: 2019-12-15 13:20:37
@@ -612,13 +619,7 @@ function Ant_forest () {
       // 解锁其实在main里面已经执行 这里是为了容错 觉得没必要可以注释掉
       unlocker.exec()
       _runningQueueDispatcher.addRunningTask()
-      if (_config.tryGetExactlyPackage) {
-        _commonFunctions.showDialogAndWait(true)
-        _commonFunctions.recordCurrentPackage()
-      } else {
-        _commonFunctions.recordCurrentPackage()
-        _commonFunctions.showDialogAndWait(true)
-      }
+      _commonFunctions.showDialogAndWait(true)
       this.listenStopCollect()
       _commonFunctions.showEnergyInfo()
     }
@@ -794,8 +795,8 @@ function Ant_forest () {
             }
           }
         }
+        logInfo('========本轮结束========')
       }
-      logInfo('========本轮结束========')
       this.endCollect()
     }
   }
