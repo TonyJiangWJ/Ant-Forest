@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-10 19:41:12
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-15 11:04:26
+ * @Last Modified time: 2019-12-17 22:07:42
  * @Description: 
  -->
 # 其他脚本
@@ -30,6 +30,7 @@
 # 使用
 
 - 下载安装 [AutoJs 4.1.1 alpha2 下载](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
+- 如果运行提示有任务正在队列中，请运行`config.js` 然后进到 `进阶配置` 中勾选 `单脚本运行`，该功能是用于多个脚本同时运行时的任务队列 相当于一个调度程序，避免多个脚本抢占前台导致出错
 
 # 功能
 

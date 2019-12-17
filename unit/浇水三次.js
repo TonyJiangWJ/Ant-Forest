@@ -11,3 +11,4 @@ while (count++ < 5) {
   sleep(1500)
 }
 toast('done')
+back()

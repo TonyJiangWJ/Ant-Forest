@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-16 20:34:41
+ * @Last Modified time: 2019-12-17 22:04:40
  * @Description: 
  */
 importClass(com.tony.BitCheck)
@@ -259,8 +259,8 @@ const collectTargetFriend = function (obj) {
       )
       automator.click(obj.point.x, obj.point.y)
       sleep(500)
-      if (count > 5) {
-        warnInfo('重试超过5次，取消操作')
+      if (count >= 3) {
+        warnInfo('重试超过3次，取消操作')
         restartLoop = true
         break
       }
@@ -758,9 +758,18 @@ function ImgBasedFriendListScanner () {
         countdown.summary('分析所有可帮助和可收取的点')
         if (collectOrHelpList && collectOrHelpList.length > 0) {
           debugInfo(['开始收集和帮助收取，总数：{}', collectOrHelpList.length])
+          let noError = true
           collectOrHelpList.forEach(point => {
-            collectTargetFriend(point)
+            if (noError) {
+              if (false === collectTargetFriend(point)) {
+                noError = false
+              }
+            }
           })
+          if (!noError) {
+            // true is error
+            return true
+          }
         } else {
           debugInfo('无可收取或帮助的内容')
         }
@@ -774,6 +783,11 @@ function ImgBasedFriendListScanner () {
       }
       screen.recycle()
       grayScreen.recycle()
+      if (!_widgetUtils.friendListWaiting()) {
+        errorInfo('当前不在好友排行榜！')
+        // true is error
+        return true
+      }
     } while (hasNext)
     let poolWaitCount = 0
     while (this.threadPool.getActiveCount() > 0) {
