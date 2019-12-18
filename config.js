@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-15 20:07:43
+ * @Last Modified time: 2019-12-18 19:09:21
  * @Description: 
  */
 "ui";
@@ -30,7 +30,9 @@ let default_config = {
   is_cycle: false,
   collect_self_only: false,
   not_collect_self: false,
-  base_on_image: false,
+  base_on_image: true,
+  // 自动判断基于图像还是基于控件识别
+  auto_set_img_or_widget: true,
   // 是否基于图像分析是否到达底部
   checkBottomBaseImg: true,
   // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
@@ -64,16 +66,20 @@ let default_config = {
   single_script: false,
   // 这个用于控制列表滑动是否稳定 不用去修改它
   friendListStableCount: 3,
-  // 底部高度，比如有虚拟按键就需要修改这个值 设置比虚拟按键高度高就可以了
+  // 滑动起始底部高度
   bottomHeight: 200,
+  // 虚拟按键的精确高度
+  virtualButtonHeight: 0,
   // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认关闭 经常有人手机上有虚拟按键 然后又不看文档注释的
-  useCustomScrollDown: false,
+  useCustomScrollDown: true,
   // 排行榜列表下滑速度 200毫秒 不要太低否则滑动不生效 仅仅针对useCustomScrollDown=true的情况
   scrollDownSpeed: 200,
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
   can_collect_color: '#1da06a',
   can_help_color: '#f99236',
   helpBallColors: ['#f99236', '#f7af70'],
+  // 浇水的球
+  waterBallColor: '#d1971a',
   // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
   wateringBack: true,
   // 浇水阈值40克
@@ -143,6 +149,9 @@ if (!inRunningMode) {
     ui.baseOnImageContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.useOcrParentContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.friendListScrollTimeContainer.setVisibility(config.checkBottomBaseImg ? View.GONE : View.VISIBLE)
+    ui.virtualButtonContainer.setVisibility(!config.checkBottomBaseImg ? View.GONE : View.VISIBLE)
+    ui.virtualButtonHeightInpt.text(config.virtualButtonHeight + '')
+
     ui.delayStartTimeInpt.text(config.delayStartTime + '')
 
 
@@ -227,6 +236,8 @@ if (!inRunningMode) {
     if (config.collect_self_only) {
       ui.notCollectSelfChkBox.setVisibility(View.GONE)
     }
+
+    ui.autoSetImgOrWidgetChkBox.setChecked(config.auto_set_img_or_widget)
     ui.baseOnImageChkBox.setChecked(config.base_on_image)
     ui.bottomHeightInpt.text(config.bottomHeight + '')
 
@@ -250,15 +261,21 @@ if (!inRunningMode) {
     ui.wateringWidgetContentInpt.text(config.watering_widget_content)
     ui.usingProtectContentInpt.text(config.using_protect_content)
 
+    let colorRegex = /^#[\dabcdef]{6}$/i
     let collectColor = config.can_collect_color
     ui.canCollectColorInpt.text(collectColor)
-    if (/^#[\dabcdef]{6}$/i.test(collectColor)) {
+    if (colorRegex.test(collectColor)) {
       ui.canCollectColorInpt.setTextColor(colors.parseColor(collectColor))
     }
     let helpColor = config.can_help_color
     ui.canHelpColorInpt.text(helpColor)
-    if (/^#[\dabcdef]{6}$/i.test(helpColor)) {
+    if (colorRegex.test(helpColor)) {
       ui.canHelpColorInpt.setTextColor(colors.parseColor(helpColor))
+    }
+    let waterBallColor = config.waterBallColor
+    ui.waterBallColorInpt.text(waterBallColor)
+    if (colorRegex.test(waterBallColor)) {
+      ui.waterBallColorInpt.setTextColor(colors.parseColor(waterBallColor))
     }
     ui.collectableEnergyBallContentInpt.text(config.collectable_energy_ball_content)
 
@@ -456,9 +473,17 @@ if (!inRunningMode) {
                   <checkbox id="notCollectSelfChkBox" text="不收自己的能量" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 基于图像分析 */}
+                  <checkbox id="autoSetImgOrWidgetChkBox" text="自动判断基于图像还是控件分析" />
                   <checkbox id="baseOnImageChkBox" text="基于图像分析" />
                   <vertical id="baseOnImageContainer">
                     <checkbox id="checkBottomBaseImgChkBox" text="基于图像判断列表底部" />
+                    <vertical id="virtualButtonContainer">
+                      <text text="系统底部虚拟按键的精确高度，全面屏设置为0即可，含虚拟按键的必须填写真实高度 否则判断有误" textSize="10sp" />
+                      <horizontal gravity="center" >
+                        <text text="虚拟按键精确高度:" />
+                        <input layout_weight="70" inputType="number" id="virtualButtonHeightInpt" />
+                      </horizontal>
+                    </vertical>
                     {/* 排行榜中下拉次数 */}
                     <vertical id="friendListScrollTimeContainer">
                       <text text="排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像拍短无效只能如此" textSize="10sp" />
@@ -484,7 +509,7 @@ if (!inRunningMode) {
                   </horizontal>
                   {/* 虚拟按键高度 */}
                   <horizontal gravity="center" id="bottomHeightContainer">
-                    <text text="系统底部虚拟按键高度，全面屏设置为100即可" />
+                    <text text="模拟滑动距离底部的高度，默认200即可" />
                     <input layout_weight="70" inputType="number" id="bottomHeightInpt" />
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
@@ -594,6 +619,10 @@ if (!inRunningMode) {
                     <input inputType="text" id="canHelpColorInpt" layout_weight="80" />
                   </horizontal>
 
+                  <horizontal gravity="center">
+                    <text text="浇水能量球的数字颜色:" layout_weight="20" />
+                    <input inputType="text" id="waterBallColorInpt" layout_weight="80" />
+                  </horizontal>
                   <vertical w="*" gravity="left" layout_gravity="left" margin="10">
                     <text text="帮收取能量球颜色" textColor="#666666" textSize="14sp" />
                     <frame>
@@ -913,6 +942,16 @@ if (!inRunningMode) {
       config.not_collect_self = ui.notCollectSelfChkBox.isChecked()
     })
 
+    ui.autoSetImgOrWidgetChkBox.on('click', () => {
+      config.auto_set_img_or_widget = ui.autoSetImgOrWidgetChkBox.isChecked()
+      if (config.auto_set_img_or_widget) {
+        // 自动判断的 默认启用图像分析
+        config.base_on_image = true
+        ui.baseOnImageChkBox.setChecked(true)
+        config.useCustomScrollDown = true
+      }
+      setScrollDownUiVal()
+    })
     ui.baseOnImageChkBox.on('click', () => {
       config.base_on_image = ui.baseOnImageChkBox.isChecked()
       if (config.base_on_image) {
@@ -933,6 +972,10 @@ if (!inRunningMode) {
 
     ui.bottomHeightInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.bottomHeight = parseInt(text) })
+    )
+
+    ui.virtualButtonHeightInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.virtualButtonHeight = parseInt(text) })
     )
 
     ui.scrollDownSpeedInpt.addTextChangedListener(
@@ -1027,6 +1070,18 @@ if (!inRunningMode) {
         if (/^#[\dabcdef]{6}$/i.test(val)) {
           ui.canHelpColorInpt.setTextColor(colors.parseColor(val))
           config.can_help_color = val
+        }
+      })
+    )
+    ui.waterBallColorInpt.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        let val = text + ''
+        if (val) {
+          val = val.trim()
+        }
+        if (/^#[\dabcdef]{6}$/i.test(val)) {
+          ui.waterBallColorInpt.setTextColor(colors.parseColor(val))
+          config.waterBallColor = val
         }
       })
     )

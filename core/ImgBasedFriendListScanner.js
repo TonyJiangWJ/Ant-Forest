@@ -2,8 +2,8 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-17 22:04:40
- * @Description: 
+ * @Last Modified time: 2019-12-18 19:02:20
+ * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -13,380 +13,10 @@ importClass(java.util.concurrent.CountDownLatch)
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
 let automator = require('../lib/Automator.js')
 let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/CommonFunction.js') : commonFunctions
-let _FloatyInstance = typeof FloatyInstance === 'undefined' ? require('../lib/FloatyUtil.js') : FloatyInstance
 let _config = typeof config === 'undefined' ? require('../config.js').config : config
-let FileUtils = require('../lib/FileUtils.js')
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
-let _avil_list = []
-let _increased_energy = 0
-let _collect_any = false
-let _min_countdown = 10000
-let _min_countdown_pixels = 10
-let _lost_someone = false
-let _current_time = 0
-
+let BaseScanner = require('./BaseScanner.js')
 const _package_name = 'com.eg.android.AlipayGphone'
-
-
-/**
- * 展示当前累积收集能量信息，累加已记录的和当前运行轮次所增加的
- * 
- * @param {本次增加的能量值} increased
- */
-const showCollectSummaryFloaty = function (increased) {
-  increased = increased || 0
-  _increased_energy += increased
-  if (_config.is_cycle) {
-    _commonFunctions.showCollectSummaryFloaty0(_increased_energy, _current_time, increased)
-  } else {
-    _commonFunctions.showCollectSummaryFloaty0(null, null, _increased_energy)
-  }
-}
-
-/**
- * 收集目标能量球能量
- * 
- * @param {*} energy_ball 能量球对象
- * @param {boolean} isDesc 是否是desc类型
- */
-const collectBallEnergy = function (energy_ball, isDesc) {
-  if (_config.skip_five && !isOwn) {
-    let regexCheck = /(\d+)克/
-    let execResult
-    if (isDesc) {
-      debugInfo('获取能量球desc数据')
-      execResult = regexCheck.exec(energy_ball.desc())
-    } else {
-      debugInfo('获取能量球text数据')
-      execResult = regexCheck.exec(energy_ball.text())
-    }
-    if (execResult.length > 1 && parseInt(execResult[1]) <= 5) {
-      debugInfo(
-        '能量小于等于五克跳过收取 ' + isDesc ? energy_ball.desc() : energy_ball.text()
-      )
-      return
-    }
-  }
-  debugInfo(isDesc ? energy_ball.desc() : energy_ball.text())
-  automator.clickCenter(energy_ball)
-  _collect_any = true
-  sleep(300)
-}
-
-// 收取能量
-const collectEnergy = function (own) {
-  let isOwn = own || false
-  let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, null, true)
-  if (ballCheckContainer !== null) {
-    debugInfo('能量球存在')
-    ballCheckContainer.target
-      .forEach(function (energy_ball) {
-        collectBallEnergy(energy_ball, isOwn, ballCheckContainer.isDesc)
-      })
-  } else {
-    debugInfo('无能量球可收取')
-  }
-}
-
-// 收取能量同时帮好友收取
-const collectAndHelp = function (needHelp) {
-  // 收取好友能量
-  collectEnergy()
-  let screen = _commonFunctions.checkCaptureScreenPermission()
-  if (!screen) {
-    warnInfo('获取截图失败，无法帮助收取能量')
-    return
-  }
-  // 帮助好友收取能量
-  let energyBalls
-  if (
-    className('Button').descMatches(/\s/).exists()
-  ) {
-    energyBalls = className('Button').descMatches(/\s/).untilFind()
-  } else if (
-    className('Button').textMatches(/\s/).exists()
-  ) {
-    energyBalls = className('Button').textMatches(/\s/).untilFind()
-  }
-  if (energyBalls && energyBalls.length > 0) {
-    let length = energyBalls.length
-    let helped = false
-    let colors = _config.helpBallColors || ['#f99236', '#f7af70']
-    energyBalls.forEach(function (energy_ball) {
-      let bounds = energy_ball.bounds()
-      let o_x = bounds.left,
-        o_y = bounds.top,
-        o_w = bounds.width() + 20,
-        o_h = bounds.height() + 20,
-        threshold = _config.color_offset
-      for (let color of colors)
-        if (
-          images.findColor(screen, color, {
-            region: [o_x, o_y, o_w, o_h],
-            threshold: threshold
-          })
-        ) {
-          automator.clickCenter(energy_ball)
-          helped = true
-          _collect_any = true
-          sleep(200)
-          debugInfo("找到帮收取能量球颜色匹配" + color)
-          break
-        }
-    })
-    if (!helped && needHelp) {
-      warnInfo(['未能找到帮收能量球需要增加匹配颜色组 当前{}', colors])
-    }
-    screen.recycle()
-    // 当数量大于等于6且帮助收取后，重新进入
-    if (helped && length >= 6) {
-      debugInfo('帮助了 且有六个球 重新进入')
-      return true
-    } else {
-      debugInfo(['帮助了 但是只有{}个球 不重新进入', length])
-    }
-  }
-}
-
-// 判断并记录保护罩
-const recordProtected = function (toast) {
-  if (toast.indexOf('能量罩') > 0) {
-    recordCurrentProtected()
-  }
-}
-
-const recordCurrentProtected = function () {
-  let title = textContains('的蚂蚁森林')
-    .findOne(_config.timeout_findOne)
-    .text()
-  _commonFunctions.addNameToProtect(title.substring(0, title.indexOf('的')))
-}
-
-// 检测能量罩
-const protectDetect = function (filter) {
-  filter = typeof filter == null ? '' : filter
-  // 在新线程中开启监听
-  return threads.start(function () {
-    events.onToast(function (toast) {
-      if (toast.getPackageName().indexOf(filter) >= 0)
-        recordProtected(toast.getText())
-    })
-  })
-}
-
-const protectInfoDetect = function () {
-  let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 50, true, true)
-  if (usingInfo !== null) {
-    let target = usingInfo.target
-    debugInfo(['found using protect info, bounds:{}', target.bounds()], true)
-    let parent = target.parent().parent()
-    let targetRow = parent.row()
-    let time = parent.child(1).text()
-    if (!time) {
-      time = parent.child(1).desc()
-    }
-    let isToday = true
-    let yesterday = _widgetUtils.widgetGetOne('昨天', 50, true, true)
-    let yesterdayRow = null
-    if (yesterday !== null) {
-      yesterdayRow = yesterday.target.row()
-      // warnInfo(yesterday.target.indexInParent(), true)
-      isToday = yesterdayRow > targetRow
-    }
-    if (!isToday) {
-      // 获取前天的日期
-      let dateBeforeYesterday = formatDate(new Date(new Date().getTime() - 3600 * 24 * 1000 * 2), 'MM-dd')
-      let dayBeforeYesterday = _widgetUtils.widgetGetOne(dateBeforeYesterday, 50, true, true)
-      if (dayBeforeYesterday !== null) {
-        let dayBeforeYesterdayRow = dayBeforeYesterday.target.row()
-        if (dayBeforeYesterdayRow < targetRow) {
-          debugInfo('能量罩使用时间已超时，前天之前的数据')
-          return false
-        } else {
-          debugInfo(['前天row:{}', dayBeforeYesterdayRow])
-        }
-      }
-      let timeRe = /(\d{2}:\d{2})/
-      if (timeRe.test(time)) {
-        time = timeRe.exec(time)[1]
-        let compare = new Date('1999/01/01 ' + time)
-        let usingFlag = compare.getHours() * 60 + compare.getMinutes()
-        let now = new Date().getHours() * 60 + new Date().getMinutes()
-        if (usingFlag < now) {
-          return false
-        }
-      }
-    }
-    debugInfo(['using time:{}-{} rows: yesterday[{}] target[{}]', (isToday ? '今天' : '昨天'), time, yesterdayRow, targetRow], true)
-    recordCurrentProtected()
-    return true
-  } else {
-    debugInfo('not found using protect info')
-  }
-  return false
-}
-
-const returnToListAndCheck = function () {
-  automator.back()
-  sleep(500)
-  let returnCount = 0
-  while (!_widgetUtils.friendListWaiting()) {
-    sleep(500)
-    if (returnCount++ === 2) {
-      // 等待两秒后再次触发
-      automator.back()
-    }
-    if (returnCount > 5) {
-      errorInfo('返回好友排行榜失败，重新开始')
-      return false
-    }
-  }
-}
-
-const collectTargetFriend = function (obj) {
-  let rentery = false
-  if (!obj.protect) {
-    let temp = protectDetect(_package_name)
-    //automator.click(obj.target.centerX(), obj.target.centerY())
-    debugInfo('等待进入好友主页')
-    let restartLoop = false
-    let count = 1
-    automator.click(obj.point.x, obj.point.y)
-    ///sleep(1000)
-    while (!_widgetUtils.friendHomeWaiting()) {
-      debugInfo(
-        '未能进入主页，尝试再次进入 count:' + count++
-      )
-      automator.click(obj.point.x, obj.point.y)
-      sleep(500)
-      if (count >= 3) {
-        warnInfo('重试超过3次，取消操作')
-        restartLoop = true
-        break
-      }
-    }
-    if (restartLoop) {
-      errorInfo('页面流程出错，重新开始')
-      return false
-    }
-    let title = textContains('的蚂蚁森林')
-      .findOne(_config.timeout_findOne)
-      .text()
-    obj.name = title.substring(0, title.indexOf('的'))
-    let skip = false
-    if (!skip && _config.white_list && _config.white_list.indexOf(obj.name) > 0) {
-      debugInfo(['{} 在白名单中不收取他', obj.name])
-      skip = true
-    }
-    if (!skip && _commonFunctions.checkIsProtected(obj.name)) {
-      debugInfo(['{} 使用了保护罩 不收取他'])
-      skip = true
-    }
-    if (!skip && protectInfoDetect()) {
-      warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
-      skip = true
-    }
-    if (skip) {
-      return returnToListAndCheck()
-    }
-    debugInfo('准备开始收取')
-
-    let preGot
-    let preE
-    try {
-      preGot = _widgetUtils.getYouCollectEnergy() || 0
-      preE = _widgetUtils.getFriendEnergy()
-    } catch (e) { errorInfo("[" + obj.name + "]获取收集前能量异常" + e) }
-    if (_config.help_friend) {
-      rentery = collectAndHelp(obj.isHelp)
-    } else {
-      collectEnergy()
-    }
-    try {
-      let postGet = _widgetUtils.getYouCollectEnergy() || 0
-      let postE = _widgetUtils.getFriendEnergy()
-      if (!obj.isHelp && postGet !== null && preGot !== null) {
-        let gotEnergy = postGet - preGot
-        debugInfo("开始收集前:" + preGot + "收集后:" + postGet)
-        if (gotEnergy) {
-          let needWaterback = _commonFunctions.recordFriendCollectInfo({
-            friendName: obj.name,
-            friendEnergy: postE,
-            postCollect: postGet,
-            preCollect: preGot,
-            helpCollect: 0
-          })
-          try {
-            if (needWaterback) {
-              _widgetUtils.wateringFriends()
-              gotEnergy -= 10
-            }
-          } catch (e) {
-            errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
-          }
-          logInfo([
-            "收取好友:{} 能量 {}g {}",
-            obj.name, gotEnergy, (needWaterback ? '其中浇水10g' : '')
-          ])
-          showCollectSummaryFloaty(gotEnergy)
-        } else {
-          debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
-        }
-      } else if (obj.isHelp && postE !== null && preE !== null) {
-        let gotEnergy = postE - preE
-        debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
-        if (gotEnergy) {
-          logInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
-          _commonFunctions.recordFriendCollectInfo({
-            friendName: obj.name,
-            friendEnergy: postE,
-            postCollect: postGet,
-            preCollect: preGot,
-            helpCollect: gotEnergy
-          })
-        } else {
-          debugInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
-        }
-      }
-    } catch (e) {
-      errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
-    }
-    temp.interrupt()
-    debugInfo('好友能量收取完毕, 回到好友排行榜')
-    if (false === returnToListAndCheck()) {
-      return false
-    }
-    if (rentery) {
-      obj.isHelp = false
-      return collectTargetFriend(obj)
-    }
-  }
-  return true
-}
-
-const checkRunningCountdown = function (countingDownContainers) {
-  if (!_config.is_cycle && countingDownContainers.length > 0) {
-    debugInfo(['倒计时中的好友数[{}]', countingDownContainers.length])
-    countingDownContainers.forEach((item, idx) => {
-      let now = new Date()
-      let stamp = item.stamp
-      let count = item.countdown
-      let passed = Math.round((now - stamp) / 60000.0)
-      debugInfo([
-        '需要计时[{}]分\t经过了[{}]分\t计时时间戳[{}]',
-        count, passed, stamp
-      ])
-      if (passed >= count) {
-        debugInfo('有一个记录倒计时结束')
-        // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
-        return true
-      } else {
-        let rest = count - passed
-        _min_countdown = rest < _min_countdown ? rest : _min_countdown
-      }
-    })
-  }
-}
 
 const Stack = function () {
   this.size = 0
@@ -574,20 +204,21 @@ function ColorRegionCenterCalculator (img, point, threshold) {
 
 }
 
-function ImgBasedFriendListScanner () {
-
+const ImgBasedFriendListScanner = function () {
+  BaseScanner.call(this)
   this.threadPool = null
+  this.min_countdown_pixels = 10
 
   this.init = function (option) {
-    _current_time = option.currentTime || 0
-    _increased_energy = option.increasedEnergy || 0
+    this.current_time = option.currentTime || 0
+    this.increased_energy = option.increasedEnergy || 0
     this.threadPool = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(256))
   }
 
   this.start = function () {
-    _increased_energy = 0
-    _min_countdown = 10000
-    _min_countdown_pixels = 10
+    this.increased_energy = 0
+    this.min_countdown = 10000
+    this.min_countdown_pixels = 10
     debugInfo('图像分析即将开始')
     return this.collecting()
   }
@@ -618,7 +249,8 @@ function ImgBasedFriendListScanner () {
   }
 
   this.reachBottom = function (grayImg) {
-    let height = device.height
+    let virtualButtonHeight = _config.virtualButtonHeight | 0
+    let height = device.height - virtualButtonHeight
     for (let startY = 5; startY < 50; startY++) {
       let colorGreen = grayImg.getBitmap().getPixel(10, height - startY) >> 8 & 0xFF
       if (Math.abs(colorGreen - 245) > 4) {
@@ -634,6 +266,7 @@ function ImgBasedFriendListScanner () {
     let countingDownContainers = []
     let count = 0
     let hasNext = true
+    let that = this
     do {
       screen = _commonFunctions.checkCaptureScreenPermission()
       // 重新复制一份
@@ -716,7 +349,7 @@ function ImgBasedFriendListScanner () {
                     errorInfo('存储倒计时图片失败：' + e)
                   }
                   if (base64String) {
-                    if (point.same > (_config.ocrThresold || 2900) && _min_countdown >= 2) {
+                    if (point.same > (_config.ocrThresold || 2900) && that.min_countdown >= 2) {
                       // 百度识图API获取文本
                       let result = BaiduOcrUtil.recoginze(base64String)
                       if (result && result.words_result_num > 0) {
@@ -725,10 +358,10 @@ function ImgBasedFriendListScanner () {
                           debugInfo('百度识图结果：' + JSON.stringify(filter))
                           countdownLock.lock()
                           let countdown = parseInt(filter[0].words)
-                          if (countdown < _min_countdown) {
+                          if (countdown < that.min_countdown) {
                             debugInfo('设置最小倒计时：' + countdown)
-                            _min_countdown = countdown
-                            _min_countdown_pixels = point.same
+                            that.min_countdown = countdown
+                            that.min_countdown_pixels = point.same
                           }
                           countingDownContainers.push({
                             countdown: countdown,
@@ -761,7 +394,7 @@ function ImgBasedFriendListScanner () {
           let noError = true
           collectOrHelpList.forEach(point => {
             if (noError) {
-              if (false === collectTargetFriend(point)) {
+              if (false === that.collectTargetFriend(point)) {
                 noError = false
               }
             }
@@ -776,14 +409,25 @@ function ImgBasedFriendListScanner () {
       }
       automator.scrollDown()
       sleep(500)
+      count++
       if (_config.checkBottomBaseImg) {
-        hasNext = !this.reachBottom(grayScreen)
+        let reached = this.reachBottom(grayScreen)
+        if (reached) {
+          // 二次校验，避免因为加载中导致的错误判断
+          let newScreen = _commonFunctions.checkCaptureScreenPermission()
+          let newGrayScreen = images.grayscale(newScreen)
+          reached = this.reachBottom(newGrayScreen)
+          newScreen.recycle()
+          newGrayScreen.recycle()
+        }
+        hasNext = !reached
       } else {
-        hasNext = count++ < (_config.friendListScrollTime || 30)
+        hasNext = count < (_config.friendListScrollTime || 30)
       }
       screen.recycle()
       grayScreen.recycle()
-      if (!_widgetUtils.friendListWaiting()) {
+      // 每5次滑动判断一次是否在排行榜中
+      if (hasNext && count % 5 == 0 && !_widgetUtils.friendListWaiting()) {
         errorInfo('当前不在好友排行榜！')
         // true is error
         return true
@@ -803,12 +447,12 @@ function ImgBasedFriendListScanner () {
       }
     }
     if (countingDownContainers.length > 0) {
-      _lost_someone = checkRunningCountdown(countingDownContainers)
+      this.lost_someone = this.checkRunningCountdown(countingDownContainers)
     }
     automator.back()
     return {
-      minCountdown: _min_countdown,
-      lostSomeone: _lost_someone
+      minCountdown: this.min_countdown,
+      lostSomeone: this.lost_someone
     }
   }
 
@@ -861,6 +505,169 @@ function ImgBasedFriendListScanner () {
   }
 }
 
+ImgBasedFriendListScanner.prototype.returnToListAndCheck = function () {
+  automator.back()
+  sleep(500)
+  let returnCount = 0
+  while (!_widgetUtils.friendListWaiting()) {
+    sleep(500)
+    if (returnCount++ === 2) {
+      // 等待两秒后再次触发
+      automator.back()
+    }
+    if (returnCount > 5) {
+      errorInfo('返回好友排行榜失败，重新开始')
+      return false
+    }
+  }
+}
+
+ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
+  let rentery = false
+  if (!obj.protect) {
+    let temp = this.protectDetect(_package_name)
+    //automator.click(obj.target.centerX(), obj.target.centerY())
+    debugInfo('等待进入好友主页')
+    let restartLoop = false
+    let count = 1
+    automator.click(obj.point.x, obj.point.y)
+    ///sleep(1000)
+    while (!_widgetUtils.friendHomeWaiting()) {
+      debugInfo(
+        '未能进入主页，尝试再次进入 count:' + count++
+      )
+      automator.click(obj.point.x, obj.point.y)
+      sleep(500)
+      if (count >= 3) {
+        warnInfo('重试超过3次，取消操作')
+        restartLoop = true
+        break
+      }
+    }
+    if (restartLoop) {
+      errorInfo('页面流程出错，重新开始')
+      return false
+    }
+    let title = textContains('的蚂蚁森林')
+      .findOne(_config.timeout_findOne)
+      .text()
+    obj.name = title.substring(0, title.indexOf('的'))
+    let skip = false
+    if (!skip && _config.white_list && _config.white_list.indexOf(obj.name) > 0) {
+      debugInfo(['{} 在白名单中不收取他', obj.name])
+      skip = true
+    }
+    if (!skip && _commonFunctions.checkIsProtected(obj.name)) {
+      debugInfo(['{} 使用了保护罩 不收取他'])
+      skip = true
+    }
+    if (!skip && this.protectInfoDetect()) {
+      warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
+      skip = true
+    }
+    if (skip) {
+      return this.returnToListAndCheck()
+    }
+    debugInfo('准备开始收取')
+
+    let preGot
+    let preE
+    try {
+      preGot = _widgetUtils.getYouCollectEnergy() || 0
+      preE = _widgetUtils.getFriendEnergy()
+    } catch (e) { errorInfo("[" + obj.name + "]获取收集前能量异常" + e) }
+    if (_config.help_friend) {
+      rentery = this.collectAndHelp(obj.isHelp)
+    } else {
+      this.collectEnergy()
+    }
+    try {
+      let postGet = _widgetUtils.getYouCollectEnergy() || 0
+      let postE = _widgetUtils.getFriendEnergy()
+      if (!obj.isHelp && postGet !== null && preGot !== null) {
+        let gotEnergy = postGet - preGot
+        debugInfo("开始收集前:" + preGot + "收集后:" + postGet)
+        if (gotEnergy) {
+          let needWaterback = _commonFunctions.recordFriendCollectInfo({
+            friendName: obj.name,
+            friendEnergy: postE,
+            postCollect: postGet,
+            preCollect: preGot,
+            helpCollect: 0
+          })
+          try {
+            if (needWaterback) {
+              _widgetUtils.wateringFriends()
+              gotEnergy -= 10
+            }
+          } catch (e) {
+            errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
+          }
+          logInfo([
+            "收取好友:{} 能量 {}g {}",
+            obj.name, gotEnergy, (needWaterback ? '其中浇水10g' : '')
+          ])
+          this.showCollectSummaryFloaty(gotEnergy)
+        } else {
+          debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
+        }
+      } else if (obj.isHelp && postE !== null && preE !== null) {
+        let gotEnergy = postE - preE
+        debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
+        if (gotEnergy) {
+          logInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
+          _commonFunctions.recordFriendCollectInfo({
+            friendName: obj.name,
+            friendEnergy: postE,
+            postCollect: postGet,
+            preCollect: preGot,
+            helpCollect: gotEnergy
+          })
+        } else {
+          debugInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
+        }
+      }
+    } catch (e) {
+      errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
+    }
+    temp.interrupt()
+    debugInfo('好友能量收取完毕, 回到好友排行榜')
+    if (false === this.returnToListAndCheck()) {
+      return false
+    }
+    if (rentery) {
+      obj.isHelp = false
+      return this.collectTargetFriend(obj)
+    }
+  }
+  return true
+}
+
+ImgBasedFriendListScanner.prototype.checkRunningCountdown = function (countingDownContainers) {
+  if (!_config.is_cycle && countingDownContainers.length > 0) {
+    debugInfo(['倒计时中的好友数[{}]', countingDownContainers.length])
+    let that = this
+    countingDownContainers.forEach((item, idx) => {
+      let now = new Date()
+      let stamp = item.stamp
+      let count = item.countdown
+      let passed = Math.round((now - stamp) / 60000.0)
+      debugInfo([
+        '需要计时[{}]分\t经过了[{}]分\t计时时间戳[{}]',
+        count, passed, stamp
+      ])
+      if (passed >= count) {
+        debugInfo('有一个记录倒计时结束')
+        // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
+        return true
+      } else {
+        let rest = count - passed
+        that.min_countdown = rest < that.min_countdown ? rest : that.min_countdown
+      }
+    })
+  }
+}
+
 function Countdown () {
   this.start = new Date().getTime()
   this.getCost = function () {
@@ -876,5 +683,4 @@ function Countdown () {
   }
 
 }
-
 module.exports = ImgBasedFriendListScanner

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-16 13:38:16
+ * @Last Modified time: 2019-12-18 18:19:02
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')
@@ -46,12 +46,22 @@ if (!commonFunctions.checkAccessibilityService()) {
   }
 }
 logInfo('---前置校验完成;启动系统--->>>>')
+// 打印运行环境信息
 if (files.exists('version.json')) {
   let content = JSON.parse(files.read('version.json'))
   logInfo(['版本信息：{} nodeId:{}', content.version, content.nodeId])
 } else {
   logInfo('无法获取脚本版本信息')
 }
+logInfo(['运行模式：{}{} {} {} {}',
+  config.develop_mode ? '开发模式 ' : '',
+  config.single_script ? '单脚本运行无视运行队列' : '多脚本调度运行',
+  config.is_cycle ? '循环' + config.cycle_times + '次' : (config.never_stop ? '永不停止，重新激活时间：' + config.reactive_time : '计时模式，超时时间：' + config.max_collect_wait_time),
+  config.auto_set_img_or_widget ? '自动分析基于图像还是控件分析' : (
+    config.base_on_image ? '基于图像分析' + (config.useOcr ? '-使用OCR识别倒计时 ' : '') : '基于控件分析'
+  ),
+  config.useCustomScrollDown ? '使用模拟滑动, 速度：' + config.scrollDownSpeed + 'ms 底部高度：' + config.bottomHeight : ''
+])
 logInfo('======解锁并校验截图权限======')
 try {
   unlocker.exec()

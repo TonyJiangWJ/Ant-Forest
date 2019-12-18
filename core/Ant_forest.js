@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-11 21:42:23
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-16 20:30:36
+ * @Last Modified time: 2019-12-18 15:32:06
  * @Description: 
  */
 /*
@@ -627,6 +627,7 @@ function Ant_forest () {
     this.endLoop = function () {
       this.interruptStopListenThread()
       events.removeAllListeners()
+      events.recycle()
       _runningQueueDispatcher.removeRunningTask()
       if (_config.auto_lock === true && unlocker.needRelock() === true) {
         debugInfo('重新锁定屏幕')
