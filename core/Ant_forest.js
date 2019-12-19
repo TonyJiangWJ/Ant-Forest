@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-11 21:42:23
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-18 15:32:06
+ * @Last Modified time: 2019-12-19 10:46:49
  * @Description: 
  */
 /*
@@ -378,16 +378,11 @@ function Ant_forest () {
 
   // 记录当前能量
   const getCurrentEnergy = function () {
-    let currentEnergyWidgetContainer = _widgetUtils.widgetGetOne('\\d+g', null, true)
+    let currentEnergyWidget = _widgetUtils.widgetGetById(_config.energy_id || 'J_userEnergy')
     let currentEnergy = undefined
-    if (currentEnergyWidgetContainer) {
-      let target = currentEnergyWidgetContainer.target
-      let isDesc = currentEnergyWidgetContainer.isDesc
-      if (isDesc) {
-        currentEnergy = parseInt(target.desc().match(/\d+/))
-      } else {
-        currentEnergy = parseInt(target.text().match(/\d+/))
-      }
+    if (currentEnergyWidget) {
+      let content = currentEnergyWidget.text() || currentEnergyWidget.desc()
+      currentEnergy = parseInt(content.match(/\d+/))
     }
     if (currentEnergy) {
       // 存储能量值数据
@@ -418,7 +413,8 @@ function Ant_forest () {
   // 记录最终能量值
   const getPostEnergy = function (collectedFriend) {
     if (collectedFriend) {
-      automator.clickBack()
+      debugInfo('非仅收自己，返回主页面')
+      automator.back()
       _widgetUtils.homePageWaiting()
     }
     // 等待能量值稳定
