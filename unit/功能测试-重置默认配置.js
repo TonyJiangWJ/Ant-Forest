@@ -2,12 +2,12 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-12 11:27:11
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-12 11:42:19
+ * @Last Modified time: 2019-12-19 14:19:45
  * @Description: 
  */
 let { config, default_config } = require('../config.js')
-
-let storageConfig = storages.create(storage_name)
+let _storage_name = require('../config.js').storage_name
+let storageConfig = storages.create(_storage_name)
 let allSame = true
 
 
