@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-18 19:09:21
+ * @Last Modified time: 2019-12-19 16:21:23
  * @Description: 
  */
 "ui";
@@ -110,6 +110,7 @@ let default_config = {
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   watering_widget_content: '浇水',
+  do_watering_button_content: '送给\\s*TA|浇水送祝福',
   using_protect_content: '使用了保护罩',
   collectable_energy_ball_content: '收集能量\\d+克'
 }
@@ -127,8 +128,7 @@ Object.keys(default_config).forEach(key => {
 if (typeof config.collectable_energy_ball_content !== 'string') {
   config.collectable_energy_ball_content = default_config.collectable_energy_ball_content
 }
-// 传递给commonFunction等
-const storage_name = CONFIG_STORAGE_NAME
+
 if (!inRunningMode) {
   module.exports = {
     config: config,
@@ -138,7 +138,8 @@ if (!inRunningMode) {
 } else {
 
   const _hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
-
+  // 传递给commonFunction 避免二次引用config.js
+  const storage_name = CONFIG_STORAGE_NAME
   let commonFunctions = require('./lib/CommonFunction.js')
   // 初始化list 为全局变量
   let whiteList = [], wateringBlackList = [], helpBallColorList = []
@@ -259,6 +260,7 @@ if (!inRunningMode) {
     ui.noMoreUiContentInpt.text(config.no_more_ui_content)
     ui.loadMoreUiContentInpt.text(config.load_more_ui_content)
     ui.wateringWidgetContentInpt.text(config.watering_widget_content)
+    ui.doWateringWidgetContentInpt.text(config.do_watering_button_content)
     ui.usingProtectContentInpt.text(config.using_protect_content)
 
     let colorRegex = /^#[\dabcdef]{6}$/i
@@ -601,6 +603,10 @@ if (!inRunningMode) {
                   <horizontal gravity="center">
                     <text text="浇水:" layout_weight="20" />
                     <input inputType="text" id="wateringWidgetContentInpt" layout_weight="80" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="确认浇水按钮:" layout_weight="20" />
+                    <input inputType="text" id="doWateringWidgetContentInpt" layout_weight="80" />
                   </horizontal>
                   <horizontal gravity="center">
                     <text text="保护罩:" layout_weight="20" />
@@ -1045,6 +1051,9 @@ if (!inRunningMode) {
     )
     ui.wateringWidgetContentInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.watering_widget_content = text + '' })
+    )
+    ui.doWateringWidgetContentInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.do_watering_button_content = text + '' })
     )
     ui.usingProtectContentInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.using_protect_content = text + '' })

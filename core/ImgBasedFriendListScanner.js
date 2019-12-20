@@ -653,7 +653,7 @@ ImgBasedFriendListScanner.prototype.checkRunningCountdown = function (countingDo
       let count = item.countdown
       let passed = Math.round((now - stamp) / 60000.0)
       debugInfo([
-        '需要计时[{}]分\t经过了[{}]分\t计时时间戳[{}]',
+        '需要计时[{}]分 经过了[{}]分 计时时间戳[{}]',
         count, passed, stamp
       ])
       if (passed >= count) {

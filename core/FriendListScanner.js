@@ -736,7 +736,7 @@ FriendListScanner.prototype.checkRunningCountdown = function (countingDownContai
       let count = item.countdown.count
       let passed = Math.round((now - stamp) / 60000.0)
       debugInfo([
-        '[{}]\t需要计时[{}]分\t经过了[{}]分\t计时时间戳[{}]',
+        '[{}] 需要计时[{}]分 经过了[{}]分 计时时间戳[{}]',
         item.name, count, passed, stamp
       ])
       if (passed >= count) {
