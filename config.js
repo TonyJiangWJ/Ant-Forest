@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-19 16:21:23
+ * @Last Modified time: 2019-12-21 12:58:40
  * @Description: 
  */
 "ui";
@@ -19,6 +19,8 @@ importClass(android.view.MotionEvent)
 let default_config = {
   develop_mode: false,
   password: '',
+  is_alipay_locked: false,
+  alipay_lock_password: '',
   color_offset: 20,
   // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
   show_small_floaty: true,
@@ -45,6 +47,7 @@ let default_config = {
   timeout_unlock: 1000,
   timeout_findOne: 1000,
   timeout_existing: 8000,
+  capture_waiting_time: 500,
   max_collect_repeat: 20,
   max_collect_wait_time: 60,
   show_debug_log: true,
@@ -182,6 +185,10 @@ if (!inRunningMode) {
     helpBallColorList = []
     // 基本配置
     ui.password.text(config.password + '')
+    ui.alipayLockPasswordInpt.text(config.alipay_lock_password + '')
+    ui.isAlipayLockedChkBox.setChecked(config.is_alipay_locked)
+    ui.alipayLockPasswordContainer.setVisibility(config.is_alipay_locked ? View.VISIBLE: View.GONE)
+
     ui.colorThresholdInput.text('' + config.color_offset)
     let precent = parseInt(config.color_offset / 255 * 100)
     ui.colorThresholdSeekbar.setProgress(precent)
@@ -229,6 +236,7 @@ if (!inRunningMode) {
     ui.timeoutUnlockInpt.text(config.timeout_unlock + '')
     ui.timeoutFindOneInpt.text(config.timeout_findOne + '')
     ui.timeoutExistingInpt.text(config.timeout_existing + '')
+    ui.captureWaitingTimeInpt.text(config.capture_waiting_time + '')
 
     // 进阶配置
     ui.singleScriptChkBox.setChecked(config.single_script)
@@ -348,6 +356,12 @@ if (!inRunningMode) {
                     <text text="锁屏密码：" />
                     <input id="password" inputType="textPassword" layout_weight="80" />
                   </horizontal>
+                  <checkbox id="isAlipayLockedChkBox" text="支付宝是否锁定"/>
+                  <horizontal gravity="center" id="alipayLockPasswordContainer">
+                    <text text="支付宝手势密码对应的九宫格数字：" textSize="10sp" />
+                    <input id="alipayLockPasswordInpt" inputType="textPassword" layout_weight="80" />
+                  </horizontal>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 5"></horizontal>
                   {/* 颜色识别 */}
                   <text text="颜色相似度（拖动为百分比，实际使用0-255）" textColor="black" textSize="16sp" />
                   <horizontal gravity="center">
@@ -460,6 +474,10 @@ if (!inRunningMode) {
                   <horizontal gravity="center">
                     <text text="校验控件是否存在超时（ms）:" />
                     <input id="timeoutExistingInpt" inputType="number" layout_weight="60" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="获取截图等待时间（ms）:" />
+                    <input id="captureWaitingTimeInpt" inputType="number" layout_weight="60" />
                   </horizontal>
                 </vertical>
               </ScrollView>
@@ -886,6 +904,15 @@ if (!inRunningMode) {
     ui.password.addTextChangedListener(
       TextWatcherBuilder(text => { config.password = text + '' })
     )
+    
+    ui.alipayLockPasswordInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.alipay_lock_password = text + ''})
+    )
+
+    ui.isAlipayLockedChkBox.on('click', () => {
+      config.is_alipay_locked = ui.isAlipayLockedChkBox.isChecked()
+      ui.alipayLockPasswordContainer.setVisibility(config.is_alipay_locked ? View.VISIBLE: View.GONE)
+    })
 
     ui.floatyColor.addTextChangedListener(
       TextWatcherBuilder(text => {
@@ -924,6 +951,10 @@ if (!inRunningMode) {
 
     ui.timeoutExistingInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.timeout_existing = parseInt(text) })
+    )
+
+    ui.captureWaitingTimeInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.capture_waiting_time = parseInt(text) })
     )
 
     ui.fileSizeInpt.addTextChangedListener(

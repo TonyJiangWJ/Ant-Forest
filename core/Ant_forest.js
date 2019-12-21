@@ -1,14 +1,7 @@
 /*
- * @Author: TonyJiangWJ
- * @Date: 2019-12-11 21:42:23
- * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-19 10:46:49
- * @Description: 
- */
-/*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-15 13:20:37
+ * @Last Modified time: 2019-12-21 12:50:09
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -16,6 +9,7 @@ let automator = require('../lib/Automator.js')
 let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/CommonFunction.js') : commonFunctions
 let _runningQueueDispatcher = typeof runningQueueDispatcher === 'undefined' ? require('./RunningQueueDispatcher.js') : runningQueueDispatcher
 let _config = typeof config === 'undefined' ? require('../config.js').config : config
+let alipayUnlocker = require('../lib/AlipayUnlocker.js')
 let FriendListScanner = require('./FriendListScanner.js')
 let ImgBasedFriendListScanner = null
 if (_config.base_on_image) {
@@ -43,6 +37,9 @@ function Ant_forest () {
   // 进入蚂蚁森林主页
   const startApp = function () {
     _commonFunctions.launchPackage(_package_name, false)
+    if (_config.is_alipay_locked) {
+      alipayUnlocker.unlockAlipay()
+    }
     app.startActivity({
       action: 'VIEW',
       data: 'alipays://platformapi/startapp?appId=60000002',
@@ -167,7 +164,7 @@ function Ant_forest () {
           ) {
             counter++
             temp.push(toast.getText())
-            if (counter == limit) {
+            if (counter >= limit) {
               logInfo('正常获取toast信息' + temp)
               toastDone = true
             } else if (new Date().getTime() - startTimestamp > 10000) {
@@ -180,8 +177,8 @@ function Ant_forest () {
           }
         })
         // 触发 toast
-        exec()
-        let count = 10
+        limit = exec()
+        let count = 5
         while (count-- > 0 && !toastDone) {
           sleep(1000)
         }
@@ -226,12 +223,26 @@ function Ant_forest () {
       let temp = []
       debugInfo('待收取球数' + ball.length)
       let toasts = getToastAsync(_package_name, ball.length >= 2 ? 2 : ball.length, function () {
-        // 只需要点击两个球就够了
-        for (let i = 0; i < ball.length && i < 2; i++) {
+        let screen = _commonFunctions.checkCaptureScreenPermission()
+        let count = 0
+        for (let i = 0; i < ball.length; i++) {
           let countDownBall = ball[i]
+          let bounds = countDownBall.bounds()
+          if (!images.findColor(screen, _config.waterBallColor || '#d1971a', {
+            region: [bounds.left, bounds.top, bounds.right - bounds.left, parseInt(bounds.height() / 2)],
+            threshold: _config.color_offset || 20
+          })) {
+            count++
+          }
           automator.clickCenter(countDownBall)
           sleep(500)
+          // 只需要点击两个球就够了
+          if (count >= 2) {
+            break
+          }
         }
+        // 返回实际倒计时个数
+        return count
       })
       toasts.forEach(function (toast) {
         let countdown = toast.match(/\d+/g)

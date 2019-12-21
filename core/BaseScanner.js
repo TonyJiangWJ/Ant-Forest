@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-18 19:00:46
+ * @Last Modified time: 2019-12-21 12:11:55
  * @Description: 排行榜扫描基类
  */
 
@@ -108,7 +108,7 @@ const BaseScanner = function () {
           o_y = bounds.top,
           o_w = bounds.width() + 5,
           o_h = parseInt(bounds.height() * 1.5),
-          o_center_h = parseInt(bounds.width() / 2)
+          o_center_h = parseInt(bounds.height() / 2)
         threshold = _config.color_offset
         for (let color of colors)
           if (
