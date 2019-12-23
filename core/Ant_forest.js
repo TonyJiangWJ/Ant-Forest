@@ -128,8 +128,6 @@ function Ant_forest () {
     ui.run(function () {
       window.log.text(text)
     })
-    // 30秒后关闭，防止立即停止
-    setTimeout(() => { exit() }, 1000 * 30)
   }
 
   /***********************
@@ -658,9 +656,6 @@ function Ant_forest () {
         this.eventSettingThread.interrupt()
         this.eventSettingThread = null
       }
-      setTimeout(() => {
-        runningQueueDispatcher.removeRunningTask(true)
-      }, 30000)
     }
   }
 

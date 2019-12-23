@@ -113,6 +113,7 @@ if (config.develop_mode) {
     errorInfo('执行异常, 1分钟后重新开始' + e)
   } finally {
     runningQueueDispatcher.removeRunningTask(true)
-    exit()
+    // 30秒后关闭，防止立即停止
+    setTimeout(() => { exit() }, 1000 * 30)
   }
 }

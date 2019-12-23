@@ -117,7 +117,7 @@ const BaseScanner = function () {
               threshold: threshold
             })
             && !images.findColor(screen, _config.waterBallColor || '#d1971a', {
-              region: [o_x, o_y, o_w, o_center_h],
+              region: [o_x, o_center_h, o_w, parseInt(o_center_h / 2)],
               threshold: threshold
             })
           ) {

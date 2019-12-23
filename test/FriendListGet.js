@@ -65,10 +65,10 @@ function getJRankSelfBottom () {
   let maxTry = 50
   while (maxTry-- > 0) {
     try {
-      return textMatches(_own_text).findOnce(1).bounds().bottom;
+      return textMatches(_own_text).findOnce(1).bounds().bottom
     } catch (e) {
       try {
-        return descMatches(_own_text).findOnce(1).bounds().bottom;
+        return descMatches(_own_text).findOnce(1).bounds().bottom
       } catch (e2) {
         // nothing to do here
       }
@@ -81,7 +81,7 @@ function getH5RankSelfBottom () {
   let maxTry = 50
   while (maxTry-- > 0) {
     try {
-      return idMatches(/.*h5_h_divider/).findOnce().bounds().bottom;
+      return idMatches(/.*h5_h_divider/).findOnce().bounds().bottom
     } catch (e) {
       // nothing to do here
     }
