@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-26 21:49:08
+ * @Last Modified time: 2019-12-27 07:25:42
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
@@ -455,9 +455,9 @@ const ImgBasedFriendListScanner = function () {
         break
       }
     }
-    if (countingDownContainers.length > 0) {
-      this.lost_someone = this.checkRunningCountdown(countingDownContainers)
-    }
+
+    this.checkRunningCountdown(countingDownContainers)
+
     return {
       minCountdown: this.min_countdown,
       lostSomeone: this.lost_someone
@@ -667,7 +667,7 @@ ImgBasedFriendListScanner.prototype.checkRunningCountdown = function (countingDo
       if (passed >= count) {
         debugInfo('有一个记录倒计时结束')
         // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
-        return true
+        that.lost_someone = true
       } else {
         let rest = count - passed
         that.min_countdown = rest < that.min_countdown ? rest : that.min_countdown

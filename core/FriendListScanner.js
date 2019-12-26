@@ -404,7 +404,7 @@ const FriendListScanner = function () {
     }
 
     this.lost_someone = this.checkIsEveryFriendChecked(checkedList, totalValidLength)
-    this.lost_someone = this.lost_someone || this.checkRunningCountdown(countingDownContainers)
+    this.checkRunningCountdown(countingDownContainers)
     _commonFunctions.addClosePlacehold(">>>><<<<")
     debugInfo([
       '全部收集完成, last:[{}] length:[{}]',
@@ -742,7 +742,7 @@ FriendListScanner.prototype.checkRunningCountdown = function (countingDownContai
       if (passed >= count) {
         debugInfo('[' + item.name + ']倒计时结束')
         // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
-        return true
+        that.lost_someone = true
       } else {
         let rest = count - passed
         that.min_countdown = rest < that.min_countdown ? rest : that.min_countdown
