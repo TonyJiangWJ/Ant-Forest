@@ -458,7 +458,6 @@ const ImgBasedFriendListScanner = function () {
     if (countingDownContainers.length > 0) {
       this.lost_someone = this.checkRunningCountdown(countingDownContainers)
     }
-    automator.back()
     return {
       minCountdown: this.min_countdown,
       lostSomeone: this.lost_someone
