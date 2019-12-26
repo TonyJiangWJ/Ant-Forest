@@ -561,7 +561,7 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
       .text()
     obj.name = title.substring(0, title.indexOf('的'))
     let skip = false
-    if (!skip && _config.white_list && _config.white_list.indexOf(obj.name) > 0) {
+    if (!skip && _config.white_list && _config.white_list.indexOf(obj.name) >= 0) {
       debugInfo(['{} 在白名单中不收取他', obj.name])
       skip = true
     }
