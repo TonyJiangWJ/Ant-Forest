@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-26 20:42:48
+ * @Last Modified time: 2019-12-26 21:05:16
  * @Description: 
  */
 "ui";
@@ -576,19 +576,19 @@ if (!inRunningMode) {
                   {/* 线程池配置 */}
                   <text text="图像识别的线程池配置，如果过于卡顿，请调低线程池大小，同时增加线程池等待时间。" />
                   <horizontal gravity="center">
-                    <text text="线程池大小" layout_weight="40" />
+                    <text text="线程池大小" layout_weight="20" />
                     <input layout_weight="60" inputType="number" id="threadPoolSizeInpt" />
                   </horizontal>
                   <horizontal gravity="center">
-                    <text text="线程池最大大小" layout_weight="40" />
+                    <text text="线程池最大大小" layout_weight="20" />
                     <input layout_weight="60" inputType="number" id="threadPoolMaxSizeInpt" />
                   </horizontal>
                   <horizontal gravity="center">
-                    <text text="线程池等待队列大小" layout_weight="40" />
+                    <text text="线程池等待队列大小" layout_weight="20" />
                     <input layout_weight="60" inputType="number" id="threadPoolQueueSizeInpt" />
                   </horizontal>
                   <horizontal gravity="center">
-                    <text text="线程池等待时间" layout_weight="40" />
+                    <text text="线程池等待时间（秒）" layout_weight="20" />
                     <input layout_weight="60" inputType="number" id="threadPoolWaitingTimeInpt" />
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>

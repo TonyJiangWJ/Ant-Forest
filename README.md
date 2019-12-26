@@ -1,11 +1,3 @@
-<!--
- * @Author: TonyJiangWJ
- * @Date: 2019-12-10 19:41:12
- * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-26 20:50:21
- * @Description: 
- -->
-
 # 其他脚本
 
 - [蚂蚁庄园传送门](https://github.com/TonyJiangWJ/Ant-Manor)
@@ -57,7 +49,7 @@
 
 - 下载安装 [AutoJs 4.1.1 alpha2 下载](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
 - 给与软件必要权限 `后台弹出界面`、`显示悬浮窗`、`自启动`，并将软件保持后台运行
-- 定时启动软件，点击 `main.js` 的菜单，选择更多 `定时任务` 即可配置定时启动
+- 定时启动脚本，点击 `main.js` 的菜单，选择 `更多` `定时任务` 即可配置定时启动
 - 如果运行提示有任务正在队列中，请运行配置 `config.js` 然后进到 `进阶配置` 中勾选 `单脚本运行`，该功能是用于多个脚本同时运行时的任务队列 相当于一个调度程序，避免多个脚本抢占前台导致出错
 
 # 配置
