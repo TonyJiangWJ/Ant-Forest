@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-26 21:05:16
+ * @Last Modified time: 2019-12-26 21:13:32
  * @Description: 
  */
 "ui";
@@ -899,7 +899,6 @@ if (!inRunningMode) {
       let blue = parseInt(progress * 255 / 100)
       let rgb = red << 16 | green << 8 | blue
       config.min_floaty_color = colors.toString(rgb)
-      log('colorText:' + config.min_floaty_color)
       ui.floatyColor.text(config.min_floaty_color)
       ui.floatyColor.setTextColor(colors.parseColor(config.min_floaty_color))
     }
