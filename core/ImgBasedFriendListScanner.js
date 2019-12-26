@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-18 19:02:20
+ * @Last Modified time: 2019-12-26 01:01:47
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
@@ -212,7 +212,11 @@ const ImgBasedFriendListScanner = function () {
   this.init = function (option) {
     this.current_time = option.currentTime || 0
     this.increased_energy = option.increasedEnergy || 0
-    this.threadPool = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(256))
+    this.createNewThreadPool()
+  }
+
+  this.createNewThreadPool = function () {
+    this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256))
   }
 
   this.start = function () {
@@ -268,7 +272,7 @@ const ImgBasedFriendListScanner = function () {
     let hasNext = true
     let that = this
     do {
-      screen = _commonFunctions.checkCaptureScreenPermission()
+      screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
       // 重新复制一份
       let tmpImg = images.copy(screen)
       grayScreen = images.grayscale(tmpImg)
@@ -379,18 +383,23 @@ const ImgBasedFriendListScanner = function () {
           }
         })
         // 等待五秒
-        if (!countdownLatch.await(5, TimeUnit.SECONDS)) {
+        if (!countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)) {
           let activeCount = this.threadPool.getActiveCount()
           errorInfo('有线程执行失败 运行中的线程数：' + activeCount)
           if (activeCount > 0) {
             debugInfo('将线程池关闭然后重建线程池')
             this.threadPool.shutdownNow()
-            this.threadPool = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(1024))
+            this.createNewThreadPool()
           }
         }
         countdown.summary('分析所有可帮助和可收取的点')
         if (collectOrHelpList && collectOrHelpList.length > 0) {
           debugInfo(['开始收集和帮助收取，总数：{}', collectOrHelpList.length])
+          if (_config.develop_mode) {
+            collectOrHelpList.forEach(target => {
+              debugInfo(JSON.stringify(target))
+            })
+          }
           let noError = true
           collectOrHelpList.forEach(point => {
             if (noError) {
@@ -527,7 +536,7 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
   if (!obj.protect) {
     let temp = this.protectDetect(_package_name)
     //automator.click(obj.target.centerX(), obj.target.centerY())
-    debugInfo('等待进入好友主页')
+    debugInfo('等待进入好友主页, 位置：「{}, {}」', obj.point.x, obj.point.y)
     let restartLoop = false
     let count = 1
     automator.click(obj.point.x, obj.point.y)

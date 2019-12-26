@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-21 12:58:40
+ * @Last Modified time: 2019-12-26 20:42:48
  * @Description: 
  */
 "ui";
@@ -30,17 +30,6 @@ let default_config = {
   min_floaty_color: '#00ff00',
   help_friend: true,
   is_cycle: false,
-  collect_self_only: false,
-  not_collect_self: false,
-  base_on_image: true,
-  // 自动判断基于图像还是基于控件识别
-  auto_set_img_or_widget: true,
-  // 是否基于图像分析是否到达底部
-  checkBottomBaseImg: true,
-  // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
-  friendListScrollTime: 30,
-  // 可收取小手指绿色像素点个数，1080P分辨率是这个数值，其他分辨率请自己修改
-  finger_img_pixels: 2300,
   cycle_times: 10,
   never_stop: false,
   reactive_time: 60,
@@ -60,6 +49,22 @@ let default_config = {
   // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
   saveLogFile: true,
   back_size: '100',
+
+  collect_self_only: false,
+  not_collect_self: false,
+  base_on_image: true,
+  // 自动判断基于图像还是基于控件识别
+  auto_set_img_or_widget: true,
+  // 是否基于图像分析是否到达底部
+  checkBottomBaseImg: true,
+  // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
+  friendListScrollTime: 30,
+  // 可收取小手指绿色像素点个数，1080P分辨率是这个数值，其他分辨率请自己修改
+  finger_img_pixels: 2300,
+  thread_pool_size: 4,
+  thread_pool_max_size: 8,
+  thread_pool_queue_size: 256,
+  thread_pool_waiting_time: 5,
   white_list: [],
 
   // 只在AutoJS中能打开，定时不能打开时 尝试开启这个 设为true
@@ -187,7 +192,7 @@ if (!inRunningMode) {
     ui.password.text(config.password + '')
     ui.alipayLockPasswordInpt.text(config.alipay_lock_password + '')
     ui.isAlipayLockedChkBox.setChecked(config.is_alipay_locked)
-    ui.alipayLockPasswordContainer.setVisibility(config.is_alipay_locked ? View.VISIBLE: View.GONE)
+    ui.alipayLockPasswordContainer.setVisibility(config.is_alipay_locked ? View.VISIBLE : View.GONE)
 
     ui.colorThresholdInput.text('' + config.color_offset)
     let precent = parseInt(config.color_offset / 255 * 100)
@@ -202,6 +207,19 @@ if (!inRunningMode) {
     ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / device.width * 100))
     ui.floatyY.text(config.min_floaty_y + '')
     ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / device.height * 100))
+    ui.colorSelectorChkBox.setChecked(false)
+    ui.colorSelectorContainer.setVisibility(View.GONE)
+    let rgbColor = colors.parseColor(config.min_floaty_color)
+    let rgbColors = {
+      red: colors.red(rgbColor),
+      green: colors.green(rgbColor),
+      blue: colors.blue(rgbColor),
+    }
+    log(config.min_floaty_color + + ' ' + rgbColor + ' color config:' + JSON.stringify(rgbColors))
+    ui.redSeekbar.setProgress(parseInt(rgbColors.red / 255) * 100)
+    ui.greenSeekbar.setProgress(parseInt(rgbColors.green / 255) * 100)
+    ui.blueSeekbar.setProgress(parseInt(rgbColors.blue / 255) * 100)
+
     ui.notLingeringFloatWindowChkBox.setChecked(config.notLingeringFloatWindow)
     ui.helpFriendChkBox.setChecked(config.help_friend)
 
@@ -249,6 +267,11 @@ if (!inRunningMode) {
     ui.autoSetImgOrWidgetChkBox.setChecked(config.auto_set_img_or_widget)
     ui.baseOnImageChkBox.setChecked(config.base_on_image)
     ui.bottomHeightInpt.text(config.bottomHeight + '')
+
+    ui.threadPoolSizeInpt.setText(config.thread_pool_size + '')
+    ui.threadPoolMaxSizeInpt.setText(config.thread_pool_max_size + '')
+    ui.threadPoolQueueSizeInpt.setText(config.thread_pool_queue_size + '')
+    ui.threadPoolWaitingTimeInpt.setText(config.thread_pool_waiting_time + '')
 
 
     ui.wateringBackChkBox.setChecked(config.wateringBack)
@@ -356,7 +379,7 @@ if (!inRunningMode) {
                     <text text="锁屏密码：" />
                     <input id="password" inputType="textPassword" layout_weight="80" />
                   </horizontal>
-                  <checkbox id="isAlipayLockedChkBox" text="支付宝是否锁定"/>
+                  <checkbox id="isAlipayLockedChkBox" text="支付宝是否锁定" />
                   <horizontal gravity="center" id="alipayLockPasswordContainer">
                     <text text="支付宝手势密码对应的九宫格数字：" textSize="10sp" />
                     <input id="alipayLockPasswordInpt" inputType="textPassword" layout_weight="80" />
@@ -364,6 +387,7 @@ if (!inRunningMode) {
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 5"></horizontal>
                   {/* 颜色识别 */}
                   <text text="颜色相似度（拖动为百分比，实际使用0-255）" textColor="black" textSize="16sp" />
+                  <button id="showThresholdConfig" >直接输入</button>
                   <horizontal gravity="center">
                     <text id="colorThresholdInput" />
                     <seekbar id="colorThresholdSeekbar" progress="20" layout_weight="85" />
@@ -372,7 +396,7 @@ if (!inRunningMode) {
                   {/* 悬浮窗配置 不再提供关闭 */}
                   <horizontal margin="10 0" gravity="center">
                     <vertical padding="12" layout_weight="75">
-                      <text text="悬浮窗颜色" textColor="black" textSize="16sp" />
+                      <checkbox id="colorSelectorChkBox" text="悬浮窗颜色" textColor="black" textSize="16sp" />
                       <input id="floatyColor" inputType="text" />
                       <text text="悬浮窗位置" textColor="black" textSize="16sp" />
                       <horizontal margin="10 0" gravity="center">
@@ -388,8 +412,23 @@ if (!inRunningMode) {
                     </vertical>
                     <vertical padding="12" layout_weight="25">
                       <button id="testFloatyPosition">测试悬浮窗</button>
+                      <button id="showFloatyPointConfig">手动输入坐标</button>
                     </vertical>
                   </horizontal>
+                  <vertical id="colorSelectorContainer" >
+                    <horizontal gravity="center">
+                      <text text="R:" />
+                      <seekbar id="redSeekbar" progress="20" layout_weight="85" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="G:" />
+                      <seekbar id="greenSeekbar" progress="20" layout_weight="85" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="B:" />
+                      <seekbar id="blueSeekbar" progress="20" layout_weight="85" />
+                    </horizontal>
+                  </vertical>
                   <text text="是否在执行完毕后不驻留前台，关闭悬浮窗" textSize="12sp" />
                   <checkbox id="notLingeringFloatWindowChkBox" text="不驻留前台" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
@@ -457,6 +496,7 @@ if (!inRunningMode) {
                         <seekbar id="lockYSeekBar" progress="20" layout_weight="80" />
                         <text id="lockY" />
                       </horizontal>
+                      <button id="showLockPointConfig" >手动输入坐标</button>
                     </vertical>
                   </horizontal>
                   {/* 是否自动设置最低亮度 */}
@@ -531,6 +571,25 @@ if (!inRunningMode) {
                   <horizontal gravity="center" id="bottomHeightContainer">
                     <text text="模拟滑动距离底部的高度，默认200即可" />
                     <input layout_weight="70" inputType="number" id="bottomHeightInpt" />
+                  </horizontal>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
+                  {/* 线程池配置 */}
+                  <text text="图像识别的线程池配置，如果过于卡顿，请调低线程池大小，同时增加线程池等待时间。" />
+                  <horizontal gravity="center">
+                    <text text="线程池大小" layout_weight="40" />
+                    <input layout_weight="60" inputType="number" id="threadPoolSizeInpt" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="线程池最大大小" layout_weight="40" />
+                    <input layout_weight="60" inputType="number" id="threadPoolMaxSizeInpt" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="线程池等待队列大小" layout_weight="40" />
+                    <input layout_weight="60" inputType="number" id="threadPoolQueueSizeInpt" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="线程池等待时间" layout_weight="40" />
+                    <input layout_weight="60" inputType="number" id="threadPoolWaitingTimeInpt" />
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 是否启用百度的OCR */}
@@ -821,6 +880,123 @@ if (!inRunningMode) {
       config.min_floaty_y = trueVal
     })
 
+
+    ui.colorSelectorChkBox.on('click', () => {
+      let show = ui.colorSelectorChkBox.isChecked()
+      if (show) {
+        ui.colorSelectorContainer.setVisibility(View.VISIBLE)
+      } else {
+        ui.colorSelectorContainer.setVisibility(View.GONE)
+      }
+    })
+
+    const resetColorTextBySelector = function () {
+      let progress = ui.redSeekbar.getProgress()
+      let red = parseInt(progress * 255 / 100)
+      progress = ui.greenSeekbar.getProgress()
+      let green = parseInt(progress * 255 / 100)
+      progress = ui.blueSeekbar.getProgress()
+      let blue = parseInt(progress * 255 / 100)
+      let rgb = red << 16 | green << 8 | blue
+      config.min_floaty_color = colors.toString(rgb)
+      log('colorText:' + config.min_floaty_color)
+      ui.floatyColor.text(config.min_floaty_color)
+      ui.floatyColor.setTextColor(colors.parseColor(config.min_floaty_color))
+    }
+
+    ui.redSeekbar.on('touch', () => {
+      resetColorTextBySelector()
+    })
+    ui.greenSeekbar.on('touch', () => {
+      resetColorTextBySelector()
+    })
+    ui.blueSeekbar.on('touch', () => {
+      resetColorTextBySelector()
+    })
+
+    ui.showThresholdConfig.on('click', () => {
+      threads.start(function () {
+        dialogs.rawInput("请输入颜色相似度（0-255）", config.color_offset + '', val => {
+          if (!val) {
+            return
+          }
+          let newVal = parseInt(val)
+          if (isFinite(newVal) && 0 <= newVal && 255 >= newVal) {
+            config.color_offset = newVal
+            ui.colorThresholdInput.text('' + config.color_offset)
+            let precent = parseInt(config.color_offset / 255 * 100)
+            ui.colorThresholdSeekbar.setProgress(precent)
+          } else {
+            toast('输入的值无效 请重新输入')
+          }
+        })
+      })
+    })
+
+    ui.showFloatyPointConfig.on('click', () => {
+      Promise.resolve().then(() => {
+        return dialogs.rawInput('请输入X坐标：', config.min_floaty_x + '')
+      }).then(x => {
+        if (x) {
+          let xVal = parseInt(x)
+          if (isFinite(xVal)) {
+            config.min_floaty_x = xVal
+          } else {
+            toast('输入值无效')
+          }
+        }
+      }).then(() => {
+        return dialogs.rawInput('请输入Y坐标：', config.min_floaty_y + '')
+      }).then(y => {
+        if (y) {
+          let yVal = parseInt(y)
+          if (isFinite(yVal)) {
+            config.min_floaty_y = yVal
+          } else {
+            toast('输入值无效')
+          }
+        }
+      }).then(() => {
+        ui.floatyX.text(config.min_floaty_x + '')
+        ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / device.width * 100))
+        ui.floatyY.text(config.min_floaty_y + '')
+        ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / device.height * 100))
+      })
+
+    })
+
+    ui.showLockPointConfig.on('click', () => {
+      Promise.resolve().then(() => {
+        return dialogs.rawInput('请输入X坐标：', config.lock_x + '')
+      }).then(x => {
+        if (x) {
+          let xVal = parseInt(x)
+          if (isFinite(xVal)) {
+            config.lock_x = xVal
+          } else {
+            toast('输入值无效')
+          }
+        }
+      }).then(() => {
+        return dialogs.rawInput('请输入Y坐标：', config.lock_y + '')
+      }).then(y => {
+        if (y) {
+          let yVal = parseInt(y)
+          if (isFinite(yVal)) {
+            config.lock_y = yVal
+          } else {
+            toast('输入值无效')
+          }
+        }
+      }).then(() => {
+        ui.lockX.text(config.lock_x + '')
+        ui.lockXSeekBar.setProgress(parseInt(config.lock_x / device.width * 100))
+        ui.lockY.text(config.lock_y + '')
+        ui.lockYSeekBar.setProgress(parseInt(config.lock_y / device.height * 100))
+      })
+
+    })
+
     ui.testFloatyPosition.on('click', () => {
       threads.start(function () {
         sleep(300)
@@ -904,14 +1080,14 @@ if (!inRunningMode) {
     ui.password.addTextChangedListener(
       TextWatcherBuilder(text => { config.password = text + '' })
     )
-    
+
     ui.alipayLockPasswordInpt.addTextChangedListener(
-      TextWatcherBuilder(text => { config.alipay_lock_password = text + ''})
+      TextWatcherBuilder(text => { config.alipay_lock_password = text + '' })
     )
 
     ui.isAlipayLockedChkBox.on('click', () => {
       config.is_alipay_locked = ui.isAlipayLockedChkBox.isChecked()
-      ui.alipayLockPasswordContainer.setVisibility(config.is_alipay_locked ? View.VISIBLE: View.GONE)
+      ui.alipayLockPasswordContainer.setVisibility(config.is_alipay_locked ? View.VISIBLE : View.GONE)
     })
 
     ui.floatyColor.addTextChangedListener(
@@ -1009,6 +1185,22 @@ if (!inRunningMode) {
 
     ui.bottomHeightInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.bottomHeight = parseInt(text) })
+    )
+
+    ui.threadPoolSizeInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.thread_pool_size = parseInt(text) })
+    )
+
+    ui.threadPoolMaxSizeInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.thread_pool_max_size = parseInt(text) })
+    )
+
+    ui.threadPoolQueueSizeInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.thread_pool_queue_size = parseInt(text) })
+    )
+
+    ui.threadPoolWaitingTimeInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.thread_pool_waiting_time = parseInt(text) })
     )
 
     ui.virtualButtonHeightInpt.addTextChangedListener(

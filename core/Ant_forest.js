@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-21 12:50:09
+ * @Last Modified time: 2019-12-26 17:38:35
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -602,20 +602,31 @@ function Ant_forest () {
     }
 
     /**
-    * 监听音量上键直接关闭
-    */
+     * 监听音量上键直接关闭 音量下延迟5分钟
+     */
     this.listenStopCollect = function () {
       this.interruptStopListenThread()
       this.stopListenThread = threads.start(function () {
         infoLog('即将收取能量，运行中可按音量上键关闭', true)
+        events.removeAllKeyUpListeners('volume_down')
         events.observeKey()
-        events.onceKeyDown('volume_up', function (event) {
-          if (_config.autoSetBrightness) {
-            device.setBrightnessMode(1)
+        events.on("key_down", function (keyCode, event) {
+          let stop = false
+          if (keyCode === 25) {
+            stop = true
+          } else if (keyCode === 24) {
+            if (_config.autoSetBrightness) {
+              device.setBrightnessMode(1)
+            }
+            warnInfo('延迟五分钟后启动脚本', true)
+            _commonFunctions.setUpAutoStart(5)
+            stop = true
           }
-          _runningQueueDispatcher.removeRunningTask()
-          engines.myEngine().forceStop()
-          exit()
+          if (stop) {
+            engines.myEngine().forceStop()
+            _runningQueueDispatcher.removeRunningTask()
+            exit()
+          }
         })
       })
     }
