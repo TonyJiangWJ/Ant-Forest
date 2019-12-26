@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-26 01:01:47
+ * @Last Modified time: 2019-12-26 21:49:08
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
@@ -535,7 +535,7 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
   if (!obj.protect) {
     let temp = this.protectDetect(_package_name)
     //automator.click(obj.target.centerX(), obj.target.centerY())
-    debugInfo('等待进入好友主页, 位置：「{}, {}」', obj.point.x, obj.point.y)
+    debugInfo(['等待进入好友主页, 位置：「{}, {}」', obj.point.x, obj.point.y])
     let restartLoop = false
     let count = 1
     automator.click(obj.point.x, obj.point.y)
