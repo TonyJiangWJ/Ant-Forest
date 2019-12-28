@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-26 21:13:32
+ * @Last Modified time: 2019-12-28 13:42:08
  * @Description: 
  */
 "ui";
@@ -120,7 +120,11 @@ let default_config = {
   watering_widget_content: '浇水',
   do_watering_button_content: '送给\\s*TA|浇水送祝福',
   using_protect_content: '使用了保护罩',
-  collectable_energy_ball_content: '收集能量\\d+克'
+  collectable_energy_ball_content: '收集能量\\d+克',
+  rank_check_left: 190,
+  rank_check_top: 230,
+  rank_check_width: 700,
+  rank_check_height: 135,
 }
 const CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let config = {}
@@ -293,6 +297,7 @@ if (!inRunningMode) {
     ui.wateringWidgetContentInpt.text(config.watering_widget_content)
     ui.doWateringWidgetContentInpt.text(config.do_watering_button_content)
     ui.usingProtectContentInpt.text(config.using_protect_content)
+    ui.rankCheckRegion.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
 
     let colorRegex = /^#[\dabcdef]{6}$/i
     let collectColor = config.can_collect_color
@@ -688,6 +693,11 @@ if (!inRunningMode) {
                   <horizontal gravity="center">
                     <text text="保护罩:" layout_weight="20" />
                     <input inputType="text" id="usingProtectContentInpt" layout_weight="80" />
+                  </horizontal>
+                  <text text="通过运行 util/悬浮窗框位置.js 可以获取对应位置信息"/>
+                  <horizontal gravity="center">
+                    <text text="校验排行榜分析范围:" layout_weight="20" />
+                    <input inputType="text" id="rankCheckRegion" layout_weight="80" />
                   </horizontal>
                   <horizontal gravity="center">
                     <text text="可收集能量球:" layout_weight="20" />
@@ -1279,6 +1289,21 @@ if (!inRunningMode) {
     )
     ui.usingProtectContentInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.using_protect_content = text + '' })
+    )
+    ui.rankCheckRegion.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        let newVal = text + ''
+        let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
+        if (regex.test(newVal)) {
+          let match = regex.exec(newVal)
+          config.rank_check_left = parseInt(match[1])
+          config.rank_check_top = parseInt(match[2])
+          config.rank_check_width = parseInt(match[3])
+          config.rank_check_height = parseInt(match[4])
+        } else {
+          toast('输入值无效')
+        }
+      })
     )
     ui.canCollectColorInpt.addTextChangedListener(
       TextWatcherBuilder(text => {

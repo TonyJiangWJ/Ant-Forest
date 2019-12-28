@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-27 07:25:42
+ * @Last Modified time: 2019-12-28 14:14:43
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
@@ -347,7 +347,7 @@ const ImgBasedFriendListScanner = function () {
                     base64String = images.toBase64(countdownImg)
                     countdownImg.recycle()
                     if (_config.saveBase64ImgInfo) {
-                      debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「{}」', point.same, base64String])
+                      debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「data:image/png;base64,{}」', point.same, base64String])
                     }
                   } catch (e) {
                     errorInfo('存储倒计时图片失败：' + e)
@@ -442,6 +442,11 @@ const ImgBasedFriendListScanner = function () {
         return true
       }
     } while (hasNext)
+    if (!_widgetUtils.friendListWaiting()) {
+      errorInfo('当前不在好友排行榜！')
+      // true is error
+      return true
+    }
     let poolWaitCount = 0
     while (this.threadPool.getActiveCount() > 0) {
       debugInfo(['当前线程池还有工作线程未结束，继续等待。运行中数量：{}', this.threadPool.getActiveCount()])
@@ -535,7 +540,15 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
   if (!obj.protect) {
     let temp = this.protectDetect(_package_name)
     //automator.click(obj.target.centerX(), obj.target.centerY())
-    debugInfo(['等待进入好友主页, 位置：「{}, {}」', obj.point.x, obj.point.y])
+    debugInfo(['等待进入好友主页, 位置：「{}, {}」设备宽高：[{}, {}]', obj.point.x, obj.point.y, device.width, device.height])
+    if (_config.develop_mode) {
+      let screen = _commonFunctions.checkCaptureScreenPermission()
+      let rangeImg = images.clip(screen, 0, obj.point.y - 32, device.width, 190)
+      let base64 = images.toBase64(rangeImg)
+      screen.recycle()
+      rangeImg.recycle()
+      debugForDev(['点击区域「{}, {}」图片信息：「data:image/png;base64,{}」', obj.point.x, obj.point.y, base64], false, true)
+    }
     let restartLoop = false
     let count = 1
     automator.click(obj.point.x, obj.point.y)

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-26 17:38:35
+ * @Last Modified time: 2019-12-28 14:03:24
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -614,6 +614,7 @@ function Ant_forest () {
           let stop = false
           if (keyCode === 25) {
             stop = true
+            warnInfo('关闭脚本', true)
           } else if (keyCode === 24) {
             if (_config.autoSetBrightness) {
               device.setBrightnessMode(1)

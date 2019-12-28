@@ -1,3 +1,10 @@
+/*
+ * @Author: TonyJiangWJ
+ * @Date: 2019-12-23 22:54:22
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2019-12-27 07:47:05
+ * @Description: 
+ */
 let FileUtils = require('../lib/FileUtils.js')
 let loadingDialog = null
 try {
@@ -78,6 +85,10 @@ let downloadingExecutor = function (backup) {
     sleep(1000)
   }
   downloader.downloadZip()
+
+  // 覆盖新的dex到lib下
+  let copy_result = files.copy(targetOutputDir + '/resources/for_update/autojs-tools.dex', targetOutputDir + '/lib/autojs-tools.dex')
+  toastLog('复制新的dex文件' + (copy_result ? '成功' : '失败'))
   downloadDialog.setContent('更新完成')
   sleep(2000)
   downloadDialog.dismiss()

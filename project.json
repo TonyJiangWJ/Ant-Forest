@@ -1,10 +1,10 @@
 {
     "name": "Custom Ant Forest autoscript",
-    "main": "main.js",
+    "main": "悬浮窗框位置.js",
     "ignore": [
         "build"
     ],
     "packageName": "com.ant-forest-autoscript",
-    "versionName": "1.2.0.11",
+    "versionName": "1.2.0.12",
     "versionCode": 1
 }
