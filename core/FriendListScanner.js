@@ -252,9 +252,9 @@ const FriendListScanner = function () {
                   let container = this.isObtainable(fri, screen, friendName)
                   if (container.canDo) {
                     container.bounds = bounds
-                    this.recordAvailableList(container)
+                    let pushed = this.recordAvailableList(container)
                     debugInfo([
-                      '可收取 fh[{}] index:[{}] name:[{}]', fh, idx, container.name
+                      '可收取 fh[{}] index:[{}] name:[{}]{}', fh, idx, container.name, pushed ? '' : ' 但是在白名单中，不收取TA'
                     ])
                   } else {
                     debugInfo([
@@ -698,7 +698,9 @@ FriendListScanner.prototype.recordAvailableList = function (container) {
   // 不在白名单的 添加到可收取列表
   if (_config.white_list.indexOf(temp.name) < 0) {
     this.avil_list.push(temp)
+    return true
   }
+  return false
 }
 
 

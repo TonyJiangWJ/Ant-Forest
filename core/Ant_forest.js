@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-28 14:03:24
+ * @Last Modified time: 2019-12-29 11:58:20
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -608,14 +608,15 @@ function Ant_forest () {
       this.interruptStopListenThread()
       this.stopListenThread = threads.start(function () {
         infoLog('即将收取能量，运行中可按音量上键关闭', true)
-        events.removeAllKeyUpListeners('volume_down')
+        events.removeAllKeyDownListeners('volume_down')
         events.observeKey()
         events.on("key_down", function (keyCode, event) {
           let stop = false
-          if (keyCode === 25) {
+          if (keyCode === 24) {
             stop = true
             warnInfo('关闭脚本', true)
-          } else if (keyCode === 24) {
+            _commonFunctions.cancelAllTimedTasks()
+          } else if (keyCode === 25) {
             if (_config.autoSetBrightness) {
               device.setBrightnessMode(1)
             }
@@ -624,8 +625,8 @@ function Ant_forest () {
             stop = true
           }
           if (stop) {
-            engines.myEngine().forceStop()
             _runningQueueDispatcher.removeRunningTask()
+            engines.myEngine().forceStop()
             exit()
           }
         })
