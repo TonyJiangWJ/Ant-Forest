@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-21 12:11:55
+ * @Last Modified time: 2019-12-30 04:40:25
  * @Description: 排行榜扫描基类
  */
 
@@ -144,34 +144,42 @@ const BaseScanner = function () {
   }
 
   // 判断并记录保护罩
-  this.recordProtected = function (toast) {
+  this.recordProtected = function (toast, name) {
     if (toast.indexOf('能量罩') > 0) {
-      this.recordCurrentProtected()
+      this.recordCurrentProtected(name)
     }
   }
 
-  this.recordCurrentProtected = function () {
+  this.recordCurrentProtected = function (name) {
+    if (name) {
+      _commonFunctions.addNameToProtect(title[1])
+      return
+    }
     let title = textContains('的蚂蚁森林')
       .findOne(_config.timeout_findOne)
-      .text()
-    _commonFunctions.addNameToProtect(title.substring(0, title.indexOf('的')))
+      .text().match(/(.*)的蚂蚁森林/)
+    if (title) {
+      _commonFunctions.addNameToProtect(title[1])
+    } else {
+      errorInfo(['获取好友名称失败，无法加入保护罩列表，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
+    }
   }
 
   // 检测能量罩
-  this.protectDetect = function (filter) {
+  this.protectDetect = function (filter, name) {
     filter = typeof filter == null ? '' : filter
     let that = this
     // 在新线程中开启监听
     return threads.start(function () {
       events.onToast(function (toast) {
         if (toast.getPackageName().indexOf(filter) >= 0) {
-          that.recordProtected(toast.getText())
+          that.recordProtected(toast.getText(), name)
         }
       })
     })
   }
 
-  this.protectInfoDetect = function () {
+  this.protectInfoDetect = function (name) {
     let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 50, true, true)
     if (usingInfo !== null) {
       let target = usingInfo.target
@@ -215,7 +223,7 @@ const BaseScanner = function () {
         }
       }
       debugInfo(['using time:{}-{} rows: yesterday[{}] target[{}]', (isToday ? '今天' : '昨天'), time, yesterdayRow, targetRow], true)
-      this.recordCurrentProtected()
+      this.recordCurrentProtected(name)
       return true
     } else {
       debugInfo('not found using protect info')

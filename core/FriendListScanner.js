@@ -445,7 +445,6 @@ FriendListScanner.prototype.whetherFriendListValidLength = function (friends_lis
 FriendListScanner.prototype.collectTargetFriend = function (obj) {
   let rentery = false
   if (!obj.protect) {
-    let temp = this.protectDetect(_package_name)
     //automator.click(obj.target.centerX(), obj.target.centerY())
     debugInfo('等待进入好友主页：' + obj.name)
     let restartLoop = false
@@ -468,13 +467,13 @@ FriendListScanner.prototype.collectTargetFriend = function (obj) {
       errorInfo('页面流程出错，重新开始')
       return false
     }
-    if (this.protectInfoDetect()) {
+    if (this.protectInfoDetect(obj.name)) {
       warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
       automator.back()
       return
     }
     debugInfo('准备开始收取')
-
+    let temp = this.protectDetect(_package_name, obj.name)
     let preGot
     let preE
     try {

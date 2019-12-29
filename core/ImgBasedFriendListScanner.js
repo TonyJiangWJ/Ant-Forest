@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-28 14:14:43
+ * @Last Modified time: 2019-12-30 04:36:20
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
@@ -538,7 +538,6 @@ ImgBasedFriendListScanner.prototype.returnToListAndCheck = function () {
 ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
   let rentery = false
   if (!obj.protect) {
-    let temp = this.protectDetect(_package_name)
     //automator.click(obj.target.centerX(), obj.target.centerY())
     debugInfo(['等待进入好友主页, 位置：「{}, {}」设备宽高：[{}, {}]', obj.point.x, obj.point.y, device.width, device.height])
     if (_config.develop_mode) {
@@ -571,8 +570,13 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
     }
     let title = textContains('的蚂蚁森林')
       .findOne(_config.timeout_findOne)
-      .text()
-    obj.name = title.substring(0, title.indexOf('的'))
+      .text().match(/(.*)的蚂蚁森林/)
+    if (title) {
+      obj.name = title[1]
+      debugInfo(['进入好友[{}]首页成功', obj.name])
+    } else {
+      errorInfo(['获取好友名称失败，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
+    }
     let skip = false
     if (!skip && _config.white_list && _config.white_list.indexOf(obj.name) >= 0) {
       debugInfo(['{} 在白名单中不收取他', obj.name])
@@ -582,7 +586,7 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
       debugInfo(['{} 使用了保护罩 不收取他'])
       skip = true
     }
-    if (!skip && this.protectInfoDetect()) {
+    if (!skip && this.protectInfoDetect(obj.name)) {
       warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
       skip = true
     }
@@ -590,7 +594,7 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
       return this.returnToListAndCheck()
     }
     debugInfo('准备开始收取')
-
+    let temp = this.protectDetect(_package_name, obj.name)
     let preGot
     let preE
     try {
