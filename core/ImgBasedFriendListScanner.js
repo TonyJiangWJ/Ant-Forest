@@ -542,11 +542,13 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
     debugInfo(['等待进入好友主页, 位置：「{}, {}」设备宽高：[{}, {}]', obj.point.x, obj.point.y, device.width, device.height])
     if (_config.develop_mode) {
       let screen = _commonFunctions.checkCaptureScreenPermission()
-      let rangeImg = images.clip(screen, 0, obj.point.y - 32, device.width, 190)
+      let startY = obj.point.y - 32
+      let height = device.height - startY > 190 ? 190 : device.height - startY - 1
+      let rangeImg = images.clip(screen, 0, startY, device.width, height)
       let base64 = images.toBase64(rangeImg)
       screen.recycle()
       rangeImg.recycle()
-      debugForDev(['点击区域「{}, {}」图片信息：「data:image/png;base64,{}」', obj.point.x, obj.point.y, base64], false, true)
+      debugForDev(['点击区域「{}, {}」startY:{} 图片信息：「data:image/png;base64,{}」', obj.point.x, obj.point.y, startY, base64], false, true)
     }
     let restartLoop = false
     let count = 1

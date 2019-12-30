@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-29 11:58:20
+ * @Last Modified time: 2019-12-30 09:34:39
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -769,6 +769,7 @@ function Ant_forest () {
         if (_lost_someone) {
           warnInfo('上一次收取有漏收，再次收集', true)
         } else {
+          debugInfo(['获取到的倒计时时间：{}', _min_countdown])
           if (_min_countdown > 0) {
             // 提前10秒左右结束计时
             let delayTime = 10 / 60.0

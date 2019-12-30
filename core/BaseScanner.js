@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-30 04:40:25
+ * @Last Modified time: 2019-12-30 13:23:48
  * @Description: 排行榜扫描基类
  */
 
@@ -212,9 +212,11 @@ const BaseScanner = function () {
           }
         }
         let timeRe = /(\d{2}:\d{2})/
-        if (timeRe.test(time)) {
-          time = timeRe.exec(time)[1]
-          let compare = new Date('1999/01/01 ' + time)
+        let match = timeRe.exec(time)
+        let usingTime = null
+        if (match) {
+          usingTime = match[1]
+          let compare = new Date('1999/01/01 ' + usingTime)
           let usingFlag = compare.getHours() * 60 + compare.getMinutes()
           let now = new Date().getHours() * 60 + new Date().getMinutes()
           if (usingFlag < now) {
@@ -222,7 +224,7 @@ const BaseScanner = function () {
           }
         }
       }
-      debugInfo(['using time:{}-{} rows: yesterday[{}] target[{}]', (isToday ? '今天' : '昨天'), time, yesterdayRow, targetRow], true)
+      debugInfo(['using time:{}-{} rows: yesterday[{}] target[{}]', (isToday ? '今天' : '昨天'), usingTime || time, yesterdayRow, targetRow], true)
       this.recordCurrentProtected(name)
       return true
     } else {
