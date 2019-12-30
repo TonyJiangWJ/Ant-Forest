@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-30 13:23:48
+ * @Last Modified time: 2019-12-30 13:49:18
  * @Description: 排行榜扫描基类
  */
 
@@ -152,7 +152,7 @@ const BaseScanner = function () {
 
   this.recordCurrentProtected = function (name) {
     if (name) {
-      _commonFunctions.addNameToProtect(title[1])
+      _commonFunctions.addNameToProtect(name)
       return
     }
     let title = textContains('的蚂蚁森林')
