@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-30 09:34:39
+ * @Last Modified time: 2019-12-31 09:12:02
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -261,33 +261,8 @@ function Ant_forest () {
   // 确定下一次收取倒计时
   const getMinCountdown = function () {
     let countDownNow = calculateMinCountdown()
-    // 如果有收集过能量，那么先返回主页在进入排行榜，以获取最新的倒计时信息，避免收集过的倒计时信息不刷新，此过程可能导致执行过慢
-    if (_collect_any) {
-      /** TODO 暂时屏蔽
-      if (!isFinite(countDownNow) || countDownNow >= 2) {
-        debugInfo('收集过能量，重新获取倒计时列表，原倒计时时间：[' + countDownNow + ']分')
-        automator.clickBack()
-        _widgetUtils.homePageWaiting()
-        automator.enterFriendList()
-        _widgetUtils.friendListWaiting()
-        _widgetUtils.quickScrollDown()
-        sleep(100)
-        // 再次获取倒计时数据
-        let newCountDown = calculateMinCountdown(countDownNow, new Date())
-        debugInfo('第二次获取倒计时时间:[' + newCountDown + ']分')
-        if (isFinite(countDownNow)) {
-          countDownNow = (isFinite(newCountDown) && newCountDown < countDownNow) ? newCountDown : countDownNow
-        } else {
-          countDownNow = newCountDown
-        }
-      } else {
-        debugInfo('当前倒计时时间短，无需再次获取')
-      }
-       */
-    } else {
-      debugInfo('未收集能量直接获取倒计时列表')
-    }
     _min_countdown = isFinite(countDownNow) ? countDownNow : _min_countdown
+    logInfo(['获取最终倒计时时间：{}', _min_countdown])
   }
 
   const calculateMinCountdown = function (lastMin, lastTimestamp) {
@@ -586,6 +561,8 @@ function Ant_forest () {
       errorInfo('收集好友能量失败，重新开始')
       _re_try++
       return false
+    } else {
+      _re_try = 0
     }
     _commonFunctions.addClosePlacehold("收集好友能量结束")
   }

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-28 13:42:08
+ * @Last Modified time: 2019-12-30 16:40:51
  * @Description: 
  */
 "ui";
@@ -448,13 +448,16 @@ if (!inRunningMode) {
                     </horizontal>
                   </horizontal>
                   {/* 是否永不停止 */}
-                  <horizontal gravity="center" id="neverStopContainer">
-                    <checkbox id="isNeverStopChkBox" text="是否永不停止" />
-                    <horizontal padding="10 0" id="reactiveTimeContainer" gravity="center" layout_weight="75">
-                      <text margin="10 0" text="重新激活时间：" layout_weight="40" />
-                      <input id="reactiveTimeInpt" textSize="14sp" layout_weight="60" />
+                  <vertical id="neverStopContainer">
+                    <text text="永不停止模式请不要全天24小时运行，具体见README.md"/>
+                    <horizontal gravity="center">
+                      <checkbox id="isNeverStopChkBox" text="是否永不停止" />
+                      <horizontal padding="10 0" id="reactiveTimeContainer" gravity="center" layout_weight="75">
+                        <text margin="10 0" text="重新激活时间：" layout_weight="40" />
+                        <input id="reactiveTimeInpt" textSize="14sp" layout_weight="60" />
+                      </horizontal>
                     </horizontal>
-                  </horizontal>
+                  </vertical>
                   <vertical id="countdownContainer">
                     <horizontal gravity="center" >
                       <text text="计时最大等待时间:" />
