@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-30 13:49:18
+ * @Last Modified time: 2019-12-31 21:46:07
  * @Description: 排行榜扫描基类
  */
 
@@ -183,6 +183,7 @@ const BaseScanner = function () {
     let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 50, true, true)
     if (usingInfo !== null) {
       let target = usingInfo.target
+      let usingTime = null
       debugInfo(['found using protect info, bounds:{}', target.bounds()], true)
       let parent = target.parent().parent()
       let targetRow = parent.row()
@@ -213,7 +214,6 @@ const BaseScanner = function () {
         }
         let timeRe = /(\d{2}:\d{2})/
         let match = timeRe.exec(time)
-        let usingTime = null
         if (match) {
           usingTime = match[1]
           let compare = new Date('1999/01/01 ' + usingTime)
