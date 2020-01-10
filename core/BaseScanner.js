@@ -150,16 +150,16 @@ const BaseScanner = function () {
     }
   }
 
-  this.recordCurrentProtected = function (name) {
+  this.recordCurrentProtected = function (name, timeout) {
     if (name) {
-      _commonFunctions.addNameToProtect(name)
+      _commonFunctions.addNameToProtect(name, timeout)
       return
     }
     let title = textContains('的蚂蚁森林')
       .findOne(_config.timeout_findOne)
       .text().match(/(.*)的蚂蚁森林/)
     if (title) {
-      _commonFunctions.addNameToProtect(title[1])
+      _commonFunctions.addNameToProtect(title[1], timeout)
     } else {
       errorInfo(['获取好友名称失败，无法加入保护罩列表，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
     }
@@ -225,7 +225,9 @@ const BaseScanner = function () {
         }
       }
       debugInfo(['using time:{}-{} rows: yesterday[{}] target[{}]', (isToday ? '今天' : '昨天'), usingTime || time, yesterdayRow, targetRow], true)
-      this.recordCurrentProtected(name)
+      let timeout = isToday ? new Date(formatDate(new Date(new Date().getTime() + 24 * 3600000), 'yyyy/MM/dd ') + usingTime)
+        : new Date(formatDate(new Date(), 'yyyy/MM/dd ') + usingTime)
+      this.recordCurrentProtected(name, timeout)
       return true
     } else {
       debugInfo('not found using protect info')

@@ -2,26 +2,13 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-23 22:54:22
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-27 07:47:05
+ * @Last Modified time: 2020-01-10 17:08:34
  * @Description: 
  */
+
+runtime.loadDex('../lib/autojs-tools.dex')
 let FileUtils = require('../lib/FileUtils.js')
 let loadingDialog = null
-try {
-  importClass(com.tony.DownloaderListener)
-} catch (e) {
-  toastLog('未载入dex, 请稍等')
-  loadingDialog = dialogs.build({
-    title: '正在加载dex',
-    content: '请稍等...'
-  }).show()
-  runtime.loadDex('../lib/autojs-tools.dex')
-  loadingDialog.setContent('加载完成！')
-  sleep(1000)
-  loadingDialog.dismiss()
-  engines.execScriptFile(engines.myEngine().getSource())
-  exit()
-}
 
 importClass(com.tony.Downloader)
 importClass(com.tony.DownloaderListener)

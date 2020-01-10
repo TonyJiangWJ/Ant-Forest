@@ -745,6 +745,8 @@ function Ant_forest () {
         _collect_any = false
         if (_lost_someone) {
           warnInfo('上一次收取有漏收，再次收集', true)
+          automator.back()
+          _commonFunctions.getAndUpdateSpringboard('lost_someone')
         } else {
           debugInfo(['获取到的倒计时时间：{}', _min_countdown])
           if (_min_countdown > 0) {

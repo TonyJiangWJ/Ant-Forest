@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-30 16:40:51
+ * @Last Modified time: 2020-01-09 11:00:38
  * @Description: 
  */
 "ui";
@@ -153,6 +153,7 @@ if (!inRunningMode) {
   // 传递给commonFunction 避免二次引用config.js
   const storage_name = CONFIG_STORAGE_NAME
   let commonFunctions = require('./lib/CommonFunction.js')
+  let AesUtil = require('./lib/AesUtil.js')
   // 初始化list 为全局变量
   let whiteList = [], wateringBlackList = [], helpBallColorList = []
   const setScrollDownUiVal = function () {
@@ -449,7 +450,7 @@ if (!inRunningMode) {
                   </horizontal>
                   {/* 是否永不停止 */}
                   <vertical id="neverStopContainer">
-                    <text text="永不停止模式请不要全天24小时运行，具体见README.md"/>
+                    <text text="永不停止模式请不要全天24小时运行，具体见README" />
                     <horizontal gravity="center">
                       <checkbox id="isNeverStopChkBox" text="是否永不停止" />
                       <horizontal padding="10 0" id="reactiveTimeContainer" gravity="center" layout_weight="75">
@@ -697,7 +698,7 @@ if (!inRunningMode) {
                     <text text="保护罩:" layout_weight="20" />
                     <input inputType="text" id="usingProtectContentInpt" layout_weight="80" />
                   </horizontal>
-                  <text text="通过运行 util/悬浮窗框位置.js 可以获取对应位置信息"/>
+                  <text text="通过运行 util/悬浮窗框位置.js 可以获取对应位置信息" />
                   <horizontal gravity="center">
                     <text text="校验排行榜分析范围:" layout_weight="20" />
                     <input inputType="text" id="rankCheckRegion" layout_weight="80" />
@@ -746,9 +747,16 @@ if (!inRunningMode) {
     // 创建选项菜单(右上角)
     ui.emitter.on("create_options_menu", menu => {
       menu.add("全部重置为默认")
+      menu.add("从配置文件中读取")
+      menu.add("将配置导出")
+      menu.add("导出运行时数据")
+      menu.add("导入运行时数据")
     })
     // 监听选项菜单点击
     ui.emitter.on("options_item_selected", (e, item) => {
+      let local_config_path = files.cwd() + '/local_config.cfg'
+      let runtime_store_path = files.cwd() + '/runtime_store.cfg'
+      let aesKey = device.getAndroidId()
       switch (item.getTitle()) {
         case "全部重置为默认":
           confirm('确定要将所有配置重置为默认值吗？').then(ok => {
@@ -759,6 +767,120 @@ if (!inRunningMode) {
                 storageConfig.put(key, defaultValue)
               })
               resetUiValues()
+            }
+          })
+          break
+        case "从配置文件中读取":
+          confirm('确定要从local_config.cfg中读取配置吗？').then(ok => {
+            if (ok) {
+              try {
+                if (files.exists(local_config_path)) {
+                  const refillConfigs = function (configStr) {
+                    let local_config = JSON.parse(configStr)
+                    Object.keys(default_config).forEach(key => {
+                      let defaultValue = local_config[key]
+                      if (typeof defaultValue === 'undefined') {
+                        defaultValue = default_config[key]
+                      }
+                      config[key] = defaultValue
+                      storageConfig.put(key, defaultValue)
+                    })
+                    resetUiValues()
+                  }
+                  let configStr = AesUtil.decrypt(files.read(local_config_path), aesKey)
+                  if (!configStr) {
+                    toastLog('local_config.cfg解密失败, 请尝试输入秘钥')
+                    dialogs.rawInput('请输入秘钥，可通过device.getAndroidId()获取')
+                      .then(key => {
+                        if (key) {
+                          key = key.trim()
+                          configStr = AesUtil.decrypt(files.read(local_config_path), key)
+                          if (configStr) {
+                            refillConfigs(configStr)
+                          } else {
+                            toastLog('秘钥不正确，无法解析')
+                          }
+                        }
+                      })
+                  } else {
+                    refillConfigs(configStr)
+                  }
+                } else {
+                  toastLog('local_config.cfg不存在无法导入')
+                }
+              } catch (e) {
+                toastLog(e)
+              }
+            }
+          })
+          break
+        case "将配置导出":
+          confirm('确定要将配置导出到local_config.cfg吗？此操作会覆盖已有的local_config数据').then(ok => {
+            if (ok) {
+              Object.keys(default_config).forEach(key => {
+                console.verbose(key + ': ' + config[key])
+              })
+              try {
+                let configString = AesUtil.encrypt(JSON.stringify(config), aesKey)
+                files.write(local_config_path, configString)
+                toastLog('配置信息导出成功，刷新目录即可，local_config.cfg内容已加密仅本机可用，除非告知秘钥')
+              } catch (e) {
+                toastLog(e)
+              }
+
+            }
+          })
+          break
+        case "导出运行时数据":
+          confirm('确定要将运行时数据导出到runtime_store.cfg吗？此操作会覆盖已有的数据').then(ok => {
+            if (ok) {
+              try {
+                let runtimeStorageStr = AesUtil.encrypt(commonFunctions.exportRuntimeStorage(), aesKey)
+                files.write(runtime_store_path, runtimeStorageStr)
+              } catch (e) {
+                toastLog(e)
+              }
+            }
+          })
+          break
+        case "导入运行时数据":
+          confirm('确定要将从runtime_store.cfg导入运行时数据吗？此操作会覆盖已有的数据').then(ok => {
+            if (ok) {
+              if (files.exists(runtime_store_path)) {
+                let encrypt_content = files.read(runtime_store_path)
+                const resetRuntimeStore = function (runtimeStorageStr) {
+                  if (commonFunctions.importRuntimeStorage(runtimeStorageStr)) {
+                    resetUiValues()
+                    return true
+                  }
+                  toastLog('导入运行配置失败，无法读取正确信息')
+                  return false
+                }
+                try {
+                  let decrypt = AesUtil.decrypt(encrypt_content, aesKey)
+                  if (!decrypt) {
+                    toastLog('runtime_store.cfg解密失败, 请尝试输入秘钥')
+                    dialogs.rawInput('请输入秘钥，可通过device.getAndroidId()获取')
+                      .then(key => {
+                        if (key) {
+                          key = key.trim()
+                          decrypt = AesUtil.decrypt(encrypt_content, key)
+                          if (decrypt) {
+                            resetRuntimeStore(decrypt)
+                          } else {
+                            toastLog('秘钥不正确，无法解析')
+                          }
+                        }
+                      })
+                  } else {
+                    resetRuntimeStore(decrypt)
+                  }
+                } catch (e) {
+                  toastLog(e)
+                }
+              } else {
+                toastLog('配置信息不存在，无法导入')
+              }
             }
           })
           break
