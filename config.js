@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-09 11:00:38
+ * @Last Modified time: 2020-01-12 20:57:23
  * @Description: 
  */
 "ui";
@@ -125,6 +125,8 @@ let default_config = {
   rank_check_top: 230,
   rank_check_width: 700,
   rank_check_height: 135,
+  device_width: device.width,
+  device_height: device.height
 }
 const CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let config = {}
@@ -142,6 +144,10 @@ if (typeof config.collectable_energy_ball_content !== 'string') {
 }
 
 if (!inRunningMode) {
+  if (config.device_height === 0 || config.device_width === 0) {
+    toastLog('请先运行config.js并输入设备宽高')
+    exit()
+  }
   module.exports = {
     config: config,
     default_config: default_config,
@@ -188,6 +194,36 @@ if (!inRunningMode) {
     ui.useOcrContainer.setVisibility(config.useOcr ? View.VISIBLE : View.GONE)
   }
 
+  const inputDeviceSize = function () {
+    return Promise.resolve().then(() => {
+      return dialogs.rawInput('请输入设备宽度：', config.device_width + '')
+    }).then(x => {
+      if (x) {
+        let xVal = parseInt(x)
+        if (isFinite(xVal) && xVal > 0) {
+          config.device_width = xVal
+        } else {
+          toast('输入值无效')
+        }
+      }
+    }).then(() => {
+      return dialogs.rawInput('请输入设备高度：', config.device_height + '')
+    }).then(y => {
+      if (y) {
+        let yVal = parseInt(y)
+        if (isFinite(yVal) && yVal > 0) {
+          config.device_height = yVal
+        } else {
+          toast('输入值无效')
+        }
+      }
+    })
+  }
+
+  const setDeviceSizeText = function () {
+    ui.deviceSizeText.text(config.device_width + 'px ' + config.device_height + 'px')
+  }
+
   const resetUiValues = function () {
     // 重置为默认
     whiteList = []
@@ -209,9 +245,9 @@ if (!inRunningMode) {
       ui.floatyColor.setTextColor(colors.parseColor(configColor))
     }
     ui.floatyX.text(config.min_floaty_x + '')
-    ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / device.width * 100))
+    ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / config.device_width * 100))
     ui.floatyY.text(config.min_floaty_y + '')
-    ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / device.height * 100))
+    ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / config.device_height * 100))
     ui.colorSelectorChkBox.setChecked(false)
     ui.colorSelectorContainer.setVisibility(View.GONE)
     let rgbColor = colors.parseColor(config.min_floaty_color)
@@ -247,9 +283,9 @@ if (!inRunningMode) {
     ui.requestCapturePermissionChkBox.setChecked(config.request_capture_permission)
 
     ui.lockX.text(config.lock_x + '')
-    ui.lockXSeekBar.setProgress(parseInt(config.lock_x / device.width * 100))
+    ui.lockXSeekBar.setProgress(parseInt(config.lock_x / config.device_width * 100))
     ui.lockY.text(config.lock_y + '')
-    ui.lockYSeekBar.setProgress(parseInt(config.lock_y / device.height * 100))
+    ui.lockYSeekBar.setProgress(parseInt(config.lock_y / config.device_height * 100))
     ui.autoLockChkBox.setChecked(config.auto_lock)
     ui.lockPositionContainer.setVisibility(config.auto_lock && !_hasRootPermission ? View.VISIBLE : View.INVISIBLE)
     ui.lockDescNoRoot.setVisibility(!_hasRootPermission ? View.VISIBLE : View.INVISIBLE)
@@ -340,6 +376,7 @@ if (!inRunningMode) {
     }
     ui.helpBallColorsList.setDataSource(helpBallColorList)
 
+    setDeviceSizeText()
   }
   let loadingDialog = null
   threads.start(function () {
@@ -389,6 +426,12 @@ if (!inRunningMode) {
                   <horizontal gravity="center" id="alipayLockPasswordContainer">
                     <text text="支付宝手势密码对应的九宫格数字：" textSize="10sp" />
                     <input id="alipayLockPasswordInpt" inputType="textPassword" layout_weight="80" />
+                  </horizontal>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 5"></horizontal>
+                  <horizontal gravity="center">
+                    <text text="设备宽高：" textColor="black" textSize="16sp" />
+                    <text id="deviceSizeText" text="" />
+                    <button id="changeDeviceSizeBtn" >修改</button>
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 5"></horizontal>
                   {/* 颜色识别 */}
@@ -749,8 +792,8 @@ if (!inRunningMode) {
       menu.add("全部重置为默认")
       menu.add("从配置文件中读取")
       menu.add("将配置导出")
-      menu.add("导出运行时数据")
       menu.add("导入运行时数据")
+      menu.add("导出运行时数据")
     })
     // 监听选项菜单点击
     ui.emitter.on("options_item_selected", (e, item) => {
@@ -891,7 +934,11 @@ if (!inRunningMode) {
 
     ui.viewpager.setTitles(['基本配置', '进阶配置', '控件文本配置'])
     ui.tabs.setupWithViewPager(ui.viewpager)
-    resetUiValues()
+    if (config.device_height === 0 || config.device_width === 0) {
+      inputDeviceSize().then(() => resetUiValues())
+    } else {
+      resetUiValues()
+    }
     // 列表监听
     ui.whiteList.on('item_bind', function (itemView, itemHolder) {
       // 绑定删除事件
@@ -1003,14 +1050,14 @@ if (!inRunningMode) {
 
     ui.floatyXSeekBar.on('touch', () => {
       let precent = ui.floatyXSeekBar.getProgress()
-      let trueVal = parseInt(precent * device.width / 100)
+      let trueVal = parseInt(precent * config.device_width / 100)
       ui.floatyX.text('' + trueVal)
       config.min_floaty_x = trueVal
     })
 
     ui.floatyYSeekBar.on('touch', () => {
       let precent = ui.floatyYSeekBar.getProgress()
-      let trueVal = parseInt(precent * device.height / 100)
+      let trueVal = parseInt(precent * config.device_height / 100)
       ui.floatyY.text('' + trueVal)
       config.min_floaty_y = trueVal
     })
@@ -1046,6 +1093,10 @@ if (!inRunningMode) {
     })
     ui.blueSeekbar.on('touch', () => {
       resetColorTextBySelector()
+    })
+
+    ui.changeDeviceSizeBtn.on('click', () => {
+      inputDeviceSize().then(() => setDeviceSizeText())
     })
 
     ui.showThresholdConfig.on('click', () => {
@@ -1092,9 +1143,9 @@ if (!inRunningMode) {
         }
       }).then(() => {
         ui.floatyX.text(config.min_floaty_x + '')
-        ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / device.width * 100))
+        ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / config.device_width * 100))
         ui.floatyY.text(config.min_floaty_y + '')
-        ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / device.height * 100))
+        ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / config.device_height * 100))
       })
 
     })
@@ -1124,9 +1175,9 @@ if (!inRunningMode) {
         }
       }).then(() => {
         ui.lockX.text(config.lock_x + '')
-        ui.lockXSeekBar.setProgress(parseInt(config.lock_x / device.width * 100))
+        ui.lockXSeekBar.setProgress(parseInt(config.lock_x / config.device_width * 100))
         ui.lockY.text(config.lock_y + '')
-        ui.lockYSeekBar.setProgress(parseInt(config.lock_y / device.height * 100))
+        ui.lockYSeekBar.setProgress(parseInt(config.lock_y / config.device_height * 100))
       })
 
     })
@@ -1199,14 +1250,14 @@ if (!inRunningMode) {
 
     ui.lockXSeekBar.on('touch', () => {
       let precent = ui.lockXSeekBar.getProgress()
-      let trueVal = parseInt(precent * device.width / 100)
+      let trueVal = parseInt(precent * config.device_width / 100)
       ui.lockX.text('' + trueVal)
       config.lock_x = trueVal
     })
 
     ui.lockYSeekBar.on('touch', () => {
       let precent = ui.lockYSeekBar.getProgress()
-      let trueVal = parseInt(precent * device.height / 100)
+      let trueVal = parseInt(precent * config.device_height / 100)
       ui.lockY.text('' + trueVal)
       config.lock_y = trueVal
     })

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-10 19:06:07
+ * @Last Modified time: 2020-01-12 20:12:49
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
@@ -58,9 +58,9 @@ const Stack = function () {
   }
 }
 
-const SCALE_RATE = device.width / 1080
+const SCALE_RATE = _config.device_width / 1080
 const ANALYZE_WIDTH = parseInt(200 * SCALE_RATE)
-const BIT_MAX_VAL = device.height << 8 | ANALYZE_WIDTH
+const BIT_MAX_VAL = _config.device_height << 8 | ANALYZE_WIDTH
 debugInfo(['初始化 BitMap最大值为:{} 小手分析宽度:{} 缩放比例：{}', BIT_MAX_VAL, ANALYZE_WIDTH, SCALE_RATE])
 // 计算中心点
 function ColorRegionCenterCalculator (img, point, threshold) {
@@ -92,9 +92,9 @@ function ColorRegionCenterCalculator (img, point, threshold) {
    */
   this.getColorRegionCenter = function () {
     let maxX = -1
-    let minX = device.width + 10
+    let minX = _config.device_width + 10
     let maxY = -1
-    let minY = device.height + 10
+    let minY = _config.device_height + 10
     debugInfo(['准备获取[{}]的同色[{}]点区域', JSON.stringify(this.point), colors.toString(this.color)])
     let nearlyColorPoints = this.getAllColorRegionPoints()
     if (nearlyColorPoints && nearlyColorPoints.length > 0) {
@@ -131,8 +131,8 @@ function ColorRegionCenterCalculator (img, point, threshold) {
 
 
   this.isOutofScreen = function (point) {
-    let width = device.width
-    let height = device.height
+    let width = _config.device_width
+    let height = _config.device_height
     if (point.x >= width || point.x < 0 || point.y < 0 || point.y >= height) {
       return true
     }
@@ -183,7 +183,7 @@ function ColorRegionCenterCalculator (img, point, threshold) {
   }
 
   this.isUncheckedBitJava = function (point) {
-    let x_start = device.width - ANALYZE_WIDTH
+    let x_start = _config.device_width - ANALYZE_WIDTH
     if (point.x < x_start) {
       return false
     }
@@ -256,7 +256,7 @@ const ImgBasedFriendListScanner = function () {
 
   this.reachBottom = function (grayImg) {
     let virtualButtonHeight = _config.virtualButtonHeight || 0
-    let height = device.height - virtualButtonHeight
+    let height = _config.device_height - virtualButtonHeight
     for (let startY = 5; startY < 50; startY++) {
       let colorGreen = grayImg.getBitmap().getPixel(10, height - startY) >> 8 & 0xFF
       if (Math.abs(colorGreen - 245) > 4) {
@@ -504,9 +504,9 @@ const ImgBasedFriendListScanner = function () {
     let movingY = parseInt(200 * SCALE_RATE)
     let movingX = parseInt(100 * SCALE_RATE)
     // 预留70左右的高度
-    let endY = device.height - movingY - 70 * SCALE_RATE
+    let endY = _config.device_height - movingY - 70 * SCALE_RATE
     let runningY = 440 * SCALE_RATE
-    let startX = device.width - movingX
+    let startX = _config.device_width - movingX
     let regionWindow = []
     let findColorPoints = []
     let countdown = new Countdown()
@@ -556,12 +556,12 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
   let rentery = false
   if (!obj.protect) {
     //automator.click(obj.target.centerX(), obj.target.centerY())
-    debugInfo(['等待进入好友主页, 位置：「{}, {}」设备宽高：[{}, {}]', obj.point.x, obj.point.y, device.width, device.height])
+    debugInfo(['等待进入好友主页, 位置：「{}, {}」设备宽高：[{}, {}]', obj.point.x, obj.point.y, _config.device_width, _config.device_height])
     if (_config.develop_mode) {
       let screen = _commonFunctions.checkCaptureScreenPermission()
       let startY = obj.point.y - 32
-      let height = device.height - startY > 190 ? 190 : device.height - startY - 1
-      let rangeImg = images.clip(screen, 0, startY, device.width, height)
+      let height = _config.device_height - startY > 190 ? 190 : _config.device_height - startY - 1
+      let rangeImg = images.clip(screen, 0, startY, _config.device_width, height)
       let base64 = images.toBase64(rangeImg)
       screen.recycle()
       rangeImg.recycle()

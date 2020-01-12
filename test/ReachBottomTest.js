@@ -2,13 +2,13 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-12 19:18:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-16 16:14:26
+ * @Last Modified time: 2020-01-12 20:14:52
  * @Description: 
  */
 requestScreenCapture()
 
 const reachBottom = function (grayImg) {
-  let height = device.height
+  let height = _config.device_height
   log('设备高度：' + height)
   for (let startY = 1; startY < 50; startY++) {
     let colorGreen = grayImg.getBitmap().getPixel(10, height - startY) >> 8 & 0xFF
