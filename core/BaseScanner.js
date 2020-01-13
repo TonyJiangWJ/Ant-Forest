@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-31 21:46:07
+ * @Last Modified time: 2020-01-13 08:51:37
  * @Description: 排行榜扫描基类
  */
 
@@ -117,7 +117,7 @@ const BaseScanner = function () {
               threshold: threshold
             })
             && !images.findColor(screen, _config.waterBallColor || '#d1971a', {
-              region: [o_x, o_center_h, o_w, parseInt(o_center_h / 2)],
+              region: [o_x, o_y + parseInt(o_center_h / 2), o_w, o_center_h],
               threshold: threshold
             })
           ) {

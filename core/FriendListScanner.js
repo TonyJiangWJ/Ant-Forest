@@ -540,7 +540,6 @@ FriendListScanner.prototype.collectTargetFriend = function (obj) {
     debugInfo('好友能量收取完毕, 回到好友排行榜')
     let returnCount = 0
     while (!_widgetUtils.friendListWaiting()) {
-      sleep(1000)
       if (returnCount++ === 2) {
         // 等待两秒后再次触发
         automator.back()

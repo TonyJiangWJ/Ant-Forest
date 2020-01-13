@@ -540,7 +540,6 @@ ImgBasedFriendListScanner.prototype.returnToListAndCheck = function () {
   sleep(500)
   let returnCount = 0
   while (!_widgetUtils.friendListWaiting()) {
-    sleep(500)
     if (returnCount++ === 2) {
       // 等待两秒后再次触发
       automator.back()
