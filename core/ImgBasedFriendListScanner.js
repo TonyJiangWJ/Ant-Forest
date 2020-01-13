@@ -601,7 +601,7 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
       skip = true
     }
     if (!skip && _commonFunctions.checkIsProtected(obj.name)) {
-      debugInfo(['{} 使用了保护罩 不收取他'])
+      warnInfo(['{} 使用了保护罩 不收取他', obj.name])
       skip = true
     }
     if (!skip && this.protectInfoDetect(obj.name)) {

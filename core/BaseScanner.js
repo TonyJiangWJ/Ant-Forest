@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-13 08:51:37
+ * @Last Modified time: 2020-01-13 17:16:52
  * @Description: 排行榜扫描基类
  */
 
@@ -225,8 +225,8 @@ const BaseScanner = function () {
         }
       }
       debugInfo(['using time:{}-{} rows: yesterday[{}] target[{}]', (isToday ? '今天' : '昨天'), usingTime || time, yesterdayRow, targetRow], true)
-      let timeout = isToday ? new Date(formatDate(new Date(new Date().getTime() + 24 * 3600000), 'yyyy/MM/dd ') + usingTime)
-        : new Date(formatDate(new Date(), 'yyyy/MM/dd ') + usingTime)
+      let timeout = isToday ? new Date(formatDate(new Date(new Date().getTime() + 24 * 3600000), 'yyyy/MM/dd ') + usingTime).getTime()
+        : new Date(formatDate(new Date(), 'yyyy/MM/dd ') + usingTime).getTime()
       this.recordCurrentProtected(name, timeout)
       return true
     } else {
