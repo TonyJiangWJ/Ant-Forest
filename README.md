@@ -104,14 +104,6 @@ module.exports = function (obj) {
 }
 ```
 
-上述所示为最简单的解锁模板，也可以参考 Unlock.js 默认多解锁方式的代码进行修改。
-
-然后在下方的 MyDevice 中设置解锁设备：
-
-```javascript
-var MyDevice = Devices.device_1
-```
-
 # 注意事项
 
 解锁仅支持：
