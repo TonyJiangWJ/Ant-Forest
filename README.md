@@ -87,27 +87,19 @@
 
 # 添加解锁设备
 
-在 Unlock.js 中，按照以下格式扩展：
+- 脚本根目录下新建extends文件夹，然后创建ExternalUnlockDevice.js文件，内容格式如下自定义
 
 ```javascript
-var Devices = {
-  device_1: function(obj) {
-    this.__proto__ = obj
+module.exports = function (obj) {
+  this.__proto__ = obj
 
-    this.unlock = function(password) {
-      if (typeof password !== "string") throw new Error("密码应为字符串！")
+  this.unlock = function(password) {
+    // 此处为自行编写的解锁代码
 
-      // 此处为解锁的代码
-
-      return this.check_unlock()
-    }
-  },
-  device_2: function(obj) {
-    ...
-  },
-  device_3: function(obj) {
-    ...
+    // 在结尾返回此语句用于判断是否解锁成功
+    return this.check_unlock()
   }
+
 }
 ```
 
