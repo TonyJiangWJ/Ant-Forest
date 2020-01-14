@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-12 20:57:23
+ * @Last Modified time: 2020-01-14 17:05:03
  * @Description: 
  */
 "ui";
@@ -15,6 +15,9 @@ if (currentEngine.endsWith('/config.js')) {
 importClass(android.text.TextWatcher)
 importClass(android.view.View)
 importClass(android.view.MotionEvent)
+importClass(java.util.concurrent.LinkedBlockingQueue)
+importClass(java.util.concurrent.ThreadPoolExecutor)
+importClass(java.util.concurrent.TimeUnit)
 
 let default_config = {
   develop_mode: false,
@@ -155,6 +158,13 @@ if (!inRunningMode) {
   }
 } else {
 
+  let threadPool = new ThreadPoolExecutor(4, 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(16))
+  let floatyWindow = null
+  let floatyLock = threads.lock()
+  let count = 10
+  let countdownThread = null
+  let loadingDialog = null
+
   const _hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
   // 传递给commonFunction 避免二次引用config.js
   const storage_name = CONFIG_STORAGE_NAME
@@ -224,6 +234,18 @@ if (!inRunningMode) {
     ui.deviceSizeText.text(config.device_width + 'px ' + config.device_height + 'px')
   }
 
+  const setColorSeekBar = function () {
+    let rgbColor = colors.parseColor(config.min_floaty_color)
+    let rgbColors = {
+      red: colors.red(rgbColor),
+      green: colors.green(rgbColor),
+      blue: colors.blue(rgbColor),
+    }
+    ui.redSeekbar.setProgress(parseInt(rgbColors.red / 255 * 100))
+    ui.greenSeekbar.setProgress(parseInt(rgbColors.green / 255 * 100))
+    ui.blueSeekbar.setProgress(parseInt(rgbColors.blue / 255 * 100))
+  }
+
   const resetUiValues = function () {
     // 重置为默认
     whiteList = []
@@ -250,16 +272,7 @@ if (!inRunningMode) {
     ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / config.device_height * 100))
     ui.colorSelectorChkBox.setChecked(false)
     ui.colorSelectorContainer.setVisibility(View.GONE)
-    let rgbColor = colors.parseColor(config.min_floaty_color)
-    let rgbColors = {
-      red: colors.red(rgbColor),
-      green: colors.green(rgbColor),
-      blue: colors.blue(rgbColor),
-    }
-    log(config.min_floaty_color + + ' ' + rgbColor + ' color config:' + JSON.stringify(rgbColors))
-    ui.redSeekbar.setProgress(parseInt(rgbColors.red / 255) * 100)
-    ui.greenSeekbar.setProgress(parseInt(rgbColors.green / 255) * 100)
-    ui.blueSeekbar.setProgress(parseInt(rgbColors.blue / 255) * 100)
+    setColorSeekBar()
 
     ui.notLingeringFloatWindowChkBox.setChecked(config.notLingeringFloatWindow)
     ui.helpFriendChkBox.setChecked(config.help_friend)
@@ -378,7 +391,7 @@ if (!inRunningMode) {
 
     setDeviceSizeText()
   }
-  let loadingDialog = null
+
   threads.start(function () {
     loadingDialog = dialogs.build({
       title: "加载中...",
@@ -1048,24 +1061,10 @@ if (!inRunningMode) {
       config.color_offset = trueVal
     })
 
-    ui.floatyXSeekBar.on('touch', () => {
-      let precent = ui.floatyXSeekBar.getProgress()
-      let trueVal = parseInt(precent * config.device_width / 100)
-      ui.floatyX.text('' + trueVal)
-      config.min_floaty_x = trueVal
-    })
-
-    ui.floatyYSeekBar.on('touch', () => {
-      let precent = ui.floatyYSeekBar.getProgress()
-      let trueVal = parseInt(precent * config.device_height / 100)
-      ui.floatyY.text('' + trueVal)
-      config.min_floaty_y = trueVal
-    })
-
-
     ui.colorSelectorChkBox.on('click', () => {
       let show = ui.colorSelectorChkBox.isChecked()
       if (show) {
+        setColorSeekBar()
         ui.colorSelectorContainer.setVisibility(View.VISIBLE)
       } else {
         ui.colorSelectorContainer.setVisibility(View.GONE)
@@ -1100,7 +1099,7 @@ if (!inRunningMode) {
     })
 
     ui.showThresholdConfig.on('click', () => {
-      threads.start(function () {
+      threadPool.execute(function () {
         dialogs.rawInput("请输入颜色相似度（0-255）", config.color_offset + '', val => {
           if (!val) {
             return
@@ -1116,6 +1115,82 @@ if (!inRunningMode) {
           }
         })
       })
+    })
+
+    const setFloatyStatusIfExist = function () {
+      try {
+        floatyLock.lock()
+        if (floatyWindow !== null) {
+          count = 10
+          threadPool.execute(function () {
+            try {
+              floatyLock.lock()
+              if (floatyWindow !== null) {
+                floatyWindow.content.setTextColor(colors.parseColor(config.min_floaty_color))
+                floatyWindow.setPosition(config.min_floaty_x, config.min_floaty_y)
+                floatyWindow.content.text('悬浮窗' + count + '秒后关闭')
+              }
+            } finally {
+              floatyLock.unlock()
+            }
+          })
+          if (countdownThread === null || !countdownThread.isAlive()) {
+            countdownThread = threads.start(function () {
+              while (count-- > 0 && floatyWindow !== null) {
+                try {
+                  floatyWindow.content.text('悬浮窗' + count + '秒后关闭')
+                  log('悬浮窗' + count + '秒后关闭')
+                } catch (e) {
+                  console.error(e)
+                }
+                sleep(1000)
+              }
+              try {
+                floatyLock.lock()
+                if (floatyWindow !== null) {
+                  floatyWindow.close()
+                  floatyWindow = null
+                }
+              } finally {
+                floatyLock.unlock()
+              }
+            })
+          }
+        }
+      } finally {
+        floatyLock.unlock()
+      }
+    }
+
+
+    ui.floatyColor.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        let val = text + ''
+        if (val) {
+          val = val.trim()
+        }
+        if (/^#[\dabcdef]{6}$/i.test(val)) {
+          ui.floatyColor.setTextColor(colors.parseColor(val))
+          config.min_floaty_color = val
+          setFloatyStatusIfExist()
+        }
+      })
+    )
+
+    ui.floatyXSeekBar.on('touch', () => {
+      let precent = ui.floatyXSeekBar.getProgress()
+      let trueVal = parseInt(precent * config.device_width / 100)
+      ui.floatyX.text('' + trueVal)
+      config.min_floaty_x = trueVal
+      setFloatyStatusIfExist()
+    })
+
+    ui.floatyYSeekBar.on('touch', () => {
+      let precent = ui.floatyYSeekBar.getProgress()
+      let trueVal = parseInt(precent * config.device_height / 100)
+      ui.floatyY.text('' + trueVal)
+      config.min_floaty_y = trueVal
+      setFloatyStatusIfExist()
     })
 
     ui.showFloatyPointConfig.on('click', () => {
@@ -1146,61 +1221,30 @@ if (!inRunningMode) {
         ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / config.device_width * 100))
         ui.floatyY.text(config.min_floaty_y + '')
         ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / config.device_height * 100))
-      })
-
-    })
-
-    ui.showLockPointConfig.on('click', () => {
-      Promise.resolve().then(() => {
-        return dialogs.rawInput('请输入X坐标：', config.lock_x + '')
-      }).then(x => {
-        if (x) {
-          let xVal = parseInt(x)
-          if (isFinite(xVal)) {
-            config.lock_x = xVal
-          } else {
-            toast('输入值无效')
-          }
-        }
-      }).then(() => {
-        return dialogs.rawInput('请输入Y坐标：', config.lock_y + '')
-      }).then(y => {
-        if (y) {
-          let yVal = parseInt(y)
-          if (isFinite(yVal)) {
-            config.lock_y = yVal
-          } else {
-            toast('输入值无效')
-          }
-        }
-      }).then(() => {
-        ui.lockX.text(config.lock_x + '')
-        ui.lockXSeekBar.setProgress(parseInt(config.lock_x / config.device_width * 100))
-        ui.lockY.text(config.lock_y + '')
-        ui.lockYSeekBar.setProgress(parseInt(config.lock_y / config.device_height * 100))
+        setFloatyStatusIfExist()
       })
 
     })
 
     ui.testFloatyPosition.on('click', () => {
-      threads.start(function () {
-        sleep(300)
-        toastLog('准备初始化悬浮窗')
-        let floatyWindow = floaty.rawWindow(
-          <frame gravity='left'>
-            <text id='content' textSize='8dp' textColor='#00ff00' />
-          </frame>
-        )
-        let count = 5
-        floatyWindow.content.text('悬浮窗' + count + '秒后关闭')
-        floatyWindow.content.setTextColor(colors.parseColor(config.min_floaty_color))
-        floatyWindow.setPosition(config.min_floaty_x, config.min_floaty_y)
-        setInterval(function () {
-          floatyWindow.content.text('悬浮窗' + --count + '秒后关闭')
-        }, 1000)
-        setTimeout(function () {
-          floatyWindow.close()
-        }, 5000)
+      threadPool.execute(function () {
+        try {
+          floatyLock.lock()
+          if (floatyWindow === null) {
+            sleep(300)
+            toastLog('准备初始化悬浮窗')
+            floatyWindow = floaty.rawWindow(
+              <frame gravity='left'>
+                <text id='content' textSize='8dp' textColor='#00ff00' />
+              </frame>
+            )
+            setFloatyStatusIfExist()
+          }
+        } catch (e) {
+          toastLog(e)
+        } finally {
+          floatyLock.unlock()
+        }
       })
     })
 
@@ -1262,6 +1306,37 @@ if (!inRunningMode) {
       config.lock_y = trueVal
     })
 
+    ui.showLockPointConfig.on('click', () => {
+      Promise.resolve().then(() => {
+        return dialogs.rawInput('请输入X坐标：', config.lock_x + '')
+      }).then(x => {
+        if (x) {
+          let xVal = parseInt(x)
+          if (isFinite(xVal)) {
+            config.lock_x = xVal
+          } else {
+            toast('输入值无效')
+          }
+        }
+      }).then(() => {
+        return dialogs.rawInput('请输入Y坐标：', config.lock_y + '')
+      }).then(y => {
+        if (y) {
+          let yVal = parseInt(y)
+          if (isFinite(yVal)) {
+            config.lock_y = yVal
+          } else {
+            toast('输入值无效')
+          }
+        }
+      }).then(() => {
+        ui.lockX.text(config.lock_x + '')
+        ui.lockXSeekBar.setProgress(parseInt(config.lock_x / config.device_width * 100))
+        ui.lockY.text(config.lock_y + '')
+        ui.lockYSeekBar.setProgress(parseInt(config.lock_y / config.device_height * 100))
+      })
+    })
+
     ui.password.addTextChangedListener(
       TextWatcherBuilder(text => { config.password = text + '' })
     )
@@ -1274,19 +1349,6 @@ if (!inRunningMode) {
       config.is_alipay_locked = ui.isAlipayLockedChkBox.isChecked()
       ui.alipayLockPasswordContainer.setVisibility(config.is_alipay_locked ? View.VISIBLE : View.GONE)
     })
-
-    ui.floatyColor.addTextChangedListener(
-      TextWatcherBuilder(text => {
-        let val = text + ''
-        if (val) {
-          val = val.trim()
-        }
-        if (/^#[\dabcdef]{6}$/i.test(val)) {
-          ui.floatyColor.setTextColor(colors.parseColor(val))
-          config.min_floaty_color = val
-        }
-      })
-    )
 
     ui.cycleTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.cycle_times = parseInt(text) })

@@ -88,6 +88,7 @@
 # 添加解锁设备
 
 - 脚本根目录下新建extends文件夹，然后创建ExternalUnlockDevice.js文件，内容格式如下自定义
+- 具体可以参考ExternalUnlockDevice-demo.js
 
 ```javascript
 module.exports = function (obj) {
