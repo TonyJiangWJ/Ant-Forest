@@ -366,7 +366,7 @@ const ImgBasedFriendListScanner = function () {
                     } else {
                       debugInfo(['该像素点总数[{}]未校验', point.same])
                     }
-                    if (point.same > (_config.ocrThresold || 2900) && that.min_countdown >= 2) {
+                    if (point.same >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2) {
                       // 百度识图API获取文本
                       let result = BaiduOcrUtil.recoginze(base64String)
                       if (result && result.words_result_num > 0) {
@@ -390,6 +390,8 @@ const ImgBasedFriendListScanner = function () {
                           countdownLock.unlock()
                         }
                       }
+                    } else {
+                      debugInfo(['当前倒计时校验最小像素阈值：{} 以获取最小倒计时：{}', (_config.ocrThreshold || 2900), that.min_countdown])
                     }
                   }
                 }
