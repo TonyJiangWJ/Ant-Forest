@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-12 20:12:49
+ * @Last Modified time: 2020-01-16 23:34:55
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
@@ -368,13 +368,33 @@ const ImgBasedFriendListScanner = function () {
                     }
                     if (point.same >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2) {
                       // 百度识图API获取文本
-                      let result = BaiduOcrUtil.recoginze(base64String)
-                      if (result && result.words_result_num > 0) {
-                        let filter = result.words_result.filter(r => isFinite(parseInt(r.words)))
-                        if (filter && filter.length > 0) {
-                          debugInfo('百度识图结果：' + JSON.stringify(filter))
+                      if (!config.ocrUseCache) {
+                        let result = BaiduOcrUtil.recoginze(base64String)
+                        if (result && result.words_result_num > 0) {
+                          let filter = result.words_result.filter(r => isFinite(parseInt(r.words)))
+                          if (filter && filter.length > 0) {
+                            debugInfo('百度识图结果：' + JSON.stringify(filter))
+                            countdownLock.lock()
+                            let countdown = parseInt(filter[0].words)
+                            // 标记该像素点总数的图片已处理过
+                            that.resolved_pixels[point.same] = true
+                            that.resolved_pixels[point.same + 'count'] = countdown
+                            if (countdown < that.min_countdown) {
+                              debugInfo('设置最小倒计时：' + countdown)
+                              that.min_countdown = countdown
+                              that.min_countdown_pixels = point.same
+                            }
+                            countingDownContainers.push({
+                              countdown: countdown,
+                              stamp: new Date().getTime()
+                            })
+                            countdownLock.unlock()
+                          }
+                        }
+                      } else {
+                        let countdown = BaiduOcrUtil.tryGetByCache(base64String, point.same)
+                        if (isFinite(countdown)) {
                           countdownLock.lock()
-                          let countdown = parseInt(filter[0].words)
                           // 标记该像素点总数的图片已处理过
                           that.resolved_pixels[point.same] = true
                           that.resolved_pixels[point.same + 'count'] = countdown
@@ -391,7 +411,7 @@ const ImgBasedFriendListScanner = function () {
                         }
                       }
                     } else {
-                      debugInfo(['当前倒计时校验最小像素阈值：{} 以获取最小倒计时：{}', (_config.ocrThreshold || 2900), that.min_countdown])
+                      debugInfo(['当前倒计时校验最小像素阈值：{} 已获取最小倒计时：{}', (_config.ocrThreshold || 2900), that.min_countdown])
                     }
                   }
                 }
@@ -627,6 +647,7 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
       this.collectEnergy()
     }
     try {
+      sleep(300)
       let postGet = _widgetUtils.getYouCollectEnergy() || 0
       let postE = _widgetUtils.getFriendEnergy()
       if (!obj.isHelp && postGet !== null && preGot !== null) {

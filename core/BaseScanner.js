@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-13 17:16:52
+ * @Last Modified time: 2020-01-16 19:04:42
  * @Description: 排行榜扫描基类
  */
 
@@ -107,17 +107,18 @@ const BaseScanner = function () {
         let o_x = bounds.left,
           o_y = bounds.top,
           o_w = bounds.width() + 5,
-          o_h = parseInt(bounds.height() * 1.5),
-          o_center_h = parseInt(bounds.height() / 2)
+          o_center_h = parseInt(bounds.height() * 1.5 / 2)
         threshold = _config.color_offset
         for (let color of colors)
           if (
+            // 下半部分颜色匹配
             images.findColor(screen, color, {
-              region: [o_x, o_y, o_w, o_h],
+              region: [o_x, o_y + o_center_h, o_w, o_center_h],
               threshold: threshold
             })
-            && !images.findColor(screen, _config.waterBallColor || '#d1971a', {
-              region: [o_x, o_y + parseInt(o_center_h / 2), o_w, o_center_h],
+            // 中间部分颜色不匹配，如果匹配那么说明这个球是浇水的能量球
+            && !images.findColor(screen, color, {
+              region: [o_x, o_y, o_w, o_center_h],
               threshold: threshold
             })
           ) {

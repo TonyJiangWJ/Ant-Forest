@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-31 09:12:02
+ * @Last Modified time: 2020-01-17 20:35:50
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -176,7 +176,7 @@ function Ant_forest () {
         })
         // 触发 toast
         limit = exec()
-        let count = 5
+        let count = 3
         while (count-- > 0 && !toastDone) {
           sleep(1000)
         }
@@ -226,8 +226,9 @@ function Ant_forest () {
         for (let i = 0; i < ball.length; i++) {
           let countDownBall = ball[i]
           let bounds = countDownBall.bounds()
-          if (!images.findColor(screen, _config.waterBallColor || '#d1971a', {
-            region: [bounds.left, bounds.top, bounds.right - bounds.left, parseInt(bounds.height() / 2)],
+          let halfHeight = parseInt(bounds.height() / 2)
+          if (!images.findColor(screen, '#d1971a', {
+            region: [bounds.left, bounds.top + parseInt(halfHeight / 2), bounds.right - bounds.left, halfHeight],
             threshold: _config.color_offset || 20
           })) {
             count++

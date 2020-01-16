@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-12 17:46:17
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-12 19:05:36
+ * @Last Modified time: 2020-01-16 10:48:08
  * @Description: 
  */
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
