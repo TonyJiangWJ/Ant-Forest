@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-16 19:04:42
+ * @Last Modified time: 2020-01-19 23:19:54
  * @Description: 排行榜扫描基类
  */
 
@@ -109,18 +109,18 @@ const BaseScanner = function () {
           o_w = bounds.width() + 5,
           o_center_h = parseInt(bounds.height() * 1.5 / 2)
         threshold = _config.color_offset
-        for (let color of colors)
+
+        let ball = images.clip(screen, o_x + parseInt(o_w * 0.2), o_y + parseInt(o_center_h / 2), parseInt(o_w * 0.6), parseInt(o_center_h / 2))
+        let interval_ball = images.interval(ball, "#61a075", 30)
+        for (let color of colors) {
           if (
             // 下半部分颜色匹配
             images.findColor(screen, color, {
               region: [o_x, o_y + o_center_h, o_w, o_center_h],
               threshold: threshold
             })
-            // 中间部分颜色不匹配，如果匹配那么说明这个球是浇水的能量球
-            && !images.findColor(screen, color, {
-              region: [o_x, o_y, o_w, o_center_h],
-              threshold: threshold
-            })
+            // 二值化后图片中会有白色部分是可帮助收取的
+            && images.findColor(interval_ball, '#FFFFFF')
           ) {
             automator.clickCenter(energy_ball)
             helped = true
@@ -129,6 +129,9 @@ const BaseScanner = function () {
             debugInfo("找到帮收取能量球颜色匹配" + color)
             break
           }
+        }
+        ball.recycle()
+        interval_ball.recycle()
       })
       if (!helped && needHelp) {
         warnInfo(['未能找到帮收能量球需要增加匹配颜色组 当前{}', colors])
