@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-16 19:05:47
+ * @Last Modified time: 2020-01-19 23:29:43
  * @Description: 
  */
 "ui";
@@ -147,7 +147,7 @@ if (typeof config.collectable_energy_ball_content !== 'string') {
 }
 
 if (!inRunningMode) {
-  if (config.device_height === 0 || config.device_width === 0) {
+  if (config.device_height <= 10 || config.device_width <= 10) {
     toastLog('请先运行config.js并输入设备宽高')
     exit()
   }
@@ -248,6 +248,8 @@ if (!inRunningMode) {
   }
 
   const resetUiValues = function () {
+    config.device_width = config.device_width > 0 ? config.device_width : 1
+    config.device_height = config.device_height > 0 ? config.device_height : 1
     // 重置为默认
     whiteList = []
     wateringBlackList = []
@@ -815,6 +817,7 @@ if (!inRunningMode) {
                 config[key] = defaultValue
                 storageConfig.put(key, defaultValue)
               })
+              log('重置默认值')
               resetUiValues()
             }
           })
@@ -940,7 +943,7 @@ if (!inRunningMode) {
 
     ui.viewpager.setTitles(['基本配置', '进阶配置', '控件文本配置'])
     ui.tabs.setupWithViewPager(ui.viewpager)
-    if (config.device_height === 0 || config.device_width === 0) {
+    if (config.device_height <= 10 || config.device_width <= 10) {
       inputDeviceSize().then(() => resetUiValues())
     } else {
       resetUiValues()

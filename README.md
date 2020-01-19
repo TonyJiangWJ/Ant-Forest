@@ -1,15 +1,17 @@
-# 其他脚本
-
-- [蚂蚁庄园传送门](https://github.com/TonyJiangWJ/Ant-Manor)
 
 # 简介
 
+本项目从[https://github.com/Nick-Hopps/Ant-Forest-autoscript](https://github.com/Nick-Hopps/Ant-Forest-autoscript) fork 而来，但是经过了各种改动，和原版功能差异较大 现在已经单独复制不再作为fork分支开发
+
 基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha2 版本开发。解锁模块参考自：https://github.com/e1399579/autojs
-- 本项目从[https://github.com/Nick-Hopps/Ant-Forest-autoscript](https://github.com/Nick-Hopps/Ant-Forest-autoscript) fork 而来，但是经过了各种改动，和原版功能差异较大 现在已经单独复制不再作为fork分支开发
 - 脚本执行依赖于：[AutoJs 4.1.1 alpha2](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0)
 - 不同手机的解锁方法不同可能不适配，需要自行编写解锁方法，具体见`添加解锁设备`小节
 
-# 功能
+## 其他脚本
+
+- [蚂蚁庄园传送门](https://github.com/TonyJiangWJ/Ant-Manor)
+
+## 功能
 
 - 自动匹配不同系统下自动化的方式，安卓 7 及以上通过无障碍服务模拟操作，以下版本通过 root 权限模拟操作；
 - 自动识别屏幕锁定方式并根据配置的密码解锁，支持图形解锁，PIN 解锁，混合密码解锁；
@@ -49,14 +51,14 @@
 - `20191221-新增` 截图权限相关默认 `获取截图等待时间` 是500毫秒，如果经常失败请修改该值 改大一些
 - `20200110-新增` 加入配置导出和导入的功能，通过AES加密，默认密码是device.getAndroidId()，因此仅本机可用。如果需要跨设备或者免费版和Pro版之间备份，自行获取device.getAndroidId()然后根据提示输入即可
 
-# 使用
+## 使用
 
 - 下载安装 [AutoJs 4.1.1 alpha2 下载](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
 - 给与软件必要权限 `后台弹出界面`、`显示悬浮窗`、`自启动`，并将软件保持后台运行
 - 定时启动脚本，点击 `main.js` 的菜单，选择 `更多` `定时任务` 即可配置定时启动
 - 如果运行提示有任务正在队列中，请运行配置 `config.js` 然后进到 `进阶配置` 中勾选 `单脚本运行`，该功能是用于多个脚本同时运行时的任务队列 相当于一个调度程序，避免多个脚本抢占前台导致出错
 
-# 配置
+## 配置
 
 运行 config.js 后可以看到如下配置：
 
@@ -72,7 +74,9 @@
 
 ![控件文本配置](./resources/config-3.png)
 
-# 常见问题
+![配置菜单](./resources/config-4.jpg)
+
+## 常见问题
 
 - config.js 执行异常，运行`util/功能测试-重置默认配置.js` 依旧有问题，尝试重启AutoJS，并检查AutoJS的版本是否为 `4.1.1 Alpah2` 或者 `较新版本的AutoJS Pro`
 - 不断的运行异常，强制关闭AutoJS软件后重新执行脚本。同时建议定期强制关闭AutoJS软件，避免内存不断增长导致卡顿
@@ -84,7 +88,7 @@
   ![悬浮窗框位置示例](./resources/floaty_using.jpg)
 - 其他问题可以提ISSUE，但是请将日志文件大小调整为1024，打开开发模式并提供出错位置的日志信息，包括`logs/develop.log`和`logs/log-verbose.log`
 
-# 添加解锁设备
+## 添加解锁设备
 
 - 脚本根目录下新建extends文件夹，然后创建ExternalUnlockDevice.js文件，内容格式如下自定义
 - 具体可以参考ExternalUnlockDevice-demo.js
@@ -103,14 +107,14 @@ module.exports = function (obj) {
 }
 ```
 
-# 注意事项
+## 注意事项
 
 解锁仅支持：
 
 - 具有 ROOT 权限的安卓 5.0 及以上版本
 - 没有 ROOT 权限的安卓 7.0 及以上版本
 
-# 目前存在的问题
+## 目前存在的问题
 
 - ~目前部分支付宝版本无法识别控件，因此无法使用~ 已加入图像分析
 - 部分个人首页可能无法获取控件信息，因此无法使用
