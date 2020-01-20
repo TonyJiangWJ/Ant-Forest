@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-19 23:19:54
+ * @Last Modified time: 2020-01-20 08:20:58
  * @Description: 排行榜扫描基类
  */
 
@@ -111,7 +111,7 @@ const BaseScanner = function () {
         threshold = _config.color_offset
 
         let ball = images.clip(screen, o_x + parseInt(o_w * 0.2), o_y + parseInt(o_center_h / 2), parseInt(o_w * 0.6), parseInt(o_center_h / 2))
-        let interval_ball = images.interval(ball, "#61a075", 30)
+        let interval_ball = images.interval(ball, "#61a075", 50)
         for (let color of colors) {
           if (
             // 下半部分颜色匹配
