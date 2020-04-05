@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-20 08:20:58
+ * @Last Modified time: 2020-02-24 09:29:12
  * @Description: 排行榜扫描基类
  */
 
@@ -138,7 +138,7 @@ const BaseScanner = function () {
       }
       screen.recycle()
       // 当数量大于等于6且帮助收取后，重新进入
-      if (helped && length >= 6) {
+      if (helped && needHelp && length >= 6) {
         debugInfo('帮助了 且有六个球 重新进入')
         return true
       } else {

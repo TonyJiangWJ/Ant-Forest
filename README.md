@@ -3,7 +3,8 @@
 
 本项目从[https://github.com/Nick-Hopps/Ant-Forest-autoscript](https://github.com/Nick-Hopps/Ant-Forest-autoscript) fork 而来，但是经过了各种改动，和原版功能差异较大 现在已经单独复制不再作为fork分支开发
 
-基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha2 版本开发。解锁模块参考自：https://github.com/e1399579/autojs
+基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha2 版本开发。解锁模块参考自：[https://github.com/e1399579/autojs](https://github.com/e1399579/autojs)
+
 - 脚本执行依赖于：[AutoJs 4.1.1 alpha2](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0)
 - 不同手机的解锁方法不同可能不适配，需要自行编写解锁方法，具体见`添加解锁设备`小节
 

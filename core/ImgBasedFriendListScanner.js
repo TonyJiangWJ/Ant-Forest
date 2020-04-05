@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-16 23:34:55
+ * @Last Modified time: 2020-02-24 09:27:48
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
@@ -640,7 +640,9 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
     try {
       preGot = _widgetUtils.getYouCollectEnergy() || 0
       preE = _widgetUtils.getFriendEnergy()
-    } catch (e) { errorInfo("[" + obj.name + "]获取收集前能量异常" + e) }
+    } catch (e) { 
+      errorInfo("[" + obj.name + "]获取收集前能量异常" + e) 
+    }
     if (_config.help_friend) {
       rentery = this.collectAndHelp(obj.isHelp)
     } else {
