@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2019-12-18 18:19:02
+ * @Last Modified time: 2020-04-07 19:05:06
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')
@@ -19,16 +19,13 @@ let unlocker = require('./lib/Unlock.js')
 let antForestRunner = require('./core/Ant_forest.js')
 let formatDate = require('./lib/DateUtil.js')
 let { tryRequestScreenCapture } = require('./lib/TryRequestScreenCapture.js')
-// let automator = require('./lib/Automator.js')
-// automator.scrollDown()
-// exit()
-logInfo('======校验是否重复运行=======')
-// 检查脚本是否重复运行
-commonFunctions.checkDuplicateRunning()
+
 // 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
 if (config.single_script) {
+  logInfo('======单脚本运行直接清空任务队列=======')
   runningQueueDispatcher.clearAll()
 }
+logInfo('======校验是否重复运行，并加入任务队列=======')
 runningQueueDispatcher.addRunningTask()
 /***********************
  * 初始化
