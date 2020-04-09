@@ -557,6 +557,9 @@ const ImgBasedFriendListScanner = function () {
   }
 }
 
+ImgBasedFriendListScanner.prototype = Object.create(BaseScanner.prototype)
+ImgBasedFriendListScanner.prototype.constructor = ImgBasedFriendListScanner
+
 ImgBasedFriendListScanner.prototype.returnToListAndCheck = function () {
   automator.back()
   sleep(500)

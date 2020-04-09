@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-07 19:05:06
+ * @Last Modified time: 2020-04-09 21:01:43
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')
@@ -59,6 +59,7 @@ logInfo(['运行模式：{}{} {} {} {}',
   ),
   config.useCustomScrollDown ? '使用模拟滑动, 速度：' + config.scrollDownSpeed + 'ms 底部高度：' + config.bottomHeight : ''
 ])
+logInfo(['设备分辨率：[{}, {}]', config.device_width, config.device_height])
 logInfo('======解锁并校验截图权限======')
 try {
   unlocker.exec()

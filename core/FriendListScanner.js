@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-08 11:41:23
+ * @Last Modified time: 2020-04-09 19:08:45
  * @Description: 基于控件识别可收取信息
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -437,6 +437,8 @@ const FriendListScanner = function () {
 
 }
 
+FriendListScanner.prototype = Object.create(BaseScanner.prototype)
+FriendListScanner.prototype.constructor = FriendListScanner
 
 FriendListScanner.prototype.whetherFriendListValidLength = function (friends_list_parent) {
   return (friends_list_parent && friends_list_parent.children()) ? friends_list_parent.children().length : undefined
