@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-17 20:35:50
+ * @Last Modified time: 2020-04-15 09:24:03
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -122,6 +122,7 @@ function Ant_forest () {
       </card>
     )
     window.stop.on('click', () => {
+      _runningQueueDispatcher.removeRunningTask()
       exit()
     })
     logInfo(text)
@@ -759,6 +760,7 @@ function Ant_forest () {
             _runningQueueDispatcher.removeRunningTask()
             // 如果不驻留悬浮窗  则不延迟，直接关闭
             if (_config.notLingeringFloatWindow) {
+              _runningQueueDispatcher.removeRunningTask()
               exit()
             } else {
               _commonFunctions.commonDelay(_min_countdown - delayTime)
