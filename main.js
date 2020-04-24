@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-09 21:01:43
+ * @Last Modified time: 2020-04-23 10:53:40
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')
@@ -70,10 +70,6 @@ try {
   exit()
 }
 logInfo('解锁成功')
-if (config.fuck_miui11) {
-  commonFunctions.showDialogAndWait()
-  commonFunctions.launchAutoJs()
-}
 
 // 请求截图权限
 let screenPermission = false
