@@ -162,7 +162,11 @@ if (!inRunningMode) {
     return scope.config_instance
   }
 } else {
-
+  this.config_instance = {
+    config: config,
+    default_config: default_config,
+    storage_name: CONFIG_STORAGE_NAME
+  }
   let threadPool = new ThreadPoolExecutor(4, 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(16))
   let floatyWindow = null
   let floatyLock = threads.lock()
@@ -368,7 +372,7 @@ if (!inRunningMode) {
     if (colorRegex.test(helpColor)) {
       ui.canHelpColorInpt.setTextColor(colors.parseColor(helpColor))
     }
-    
+
     ui.collectableEnergyBallContentInpt.text(config.collectable_energy_ball_content)
 
     // 列表绑定
@@ -1573,7 +1577,7 @@ if (!inRunningMode) {
         if (/^#[\dabcdef]{6}$/i.test(val)) {
           ui.canHelpColorInpt.setTextColor(colors.parseColor(val))
           config.can_help_color = val
-        }else {
+        } else {
           toast('颜色值无效，请重新输入')
         }
       })
