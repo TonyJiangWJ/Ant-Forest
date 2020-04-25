@@ -1,2 +1,4 @@
 .DS_Store
 *.zip
+*.log
+*.ign.js

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-15 09:24:03
+ * @Last Modified time: 2020-04-25 11:12:29
  * @Description: 蚂蚁森林操作集
  */
 let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
@@ -613,9 +613,8 @@ function Ant_forest () {
     }
 
     this.readyForStart = function () {
-      // 解锁其实在main里面已经执行 这里是为了容错 觉得没必要可以注释掉
-      unlocker.exec()
       _runningQueueDispatcher.addRunningTask()
+      unlocker.exec()
       _commonFunctions.showDialogAndWait(true)
       this.listenStopCollect()
       _commonFunctions.showEnergyInfo()
@@ -748,7 +747,7 @@ function Ant_forest () {
         if (_lost_someone) {
           warnInfo('上一次收取有漏收，再次收集', true)
           automator.back()
-          _commonFunctions.getAndUpdateSpringboard('lost_someone')
+          _commonFunctions.getAndUpdateDismissReason('lost_someone')
         } else {
           debugInfo(['获取到的倒计时时间：{}', _min_countdown])
           if (_min_countdown > 0) {
