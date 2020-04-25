@@ -11,6 +11,7 @@
 ## 其他脚本
 
 - [蚂蚁庄园传送门](https://github.com/TonyJiangWJ/Ant-Manor)
+- [支付宝积分签到](https://github.com/TonyJiangWJ/Alipay-Credits)
 
 ## 功能
 
