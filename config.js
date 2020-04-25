@@ -1169,6 +1169,8 @@ if (!inRunningMode) {
           ui.floatyColor.setTextColor(colors.parseColor(val))
           config.min_floaty_color = val
           setFloatyStatusIfExist()
+        } else {
+          toast('颜色值无效，请重新输入')
         }
       })
     )
@@ -1552,6 +1554,8 @@ if (!inRunningMode) {
         if (/^#[\dabcdef]{6}$/i.test(val)) {
           ui.canCollectColorInpt.setTextColor(colors.parseColor(val))
           config.can_collect_color = val
+        } else {
+          toast('颜色值无效，请重新输入')
         }
       })
     )
@@ -1564,6 +1568,8 @@ if (!inRunningMode) {
         if (/^#[\dabcdef]{6}$/i.test(val)) {
           ui.canHelpColorInpt.setTextColor(colors.parseColor(val))
           config.can_help_color = val
+        }else {
+          toast('颜色值无效，请重新输入')
         }
       })
     )

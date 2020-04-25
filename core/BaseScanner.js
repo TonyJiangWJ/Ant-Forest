@@ -40,7 +40,7 @@ const BaseScanner = function () {
    */
   this.collectBallEnergy = function (energy_ball, isDesc) {
     if (_config.skip_five && !isOwn) {
-      let regexCheck = /(\d+)克/
+      let regexCheck = /(\d+)/
       let execResult
       if (isDesc) {
         debugInfo('获取能量球desc数据')

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-09 21:01:43
+ * @Last Modified time: 2020-04-24 11:31:03
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')
@@ -25,8 +25,10 @@ if (config.single_script) {
   logInfo('======单脚本运行直接清空任务队列=======')
   runningQueueDispatcher.clearAll()
 }
-logInfo('======校验是否重复运行，并加入任务队列=======')
+logInfo('======加入任务队列，并关闭重复运行的脚本=======')
 runningQueueDispatcher.addRunningTask()
+// 加入任务队列
+commonFunctions.killDuplicateScript()
 /***********************
  * 初始化
  ***********************/
@@ -70,10 +72,6 @@ try {
   exit()
 }
 logInfo('解锁成功')
-if (config.fuck_miui11) {
-  commonFunctions.showDialogAndWait()
-  commonFunctions.launchAutoJs()
-}
 
 // 请求截图权限
 let screenPermission = false
