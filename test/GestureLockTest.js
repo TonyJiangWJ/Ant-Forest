@@ -8,7 +8,7 @@
 let config = {
   alipay_lock_password: ''
 }
-let alipayUnlocker = require('../lib/AlipayUnlocker.js')
+let alipayUnlocker = require('../lib/prototype/AlipayUnlocker.js')
 
 alipayUnlocker.drawGestureByPassword({
   left: 270,

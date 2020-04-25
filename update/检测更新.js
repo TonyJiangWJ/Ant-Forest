@@ -7,7 +7,7 @@
  */
 
 runtime.loadDex('../lib/autojs-tools.dex')
-let FileUtils = require('../lib/FileUtils.js')
+let FileUtils = require('../lib/prototype/FileUtils.js')
 let loadingDialog = null
 
 importClass(com.tony.Downloader)

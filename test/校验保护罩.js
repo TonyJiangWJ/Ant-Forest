@@ -1,11 +1,13 @@
-let WidgetUtils = require('../lib/WidgetUtils.js')
-let commonFunctions = require('../lib/CommonFunction.js')
+
+let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let WidgetUtils = singletoneRequire('WidgetUtils')
+let commonFunctions = singletoneRequire('CommonFunction')
 let { config } = require('../config.js')
-let automator = require('../lib/Automator.js')
-let Timers = require('../lib/Timers.js')(runtime, this)
+let automator = singletoneRequire('Automator')
+let Timers = singletoneRequire('Timers')(runtime, this)
 let {
   debugInfo, logInfo, infoLog, warnInfo, errorInfo
-} = require('../lib/LogUtils.js')
+} = singletoneRequire('LogUtils')
 let formatDate = require('../lib/DateUtil.js')
 
 const protectInfoDetect = function () {

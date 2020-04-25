@@ -151,10 +151,15 @@ if (!inRunningMode) {
     toastLog('请先运行config.js并输入设备宽高')
     exit()
   }
-  module.exports = {
-    config: config,
-    default_config: default_config,
-    storage_name: CONFIG_STORAGE_NAME
+  module.exports = function (__runtime__, scope) {
+    if (typeof scope.config_instance === 'undefined') {
+      scope.config_instance = {
+        config: config,
+        default_config: default_config,
+        storage_name: CONFIG_STORAGE_NAME
+      }
+    }
+    return scope.config_instance
   }
 } else {
 
@@ -168,7 +173,7 @@ if (!inRunningMode) {
   const _hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
   // 传递给commonFunction 避免二次引用config.js
   const storage_name = CONFIG_STORAGE_NAME
-  let commonFunctions = require('./lib/CommonFunction.js')
+  let commonFunctions = require('./lib/prototype/CommonFunction.js')
   let AesUtil = require('./lib/AesUtil.js')
   // 初始化list 为全局变量
   let whiteList = [], wateringBlackList = [], helpBallColorList = []

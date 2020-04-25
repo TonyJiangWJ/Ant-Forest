@@ -5,11 +5,11 @@
  * @Last Modified time: 2019-12-14 00:01:04
  * @Description: 
  */
-var {default_config} = require('../config.js')
-let _storage_name = typeof storage_name === 'undefined' ? require('../config.js').storage_name : storage_name
+var {default_config,storage_name:_storage_name} = require('../config.js')(runtime, this)
+let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 var configStorage = storages.create(_storage_name)
-var FileUtils = require("../lib/FileUtils.js")
-var commonFunctions = require("../lib/CommonFunction.js")
+var FileUtils = singletoneRequire('FileUtils')
+var commonFunctions = singletoneRequire('CommonFunction')
 Object.keys(default_config).forEach((key)=>{
   log(key + ":" + configStorage.get(key))
 })

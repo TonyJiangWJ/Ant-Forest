@@ -6,12 +6,13 @@
  * @Description: 
  */
 let WidgetUtils = require('../lib/WidgetUtils.js')
-let commonFunctions = require('../lib/CommonFunction.js')
-let { config } = require('../config.js')
-let automator = require('../lib/Automator.js')
+let singletoneRequire = require('./lib/SingletonRequirer.js')(runtime, this)
+let commonFunctions = singletoneRequire('CommonFunction')
+let { config } = require('../config.js')(runtime, this)
+let automator = singletoneRequire('Automator')
 let {
   debugInfo, logInfo, infoLog, warnInfo, errorInfo
-} = require('../lib/LogUtils.js')
+} = singletoneRequire('LogUtils')
 let count = 0
 while (count++ < 3) {
   WidgetUtils.wateringFriends()

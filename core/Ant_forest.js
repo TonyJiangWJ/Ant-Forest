@@ -4,12 +4,13 @@
  * @Last Modified time: 2020-04-25 19:12:10
  * @Description: 蚂蚁森林操作集
  */
-let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
-let automator = require('../lib/Automator.js')
-let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/CommonFunction.js') : commonFunctions
-let _runningQueueDispatcher = typeof runningQueueDispatcher === 'undefined' ? require('./RunningQueueDispatcher.js') : runningQueueDispatcher
-let _config = typeof config === 'undefined' ? require('../config.js').config : config
-let alipayUnlocker = require('../lib/AlipayUnlocker.js')
+let { config: _config } = require('../config.js')(runtime, this)
+let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let _widgetUtils = singletoneRequire('WidgetUtils')
+let automator = singletoneRequire('Automator')
+let _commonFunctions = singletoneRequire('CommonFunction')
+let _runningQueueDispatcher = singletoneRequire('RunningQueueDispatcher')
+let alipayUnlocker = singletoneRequire('AlipayUnlocker')
 let FriendListScanner = require('./FriendListScanner.js')
 let ImgBasedFriendListScanner = null
 if (_config.base_on_image) {

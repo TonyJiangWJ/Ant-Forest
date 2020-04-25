@@ -5,8 +5,8 @@
  * @Last Modified time: 2019-12-20 13:38:53
  * @Description: 
  */
-
-let commonFunctions = require('../lib/CommonFunction.js')
+let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let commonFunctions = singletoneRequire('CommonFunction')
 console.show()
 log('=============总收集排序==============')
 //commonFunctions.showCollectSummary()
