@@ -64,7 +64,7 @@ const BaseScanner = function () {
 
   // 收取能量
   this.collectEnergy = function () {
-    let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, null, true)
+    let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, 1000, true)
     if (ballCheckContainer !== null) {
       debugInfo('能量球存在')
       let that = this
