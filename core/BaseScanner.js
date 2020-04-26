@@ -5,11 +5,11 @@
  * @Last Modified time: 2020-02-24 09:29:12
  * @Description: 排行榜扫描基类
  */
-
-let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
-let automator = require('../lib/Automator.js')
-let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/CommonFunction.js') : commonFunctions
-let _config = typeof config === 'undefined' ? require('../config.js').config : config
+let { config: _config } = require('../config.js')(runtime, this)
+let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let _widgetUtils = singletoneRequire('WidgetUtils')
+let automator = singletoneRequire('Automator')
+let _commonFunctions = singletoneRequire('CommonFunction')
 
 const BaseScanner = function () {
   this.increased_energy = 0
@@ -64,7 +64,7 @@ const BaseScanner = function () {
 
   // 收取能量
   this.collectEnergy = function () {
-    let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, null, true)
+    let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, 1000, true)
     if (ballCheckContainer !== null) {
       debugInfo('能量球存在')
       let that = this

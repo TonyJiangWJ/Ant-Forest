@@ -5,13 +5,12 @@
  * @Last Modified time: 2019-12-19 14:19:45
  * @Description: 
  */
-let { config, default_config } = require('../config.js')
-let _storage_name = require('../config.js').storage_name
+let { config, default_config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let storageConfig = storages.create(_storage_name)
 let allSame = true
 
 
-function objectEquals(x, y) {
+function objectEquals (x, y) {
   'use strict';
 
   if (x === null || x === undefined || y === null || y === undefined) { return x === y; }
@@ -34,7 +33,7 @@ function objectEquals(x, y) {
   // recursive object equality check
   var p = Object.keys(x);
   return Object.keys(y).every(function (i) { return p.indexOf(i) !== -1; }) &&
-      p.every(function (i) { return objectEquals(x[i], y[i]); });
+    p.every(function (i) { return objectEquals(x[i], y[i]); });
 }
 
 Object.keys(default_config).forEach(key => {

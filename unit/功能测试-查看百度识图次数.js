@@ -5,7 +5,7 @@
  * @Last Modified time: 2019-12-12 21:46:07
  * @Description: 
  */
-let commonFunctions = require('../lib/CommonFunction.js')
+let commonFunctions = require('../lib/prototype/CommonFunction.js')
 
 let storageInfo = commonFunctions.getTodaysRuntimeStorage('baiduInvokeCount')
 log(JSON.stringify(storageInfo))

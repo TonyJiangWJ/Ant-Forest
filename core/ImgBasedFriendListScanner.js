@@ -10,11 +10,13 @@ importClass(java.util.concurrent.LinkedBlockingQueue)
 importClass(java.util.concurrent.ThreadPoolExecutor)
 importClass(java.util.concurrent.TimeUnit)
 importClass(java.util.concurrent.CountDownLatch)
-let _widgetUtils = typeof WidgetUtils === 'undefined' ? require('../lib/WidgetUtils.js') : WidgetUtils
-let automator = require('../lib/Automator.js')
-let _commonFunctions = typeof commonFunctions === 'undefined' ? require('../lib/CommonFunction.js') : commonFunctions
-let _config = typeof config === 'undefined' ? require('../config.js').config : config
+let { config: _config } = require('../config.js')(runtime, this)
+let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let _widgetUtils = singletoneRequire('WidgetUtils')
+let automator = singletoneRequire('Automator')
+let _commonFunctions = singletoneRequire('CommonFunction')
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
+
 let BaseScanner = require('./BaseScanner.js')
 const _package_name = 'com.eg.android.AlipayGphone'
 
