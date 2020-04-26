@@ -11,7 +11,9 @@
 ## 其他脚本
 
 - [蚂蚁庄园传送门](https://github.com/TonyJiangWJ/Ant-Manor)
-- [支付宝积分签到](https://github.com/TonyJiangWJ/Alipay-Credits)
+- [支付宝积分签到传送门](https://github.com/TonyJiangWJ/Alipay-Credits)
+- [京东签到传送门](https://github.com/TonyJiangWJ/JingDongBeans)
+- 拆分出来了基础项目，用于快速开发AutoJS脚本[AutoScriptBase](https://github.com/TonyJiangWJ/AutoScriptBase)
 
 ## 功能
 
