@@ -2,15 +2,14 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-19 23:29:43
+ * @Last Modified time: 2020-04-26 17:02:04
  * @Description: 
  */
-"ui";
-let inRunningMode = false
+'ui';
+
 let currentEngine = engines.myEngine().getSource() + ''
-if (currentEngine.endsWith('/config.js')) {
-  inRunningMode = true
-}
+let isRunningMode = currentEngine.endsWith('/config.js') && typeof module === 'undefined'
+
 
 importClass(android.text.TextWatcher)
 importClass(android.view.View)
@@ -132,6 +131,7 @@ let default_config = {
   device_height: device.height
 }
 const CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
+const PROJECT_NAME = '蚂蚁森林能量收集'
 let config = {}
 let storageConfig = storages.create(CONFIG_STORAGE_NAME)
 Object.keys(default_config).forEach(key => {
@@ -146,7 +146,7 @@ if (typeof config.collectable_energy_ball_content !== 'string') {
   config.collectable_energy_ball_content = default_config.collectable_energy_ball_content
 }
 
-if (!inRunningMode) {
+if (!isRunningMode) {
   if (config.device_height <= 10 || config.device_width <= 10) {
     toastLog('请先运行config.js并输入设备宽高')
     exit()
@@ -156,7 +156,8 @@ if (!inRunningMode) {
       scope.config_instance = {
         config: config,
         default_config: default_config,
-        storage_name: CONFIG_STORAGE_NAME
+        storage_name: CONFIG_STORAGE_NAME,
+        project_name: PROJECT_NAME
       }
     }
     return scope.config_instance
@@ -171,7 +172,6 @@ if (!inRunningMode) {
   let loadingDialog = null
 
   const _hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
-
   let commonFunctions = require('./lib/prototype/CommonFunction.js')
   let AesUtil = require('./lib/AesUtil.js')
   // 初始化list 为全局变量
@@ -1581,18 +1581,6 @@ if (!inRunningMode) {
       TextWatcherBuilder(text => { config.collectable_energy_ball_content = text + '' })
     )
 
-
-    // let runningEngines = engines.all()
-    // let currentEngine = engines.myEngine()
-
-    // let runningSize = runningEngines.length
-    // if (runningSize >= 1) {
-    //   runningEngines.forEach(engine => {
-    //     if (engine.id !== currentEngine.id) {
-    //       engine.forceStop()
-    //     }
-    //   })
-    // }
 
     console.verbose('界面初始化耗时' + (new Date().getTime() - start) + 'ms')
     setTimeout(function () {

@@ -14,11 +14,11 @@ let runningQueueDispatcher = singletoneRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog } = singletoneRequire('LogUtils')
 let FloatyInstance = singletoneRequire('FloatyUtil')
 let commonFunctions = singletoneRequire('CommonFunction')
+let tryRequestScreenCapture = singletoneRequire('TryRequestScreenCapture')
 
 let unlocker = require('./lib/Unlock.js')
 let antForestRunner = require('./core/Ant_forest.js')
 let formatDate = require('./lib/DateUtil.js')
-let { tryRequestScreenCapture } = require('./lib/TryRequestScreenCapture.js')
 
 // 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
 if (config.single_script) {
@@ -110,6 +110,8 @@ if (config.develop_mode) {
   }
 }
 
+events.removeAllListeners()
+events.recycle()
 runningQueueDispatcher.removeRunningTask(true)
 // 30秒后关闭，防止立即停止
 setTimeout(() => { exit() }, 1000 * 30)

@@ -2,10 +2,10 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-09 19:08:45
+ * @Last Modified time: 2020-04-26 16:56:44
  * @Description: 基于控件识别可收取信息
  */
-let { config: _config } = require('../config.js')(runtime, this)
+let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _widgetUtils = singletoneRequire('WidgetUtils')
 let automator = singletoneRequire('Automator')
@@ -82,7 +82,6 @@ const FriendListScanner = function () {
               // 动态修改预加载超时时间
               let dynamicTimeout = Math.ceil(listLength / 20) * 800
               _config.timeoutLoadFriendList = dynamicTimeout
-              let _storage_name = typeof storage_name === 'undefined' ? require('../config.js').storage_name : storage_name
               var configStorage = storages.create(_storage_name)
               configStorage.put('timeoutLoadFriendList', dynamicTimeout)
               // let { config: anotherConfig } = require('../config.js')
