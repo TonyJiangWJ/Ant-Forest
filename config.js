@@ -162,11 +162,7 @@ if (!inRunningMode) {
     return scope.config_instance
   }
 } else {
-  this.config_instance = {
-    config: config,
-    default_config: default_config,
-    storage_name: CONFIG_STORAGE_NAME
-  }
+
   let threadPool = new ThreadPoolExecutor(4, 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(16))
   let floatyWindow = null
   let floatyLock = threads.lock()
@@ -175,8 +171,7 @@ if (!inRunningMode) {
   let loadingDialog = null
 
   const _hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
-  // 传递给commonFunction 避免二次引用config.js
-  const storage_name = CONFIG_STORAGE_NAME
+
   let commonFunctions = require('./lib/prototype/CommonFunction.js')
   let AesUtil = require('./lib/AesUtil.js')
   // 初始化list 为全局变量
@@ -807,8 +802,8 @@ if (!inRunningMode) {
     // 创建选项菜单(右上角)
     ui.emitter.on("create_options_menu", menu => {
       menu.add("全部重置为默认")
-      menu.add("从配置文件中读取")
-      menu.add("将配置导出")
+      menu.add("从配置文件导入")
+      menu.add("导出到配置文件")
       menu.add("导入运行时数据")
       menu.add("导出运行时数据")
     })
@@ -831,7 +826,7 @@ if (!inRunningMode) {
             }
           })
           break
-        case "从配置文件中读取":
+        case "从配置文件导入":
           confirm('确定要从local_config.cfg中读取配置吗？').then(ok => {
             if (ok) {
               try {
@@ -875,7 +870,7 @@ if (!inRunningMode) {
             }
           })
           break
-        case "将配置导出":
+        case "导出到配置文件":
           confirm('确定要将配置导出到local_config.cfg吗？此操作会覆盖已有的local_config数据').then(ok => {
             if (ok) {
               Object.keys(default_config).forEach(key => {
@@ -1608,7 +1603,6 @@ if (!inRunningMode) {
   }, 500)
 
   ui.emitter.on('pause', () => {
-    // ui.finish()
     let isBlank = function (val) {
       return typeof val === 'undefined' || val === null || val === '' || ('' + val).trim() === ''
     }
