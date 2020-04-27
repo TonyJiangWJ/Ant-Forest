@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-26 17:02:04
+ * @Last Modified time: 2020-04-27 14:44:26
  * @Description: 
  */
 'ui';
@@ -19,7 +19,6 @@ importClass(java.util.concurrent.ThreadPoolExecutor)
 importClass(java.util.concurrent.TimeUnit)
 
 let default_config = {
-  develop_mode: false,
   password: '',
   is_alipay_locked: false,
   alipay_lock_password: '',
@@ -42,6 +41,8 @@ let default_config = {
   max_collect_repeat: 20,
   max_collect_wait_time: 60,
   show_debug_log: true,
+  show_engine_id: false,
+  develop_mode: false,
   auto_lock: false,
   lock_x: 150,
   lock_y: 970,
@@ -130,8 +131,8 @@ let default_config = {
   device_width: device.width,
   device_height: device.height
 }
-const CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
-const PROJECT_NAME = '蚂蚁森林能量收集'
+let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
+let PROJECT_NAME = '蚂蚁森林能量收集'
 let config = {}
 let storageConfig = storages.create(CONFIG_STORAGE_NAME)
 Object.keys(default_config).forEach(key => {
@@ -171,12 +172,12 @@ if (!isRunningMode) {
   let countdownThread = null
   let loadingDialog = null
 
-  const _hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
+  let _hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
   let commonFunctions = require('./lib/prototype/CommonFunction.js')
   let AesUtil = require('./lib/AesUtil.js')
   // 初始化list 为全局变量
   let whiteList = [], wateringBlackList = [], helpBallColorList = []
-  const setScrollDownUiVal = function () {
+  let setScrollDownUiVal = function () {
     ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
     ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
     ui.checkBottomBaseImgChkBox.setChecked(config.checkBottomBaseImg)
@@ -196,7 +197,7 @@ if (!isRunningMode) {
 
   }
 
-  const setOcrUiVal = function () {
+  let setOcrUiVal = function () {
     ui.useOcrChkBox.setChecked(config.useOcr)
     ui.ocrUseCacheChkBox.setChecked(config.ocrUseCache)
     ui.ocrThresholdInpt.text(config.ocrThreshold + '')
@@ -209,7 +210,7 @@ if (!isRunningMode) {
     ui.useOcrContainer.setVisibility(config.useOcr ? View.VISIBLE : View.GONE)
   }
 
-  const inputDeviceSize = function () {
+  let inputDeviceSize = function () {
     return Promise.resolve().then(() => {
       return dialogs.rawInput('请输入设备宽度：', config.device_width + '')
     }).then(x => {
@@ -235,11 +236,11 @@ if (!isRunningMode) {
     })
   }
 
-  const setDeviceSizeText = function () {
+  let setDeviceSizeText = function () {
     ui.deviceSizeText.text(config.device_width + 'px ' + config.device_height + 'px')
   }
 
-  const setColorSeekBar = function () {
+  let setColorSeekBar = function () {
     let rgbColor = colors.parseColor(config.min_floaty_color)
     let rgbColors = {
       red: colors.red(rgbColor),
@@ -251,7 +252,7 @@ if (!isRunningMode) {
     ui.blueSeekbar.setProgress(parseInt(rgbColors.blue / 255 * 100))
   }
 
-  const resetUiValues = function () {
+  let resetUiValues = function () {
     config.device_width = config.device_width > 0 ? config.device_width : 1
     config.device_height = config.device_height > 0 ? config.device_height : 1
     // 重置为默认
@@ -297,6 +298,8 @@ if (!isRunningMode) {
 
     ui.showDebugLogChkBox.setChecked(config.show_debug_log)
     ui.saveLogFileChkBox.setChecked(config.saveLogFile)
+    ui.showEngineIdChkBox.setChecked(config.show_engine_id)
+    ui.developModeChkBox.setChecked(config.develop_mode)
     ui.fileSizeInpt.text(config.back_size + '')
     ui.fileSizeContainer.setVisibility(config.saveLogFile ? View.VISIBLE : View.INVISIBLE)
 
@@ -408,7 +411,7 @@ if (!isRunningMode) {
     }, 3000)
   })
 
-  const TextWatcherBuilder = function (textCallback) {
+  let TextWatcherBuilder = function (textCallback) {
     return new TextWatcher({
       onTextChanged: (text) => {
         textCallback(text + '')
@@ -535,6 +538,8 @@ if (!isRunningMode) {
                   </horizontal>
                   {/* 是否显示debug日志 */}
                   <checkbox id="showDebugLogChkBox" text="是否显示debug日志" />
+                  <checkbox id="showEngineIdChkBox" text="是否在控制台中显示脚本引擎id" />
+                  <checkbox id="developModeChkBox" text="是否启用开发模式" />
                   <horizontal gravity="center">
                     <checkbox id="saveLogFileChkBox" text="是否保存日志到文件" />
                     <horizontal padding="10 0" id="fileSizeContainer" gravity="center" layout_weight="75">
@@ -714,7 +719,6 @@ if (!isRunningMode) {
                     </frame>
                     <button w="*" id="addBlack" text="添加" gravity="center" layout_gravity="center" />
                   </vertical>
-                  <checkbox id="developModeChkBox" text="开发模式" />
                 </vertical>
               </ScrollView>
             </frame>
@@ -831,7 +835,7 @@ if (!isRunningMode) {
             if (ok) {
               try {
                 if (files.exists(local_config_path)) {
-                  const refillConfigs = function (configStr) {
+                  let refillConfigs = function (configStr) {
                     let local_config = JSON.parse(configStr)
                     Object.keys(default_config).forEach(key => {
                       let defaultValue = local_config[key]
@@ -904,7 +908,7 @@ if (!isRunningMode) {
             if (ok) {
               if (files.exists(runtime_store_path)) {
                 let encrypt_content = files.read(runtime_store_path)
-                const resetRuntimeStore = function (runtimeStorageStr) {
+                let resetRuntimeStore = function (runtimeStorageStr) {
                   if (commonFunctions.importRuntimeStorage(runtimeStorageStr)) {
                     resetUiValues()
                     return true
@@ -1071,7 +1075,7 @@ if (!isRunningMode) {
       }
     })
 
-    const resetColorTextBySelector = function () {
+    let resetColorTextBySelector = function () {
       let progress = ui.redSeekbar.getProgress()
       let red = parseInt(progress * 255 / 100)
       progress = ui.greenSeekbar.getProgress()
@@ -1117,7 +1121,7 @@ if (!isRunningMode) {
       })
     })
 
-    const setFloatyStatusIfExist = function () {
+    let setFloatyStatusIfExist = function () {
       try {
         floatyLock.lock()
         if (floatyWindow !== null) {
@@ -1273,6 +1277,14 @@ if (!isRunningMode) {
 
     ui.showDebugLogChkBox.on('click', () => {
       config.show_debug_log = ui.showDebugLogChkBox.isChecked()
+    })
+
+    ui.showEngineIdChkBox.on('click', () => {
+      config.show_engine_id = ui.showEngineIdChkBox.isChecked()
+    })
+
+    ui.developModeChkBox.on('click', () => {
+      config.develop_mode = ui.developModeChkBox.isChecked()
     })
 
     ui.saveLogFileChkBox.on('click', () => {
@@ -1490,9 +1502,6 @@ if (!isRunningMode) {
       ui.wateringBlackListContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.GONE)
     })
 
-    ui.developModeChkBox.on('click', () => {
-      config.develop_mode = ui.developModeChkBox.isChecked()
-    })
     ui.wateringThresholdInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.wateringThreshold = parseInt(text) })
     )

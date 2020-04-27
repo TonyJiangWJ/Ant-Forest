@@ -1,4 +1,4 @@
-let singletoneRequire = require('./lib/SingletonRequirer.js')(runtime, this)
+let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let WidgetUtils = singletoneRequire('WidgetUtils')
 let commonFunctions = singletoneRequire('CommonFunction')
 let { config } = require('../config.js')
