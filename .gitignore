@@ -1,5 +1,6 @@
 .DS_Store
 *.zip
 *.log
-*.ign.js说明文档.pdf
 说明文档.pdf
+*.ign.js
+LockScreen.js
