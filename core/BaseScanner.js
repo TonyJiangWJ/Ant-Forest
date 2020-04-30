@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-30 21:00:45
+ * @Last Modified time: 2020-05-01 00:22:52
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -13,12 +13,14 @@ let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let customMuiltiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/MuiltiTouchCollect.js') ? require('../extends/MuiltiTouchCollect.js') : null
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog } = singletonRequire('LogUtils')
+
+let _package_name = 'com.eg.android.AlipayGphone'
+
 const BaseScanner = function () {
   this.increased_energy = 0
   this.current_time = 0
   this.collect_any = false
   this.min_countdown = 10000
-
   /**
    * 展示当前累积收集能量信息，累加已记录的和当前运行轮次所增加的
    * 
@@ -279,6 +281,102 @@ const BaseScanner = function () {
       debugInfo('not found using protect info')
     }
     return false
+  }
+
+  this.returnToListAndCheck = function () {
+    automator.back()
+    sleep(500)
+    let returnCount = 0
+    while (!_widgetUtils.friendListWaiting()) {
+      if (returnCount++ === 2) {
+        // 等待两秒后再次触发
+        automator.back()
+      }
+      if (returnCount > 5) {
+        errorInfo('返回好友排行榜失败，重新开始')
+        return false
+      }
+    }
+  }
+
+  this.doCollectTargetFriend = function (obj) {
+    debugInfo(['准备开始收取好友：「{}」', obj.name])
+    let temp = this.protectDetect(_package_name, obj.name)
+    let preGot, preE, rentery = false
+    try {
+      preGot = _widgetUtils.getYouCollectEnergy() || 0
+      preE = _widgetUtils.getFriendEnergy()
+    } catch (e) { errorInfo("[" + obj.name + "]获取收集前能量异常" + e) }
+    if (_config.help_friend) {
+      rentery = this.collectAndHelp(obj.isHelp)
+    } else {
+      this.collectEnergy()
+    }
+    try {
+      // 等待控件数据刷新
+      sleep(150)
+      let postGet = _widgetUtils.getYouCollectEnergy() || 0
+      let postE = _widgetUtils.getFriendEnergy()
+      if (!obj.isHelp && postGet !== null && preGot !== null) {
+        let gotEnergy = postGet - preGot
+        let gotEnergyAfterWater = gotEnergy
+        debugInfo("开始收集前:" + preGot + "收集后:" + postGet)
+        if (gotEnergy) {
+          let needWaterback = _commonFunctions.recordFriendCollectInfo({
+            friendName: obj.name,
+            friendEnergy: postE,
+            postCollect: postGet,
+            preCollect: preGot,
+            helpCollect: 0
+          })
+          try {
+            if (needWaterback) {
+              _widgetUtils.wateringFriends()
+              gotEnergyAfterWater = _widgetUtils.getYouCollectEnergy() - preGet
+            }
+          } catch (e) {
+            errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
+          }
+          logInfo([
+            "收取好友:{} 能量 {}g {}",
+            obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (gotEnergy - gotEnergyAfterWater) + 'g' : '')
+          ])
+          this.showCollectSummaryFloaty(gotEnergy)
+        } else {
+          debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
+        }
+      } else if (obj.isHelp && postE !== null && preE !== null) {
+        let gotEnergy = postE - preE
+        debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
+        if (gotEnergy > 0) {
+          logInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
+          _commonFunctions.recordFriendCollectInfo({
+            friendName: obj.name,
+            friendEnergy: postE,
+            postCollect: postGet,
+            preCollect: preGot,
+            helpCollect: gotEnergy
+          })
+          if (_config.try_collect_by_muilti_touch) {
+            // 如果是可帮助 且 无法获取控件信息的，以帮助收取的重新进入判断一次
+            rentery = true
+          }
+        }
+      }
+    } catch (e) {
+      errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
+    }
+    
+    temp.interrupt()
+    debugInfo('好友能量收取完毕, 回到好友排行榜')
+    if (false === this.returnToListAndCheck()) {
+      return false
+    }
+    if (rentery) {
+      obj.isHelp = false
+      return this.collectTargetFriend(obj)
+    }
+    return true
   }
 }
 module.exports = BaseScanner
