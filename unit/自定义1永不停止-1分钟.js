@@ -6,10 +6,10 @@
  * @Description: 
  */
 var {default_config,storage_name:_storage_name} = require('../config.js')(runtime, this)
-let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 var configStorage = storages.create(_storage_name)
-var FileUtils = singletoneRequire('FileUtils')
-var commonFunctions = singletoneRequire('CommonFunction')
+var FileUtils = singletonRequire('FileUtils')
+var commonFunctions = singletonRequire('CommonFunction')
 Object.keys(default_config).forEach((key)=>{
   log(key + ":" + configStorage.get(key))
 })

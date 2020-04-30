@@ -1,24 +1,26 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-25 19:12:10
+ * @Last Modified time: 2020-04-30 14:29:01
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
-let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
-let _widgetUtils = singletoneRequire('WidgetUtils')
-let automator = singletoneRequire('Automator')
-let _commonFunctions = singletoneRequire('CommonFunction')
-let _runningQueueDispatcher = singletoneRequire('RunningQueueDispatcher')
-let alipayUnlocker = singletoneRequire('AlipayUnlocker')
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let _widgetUtils = singletonRequire('WidgetUtils')
+let automator = singletonRequire('Automator')
+let _commonFunctions = singletonRequire('CommonFunction')
+let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
+let alipayUnlocker = singletonRequire('AlipayUnlocker')
 let FriendListScanner = require('./FriendListScanner.js')
 let ImgBasedFriendListScanner = null
 if (_config.base_on_image) {
   ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
 }
+let BaseScanner = require('./BaseScanner.js')
 
 function Ant_forest () {
   const _package_name = 'com.eg.android.AlipayGphone'
+  let _base_scanner = new BaseScanner()
 
   let _pre_energy = 0, // 记录收取前能量值
     _post_energy = 0, // 记录收取后能量值
@@ -257,6 +259,21 @@ function Ant_forest () {
     } else {
       _min_countdown = null
       logInfo('无可收取能量')
+      if (_config.try_collect_by_muilti_touch) {
+        let toasts = getToastAsync(_package_name, 1, function () {
+          _base_scanner.muiltiTouchToCollect()
+          return 1
+        })
+        toasts.forEach(function (toast) {
+          let countdown = toast.match(/\d+/g)
+          if (countdown !== null && countdown.length >= 2) {
+            temp.push(countdown[0] * 60 - -countdown[1])
+          } else {
+            errorInfo('获取倒计时错误：' + countdown)
+          }
+        })
+        _min_countdown = Math.min.apply(null, temp)
+      }
     }
     _timestamp = new Date()
   }
