@@ -1,6 +1,6 @@
 
-let singletoneRequire = require('../../lib/SingletonRequirer.js')(runtime, this)
-let runningQueueDispatcher = singletoneRequire('RunningQueueDispatcher')
+let singletonRequire = require('../../lib/SingletonRequirer.js')(runtime, this)
+let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let pwd = files.cwd()
 runningQueueDispatcher.showDispatchStatus()
 runningQueueDispatcher.clearAll()

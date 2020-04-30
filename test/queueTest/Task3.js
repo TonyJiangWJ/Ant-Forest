@@ -5,9 +5,9 @@
  * @Last Modified time: 2020-04-23 22:50:22
  * @Description: 
  */
-let singletoneRequire = require('../../lib/SingletonRequirer.js')(runtime, this)
-let runningQueueDispatcher = singletoneRequire('RunningQueueDispatcher')
-let commonFunctions = singletoneRequire('CommonFunction')
+let singletonRequire = require('../../lib/SingletonRequirer.js')(runtime, this)
+let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
+let commonFunctions = singletonRequire('CommonFunction')
 
 runningQueueDispatcher.addRunningTask()
 runningQueueDispatcher.showDispatchStatus()

@@ -3,9 +3,9 @@
 
 let { config } = require('../config.js')(runtime, this)
 
-let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
-let { debugInfo, errorInfo, warnInfo, logInfo, infoLog } = singletoneRequire('LogUtils')
-let WidgetUtil = singletoneRequire('WidgetUtils')
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { debugInfo, errorInfo, warnInfo, logInfo, infoLog } = singletonRequire('LogUtils')
+let WidgetUtil = singletonRequire('WidgetUtils')
 console.show()
 logInfo('能量球检测正则：' + config.collectable_energy_ball_content)
 config.show_debug_log = true

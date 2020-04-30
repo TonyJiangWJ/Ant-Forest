@@ -1,20 +1,20 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-24 11:31:03
+ * @Last Modified time: 2020-04-30 13:44:33
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
-let singletoneRequire = require('./lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 
 if (config.base_on_image) {
   runtime.loadDex('./lib/autojs-tools.dex')
 }
-let runningQueueDispatcher = singletoneRequire('RunningQueueDispatcher')
-let { logInfo, errorInfo, warnInfo, debugInfo, infoLog } = singletoneRequire('LogUtils')
-let FloatyInstance = singletoneRequire('FloatyUtil')
-let commonFunctions = singletoneRequire('CommonFunction')
-let tryRequestScreenCapture = singletoneRequire('TryRequestScreenCapture')
+let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
+let { logInfo, errorInfo, warnInfo, debugInfo, infoLog } = singletonRequire('LogUtils')
+let FloatyInstance = singletonRequire('FloatyUtil')
+let commonFunctions = singletonRequire('CommonFunction')
+let tryRequestScreenCapture = singletonRequire('TryRequestScreenCapture')
 
 let unlocker = require('./lib/Unlock.js')
 let antForestRunner = require('./core/Ant_forest.js')

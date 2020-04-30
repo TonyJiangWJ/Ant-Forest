@@ -54,6 +54,7 @@
 - `20191221-新增` 支持支付宝手势密码解锁，勾选 `支付宝是否锁定` 然后填入手势顺序经过的九宫格数字，每个数字都需要填写，比如手势为简单的Z 则输入`1235789`
 - `20191221-新增` 截图权限相关默认 `获取截图等待时间` 是500毫秒，如果经常失败请修改该值 改大一些
 - `20200110-新增` 加入配置导出和导入的功能，通过AES加密，默认密码是 `device.getAndroidId()`，因此仅本机可用。如果需要跨设备或者免费版和Pro版之间备份，自行获取 `device.getAndroidId()` 然后根据提示输入即可
+- `新增` 可以配置浇水回馈的能量克数 可选：5 10 18， 1 就算了别那么小气
 
 ## 使用
 
@@ -93,6 +94,7 @@
 - 排行榜判断失效请修改控件文本配置中的 `校验排行榜分析范围` 具体数据可以通过运行 `util/悬浮窗框位置.js` 来获取，运行后点击悬浮窗即可调整位置和大小。
   ![悬浮窗框位置示例](./resources/floaty_using.jpg)
 - 其他问题可以提ISSUE，但是请将日志文件大小调整为1024，打开开发模式并提供出错位置的日志信息，包括 `logs/develop.log` 和 `logs/log-verbose.log`
+- 蚂蚁森林更新了，无法获取到能量球控件，尝试开启 `区域点击来收取能量`, 运行 `config.js` `进阶配置` 里面，同时可以自己扩展区域点击的方法，见下方的 [#添加自定义区域点击代码](#添加自定义区域点击代码)，另外默认配置中的 `个人首页` 和 `好友首页` 文本内容可能也需要进行修改 目前有效的是分别改为 `查看更多.*` 和 `你收取TA`。
 
 ## 添加解锁设备
 
@@ -115,7 +117,7 @@ module.exports = function (obj) {
 
 ## 添加自定义锁屏代码
 
-- 同解锁设备，在extends文件夹下创建LockScreen.js，内容可以参考LockScreen-demo.js 实现自定义解锁
+- 同解锁设备，在extends文件夹下创建LockScreen.js，内容可以参考LockScreen-demo.js 实现自定义锁屏
 
 ```javascript
   let { config: _config } = require('../config.js')(runtime, this)
@@ -127,6 +129,25 @@ module.exports = function (obj) {
     sleep(500)
     // 点击锁屏按钮
     click(parseInt(_config.lock_x), parseInt(_config.lock_y))
+  }
+```
+
+## 添加自定义区域点击代码
+
+- 同解锁设备，在extends文件夹下创建MuiltiTouchCollect.js，内容可以参考MuiltiTouchCollect-demo.js 实现自定义区域点击
+
+```javascript
+
+  module.exports = function () {
+    // 循环点击1080P 分辨率下的区域(起始[150, 400]-结束[850, 800])，其他分辨率根据实际情况微调
+    for (let x = 150; x <= 850; x += 100) {
+      for (let y = 650; y <= 750; y += 100) {
+        let px = x
+        let py = x < 550 ? y - (0.5 * x - 150) : y - (-0.5 * x + 400)
+        automator.click(px, py)
+        sleep(20)
+      }
+    }
   }
 ```
 

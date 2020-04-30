@@ -1,11 +1,11 @@
-let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
-let WidgetUtils = singletoneRequire('WidgetUtils')
-let commonFunctions = singletoneRequire('CommonFunction')
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let WidgetUtils = singletonRequire('WidgetUtils')
+let commonFunctions = singletonRequire('CommonFunction')
 let { config } = require('../config.js')
-let automator = singletoneRequire('Automator')
+let automator = singletonRequire('Automator')
 let {
   debugInfo, logInfo, infoLog, warnInfo, errorInfo
-} = singletoneRequire('LogUtils')
+} = singletonRequire('LogUtils')
 const PACKAGE_NAME = 'com.eg.android.AlipayGphone'
 const START_DATA = 'alipays://platformapi/startapp?appId=60000002'
 
