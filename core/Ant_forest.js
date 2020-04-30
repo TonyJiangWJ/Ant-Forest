@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-30 14:29:01
+ * @Last Modified time: 2020-04-30 22:23:17
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -220,9 +220,9 @@ function Ant_forest () {
           return obj.bounds().height() / obj.bounds().width() > 1.05
         })
     }
+    let temp = []
     if (target && target.exists()) {
       let ball = target.untilFind()
-      let temp = []
       debugInfo('待收取球数' + ball.length)
       let toasts = getToastAsync(_package_name, ball.length >= 2 ? 2 : ball.length, function () {
         let screen = _commonFunctions.checkCaptureScreenPermission()
