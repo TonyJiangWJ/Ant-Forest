@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-30 14:02:38
+ * @Last Modified time: 2020-05-01 00:09:43
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -13,9 +13,6 @@ let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 
 let BaseScanner = require('./BaseScanner.js')
-
-
-const _package_name = 'com.eg.android.AlipayGphone'
 
 const FriendListScanner = function () {
   BaseScanner.call(this)
@@ -446,7 +443,6 @@ FriendListScanner.prototype.whetherFriendListValidLength = function (friends_lis
 }
 
 FriendListScanner.prototype.collectTargetFriend = function (obj) {
-  let rentery = false
   if (!obj.protect) {
     //automator.click(obj.target.centerX(), obj.target.centerY())
     debugInfo('等待进入好友主页：' + obj.name)
@@ -472,91 +468,9 @@ FriendListScanner.prototype.collectTargetFriend = function (obj) {
     }
     if (this.protectInfoDetect(obj.name)) {
       warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
-      automator.back()
-      return
+      return this.returnToListAndCheck()
     }
-    debugInfo(['准备开始收取好友：「{}」', obj.name])
-    let temp = this.protectDetect(_package_name, obj.name)
-    let preGot
-    let preE
-    try {
-      preGot = _widgetUtils.getYouCollectEnergy() || 0
-      preE = _widgetUtils.getFriendEnergy()
-    } catch (e) { errorInfo("[" + obj.name + "]获取收集前能量异常" + e) }
-    if (_config.help_friend) {
-      rentery = this.collectAndHelp(obj.isHelp)
-    } else {
-      this.collectEnergy()
-    }
-    try {
-      let postGet = _widgetUtils.getYouCollectEnergy() || 0
-      let postE = _widgetUtils.getFriendEnergy()
-      if (!obj.isHelp && postGet !== null && preGot !== null) {
-        let gotEnergy = postGet - preGot
-        let gotEnergyAfterWater = gotEnergy
-        debugInfo("开始收集前:" + preGot + "收集后:" + postGet)
-        if (gotEnergy) {
-          let needWaterback = _commonFunctions.recordFriendCollectInfo({
-            friendName: obj.name,
-            friendEnergy: postE,
-            postCollect: postGet,
-            preCollect: preGot,
-            helpCollect: 0
-          })
-          try {
-            if (needWaterback) {
-              _widgetUtils.wateringFriends()
-              gotEnergyAfterWater = _widgetUtils.getYouCollectEnergy() - preGet
-            }
-          } catch (e) {
-            errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
-          }
-          logInfo([
-            "收取好友:{} 能量 {}g {}",
-            obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (gotEnergy - gotEnergyAfterWater) + 'g' : '')
-          ])
-          this.showCollectSummaryFloaty(gotEnergy)
-        } else {
-          debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
-
-        }
-      } else if (obj.isHelp && postE !== null && preE !== null) {
-        let gotEnergy = postE - preE
-        debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
-        if (gotEnergy) {
-          logInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
-          _commonFunctions.recordFriendCollectInfo({
-            friendName: obj.name,
-            friendEnergy: postE,
-            postCollect: postGet,
-            preCollect: preGot,
-            helpCollect: gotEnergy
-          })
-        } else {
-          logInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
-        }
-      }
-    } catch (e) {
-      errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
-    }
-    automator.back()
-    temp.interrupt()
-    debugInfo('好友能量收取完毕, 回到好友排行榜')
-    let returnCount = 0
-    while (!_widgetUtils.friendListWaiting()) {
-      if (returnCount++ === 2) {
-        // 等待两秒后再次触发
-        automator.back()
-      }
-      if (returnCount > 5) {
-        errorInfo('返回好友排行榜失败，重新开始')
-        return false
-      }
-    }
-    if (rentery) {
-      obj.isHelp = false
-      return this.collectTargetFriend(obj)
-    }
+    return this.doCollectTargetFriend(obj)
   }
   return true
 }

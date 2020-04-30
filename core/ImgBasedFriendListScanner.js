@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-02-24 09:27:48
+ * @Last Modified time: 2020-05-01 00:49:35
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.BitCheck)
@@ -18,7 +18,6 @@ let _commonFunctions = singletonRequire('CommonFunction')
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
 
 let BaseScanner = require('./BaseScanner.js')
-const _package_name = 'com.eg.android.AlipayGphone'
 
 const Stack = function () {
   this.size = 0
@@ -579,7 +578,6 @@ ImgBasedFriendListScanner.prototype.returnToListAndCheck = function () {
 }
 
 ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
-  let rentery = false
   if (!obj.protect) {
     //automator.click(obj.target.centerX(), obj.target.centerY())
     debugInfo(['等待进入好友主页, 位置：「{}, {}」设备宽高：[{}, {}]', obj.point.x, obj.point.y, _config.device_width, _config.device_height])
@@ -638,80 +636,7 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
     if (skip) {
       return this.returnToListAndCheck()
     }
-    debugInfo(['准备开始收取好友：「{}」', obj.name])
-    let temp = this.protectDetect(_package_name, obj.name)
-    let preGot
-    let preE
-    try {
-      preGot = _widgetUtils.getYouCollectEnergy() || 0
-      preE = _widgetUtils.getFriendEnergy()
-    } catch (e) { 
-      errorInfo("[" + obj.name + "]获取收集前能量异常" + e) 
-    }
-    if (_config.help_friend) {
-      rentery = this.collectAndHelp(obj.isHelp)
-    } else {
-      this.collectEnergy()
-    }
-    try {
-      sleep(300)
-      let postGet = _widgetUtils.getYouCollectEnergy() || 0
-      let postE = _widgetUtils.getFriendEnergy()
-      if (!obj.isHelp && postGet !== null && preGot !== null) {
-        let gotEnergy = postGet - preGot
-        debugInfo("开始收集前:" + preGot + "收集后:" + postGet)
-        if (gotEnergy) {
-          let needWaterback = _commonFunctions.recordFriendCollectInfo({
-            friendName: obj.name,
-            friendEnergy: postE,
-            postCollect: postGet,
-            preCollect: preGot,
-            helpCollect: 0
-          })
-          try {
-            if (needWaterback) {
-              _widgetUtils.wateringFriends()
-              gotEnergy -= 10
-            }
-          } catch (e) {
-            errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
-          }
-          logInfo([
-            "收取好友:{} 能量 {}g {}",
-            obj.name, gotEnergy, (needWaterback ? '其中浇水10g' : '')
-          ])
-          this.showCollectSummaryFloaty(gotEnergy)
-        } else {
-          debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
-        }
-      } else if (obj.isHelp && postE !== null && preE !== null) {
-        let gotEnergy = postE - preE
-        debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
-        if (gotEnergy) {
-          logInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
-          _commonFunctions.recordFriendCollectInfo({
-            friendName: obj.name,
-            friendEnergy: postE,
-            postCollect: postGet,
-            preCollect: preGot,
-            helpCollect: gotEnergy
-          })
-        } else {
-          logInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
-        }
-      }
-    } catch (e) {
-      errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
-    }
-    temp.interrupt()
-    debugInfo('好友能量收取完毕, 回到好友排行榜')
-    if (false === this.returnToListAndCheck()) {
-      return false
-    }
-    if (rentery) {
-      obj.isHelp = false
-      return this.collectTargetFriend(obj)
-    }
+    return this.doCollectTargetFriend(obj)
   }
   return true
 }
