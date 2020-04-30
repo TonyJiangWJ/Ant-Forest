@@ -2,15 +2,15 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-26 16:56:44
+ * @Last Modified time: 2020-04-30 14:02:38
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
-let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
-let _widgetUtils = singletoneRequire('WidgetUtils')
-let automator = singletoneRequire('Automator')
-let _commonFunctions = singletoneRequire('CommonFunction')
-let FileUtils = singletoneRequire('FileUtils')
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let _widgetUtils = singletonRequire('WidgetUtils')
+let automator = singletonRequire('Automator')
+let _commonFunctions = singletonRequire('CommonFunction')
+let FileUtils = singletonRequire('FileUtils')
 
 let BaseScanner = require('./BaseScanner.js')
 
@@ -493,6 +493,7 @@ FriendListScanner.prototype.collectTargetFriend = function (obj) {
       let postE = _widgetUtils.getFriendEnergy()
       if (!obj.isHelp && postGet !== null && preGot !== null) {
         let gotEnergy = postGet - preGot
+        let gotEnergyAfterWater = gotEnergy
         debugInfo("开始收集前:" + preGot + "收集后:" + postGet)
         if (gotEnergy) {
           let needWaterback = _commonFunctions.recordFriendCollectInfo({
@@ -505,14 +506,14 @@ FriendListScanner.prototype.collectTargetFriend = function (obj) {
           try {
             if (needWaterback) {
               _widgetUtils.wateringFriends()
-              gotEnergy -= 10
+              gotEnergyAfterWater = _widgetUtils.getYouCollectEnergy() - preGet
             }
           } catch (e) {
             errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
           }
           logInfo([
             "收取好友:{} 能量 {}g {}",
-            obj.name, gotEnergy, (needWaterback ? '其中浇水10g' : '')
+            obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (gotEnergy - gotEnergyAfterWater) + 'g' : '')
           ])
           this.showCollectSummaryFloaty(gotEnergy)
         } else {

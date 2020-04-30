@@ -2,15 +2,17 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-27 00:32:19
+ * @Last Modified time: 2020-04-30 21:00:45
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
-let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
-let _widgetUtils = singletoneRequire('WidgetUtils')
-let automator = singletoneRequire('Automator')
-let _commonFunctions = singletoneRequire('CommonFunction')
-
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let _widgetUtils = singletonRequire('WidgetUtils')
+let automator = singletonRequire('Automator')
+let _commonFunctions = singletonRequire('CommonFunction')
+let FileUtils = singletonRequire('FileUtils')
+let customMuiltiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/MuiltiTouchCollect.js') ? require('../extends/MuiltiTouchCollect.js') : null
+let { debugInfo, logInfo, errorInfo, warnInfo, infoLog } = singletonRequire('LogUtils')
 const BaseScanner = function () {
   this.increased_energy = 0
   this.current_time = 0
@@ -64,16 +66,56 @@ const BaseScanner = function () {
 
   // 收取能量
   this.collectEnergy = function (isHelp) {
-    let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, isHelp ? 200 : 1000, true)
+    let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, isHelp ? 200 : 500, true)
     if (ballCheckContainer !== null) {
-      debugInfo('能量球存在')
+      debugInfo(['可收取能量球个数：「{}」', ballCheckContainer.target.length])
+      if (_config.cutAndSaveCountdown) {
+        // 保存图像数据 方便后续开发
+        let screen = _commonFunctions.checkCaptureScreenPermission()
+        if (screen) {
+          let saveDir = FileUtils.getCurrentWorkPath() + "/resources/tree_collect/"
+          files.ensureDir(saveDir)
+          images.save(screen, _commonFunctions.formatString('{}can_collect_ball_{}_{}.png',
+            saveDir,
+            ballCheckContainer.target.length,
+            (100 + (1000 * Math.random()) % 899).toFixed(0))
+          )
+          screen.recycle()
+        }
+      }
       let that = this
       ballCheckContainer.target
         .forEach(function (energy_ball) {
           that.collectBallEnergy(energy_ball, ballCheckContainer.isDesc)
         })
     } else {
-      debugInfo('无能量球可收取')
+      debugInfo('控件判断无能量球可收取')
+      // 尝试全局点击
+      if (_config.try_collect_by_muilti_touch) {
+        this.muiltiTouchToCollect()
+      }
+    }
+  }
+
+  this.defaultMuiltiTouch = function () {
+    let scaleRate = _config.device_width / 1080
+    let y = 700
+    // 模拟一个梯形点击区域
+    for (let x = 150; x <= 850; x += 100) {
+      let px = x
+      let py = x < 550 ? y - (0.5 * x - 150) : y - (-0.5 * x + 400)
+      automator.click(parseInt(px * scaleRate), parseInt(py * scaleRate))
+      sleep(15)
+    }
+  }
+
+  this.muiltiTouchToCollect = function () {
+    if (customMuiltiTouch) {
+      debugInfo('使用自定义扩展的区域点击')
+      customMuiltiTouch()
+    } else {
+      debugInfo('使用默认的区域点击')
+      this.defaultMuiltiTouch()
     }
   }
 

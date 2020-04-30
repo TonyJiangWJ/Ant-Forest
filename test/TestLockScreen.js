@@ -6,6 +6,6 @@
  * @Description: 测试锁屏功能
  */
 
-let singletoneRequire = require('../lib/SingletonRequirer.js')(runtime, this)
-let automator = singletoneRequire('Automator')
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let automator = singletonRequire('Automator')
 automator.lockScreen()
