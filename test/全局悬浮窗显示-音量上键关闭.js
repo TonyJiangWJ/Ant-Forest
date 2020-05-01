@@ -137,9 +137,6 @@ window.canvas.on("draw", function (canvas) {
     if (passwindow > 1000) {
       startTime = new Date().getTime()
       console.verbose('关闭倒计时：' + countdown.toFixed(2))
-      if (countdown < 0) {
-        exitAndClean()
-      }
     }
     // drawCoordinateAxis(canvas, paint)
     converted = true
@@ -163,4 +160,4 @@ threads.start(function () {
   })
 })
 
-setInterval(function () { }, 5000)
+setTimeout(function () { exitAndClean() }, 120000)

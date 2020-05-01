@@ -259,9 +259,9 @@ function Ant_forest () {
     } else {
       _min_countdown = null
       logInfo('无可收取能量')
-      if (_config.try_collect_by_muilti_touch) {
+      if (_config.try_collect_by_multi_touch) {
         let toasts = getToastAsync(_package_name, 1, function () {
-          _base_scanner.muiltiTouchToCollect()
+          _base_scanner.multiTouchToCollect()
           return 1
         })
         toasts.forEach(function (toast) {

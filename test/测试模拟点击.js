@@ -12,6 +12,6 @@ let _BaseScanner = require('../core/BaseScanner.js')
 let scanner = new _BaseScanner()
 let start = new Date().getTime()
 
-scanner.muiltiTouchToCollect()
+scanner.multiTouchToCollect()
 
 toastLog('点击完毕 耗时：' + (new Date().getTime() - start) + "ms")

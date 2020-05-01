@@ -134,7 +134,7 @@ module.exports = function (obj) {
 
 ## 添加自定义区域点击代码
 
-- 同解锁设备，在extends文件夹下创建MuiltiTouchCollect.js，内容可以参考MuiltiTouchCollect-demo.js 实现自定义区域点击
+- 同解锁设备，在extends文件夹下创建multiTouchCollect.js，内容可以参考multiTouchCollect-demo.js 实现自定义区域点击
 
 ```javascript
 

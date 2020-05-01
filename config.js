@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-30 20:49:06
+ * @Last Modified time: 2020-05-01 11:24:19
  * @Description: 
  */
 'ui';
@@ -125,7 +125,7 @@ let default_config = {
   device_width: device.width,
   device_height: device.height,
   // 尝试全局点击收集能量，能量球控件无法获取时使用 默认开启
-  try_collect_by_muilti_touch: true
+  try_collect_by_multi_touch: true
 }
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
@@ -348,7 +348,7 @@ if (!isRunningMode) {
     ui.wateringBlackListContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.GONE)
     ui.wateringBackAmountSpinner.setSelection([5, 10, 18].indexOf(config.targetWateringAmount))
 
-    ui.tryCollectByMuiltiTouchChkBox.setChecked(config.try_collect_by_muilti_touch)
+    ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     setScrollDownUiVal()
     setOcrUiVal()
 
@@ -622,7 +622,7 @@ if (!isRunningMode) {
                   {/* 基于图像分析 */}
                   <checkbox id="autoSetImgOrWidgetChkBox" text="自动判断基于图像还是控件分析" />
                   <text text="当可收取能量球控件无法获取时开启区域点击，后期会开发基于图像分析的方式" textSize="9sp" />
-                  <checkbox id="tryCollectByMuiltiTouchChkBox" text="是否尝试区域点击来收取能量" />
+                  <checkbox id="tryCollectByMultiTouchChkBox" text="是否尝试区域点击来收取能量" />
                   <checkbox id="baseOnImageChkBox" text="基于图像分析" />
                   <vertical id="baseOnImageContainer">
                     <checkbox id="checkBottomBaseImgChkBox" text="基于图像判断列表底部" />
@@ -1445,8 +1445,8 @@ if (!isRunningMode) {
       setScrollDownUiVal()
     })
 
-    ui.tryCollectByMuiltiTouchChkBox.on('click', () => {
-      config.try_collect_by_muilti_touch = ui.tryCollectByMuiltiTouchChkBox.isChecked()
+    ui.tryCollectByMultiTouchChkBox.on('click', () => {
+      config.try_collect_by_multi_touch = ui.tryCollectByMultiTouchChkBox.isChecked()
     })
 
     ui.baseOnImageChkBox.on('click', () => {

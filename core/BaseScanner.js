@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 00:22:52
+ * @Last Modified time: 2020-05-01 11:24:35
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -11,7 +11,7 @@ let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
-let customMuiltiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/MuiltiTouchCollect.js') ? require('../extends/MuiltiTouchCollect.js') : null
+let customMultiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/multiTouchCollect.js') ? require('../extends/multiTouchCollect.js') : null
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog } = singletonRequire('LogUtils')
 
 let _package_name = 'com.eg.android.AlipayGphone'
@@ -93,17 +93,17 @@ const BaseScanner = function () {
     } else {
       debugInfo('控件判断无能量球可收取')
       // 尝试全局点击
-      if (_config.try_collect_by_muilti_touch) {
-        this.muiltiTouchToCollect()
+      if (_config.try_collect_by_multi_touch) {
+        this.multiTouchToCollect()
       }
     }
   }
 
-  this.defaultMuiltiTouch = function () {
+  this.defaultMultiTouch = function () {
     let scaleRate = _config.device_width / 1080
     let y = 700
     // 模拟一个梯形点击区域
-    for (let x = 150; x <= 850; x += 100) {
+    for (let x = 200; x <= 900; x += 100) {
       let px = x
       let py = x < 550 ? y - (0.5 * x - 150) : y - (-0.5 * x + 400)
       automator.click(parseInt(px * scaleRate), parseInt(py * scaleRate))
@@ -111,13 +111,13 @@ const BaseScanner = function () {
     }
   }
 
-  this.muiltiTouchToCollect = function () {
-    if (customMuiltiTouch) {
+  this.multiTouchToCollect = function () {
+    if (customMultiTouch) {
       debugInfo('使用自定义扩展的区域点击')
-      customMuiltiTouch()
+      customMultiTouch()
     } else {
       debugInfo('使用默认的区域点击')
-      this.defaultMuiltiTouch()
+      this.defaultMultiTouch()
     }
   }
 
@@ -357,7 +357,7 @@ const BaseScanner = function () {
             preCollect: preGot,
             helpCollect: gotEnergy
           })
-          if (_config.try_collect_by_muilti_touch) {
+          if (_config.try_collect_by_multi_touch) {
             // 如果是可帮助 且 无法获取控件信息的，以帮助收取的重新进入判断一次
             rentery = true
           }
