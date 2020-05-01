@@ -164,3 +164,10 @@ module.exports = function (obj) {
 
 - ~目前部分支付宝版本无法识别控件，因此无法使用~ 已加入图像分析
 - 部分个人首页可能无法获取控件信息，因此无法使用
+
+## 请开发者喝咖啡
+
+- 欢迎使用支付宝或微信请我喝杯咖啡
+  - 一元喝速溶、5元喝胶囊、12买全家、33星巴克感激不尽
+  
+  ![alipay_qrcode](./resources/alipay_qrcode.jpg)  ![wechat_qrcode](./resources/wechat_qrcode.png)
