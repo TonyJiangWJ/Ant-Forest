@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-23 22:54:22
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 12:39:08
+ * @Last Modified time: 2020-05-01 17:39:32
  * @Description: 
  */
 
@@ -16,6 +16,12 @@ importClass(com.tony.DownloaderListener)
 let apiUrl = 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest'
 let targetOutputDir = FileUtils.getRealMainScriptPath(true)
 let downloader = new Downloader()
+downloader.setListener(new DownloaderListener({
+  updateGui: function (string) {
+    log(string)
+  },
+  updateProgress: function (progressInfo) { }
+}))
 log('下载并解压文件到目录：' + targetOutputDir)
 // 设置尝试获取总大小的次数，默认5次，github的content-length偶尔会给 偶尔不会给，主要原因是服务端用了分块传输的缘故
 // downloader.setTryCount(5)
