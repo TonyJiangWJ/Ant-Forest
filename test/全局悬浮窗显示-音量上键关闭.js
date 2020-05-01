@@ -161,7 +161,6 @@ window.canvas.on("draw", function (canvas) {
 let lastChangedTime = new Date().getTime()
 threads.start(function () {
   toastLog('按音量上键关闭，音量下切换')
-  events.removeAllKeyDownListeners('volume_down')
   events.observeKey()
   events.on("key_down", function (keyCode, event) {
     if (keyCode === 24) {

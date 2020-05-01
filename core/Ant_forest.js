@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-30 22:23:17
+ * @Last Modified time: 2020-05-01 17:21:00
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -803,12 +803,12 @@ function Ant_forest () {
             _has_next = true
             _re_try = 0
           }
-          // 当前没有遗漏 准备结束当前循环
-          if (!_lost_someone) {
-            this.endLoop()
-            if (_has_next === false || _re_try > 5) {
-              break
-            }
+        }
+        // 当前没有遗漏 准备结束当前循环
+        if (!_lost_someone) {
+          this.endLoop()
+          if (_has_next === false || _re_try > 5) {
+            break
           }
         }
         logInfo('========本轮结束========')
