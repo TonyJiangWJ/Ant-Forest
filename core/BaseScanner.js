@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 11:24:35
+ * @Last Modified time: 2020-05-01 18:05:42
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -11,7 +11,7 @@ let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
-let customMultiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/multiTouchCollect.js') ? require('../extends/multiTouchCollect.js') : null
+let customMultiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/MultiTouchCollect.js') ? require('../extends/MultiTouchCollect.js') : null
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog } = singletonRequire('LogUtils')
 
 let _package_name = 'com.eg.android.AlipayGphone'

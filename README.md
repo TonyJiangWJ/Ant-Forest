@@ -74,11 +74,11 @@
 - 配置导出导入功能，点击右上角菜单即可导出当前配置到local_config.cfg中，默认已加密加密密码为device.getAndriodId() 如果需要在免费版和付费版AutoJS之间同步 需要自行输入密码
 - 运行时数据导出导入功能同上所述
 
-![基本配置](./resources/config-1.png)
+![基本配置](./resources/config-1.jpg)
 
-![进阶配置](./resources/config-2.png)
+![进阶配置](./resources/config-2.jpg)
 
-![控件文本配置](./resources/config-3.png)
+![控件文本配置](./resources/config-3.jpg)
 
 ![配置菜单](./resources/config-4.jpg)
 
@@ -134,22 +134,24 @@ module.exports = function (obj) {
 
 ## 添加自定义区域点击代码
 
-- 同解锁设备，在extends文件夹下创建multiTouchCollect.js，内容可以参考multiTouchCollect-demo.js 实现自定义区域点击
+- 同解锁设备，在extends文件夹下创建MultiTouchCollect.js，内容可以参考MultiTouchCollect-demo.js 实现自定义区域点击
 
 ```javascript
 
   module.exports = function () {
-    // 循环点击1080P 分辨率下的区域(起始[150, 400]-结束[850, 800])，其他分辨率根据实际情况微调
-    for (let x = 150; x <= 850; x += 100) {
-      for (let y = 650; y <= 750; y += 100) {
-        let px = x
-        let py = x < 550 ? y - (0.5 * x - 150) : y - (-0.5 * x + 400)
-        automator.click(px, py)
-        sleep(20)
-      }
+    // 循环点击1080P 分辨率下的区域(起始[200, 700]-结束[900, 700])，其他分辨率根据实际情况微调
+    let y = 700
+    for (let x = 200; x <= 900; x += 100) {
+      let px = x
+      let py = x < 550 ? y - (0.5 * x - 150) : y - (-0.5 * x + 400)
+      automator.click(px, py)
+      sleep(20)
     }
   }
 ```
+
+- 修改扩展代码之后，可以运行 `test/全局悬浮窗显示-音量上键关闭.js` 可以进到森林页面实时查看配置效果，通过此方法可以随你调试编写各种花样点击，也可以仅仅修改y值，修正上下偏移量 默认是y=700 部分刘海屏可能需要修改成600
+- ![全局悬浮窗显示](./resources/check_multi_position.jpg)
 
 ## 注意事项
 
