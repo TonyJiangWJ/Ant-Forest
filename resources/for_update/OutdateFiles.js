@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-01 12:28:02
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 12:32:27
+ * @Last Modified time: 2020-05-01 17:09:22
  * @Description: 更新后需要移除的文件
  */
 module.exports = [
@@ -16,5 +16,5 @@ module.exports = [
   'lib/Timers.js',
   'lib/TryRequestScreenCapture.js',
   'lib/WidgetUtils.js',
-  'extends/MultiTouchCollect-demo.js',
+  'extends/MuiltiTouchCollect-demo.js',
 ]
