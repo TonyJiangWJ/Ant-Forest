@@ -1,5 +1,11 @@
+let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let automator = sRequire('Automator')
+let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
+let _BaseScanner = require('../core/BaseScanner.js')
 
-let TARGET_LAY = 2
+let _base_scanner = new _BaseScanner()
+
+let TARGET_LAY = 1
 
 var window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
@@ -62,14 +68,14 @@ function drawCoordinateAxis (canvas, paint) {
   for (let x = 50; x < width; x += 50) {
     paint.setStrokeWidth(0)
     canvas.drawText(x, x, 10, paint)
-    paint.setStrokeWidth(0.2)
+    paint.setStrokeWidth(0.5)
     canvas.drawLine(x, 0, x, height, paint)
   }
 
   for (let y = 50; y < height; y += 50) {
     paint.setStrokeWidth(0)
     canvas.drawText(y, 0, y, paint)
-    paint.setStrokeWidth(0.2)
+    paint.setStrokeWidth(0.5)
     canvas.drawLine(0, y, width, y, paint)
   }
 }
@@ -112,6 +118,9 @@ window.canvas.on("draw", function (canvas) {
     paint.setDither(true)
     let targetLayerTime = TARGET_LAY || 2
     if (targetLayerTime === 2) {
+      paint.setTextSize(20)
+      drawText('当前展示的是参考的点击区域，点击两层但是较慢：', { x: 100, y: 400 }, canvas, paint)
+      // 展示多行
       for (let x = 200; x <= 900; x += 100) {
         for (let y = 650; y <= 750; y += 100) {
           let px = x
@@ -120,12 +129,15 @@ window.canvas.on("draw", function (canvas) {
         }
       }
     } else {
-      let y = 700
-      for (let x = 200; x <= 900; x += 100) {
-        let px = x
-        let py = x < 550 ? y - (0.5 * x - 150) : y - (-0.5 * x + 400)
+      paint.setTextSize(20)
+      drawText('当前展示的是脚本执行时实际点击的区域：', { x: 100, y: 400 }, canvas, paint)
+      drawText('如果已扩展MultiTouchCollect.js也会直接展示：', { x: 100, y: 430 }, canvas, paint)
+      // 替换点击方法为 绘制坐标
+      automator.click = function (px, py) {
         drawRectAndText(px + ',' + py, [px - 5, py - 5, 10, 10], '#00ff00', canvas, paint)
       }
+      // 调用多点点击
+      _base_scanner.multiTouchToCollect()
     }
 
     paint.setTextSize(30)
@@ -137,11 +149,8 @@ window.canvas.on("draw", function (canvas) {
     if (passwindow > 1000) {
       startTime = new Date().getTime()
       console.verbose('关闭倒计时：' + countdown.toFixed(2))
-      if (countdown < 0) {
-        exitAndClean()
-      }
     }
-    // drawCoordinateAxis(canvas, paint)
+    drawCoordinateAxis(canvas, paint)
     converted = true
   } catch (e) {
     toastLog(e)
@@ -149,6 +158,7 @@ window.canvas.on("draw", function (canvas) {
   }
 });
 
+let lastChangedTime = new Date().getTime()
 threads.start(function () {
   toastLog('按音量上键关闭，音量下切换')
   events.removeAllKeyDownListeners('volume_down')
@@ -157,10 +167,14 @@ threads.start(function () {
     if (keyCode === 24) {
       exitAndClean()
     } else if (keyCode === 25) {
-      TARGET_LAY = TARGET_LAY === 2 ? 1 : 2
-      toastLog('切换层：' + TARGET_LAY)
+      // 设置最低间隔200毫秒，避免修改太快
+      if (new Date().getTime() - lastChangedTime > 200) {
+        TARGET_LAY = TARGET_LAY === 2 ? 1 : 2
+        toastLog('切换层：' + TARGET_LAY)
+        lastChangedTime = new Date().getTime()
+      }
     }
   })
 })
 
-setInterval(function () { }, 5000)
+setTimeout(function () { exitAndClean() }, 120000)

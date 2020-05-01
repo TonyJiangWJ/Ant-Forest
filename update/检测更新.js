@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-23 22:54:22
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-10 17:08:34
+ * @Last Modified time: 2020-05-01 12:39:08
  * @Description: 
  */
 
@@ -76,6 +76,22 @@ let downloadingExecutor = function (backup) {
   // 覆盖新的dex到lib下
   let copy_result = files.copy(targetOutputDir + '/resources/for_update/autojs-tools.dex', targetOutputDir + '/lib/autojs-tools.dex')
   toastLog('复制新的dex文件' + (copy_result ? '成功' : '失败'))
+  log('清理过时lib文件')
+  downloadDialog.setContent('清理过期文件...')
+  let outdateFiles = require(targetOutputDir + '/resources/for_update/OutdateFiles.js')
+  outdateFiles && outdateFiles.length > 0 && outdateFiles.forEach(fileName => {
+    let fullPath = targetOutputDir + '/' + fileName
+    if (files.exists(fullPath)) {
+      files.remove(fullPath)
+      console.verbose('删除过期文件：' + fullPath)
+    }
+  })
+  let extendMultiTouchPath = targetOutputDir + '/extends/MuiltiTouchCollect.js'
+  if (files.exists(extendMultiTouchPath)) {
+    let newName = targetOutputDir + '/extends/MultiTouchCollect.js'
+    log('重命名已存在的扩展：' + extendMultiTouchPath)
+    files.move(extendMultiTouchPath, newName)
+  }
   downloadDialog.setContent('更新完成')
   sleep(2000)
   downloadDialog.dismiss()
