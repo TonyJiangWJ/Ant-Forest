@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 00:48:02
+ * @Last Modified time: 2020-05-02 09:40:13
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -14,6 +14,7 @@ let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev } = singletonRequire('LogUtils')
 let FloatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
+let FileUtils = singletonRequire('FileUtils')
 let tryRequestScreenCapture = singletonRequire('TryRequestScreenCapture')
 
 let unlocker = require('./lib/Unlock.js')
@@ -85,7 +86,8 @@ let actionSuccess = commonFunctions.waitFor(function () {
 if (!actionSuccess || !screenPermission) {
   errorInfo('请求截图失败, 设置6秒后重启')
   runningQueueDispatcher.removeRunningTask()
-  commonFunctions.setUpAutoStart(0.1)
+  sleep(6000)
+  runningQueueDispatcher.executeTargetScript(FileUtils.getRealMainScriptPath())
   exit()
 } else {
   logInfo('请求截屏权限成功')
@@ -94,7 +96,9 @@ if (!actionSuccess || !screenPermission) {
 if (!FloatyInstance.init()) {
   runningQueueDispatcher.removeRunningTask()
   // 悬浮窗初始化失败，6秒后重试
-  commonFunctions.setUpAutoStart(0.1)
+  sleep(6000)
+  runningQueueDispatcher.executeTargetScript(FileUtils.getRealMainScriptPath())
+  exit()
 }
 /************************
  * 主程序
