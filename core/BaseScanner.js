@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 18:05:42
+ * @Last Modified time: 2020-05-03 09:54:11
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -332,7 +332,7 @@ const BaseScanner = function () {
           try {
             if (needWaterback) {
               _widgetUtils.wateringFriends()
-              gotEnergyAfterWater = _widgetUtils.getYouCollectEnergy() - preGet
+              gotEnergyAfterWater = _widgetUtils.getYouCollectEnergy() - preGot
             }
           } catch (e) {
             errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)

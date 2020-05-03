@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 00:48:02
+ * @Last Modified time: 2020-05-03 10:09:47
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -11,7 +11,7 @@ if (config.base_on_image) {
   runtime.loadDex('./lib/autojs-tools.dex')
 }
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
-let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev } = singletonRequire('LogUtils')
+let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
 let FloatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let tryRequestScreenCapture = singletonRequire('TryRequestScreenCapture')

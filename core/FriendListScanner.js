@@ -2,12 +2,13 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 00:09:43
+ * @Last Modified time: 2020-05-03 10:09:58
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _widgetUtils = singletonRequire('WidgetUtils')
+let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
@@ -137,7 +138,16 @@ const FriendListScanner = function () {
           if (l) {
             validChildList = that.simpleCheckValidList(that.friends_list_parent)
           }
+          let maxRepeatGet = 5
           while (!l || !validChildList || validChildList.length === 0) {
+            if (maxRepeatGet-- <= 0) {
+              if (!_widgetUtils.friendListWaiting()) {
+                errorInfo('预获取线程尝试次数过多，且页面所在位置不正确，重新执行脚本')
+                _runningQueueDispatcher.executeTargetScript(FileUtils.getRealMainScriptPath())
+                _commonFunctions.getAndUpdateDismissReason('get-friend-list-failed')
+                exit()
+              }
+            }
             warnInfo("首次获取列表数据不完整，再次获取")
             debugInfo('好友列表总长度：' + l + " 有效长度：" + (validChildList ? validChildList.length : '0'))
             sleep(400)
