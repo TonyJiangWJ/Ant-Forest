@@ -169,6 +169,10 @@ function exitAndClean () {
   // }
   exit()
 }
+
+let getDistance = function (p, lpx, lpy) {
+  return Math.sqrt(Math.pow(p.x - lpx, 2) + Math.pow(p.y - lpy, 2))
+}
 window.canvas.on("draw", function (canvas) {
   try {
     // 清空内容
@@ -201,6 +205,7 @@ window.canvas.on("draw", function (canvas) {
       canvas.drawImage(grayImgInfo, detectRegion[0], detectRegion[1], paint)
       clickPoints = []
       let lastPx = -130
+      let lastPy = -130
       let o = 225
       for (let x = 0; x <= 625; x += 125) {
         let offset = x == 375 ? o : Math.abs(o -= 75)
@@ -208,12 +213,13 @@ window.canvas.on("draw", function (canvas) {
           offset = 90
         }
         let iiimg = images.copy(grayImgInfo)
-        let p = images.findMultiColors(iiimg, "#ffffff", [[25, 25, "#ffffff"],[50, 50, "#ffffff"],[0, 50, "#ffffff"]], { region: [x, offset, 125, 350 - offset]})
+        let p = images.findMultiColors(iiimg, "#ffffff", [[-25, 0, "#ffffff"],[25, 0, "#ffffff"]], { region: [x, offset, 125, 350 - offset]})
         // let p = images.findColor(iiimg, '#ffffff',
         //   { region: [x, offset, 125, 350 - offset], threshold: 0 })
-        if (p && p.x - lastPx >= 100) {
+        if (p && getDistance(p, lastPx, lastPy) >= 100) {
           clickPoints.push(p)
           lastPx = p.x
+          lastPy = p.y
         }
         iiimg.recycle()
       }
@@ -227,6 +233,8 @@ window.canvas.on("draw", function (canvas) {
 
       clickPoints.forEach((p) => {
         drawRectAndText('', [p.x + 145, p.y + 500 - 5, 10, 10], '#00ffff', canvas, paint)
+        drawRectAndText('', [p.x + 150 - 25 - 2, p.y + 500 - 2, 4, 4], '#ff00ff', canvas, paint)
+        drawRectAndText('', [p.x + 150 + 25 - 2, p.y + 500 - 2, 4, 4], '#ff00ff', canvas, paint)
       })
     }
 
