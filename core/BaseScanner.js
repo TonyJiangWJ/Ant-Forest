@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-05 13:35:43
+ * @Last Modified time: 2020-05-05 14:32:04
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -136,6 +136,9 @@ const BaseScanner = function () {
     this.checkAndClickByImg('#c8c8c8', '#cacaca', '可收取')
   }
 
+  this.getDistance = function (p, lpx, lpy) {
+    return Math.sqrt(Math.pow(p.x - lpx, 2) + Math.pow(p.y - lpy, 2))
+  }
 
   this.checkAndClickByImg = function (lowColor, highColor, desc) {
     let screen = _commonFunctions.checkCaptureScreenPermission()
@@ -153,6 +156,7 @@ const BaseScanner = function () {
 
       let clickPoints = []
       let lastPx = -parseInt(130 * scaleRate)
+      let lastPy = -parseInt(130 * scaleRate)
       let o = parseInt(225 * scaleRate)
       let step = parseInt(75 * scaleRate)
       for (let x = 0; x <= parseInt(625 * scaleRate); x += parseInt(125 * scaleRate)) {
@@ -162,7 +166,8 @@ const BaseScanner = function () {
         }
         let p = images.findMultiColors(
           intervalImg, "#ffffff",
-          [[parseInt(25 * scaleRate), parseInt(25 * scaleRate), "#ffffff"], [parseInt(50 * scaleRate), parseInt(50 * scaleRate), "#ffffff"]],
+          // 横向50像素区域三点颜色匹配
+          [[parseInt(-25 * scaleRate), 0, "#ffffff"], [parseInt(25 * scaleRate), 0, "#ffffff"]],
           {
             region: [
               x, offset,
@@ -170,9 +175,10 @@ const BaseScanner = function () {
             ]
           }
         )
-        if (p && p.x - lastPx >= 100) {
+        if (p && this.getDistance(p, lastPx, lastPy) >= 100) {
           clickPoints.push(p)
           lastPx = p.x
+          lastPy = p.y
         }
       }
       copyImg.recycle()
