@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 17:21:00
+ * @Last Modified time: 2020-05-05 11:38:19
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -256,24 +256,6 @@ function Ant_forest () {
         }
       })
       _min_countdown = Math.min.apply(null, temp)
-    } else {
-      _min_countdown = null
-      logInfo('无可收取能量')
-      if (_config.try_collect_by_multi_touch) {
-        let toasts = getToastAsync(_package_name, 1, function () {
-          _base_scanner.multiTouchToCollect()
-          return 1
-        })
-        toasts.forEach(function (toast) {
-          let countdown = toast.match(/\d+/g)
-          if (countdown !== null && countdown.length >= 2) {
-            temp.push(countdown[0] * 60 - -countdown[1])
-          } else {
-            errorInfo('获取倒计时错误：' + countdown)
-          }
-        })
-        _min_countdown = Math.min.apply(null, temp)
-      }
     }
     _timestamp = new Date()
   }

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-03 10:09:58
+ * @Last Modified time: 2020-05-05 13:35:53
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -500,8 +500,8 @@ FriendListScanner.prototype.cutAndSaveImage = function (screen, countdownInfo) {
     try {
       let cutImg = images.clip(screen, countdownInfo.x, countdownInfo.y, countdownInfo.w, countdownInfo.h)
       let path = FileUtils.getCurrentWorkPath() + "/countdownImgs"
-      files.ensureDir(path)
       let saveImgPath = _commonFunctions.formatString('{}/{}_{}_{}.png', path, countdownInfo.name, countdownInfo.countdown, countdownInfo.y)
+      files.ensureDir(saveImgPath)
       images.save(cutImg, saveImgPath)
       infoLog(['保存倒计时图片：{}', saveImgPath])
     } catch (e) {

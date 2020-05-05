@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-03 09:54:11
+ * @Last Modified time: 2020-05-05 13:35:43
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -68,6 +68,10 @@ const BaseScanner = function () {
 
   // 收取能量
   this.collectEnergy = function (isHelp) {
+    if (_config.direct_use_img_collect_and_help) {
+      this.checkAndCollectByImg()
+      return
+    }
     let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, isHelp ? 200 : 500, true)
     if (ballCheckContainer !== null) {
       debugInfo(['可收取能量球个数：「{}」', ballCheckContainer.target.length])
@@ -121,10 +125,83 @@ const BaseScanner = function () {
     }
   }
 
+  this.checkAndHelpByImg = function () {
+    this.checkAndClickByImg('#b5b5b5', '#d6d6d6', '可帮助')
+    // 延迟一段时间二次检验
+    sleep(100)
+    this.checkAndClickByImg('#b5b5b5', '#d6d6d6', '可帮助')
+  }
+
+  this.checkAndCollectByImg = function () {
+    this.checkAndClickByImg('#c8c8c8', '#cacaca', '可收取')
+  }
+
+
+  this.checkAndClickByImg = function (lowColor, highColor, desc) {
+    let screen = _commonFunctions.checkCaptureScreenPermission()
+    let scaleRate = _config.device_width / 1080
+    let detectRegion = [
+      parseInt(150 * scaleRate), parseInt(500 * scaleRate),
+      parseInt(750 * scaleRate), parseInt(350 * scaleRate)
+    ]
+    if (screen) {
+      let start = new Date().getTime()
+      let copyImg = images.grayscale(screen)
+      let intervalImg = images.medianBlur(images.inRange(copyImg, lowColor, highColor), 5)
+      // 切割检测区域
+      intervalImg = images.clip(intervalImg, detectRegion[0], detectRegion[1], detectRegion[2], detectRegion[3])
+
+      let clickPoints = []
+      let lastPx = -parseInt(130 * scaleRate)
+      let o = parseInt(225 * scaleRate)
+      let step = parseInt(75 * scaleRate)
+      for (let x = 0; x <= parseInt(625 * scaleRate); x += parseInt(125 * scaleRate)) {
+        let offset = x == parseInt(375 * scaleRate) ? o : Math.abs(o -= step)
+        if (offset == step) {
+          offset = parseInt(90 * scaleRate)
+        }
+        let p = images.findMultiColors(
+          intervalImg, "#ffffff",
+          [[parseInt(25 * scaleRate), parseInt(25 * scaleRate), "#ffffff"], [parseInt(50 * scaleRate), parseInt(50 * scaleRate), "#ffffff"]],
+          {
+            region: [
+              x, offset,
+              parseInt(125 * scaleRate), parseInt(350 * scaleRate) - offset
+            ]
+          }
+        )
+        if (p && p.x - lastPx >= 100) {
+          clickPoints.push(p)
+          lastPx = p.x
+        }
+      }
+      copyImg.recycle()
+      if (intervalImg !== null) {
+        intervalImg.recycle()
+      }
+      if (clickPoints.length > 0) {
+        clickPoints.forEach(p => {
+          automator.click(p.x + detectRegion[0], p.y + detectRegion[1])
+          sleep(100)
+        })
+      }
+      logInfo(['{} 点个数：「{}」列表：{}', desc, clickPoints.length, JSON.stringify(clickPoints)])
+      logInfo(['寻找:{}点耗时:{}ms', highColor, new Date().getTime() - start])
+    }
+  }
+
   // 收取能量同时帮好友收取
   this.collectAndHelp = function (needHelp) {
     // 收取好友能量
     this.collectEnergy(needHelp)
+    if (needHelp && _config.direct_use_img_collect_and_help) {
+      this.checkAndHelpByImg()
+      return
+    }
+    if (_config.try_collect_by_multi_touch) {
+      // 多点点击方式直接就帮助了 不再执行后续操作
+      return
+    }
     let screen = _commonFunctions.checkCaptureScreenPermission()
     if (!screen) {
       warnInfo('获取截图失败，无法帮助收取能量')
@@ -303,6 +380,10 @@ const BaseScanner = function () {
     debugInfo(['准备开始收取好友：「{}」', obj.name])
     let temp = this.protectDetect(_package_name, obj.name)
     let preGot, preE, rentery = false
+    let screen = null
+    if (_config.cutAndSaveCountdown) {
+      screen = images.copy(_commonFunctions.checkCaptureScreenPermission(false))
+    }
     try {
       preGot = _widgetUtils.getYouCollectEnergy() || 0
       preE = _widgetUtils.getFriendEnergy()
@@ -342,6 +423,13 @@ const BaseScanner = function () {
             obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (gotEnergy - gotEnergyAfterWater) + 'g' : '')
           ])
           this.showCollectSummaryFloaty(gotEnergy)
+          if (_config.cutAndSaveCountdown && screen) {
+            let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+              + 'unknow_collected_' + gotEnergyAfterWater + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
+            files.ensureDir(savePath)
+            images.save(screen, savePath)
+            debugForDev(['保存可收取能量球图片：「{}」', savePath])
+          }
         } else {
           debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
         }
@@ -357,16 +445,27 @@ const BaseScanner = function () {
             preCollect: preGot,
             helpCollect: gotEnergy
           })
-          if (_config.try_collect_by_multi_touch) {
+          if (_config.try_collect_by_multi_touch || _config.direct_use_img_collect_and_help) {
             // 如果是可帮助 且 无法获取控件信息的，以帮助收取的重新进入判断一次
             rentery = true
+          }
+          if (_config.cutAndSaveCountdown && screen) {
+            let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+              + 'unknow_helped_' + gotEnergy + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
+            files.ensureDir(savePath)
+            images.save(screen, savePath)
+            debugForDev(['保存可帮助能量球图片：「{}」', savePath])
           }
         }
       }
     } catch (e) {
       errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
+    } finally {
+      if (screen) {
+        screen.recycle()
+      }
     }
-    
+
     temp.interrupt()
     debugInfo('好友能量收取完毕, 回到好友排行榜')
     if (false === this.returnToListAndCheck()) {
