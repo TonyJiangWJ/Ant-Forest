@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 12:08:13
+ * @Last Modified time: 2020-05-05 13:08:01
  * @Description: 
  */
 'ui';
@@ -125,7 +125,9 @@ let default_config = {
   device_width: device.width,
   device_height: device.height,
   // 尝试全局点击收集能量，能量球控件无法获取时使用 默认开启
-  try_collect_by_multi_touch: true
+  try_collect_by_multi_touch: true,
+  // 直接使用图像分析方式收取和帮助好友
+  direct_use_img_collect_and_help: false
 }
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
@@ -351,6 +353,13 @@ if (!isRunningMode) {
     ui.wateringBackAmountSpinner.setSelection([5, 10, 18].indexOf(config.targetWateringAmount))
 
     ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
+    ui.directUseImgCollectChkBox.setChecked(config.direct_use_img_collect_and_help)
+    if (config.direct_use_img_collect_and_help) {
+      ui.tryCollectByMultiTouchChkBox.setVisibility(View.GONE)
+      config.try_collect_by_multi_touch = false
+    } else {
+      ui.tryCollectByMultiTouchChkBox.setVisibility(View.VISIBLE)
+    }
     setScrollDownUiVal()
     setOcrUiVal()
 
@@ -434,7 +443,7 @@ if (!isRunningMode) {
       onItemSelected: function (parentView, selectedItemView, position, id) {
         selectedCallback(position)
       },
-      onNothingSelected: function (parentView) {}
+      onNothingSelected: function (parentView) { }
     })
   }
 
@@ -554,7 +563,7 @@ if (!isRunningMode) {
                   </horizontal>
                   <checkbox id="developModeChkBox" text="是否启用开发模式" />
                   <vertical id="developModeContainer" gravity="center">
-                    <text text="脚本执行时保存图片，未启用开发模式时依旧有效:" margin="5 0" textSize="14sp"/>
+                    <text text="脚本执行时保存图片，未启用开发模式时依旧有效:" margin="5 0" textSize="14sp" />
                     <checkbox id="cutAndSaveCountdownChkBox" text="是否保存开发用的图片" />
                   </vertical>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
@@ -630,6 +639,7 @@ if (!isRunningMode) {
                   <checkbox id="autoSetImgOrWidgetChkBox" text="自动判断基于图像还是控件分析" />
                   <text text="当可收取能量球控件无法获取时开启区域点击，后期会开发基于图像分析的方式" textSize="9sp" />
                   <checkbox id="tryCollectByMultiTouchChkBox" text="是否尝试区域点击来收取能量" />
+                  <checkbox id="directUseImgCollectChkBox" text="是否直接基于图像分析收取和帮助好友" />
                   <checkbox id="baseOnImageChkBox" text="基于图像分析" />
                   <vertical id="baseOnImageContainer">
                     <checkbox id="checkBottomBaseImgChkBox" text="基于图像判断列表底部" />
@@ -728,8 +738,8 @@ if (!isRunningMode) {
                       <text text="浇水阈值" />
                       <input layout_weight="70" inputType="number" id="wateringThresholdInpt" />
                     </horizontal>
-                    <text text = "浇水数量" textSize="14sp" />
-                    <spinner id="wateringBackAmountSpinner" entries="5|10|18"/>
+                    <text text="浇水数量" textSize="14sp" />
+                    <spinner id="wateringBackAmountSpinner" entries="5|10|18" />
                   </horizontal>
                   {/* 浇水黑名单 */}
                   <vertical w="*" gravity="left" layout_gravity="left" margin="10" id="wateringBlackListContainer">
@@ -1461,6 +1471,16 @@ if (!isRunningMode) {
 
     ui.tryCollectByMultiTouchChkBox.on('click', () => {
       config.try_collect_by_multi_touch = ui.tryCollectByMultiTouchChkBox.isChecked()
+    })
+    ui.directUseImgCollectChkBox.on('click', () => {
+      config.direct_use_img_collect_and_help = ui.directUseImgCollectChkBox.isChecked()
+      if (config.direct_use_img_collect_and_help) {
+        ui.tryCollectByMultiTouchChkBox.setVisibility(View.GONE)
+        config.try_collect_by_multi_touch = false
+      } else {
+        ui.tryCollectByMultiTouchChkBox.setVisibility(View.VISIBLE)
+        ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
+      }
     })
 
     ui.baseOnImageChkBox.on('click', () => {
