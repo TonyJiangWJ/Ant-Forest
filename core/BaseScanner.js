@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-05 14:32:04
+ * @Last Modified time: 2020-05-06 01:13:09
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -191,8 +191,8 @@ const BaseScanner = function () {
           sleep(100)
         })
       }
-      logInfo(['{} 点个数：「{}」列表：{}', desc, clickPoints.length, JSON.stringify(clickPoints)])
-      logInfo(['寻找:{}点耗时:{}ms', highColor, new Date().getTime() - start])
+      debugInfo(['{} 点个数：「{}」列表：{}', desc, clickPoints.length, JSON.stringify(clickPoints)])
+      debugInfo(['寻找:{}点耗时:{}ms', highColor, new Date().getTime() - start])
     }
   }
 

@@ -1,14 +1,14 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-02 09:40:13
+ * @Last Modified time: 2020-05-06 23:55:50
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 
 if (config.base_on_image) {
-  runtime.loadDex('./lib/autojs-tools.dex')
+  runtime.loadDex('./lib/color-region-center.dex')
 }
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')

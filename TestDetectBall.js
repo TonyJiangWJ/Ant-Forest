@@ -100,7 +100,7 @@ let helpGrayImg = null
 let detectHelpThread = threads.start(function (){
   while(true) {
     let start = new Date().getTime()
-    let screen = commonFunction.checkCaptureScreenPermission()
+    let screen = captureScreen()
     if (screen) {
       let copyImg = images.grayscale(screen)
       let intervalImg = null

@@ -2,10 +2,10 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 00:49:35
+ * @Last Modified time: 2020-05-07 00:30:00
  * @Description: 基于图像识别控件信息
  */
-importClass(com.tony.BitCheck)
+importClass(com.tony.ColorCenterCalculatorWithInterval)
 importClass(java.util.concurrent.LinkedBlockingQueue)
 importClass(java.util.concurrent.ThreadPoolExecutor)
 importClass(java.util.concurrent.TimeUnit)
@@ -19,191 +19,8 @@ let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
 
 let BaseScanner = require('./BaseScanner.js')
 
-const Stack = function () {
-  this.size = 0
-  this.innerArray = []
-  this.index = -1
-
-  this.isEmpty = function () {
-    return this.size === 0
-  }
-
-  this.push = function (val) {
-    this.innerArray.push(val)
-    this.index++
-    this.size++
-  }
-
-  this.peek = function () {
-    if (this.isEmpty()) {
-      return null
-    }
-    return this.innerArray[this.index]
-  }
-
-  this.pop = function (val) {
-    if (this.isEmpty()) {
-      return null
-    }
-    this.size--
-    return this.innerArray.splice(this.index--)[0]
-  }
-
-  this.print = function () {
-    if (this.isEmpty()) {
-      return
-    }
-    this.innerArray.forEach(val => {
-      debugInfo(val)
-    })
-  }
-}
 
 const SCALE_RATE = _config.device_width / 1080
-const ANALYZE_WIDTH = parseInt(200 * SCALE_RATE)
-const BIT_MAX_VAL = _config.device_height << 8 | ANALYZE_WIDTH
-debugInfo(['初始化 BitMap最大值为:{} 小手分析宽度:{} 缩放比例：{}', BIT_MAX_VAL, ANALYZE_WIDTH, SCALE_RATE])
-// 计算中心点
-function ColorRegionCenterCalculator (img, point, threshold) {
-  // Java打包的位运算方式
-  this.bitChecker = new BitCheck(BIT_MAX_VAL)
-
-  // 在外部灰度化
-  this.img = images.copy(img)
-  this.color = img.getBitmap().getPixel(point.x, point.y) >> 8 & 0xFF
-  // this.color = color
-  this.point = point
-  this.threshold = threshold
-  // 回收原始图像
-  img.recycle()
-
-  /**
-   * 获取所有同色区域的点集合
-   */
-  this.getAllColorRegionPoints = function () {
-    let nearlyColorPoints = this.getNearlyNorecursion(this.point)
-    nearlyColorPoints = nearlyColorPoints || []
-    // 回收图像资源
-    this.img.recycle()
-    return nearlyColorPoints
-  }
-
-  /**
-   * 获取颜色中心点
-   */
-  this.getColorRegionCenter = function () {
-    let maxX = -1
-    let minX = _config.device_width + 10
-    let maxY = -1
-    let minY = _config.device_height + 10
-    debugInfo(['准备获取[{}]的同色[{}]点区域', JSON.stringify(this.point), colors.toString(this.color)])
-    let nearlyColorPoints = this.getAllColorRegionPoints()
-    if (nearlyColorPoints && nearlyColorPoints.length > 0) {
-      nearlyColorPoints.forEach((item, idx) => {
-        if (maxX < item.x) {
-          maxX = item.x
-        }
-        if (minX > item.x) {
-          minX = item.x
-        }
-        if (maxY < item.y) {
-          maxY = item.y
-        }
-        if (minY > item.y) {
-          minY = item.y
-        }
-      })
-      let center = {
-        top: minY,
-        bottom: maxY,
-        left: minX,
-        right: maxX,
-        x: parseInt((maxX + minX) / 2),
-        y: parseInt((maxY + minY) / 2),
-        same: nearlyColorPoints.length
-      }
-      // debugInfo('获取中心点位置为：' + JSON.stringify(center))
-      return center
-    } else {
-      debugInfo(['没有找到同色点 原始位置：「{}」 颜色：「{}」', JSON.stringify(this.point), colors.toString(this.color)])
-      return this.point
-    }
-  }
-
-
-  this.isOutofScreen = function (point) {
-    let width = _config.device_width
-    let height = _config.device_height
-    if (point.x >= width || point.x < 0 || point.y < 0 || point.y >= height) {
-      return true
-    }
-    return false
-  }
-
-  this.getNearlyNorecursion = function (point) {
-    let directs = [
-      [0, -1],
-      [0, 1],
-      [1, 0],
-      [-1, 0]
-    ]
-    let stack = new Stack()
-    stack.push(point)
-    let nearlyPoints = [point]
-    this.isUncheckedBitJava(point)
-    let step = 0
-    let totalStart = new Date().getTime()
-    while (!stack.isEmpty()) {
-      let target = stack.peek()
-      let allChecked = true
-      for (let i = 0; i < 4; i++) {
-        let direction = directs[i]
-        let checkItem = this.getDirectionPoint(target, direction)
-        if (!checkItem) {
-          continue
-        }
-        step++
-        allChecked = false
-        // 灰度化图片颜色比较
-        let checkColor = this.img.getBitmap().getPixel(checkItem.x, checkItem.y) >> 8 & 0xFF
-        if (Math.abs(checkColor - this.color) < this.threshold) {
-          nearlyPoints.push(checkItem)
-          stack.push(checkItem)
-        }
-      }
-      if (allChecked) {
-        stack.pop()
-      }
-    }
-    debugInfo([
-      '原始点：{} 颜色：{}, 找了多个点 总计步数：{} 总耗时：{}ms 同色点个数：{}',
-      JSON.stringify(this.point), colors.toString(this.color), step,
-      new Date().getTime() - totalStart, nearlyPoints.length
-    ])
-    return nearlyPoints
-  }
-
-  this.isUncheckedBitJava = function (point) {
-    let x_start = _config.device_width - ANALYZE_WIDTH
-    if (point.x < x_start) {
-      return false
-    }
-    return this.bitChecker.isUnchecked(point.y << 8 | (point.x - x_start))
-  }
-
-  this.getDirectionPoint = function (point, direct) {
-    // debugInfo('准备获取附近节点:' + JSON.stringify(point))
-    let nearPoint = {
-      x: point.x + direct[0],
-      y: point.y + direct[1]
-    }
-    if (this.isOutofScreen(nearPoint) || !this.isUncheckedBitJava(nearPoint)) {
-      return null
-    }
-    return nearPoint
-  }
-
-}
 
 const ImgBasedFriendListScanner = function () {
   BaseScanner.call(this)
@@ -269,8 +86,8 @@ const ImgBasedFriendListScanner = function () {
   this.collecting = function () {
     let screen = null
     let grayScreen = null
-    let screenForDetectCollect = null
-    let screenForDetectHelp = null
+    let intervalScreenForDetectCollect = null
+    let intervalScreenForDetectHelp = null
     // console.show()
     let countingDownContainers = []
     let count = 0
@@ -280,8 +97,8 @@ const ImgBasedFriendListScanner = function () {
       screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
       // 重新复制一份
       let tmpImg = images.copy(screen)
-      screenForDetectCollect = images.copy(screen)
-      screenForDetectHelp = images.copy(screen)
+      intervalScreenForDetectCollect = images.medianBlur(images.interval(images.copy(screen), _config.can_collect_color || '#1da06a', _config.color_offset), 5)
+      intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
       grayScreen = images.grayscale(tmpImg)
       tmpImg.recycle()
       debugInfo('获取到screen' + (screen === null ? '失败' : '成功'))
@@ -289,7 +106,7 @@ const ImgBasedFriendListScanner = function () {
       let countdown = new Countdown()
       let waitForCheckPoints = []
       if (_config.help_friend) {
-        let helpPoints = this.sortAndReduce(this.detectHelp(screenForDetectHelp))
+        let helpPoints = this.sortAndReduce(this.detectHelp(intervalScreenForDetectHelp))
         if (helpPoints && helpPoints.length > 0) {
           waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
             helpPoint => {
@@ -301,7 +118,7 @@ const ImgBasedFriendListScanner = function () {
           )
         }
       }
-      let collectPoints = this.sortAndReduce(this.detectCollect(screenForDetectCollect))
+      let collectPoints = this.sortAndReduce(this.detectCollect(intervalScreenForDetectCollect))
       if (collectPoints && collectPoints.length > 0) {
         waitForCheckPoints = waitForCheckPoints.concat(collectPoints.map(
           collectPoint => {
@@ -322,8 +139,11 @@ const ImgBasedFriendListScanner = function () {
         waitForCheckPoints.forEach(pointData => {
           if (pointData.isHelp) {
             this.threadPool.execute(function () {
-              let calculator = new ColorRegionCenterCalculator(images.copy(grayScreen), pointData.point, _config.color_offset)
-              let point = calculator.getColorRegionCenter()
+              let calculator = new ColorCenterCalculatorWithInterval(
+                images.copy(intervalScreenForDetectHelp), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
+              )
+              let point = calculator.getCenterPoint()
+              calculator.getImg().recycle()
               debugInfo('可帮助收取位置：' + JSON.stringify(point))
               listWriteLock.lock()
               collectOrHelpList.push({
@@ -336,8 +156,11 @@ const ImgBasedFriendListScanner = function () {
             })
           } else {
             this.threadPool.execute(function () {
-              let calculator = new ColorRegionCenterCalculator(images.copy(grayScreen), pointData.point, _config.color_offset)
-              let point = calculator.getColorRegionCenter()
+              let calculator = new ColorCenterCalculatorWithInterval(
+                images.copy(intervalScreenForDetectCollect), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
+              )
+              let point = calculator.getCenterPoint()
+              calculator.getImg().recycle()
               if (point.same < (_config.finger_img_pixels || 2300)) {
                 debugInfo('可能可收取位置：' + JSON.stringify(point))
                 listWriteLock.lock()
@@ -472,8 +295,8 @@ const ImgBasedFriendListScanner = function () {
       } else {
         hasNext = count < (_config.friendListScrollTime || 30)
       }
-      screenForDetectCollect.recycle()
-      screenForDetectHelp.recycle()
+      intervalScreenForDetectCollect.recycle()
+      intervalScreenForDetectHelp.recycle()
       grayScreen.recycle()
       // 每5次滑动判断一次是否在排行榜中
       if (hasNext && count % 5 == 0 && !_widgetUtils.friendListWaiting()) {
@@ -510,20 +333,19 @@ const ImgBasedFriendListScanner = function () {
   }
 
   this.detectHelp = function (img) {
-    let helpPoints = this.detectColors(img, _config.can_help_color || '#f99236')
+    let helpPoints = this.detectColors(img)
     debugInfo('可帮助的点：' + JSON.stringify(helpPoints))
     return helpPoints
   }
 
   this.detectCollect = function (img) {
-    let collectPoints = this.detectColors(img, _config.can_collect_color || '#1da06a')
+    let collectPoints = this.detectColors(img)
     debugInfo('可收取的点：' + JSON.stringify(collectPoints))
     return collectPoints
   }
 
-  this.detectColors = function (img, color) {
-    debugInfo('准备检测颜色：' + color)
-
+  this.detectColors = function (img) {
+    let use_img = images.copy(img)
     let movingY = parseInt(200 * SCALE_RATE)
     let movingX = parseInt(100 * SCALE_RATE)
     // 预留70左右的高度
@@ -541,9 +363,8 @@ const ImgBasedFriendListScanner = function () {
       }
       regionWindow = [startX, runningY, movingX, movingY]
       debugForDev('检测区域：' + JSON.stringify(regionWindow))
-      let point = images.findColor(img, color, {
-        region: regionWindow,
-        threshold: _config.color_offset || 20
+      let point = images.findColor(use_img, '#FFFFFF', {
+        region: regionWindow
       })
       if (_config.develop_mode) {
         countdown.summary('检测初始点')
@@ -554,6 +375,7 @@ const ImgBasedFriendListScanner = function () {
       runningY += movingY
       countdown.restart()
     } while (hasNext)
+    use_img.recycle()
     return findColorPoints
   }
 }

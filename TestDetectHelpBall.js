@@ -101,7 +101,7 @@ let colorInP = null
 let detectThread = threads.start(function () {
   while (true) {
     let start = new Date().getTime()
-    let screen = commonFunction.checkCaptureScreenPermission()
+    let screen = captureScreen()
     if (screen) {
       let copyImg = images.grayscale(screen)
       let intervalImg = null
