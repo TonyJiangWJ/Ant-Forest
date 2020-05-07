@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-07 12:39:07
+ * @Last Modified time: 2020-05-08 01:40:04
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -286,7 +286,10 @@ function Ant_forest () {
       debugInfo('重新获取倒计时经过了：[' + passedTime + ']分，最终记录上轮倒计时：[' + lastMin + ']分')
       lastMin >= 0 ? temp.push(lastMin) : temp.push(0)
     }
-    let friCountDownContainer = _widgetUtils.widgetGetAll('\\d+’', null, true)
+    // 基于图像处理且已开启OCR 倒计时已通过ocr获取，尝试一秒获取控件倒计时 否则按配置的时间获取
+    // 后期基于图像分析有可能直接放弃控件获取
+    let existTimeout = _config.base_on_image && _config.useOcr ? 1000 : null
+    let friCountDownContainer = _widgetUtils.widgetGetAll('\\d+’', existTimeout, true)
     let peekCountdownContainer = function (container) {
       if (container) {
         return _commonFunctions.formatString('倒计时数据总长度：{} 文本属性来自[{}]', container.target.length, (container.isDesc ? 'desc' : 'text'))
