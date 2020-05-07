@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-04-29 14:44:49
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-01 22:16:14
+ * @Last Modified time: 2020-04-30 13:44:56
  * @Description: 
  */
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
@@ -36,7 +36,6 @@ while (limit > 0) {
   floatyInstance.setFloatyText('倒计时' + limit-- + '秒')
   sleep(1000)
 }
-device.vibrate(30)
 floatyInstance.setFloatyText('正在分析中...')
 
 
@@ -63,7 +62,6 @@ if (any) {
   floatyInstance.setPosition(parseInt(config.device_width / 5), parseInt(config.device_height / 2))
   floatyInstance.setFloatyText('无法获取任何控件信息')
 }
-device.vibrate(300)
 sleep(1000)
 floatyInstance.close()
 if (uiObjectInfoList) {
