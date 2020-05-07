@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-07 16:53:30
+ * @Last Modified time: 2020-05-08 00:15:48
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -150,19 +150,19 @@ const ImgBasedFriendListScanner = function () {
       screen.recycle()
       let countdown = new Countdown()
       let waitForCheckPoints = []
-      if (_config.help_friend) {
-        let helpPoints = this.detectHelp(intervalScreenForDetectHelp)
-        if (helpPoints && helpPoints.length > 0) {
-          waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
-            helpPoint => {
-              return {
-                isHelp: true,
-                point: helpPoint
-              }
-            })
-          )
-        }
+      
+      let helpPoints = this.detectHelp(intervalScreenForDetectHelp)
+      if (helpPoints && helpPoints.length > 0) {
+        waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
+          helpPoint => {
+            return {
+              isHelp: true,
+              point: helpPoint
+            }
+          })
+        )
       }
+    
       let collectPoints = this.detectCollect(intervalScreenForDetectCollect)
       if (collectPoints && collectPoints.length > 0) {
         waitForCheckPoints = waitForCheckPoints.concat(collectPoints.map(
@@ -177,6 +177,10 @@ const ImgBasedFriendListScanner = function () {
       waitForCheckPoints = this.sortAndReduce(waitForCheckPoints)
       countdown.summary('获取可帮助和可能可收取的点')
       if (waitForCheckPoints.length > 0) {
+        if (!_config.help_friend) {
+          waitForCheckPoints = waitForCheckPoints.filter(p => !p.isHelp)
+          debugInfo(['移除帮助收取的点之后：{}', JSON.stringify(waitForCheckPoints)])
+        }
         countdown.restart()
         let countdownLatch = new CountDownLatch(waitForCheckPoints.length)
         let listWriteLock = threads.lock()
