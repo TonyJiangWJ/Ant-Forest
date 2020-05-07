@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-05 13:08:01
+ * @Last Modified time: 2020-05-07 19:57:01
  * @Description: 
  */
 'ui';
@@ -36,12 +36,17 @@ let default_config = {
   show_engine_id: false,
   develop_mode: false,
   // 开发用开关，截图并保存一些图片
+  // 保存倒计时图片
   cutAndSaveCountdown: false,
+  // 保存好友页面可收取和可帮助图片
+  cutAndSaveTreeCollect: false,
   auto_lock: false,
   lock_x: 150,
   lock_y: 970,
   // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
   autoSetBrightness: false,
+  // 锁屏启动关闭提示框
+  dismissDialogIfLocked: true,
   request_capture_permission: true,
   // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
   saveLogFile: true,
@@ -57,7 +62,7 @@ let default_config = {
   // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
   friendListScrollTime: 30,
   // 可收取小手指绿色像素点个数，1080P分辨率是这个数值，其他分辨率请自己修改
-  finger_img_pixels: 2300,
+  finger_img_pixels: 1900,
   thread_pool_size: 4,
   thread_pool_max_size: 8,
   thread_pool_queue_size: 16,
@@ -122,12 +127,16 @@ let default_config = {
   rank_check_top: 230,
   rank_check_width: 700,
   rank_check_height: 135,
+  tree_collect_left: 150,
+  tree_collect_top: 500,
+  tree_collect_width: 800,
+  tree_collect_height: 350,
   device_width: device.width,
   device_height: device.height,
   // 尝试全局点击收集能量，能量球控件无法获取时使用 默认开启
-  try_collect_by_multi_touch: true,
+  try_collect_by_multi_touch: false,
   // 直接使用图像分析方式收取和帮助好友
-  direct_use_img_collect_and_help: false
+  direct_use_img_collect_and_help: true
 }
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
@@ -147,8 +156,10 @@ if (typeof config.collectable_energy_ball_content !== 'string') {
 
 if (!isRunningMode) {
   if (config.device_height <= 10 || config.device_width <= 10) {
-    toastLog('请先运行config.js并输入设备宽高')
-    exit()
+    if (!currentEngine.endsWith('/config.js')) {
+      toastLog('请先运行config.js并输入设备宽高')
+      exit()
+    }
   }
   module.exports = function (__runtime__, scope) {
     if (typeof scope.config_instance === 'undefined') {
@@ -307,6 +318,7 @@ if (!isRunningMode) {
     ui.showEngineIdChkBox.setChecked(config.show_engine_id)
     ui.developModeChkBox.setChecked(config.develop_mode)
     ui.cutAndSaveCountdownChkBox.setChecked(config.cutAndSaveCountdown)
+    ui.cutAndSaveTreeCollectChkBox.setChecked(config.cutAndSaveTreeCollect)
     ui.developModeContainer.setVisibility(config.develop_mode ? View.VISIBLE : View.GONE)
     ui.fileSizeInpt.text(config.back_size + '')
     ui.fileSizeContainer.setVisibility(config.saveLogFile ? View.VISIBLE : View.INVISIBLE)
@@ -322,6 +334,7 @@ if (!isRunningMode) {
     ui.lockDescNoRoot.setVisibility(!_hasRootPermission ? View.VISIBLE : View.INVISIBLE)
 
     ui.autoSetBrightnessChkBox.setChecked(config.autoSetBrightness)
+    ui.dismissDialogIfLockedChkBox.setChecked(config.dismissDialogIfLocked)
 
     ui.timeoutUnlockInpt.text(config.timeout_unlock + '')
     ui.timeoutFindOneInpt.text(config.timeout_findOne + '')
@@ -374,7 +387,7 @@ if (!isRunningMode) {
     ui.doWateringWidgetContentInpt.text(config.do_watering_button_content)
     ui.usingProtectContentInpt.text(config.using_protect_content)
     ui.rankCheckRegion.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
-
+    ui.treeCollectRegion.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
     let colorRegex = /^#[\dabcdef]{6}$/i
     let collectColor = config.can_collect_color
     ui.canCollectColorInpt.text(collectColor)
@@ -564,7 +577,8 @@ if (!isRunningMode) {
                   <checkbox id="developModeChkBox" text="是否启用开发模式" />
                   <vertical id="developModeContainer" gravity="center">
                     <text text="脚本执行时保存图片，未启用开发模式时依旧有效:" margin="5 0" textSize="14sp" />
-                    <checkbox id="cutAndSaveCountdownChkBox" text="是否保存开发用的图片" />
+                    <checkbox id="cutAndSaveCountdownChkBox" text="是否保存倒计时图片" />
+                    <checkbox id="cutAndSaveTreeCollectChkBox" text="是否保存可收取能量球图片" />
                   </vertical>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 是否显示debug日志 */}
@@ -604,6 +618,8 @@ if (!isRunningMode) {
                   </horizontal>
                   {/* 是否自动设置最低亮度 */}
                   <checkbox id="autoSetBrightnessChkBox" text="锁屏启动设置最低亮度" />
+                  {/* 是否锁屏启动关闭弹框提示 */}
+                  <checkbox id="dismissDialogIfLockedChkBox" text="锁屏启动关闭弹框提示" />
                   {/* 基本不需要修改的 */}
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <horizontal gravity="center">
@@ -658,7 +674,7 @@ if (!isRunningMode) {
                         <input layout_weight="70" inputType="number" id="friendListScrollTimeInpt" layout_weight="70" />
                       </horizontal>
                     </vertical>
-                    <text text="可收取小手指的绿色像素点个数，1080P时小于2300判定为可收取，其他分辨率需要自行修改=2300*缩放比例^2" textSize="10sp" />
+                    <text text="可收取小手指的绿色像素点个数，颜色相似度20，1080P时小于1900判定为可收取，其他分辨率需要自行修改=1900*缩放比例^2" textSize="10sp" />
                     <text text="如果还是不行，请分析日志进行调整，日志中会打印同色点个数" textSize="10sp" />
                     <horizontal gravity="center" >
                       <text text="小手指像素点个数:" />
@@ -803,6 +819,10 @@ if (!isRunningMode) {
                   <horizontal gravity="center">
                     <text text="校验排行榜分析范围:" layout_weight="20" />
                     <input inputType="text" id="rankCheckRegion" layout_weight="80" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="基于图像收集能量球范围:" layout_weight="20" />
+                    <input inputType="text" id="treeCollectRegion" layout_weight="80" />
                   </horizontal>
                   <horizontal gravity="center">
                     <text text="可收集能量球:" layout_weight="20" />
@@ -1329,6 +1349,10 @@ if (!isRunningMode) {
       config.cutAndSaveCountdown = ui.cutAndSaveCountdownChkBox.isChecked()
     })
 
+    ui.cutAndSaveTreeCollectChkBox.on('click', () => {
+      config.cutAndSaveTreeCollect = ui.cutAndSaveTreeCollectChkBox.isChecked()
+    })
+
     ui.saveLogFileChkBox.on('click', () => {
       config.saveLogFile = ui.saveLogFileChkBox.isChecked()
       ui.fileSizeContainer.setVisibility(config.saveLogFile ? View.VISIBLE : View.INVISIBLE)
@@ -1340,6 +1364,10 @@ if (!isRunningMode) {
 
     ui.autoSetBrightnessChkBox.on('click', () => {
       config.autoSetBrightness = ui.autoSetBrightnessChkBox.isChecked()
+    })
+
+    ui.dismissDialogIfLockedChkBox.on('click', () => {
+      config.dismissDialogIfLocked = ui.dismissDialogIfLockedChkBox.isChecked()
     })
 
     ui.autoLockChkBox.on('click', () => {
@@ -1614,6 +1642,21 @@ if (!isRunningMode) {
           config.rank_check_top = parseInt(match[2])
           config.rank_check_width = parseInt(match[3])
           config.rank_check_height = parseInt(match[4])
+        } else {
+          toast('输入值无效')
+        }
+      })
+    )
+    ui.treeCollectRegion.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        let newVal = text + ''
+        let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
+        if (regex.test(newVal)) {
+          let match = regex.exec(newVal)
+          config.tree_collect_left = parseInt(match[1])
+          config.tree_collect_top = parseInt(match[2])
+          config.tree_collect_width = parseInt(match[3])
+          config.tree_collect_height = parseInt(match[4])
         } else {
           toast('输入值无效')
         }

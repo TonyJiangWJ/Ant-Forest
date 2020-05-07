@@ -184,7 +184,14 @@ window.canvas.on("draw", function (canvas) {
           offset = 90
         }
         let iiimg = images.copy(grayImgInfo)
-        let p = images.findMultiColors(iiimg, "#ffffff", [[-25, 0, "#ffffff"], [25, 0, "#ffffff"], [0, 25, "#ffffff"]], { region: [x, offset, 125, 350 - offset] })
+        let checkPoints = []
+        for (let x = -25; x <= 25; x += 2) {
+          checkPoints.push([x, 0, '#ffffff'])
+        }
+        for (let y = 0; y <= 25; y += 5) {
+          checkPoints.push([0, y, '#ffffff'])
+        }
+        let p = images.findMultiColors(iiimg, "#ffffff", checkPoints, { region: [x, offset, 125, 350 - offset] })
         // let p = images.findColor(iiimg, '#ffffff',
         //   { region: [x, offset, 125, 350 - offset], threshold: 0 })
         if (p && getDistance(p, lastPx, lastPy) >= 100) {

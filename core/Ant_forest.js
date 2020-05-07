@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-06 19:23:27
+ * @Last Modified time: 2020-05-07 12:39:07
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -25,14 +25,14 @@ function Ant_forest () {
   let _pre_energy = 0, // 记录收取前能量值
     _post_energy = 0, // 记录收取后能量值
     _timestamp = 0, // 记录获取自身能量倒计时
-    _min_countdown = 0, // 最小可收取倒计时
+    _min_countdown = null, // 最小可收取倒计时
     _current_time = 0, // 当前收集次数
     _fisrt_running = true, // 是否第一次进入蚂蚁森林
     _has_next = true, // 是否下一次运行
     _collect_any = false, // 收集过能量
     _re_try = 0,
-    _lost_someone = false // 是否漏收,
-  _friends_min_countdown = 0
+    _lost_someone = false, // 是否漏收,
+    _friends_min_countdown = null
   /***********************
    * 综合操作
    ***********************/
@@ -564,7 +564,7 @@ function Ant_forest () {
     }
     debugInfo('进入好友排行榜成功')
     if (true === findAndCollect()) {
-      _min_countdown = 0
+      _min_countdown = null
       _has_next = true
       _current_time = _current_time == 0 ? 0 : _current_time - 1
       errorInfo('收集好友能量失败，重新开始')
@@ -722,6 +722,7 @@ function Ant_forest () {
     Executor.call(this)
 
     this.doInLoop = function () {
+      _min_countdown = null
       openAndWaitForPersonalHome()
       if (!_config.not_collect_self) {
         collectOwn()
@@ -732,7 +733,7 @@ function Ant_forest () {
           // 收集失败，重新开始
           _lost_someone = true
           _current_time = _current_time == 0 ? 0 : _current_time - 1
-          _min_countdown = 0
+          _min_countdown = null
           _has_next = true
           runSuccess = false
         }
@@ -788,7 +789,7 @@ function Ant_forest () {
             errorInfo('发生异常 [' + e + '] [' + e.message + ']')
             _current_time = _current_time == 0 ? 0 : _current_time - 1
             _lost_someone = true
-            _min_countdown = 0
+            _min_countdown = null
             _has_next = true
             _re_try = 0
           }

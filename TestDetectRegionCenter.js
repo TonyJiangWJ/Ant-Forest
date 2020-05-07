@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-04 14:35:59
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-06 23:34:15
+ * @Last Modified time: 2020-05-07 17:25:33
  * @Description: 
  */
 
@@ -10,13 +10,24 @@ runtime.loadDex('./lib/color-region-center.dex')
 
 importClass(com.tony.ColorCenterCalculator)
 importClass(com.tony.ColorCenterCalculatorWithInterval)
+importClass(com.tony.ScriptLogger)
 
 let { config } = require('./config.js')(runtime, this)
 let sRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
-
+let SCRIPT_LOGGER = new ScriptLogger({
+  log: function (message) {
+    logInfo(message)
+  },
+  debug: function (message) {
+    debugInfo(message)
+  },
+  error: function (message) {
+    errorInfo(message)
+  }
+})
 config.show_debug_log = true
 requestScreenCapture(false)
 var window = floaty.rawWindow(
@@ -104,14 +115,17 @@ let threshold = 0
 let flag = 1
 let centerPoint = null
 
-let detectRegion = [150, 500, 750, 350]
-let helpGrayImg = null
-
 threads.start(function () {
   while (grayImgInfo === null || centerPoint === null) {
     let screen = captureScreen()
     if (screen) {
-      let intervalImg = images.medianBlur(images.interval(images.copy(screen), config.can_collect_color || '#1da06a', config.color_offset), 5)
+      let tmp = images.copy(screen)
+      let tmp2 = images.grayscale(tmp)
+      tmp.recycle()
+      tmp=images.interval(tmp2, '#828282', 1)
+      tmp2.recycle()
+      let intervalImg = images.medianBlur(tmp, 5)
+      tmp.recycle()
       let point = images.findColor(
         intervalImg, '#FFFFFF',
         { region: [1080 - 200, 0, 200, 2000] }
@@ -122,6 +136,8 @@ threads.start(function () {
           intervalImg,
           config.device_width - 200, point.x, point.y
         )
+        calculator.setScriptLogger(SCRIPT_LOGGER)
+        calculator.setUseBfs(flag == 1)
         centerPoint = calculator.getCenterPoint()
         if (centerPoint) {
           calculator.getImg().recycle()
@@ -170,6 +186,7 @@ window.canvas.on("draw", function (canvas) {
 
 
   if (centerPoint) {
+    drawText('' + centerPoint.regionSame, {x: centerPoint.x - 50, y: centerPoint.y - 50}, canvas, paint)
     drawRectAndText('', [parseInt(centerPoint.x) - 5, parseInt(centerPoint.y - 5), 10, 10], '#00ff00', canvas, paint)
   }
   paint.setTextSize(20)

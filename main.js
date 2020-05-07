@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-06 23:55:50
+ * @Last Modified time: 2020-05-07 10:32:51
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -50,9 +50,14 @@ logInfo('---前置校验完成;启动系统--->>>>')
 if (files.exists('version.json')) {
   let content = JSON.parse(files.read('version.json'))
   logInfo(['版本信息：{} nodeId:{}', content.version, content.nodeId])
+} else if (files.exists('project.json')) {
+  let content = JSON.parse(files.read('project.json'))
+  logInfo(['版本信息：{}', content.versionName])
 } else {
   logInfo('无法获取脚本版本信息')
 }
+logInfo(['AutoJS version: {}', app.autojs.versionName])
+logInfo(['device info: {} {} {}', device.brand, device.product, device.release])
 logInfo(['运行模式：{}{} {} {} {}',
   config.develop_mode ? '开发模式 ' : '',
   config.single_script ? '单脚本运行无视运行队列' : '多脚本调度运行',

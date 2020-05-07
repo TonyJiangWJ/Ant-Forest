@@ -1,6 +1,6 @@
 
-let { config } = require('./config.js')(runtime, this)
-let sRequire = require('./lib/SingletonRequirer.js')(runtime, this)
+let { config } = require('../config.js')(runtime, this)
+let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
@@ -88,44 +88,18 @@ let targetEndTime = startTime + 120000
 let passwindow = 0
 let count = 0
 let drawPoint = null
-let detectRegion = [150, 500, 750, 350]
+let detectRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
+
 let grayImgInfo = null
 let birthTime = new Date().getTime()
 let threshold = 0
 let flag = 1
 let clickPoints = []
+let gap = parseInt(detectRegion[2] / 6)
 
 let helpGrayImg = null
 
-let detectHelpThread = threads.start(function (){
-  while(true) {
-    let start = new Date().getTime()
-    let screen = captureScreen()
-    if (screen) {
-      let copyImg = images.grayscale(screen)
-      let intervalImg = null
-      if (new Date().getTime() - birthTime > 1500) {
-
-        intervalImg = images.inRange(copyImg, '#838383', '#9a9a9a')
-        if (flag == 1) {
-          intervalImg = images.medianBlur(intervalImg, 5)
-        } else {
-          intervalImg = images.gaussianBlur(intervalImg, 5)
-        }
-        helpGrayImg = images.clip(intervalImg, detectRegion[0], detectRegion[1], detectRegion[2], detectRegion[3])
-        birthTime = new Date().getTime()
-      }
-      copyImg.recycle()
-      if (intervalImg !== null) {
-        intervalImg.recycle()
-      }
-      logInfo(['寻找可收取点耗时:{}ms', new Date().getTime() - start])
-    } else {
-      warnInfo(['重新申请截图权限:{}', requestScreenCapture(false)])
-    }
-    sleep(1000)
-  }
-})
+let scaleRate = config.device_width / 1080
 
 let detectThread = threads.start(function () {
   while (true) {
@@ -164,9 +138,9 @@ function exitAndClean () {
     sleep(1000)
     window.close()
   }
-  // if (detectThread) {
-  //   detectThread.interrupt()
-  // }
+  if (detectThread) {
+    detectThread.interrupt()
+  }
   exit()
 }
 
@@ -174,94 +148,102 @@ let getDistance = function (p, lpx, lpy) {
   return Math.sqrt(Math.pow(p.x - lpx, 2) + Math.pow(p.y - lpy, 2))
 }
 window.canvas.on("draw", function (canvas) {
-  try {
-    // 清空内容
-    canvas.drawColor(0xFFFFFF, android.graphics.PorterDuff.Mode.CLEAR);
-    var width = canvas.getWidth()
-    var height = canvas.getHeight()
-    if (!converted) {
-      toastLog('画布大小：' + width + ', ' + height)
-    }
-
-    // let canvas = new com.stardust.autojs.core.graphics.ScriptCanvas(width, height)
-    let Typeface = android.graphics.Typeface
-    var paint = new Paint()
-    paint.setStrokeWidth(1)
-    paint.setTypeface(Typeface.DEFAULT_BOLD)
-    paint.setTextAlign(Paint.Align.LEFT)
-    paint.setAntiAlias(true)
-    paint.setStrokeJoin(Paint.Join.ROUND)
-    paint.setDither(true)
-    drawRectAndText('检测区域', detectRegion, '#ffffff', canvas, paint)
-    paint.setTextSize(30)
-    let countdown = (targetEndTime - new Date().getTime()) / 1000
-    drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 100 }, canvas, paint)
-    // drawText('当前相似度' + threshold, { x: 100, y: 500 }, canvas, paint)
-    drawText('滤波方式：' + (flag == 1 ? '中值滤波' : '高斯滤波'), { x: 100, y: 400 }, canvas, paint)
-    if (drawPoint) {
-      drawRectAndText('Matched', [drawPoint.x - 50, drawPoint.y - 50, 100, 100], '#00ff00', canvas, paint)
-    }
-    if (grayImgInfo) {
-      canvas.drawImage(grayImgInfo, detectRegion[0], detectRegion[1], paint)
-      clickPoints = []
-      let lastPx = -130
-      let lastPy = -130
-      let o = 225
-      for (let x = 0; x <= 625; x += 125) {
-        let offset = x == 375 ? o : Math.abs(o -= 75)
-        if (offset == 75) {
-          offset = 90
-        }
-        let iiimg = images.copy(grayImgInfo)
-        let p = images.findMultiColors(iiimg, "#ffffff", [[-25, 0, "#ffffff"],[25, 0, "#ffffff"]], { region: [x, offset, 125, 350 - offset]})
-        // let p = images.findColor(iiimg, '#ffffff',
-        //   { region: [x, offset, 125, 350 - offset], threshold: 0 })
-        if (p && getDistance(p, lastPx, lastPy) >= 100) {
-          clickPoints.push(p)
-          lastPx = p.x
-          lastPy = p.y
-        }
-        iiimg.recycle()
-      }
-    }
-    if (helpGrayImg) {
-      canvas.drawImage(helpGrayImg, detectRegion[0], detectRegion[1], paint)
-    }
-
-    if (clickPoints && clickPoints.length > 0) {
-      drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint)
-
-      clickPoints.forEach((p) => {
-        drawRectAndText('', [p.x + 145, p.y + 500 - 5, 10, 10], '#00ffff', canvas, paint)
-        drawRectAndText('', [p.x + 150 - 25 - 2, p.y + 500 - 2, 4, 4], '#ff00ff', canvas, paint)
-        drawRectAndText('', [p.x + 150 + 25 - 2, p.y + 500 - 2, 4, 4], '#ff00ff', canvas, paint)
-      })
-    }
-
-    if (new Date().getTime() - birthTime > 1500) {
-      grayImgInfo = null
-      helpGrayImg = null
-    }
-    passwindow = new Date().getTime() - startTime
-
-    if (passwindow > 1000) {
-      startTime = new Date().getTime()
-      // console.verbose('关闭倒计时：' + countdown.toFixed(2))
-    }
-    let o = 225
-    for (let x = 150; x <= 775; x += 125) {
-      let offset = x == 525 ? o : Math.abs(o -= 75)
-      if (offset == 75) {
-        offset = 90
-      }
-      drawRectAndText('' + offset, [x, 500 + offset, 125, 350 - offset], '#00ff00', canvas, paint)
-    }
-    drawCoordinateAxis(canvas, paint)
-    converted = true
-  } catch (e) {
-    toastLog(e)
-    exitAndClean()
+  // try {
+  // 清空内容
+  canvas.drawColor(0xFFFFFF, android.graphics.PorterDuff.Mode.CLEAR);
+  var width = canvas.getWidth()
+  var height = canvas.getHeight()
+  if (!converted) {
+    toastLog('画布大小：' + width + ', ' + height)
   }
+
+  // let canvas = new com.stardust.autojs.core.graphics.ScriptCanvas(width, height)
+  let Typeface = android.graphics.Typeface
+  var paint = new Paint()
+  paint.setStrokeWidth(1)
+  paint.setTypeface(Typeface.DEFAULT_BOLD)
+  paint.setTextAlign(Paint.Align.LEFT)
+  paint.setAntiAlias(true)
+  paint.setStrokeJoin(Paint.Join.ROUND)
+  paint.setDither(true)
+  drawRectAndText('检测区域', detectRegion, '#ffffff', canvas, paint)
+  paint.setTextSize(30)
+  let countdown = (targetEndTime - new Date().getTime()) / 1000
+  drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 100 }, canvas, paint)
+  // drawText('当前相似度' + threshold, { x: 100, y: 500 }, canvas, paint)
+  drawText('滤波方式：' + (flag == 1 ? '中值滤波' : '高斯滤波'), { x: 100, y: 400 }, canvas, paint)
+  if (drawPoint) {
+    drawRectAndText('Matched', [drawPoint.x - 50, drawPoint.y - 50, 100, 100], '#00ff00', canvas, paint)
+  }
+  if (grayImgInfo) {
+    canvas.drawImage(grayImgInfo, detectRegion[0], detectRegion[1], paint)
+    clickPoints = []
+    let lastPx = -130
+    let lastPy = -130
+    let step = parseInt(75 * scaleRate)
+    let o = step * 3
+
+    for (let x = 0; x <= detectRegion[2] - gap; x += gap) {
+      let offset = x == 3 * gap ? o : Math.abs(o -= step)
+      if (offset == step) {
+        offset = parseInt(90 * scaleRate)
+      }
+      let iiimg = images.copy(grayImgInfo)
+      let checkPoints = []
+      for (let x = -parseInt(25 * scaleRate); x <= parseInt(25 * scaleRate); x += 2) {
+        checkPoints.push([x, 0, '#ffffff'])
+      }
+      let p = images.findMultiColors(iiimg, "#ffffff", checkPoints, { region: [x, offset, gap, detectRegion[3] - offset] })
+      // let p = images.findColor(iiimg, '#ffffff',
+      //   { region: [x, offset, 125, 350 - offset], threshold: 0 })
+      if (p && getDistance(p, lastPx, lastPy) >= 100) {
+        clickPoints.push(p)
+        lastPx = p.x
+        lastPy = p.y
+      }
+      iiimg.recycle()
+    }
+  }
+  if (helpGrayImg) {
+    canvas.drawImage(helpGrayImg, detectRegion[0], detectRegion[1], paint)
+  }
+
+  if (clickPoints && clickPoints.length > 0) {
+    drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint)
+
+    clickPoints.forEach((p) => {
+      drawRectAndText('', [p.x + 145, p.y + 500 - 5, 10, 10], '#00ffff', canvas, paint)
+      drawRectAndText('', [p.x + 150 - 25 - 2, p.y + 500 - 2, 4, 4], '#ff00ff', canvas, paint)
+      drawRectAndText('', [p.x + 150 + 25 - 2, p.y + 500 - 2, 4, 4], '#ff00ff', canvas, paint)
+    })
+  }
+
+  if (new Date().getTime() - birthTime > 1500) {
+    grayImgInfo = null
+    helpGrayImg = null
+  }
+  passwindow = new Date().getTime() - startTime
+
+  if (passwindow > 1000) {
+    startTime = new Date().getTime()
+    // console.verbose('关闭倒计时：' + countdown.toFixed(2))
+  }
+  let step = parseInt(75 * scaleRate)
+  let o = step * 3
+
+  for (let x = 0; x <= detectRegion[2] - gap; x += gap) {
+    let offset = x == 3 * gap ? o : Math.abs(o -= step)
+    if (offset == step) {
+      offset = parseInt(90 * scaleRate)
+    }
+    drawRectAndText('' + offset, [detectRegion[0] + x, detectRegion[1] + offset, gap, detectRegion[3] - offset], '#00ff00', canvas, paint)
+  }
+  drawCoordinateAxis(canvas, paint)
+  converted = true
+  // } catch (e) {
+  //   toastLog(e)
+  //   exitAndClean()
+  // }
 });
 
 let lastChangedTime = new Date().getTime()
