@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-07 19:42:08
+ * @Last Modified time: 2020-05-08 01:04:40
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -20,7 +20,7 @@ const BaseScanner = function () {
 
   let SCALE_RATE = _config.device_width / 1080
   let detectRegion = [
-    _config.tree_collect_left, _config.tree_collect_top, 
+    _config.tree_collect_left, _config.tree_collect_top,
     _config.tree_collect_width, _config.tree_collect_height
   ]
   let GAP = parseInt(detectRegion[2] / 6)
@@ -170,7 +170,30 @@ const BaseScanner = function () {
   }
 
   this.checkAndCollectByImg = function () {
-    this.checkAndClickByImg('#c8c8c8', '#cacaca', false)
+    let clickPoints = this.checkByImg('#c8c8c8', '#cacaca', false)
+    // 不需要帮助好友时，过滤帮助收取的点
+    if (!_config.help_friend && clickPoints.length > 0) {
+      let start = new Date().getTime()
+      let screen = _commonFunctions.checkCaptureScreenPermission()
+      if (screen) {
+        let forCheckImg = images.copy(screen)
+        clickPoints = clickPoints.filter(point => {
+          let region = [detectRegion[0] + point.x, detectRegion[1] + point.y, 50, 200]
+          for (let i = 0; i < _config.helpBallColors.length; i++) {
+            let color = _config.helpBallColors[i]
+            if (images.findColor(forCheckImg, color, { region: region, threshold: _config.color_offset })) {
+              return false
+            }
+            debugInfo(['{} 未找到匹配的颜色：{}', region, color])
+          }
+          return true
+        })
+        debugInfo(['过滤可帮助能量球后：「{}」过滤耗时：{}ms', JSON.stringify(clickPoints), new Date().getTime() - start])
+        forCheckImg.recycle()
+        screen.recycle()
+      }
+    }
+    this.clickCheckPoints(clickPoints)
   }
 
   this.getDistance = function (p, lpx, lpy) {
@@ -257,7 +280,7 @@ const BaseScanner = function () {
   this.collectAndHelp = function (needHelp) {
     // 收取好友能量
     this.collectEnergy(needHelp)
-    if(_config.direct_use_img_collect_and_help) {
+    if (_config.direct_use_img_collect_and_help) {
       if (needHelp) {
         this.checkAndHelpTwice()
         // 因为无法判断剩余多少个能量球，当需要帮助之后返回true 重新进入，下次调用时传递needHelp为false即可
@@ -504,16 +527,16 @@ const BaseScanner = function () {
           debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
         }
       } else if (obj.isHelp && postE !== null && preE !== null) {
-        let gotEnergy = postE - preE
+        let friendGrowEnergy = postE - preE
         debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
-        if (gotEnergy > 0) {
-          logInfo("帮助好友:" + obj.name + " 回收能量 " + gotEnergy + "g")
+        if (friendGrowEnergy > 0) {
+          logInfo("帮助好友:" + obj.name + " 回收能量 " + friendGrowEnergy + "g")
           _commonFunctions.recordFriendCollectInfo({
             friendName: obj.name,
             friendEnergy: postE,
             postCollect: postGet,
             preCollect: preGot,
-            helpCollect: gotEnergy
+            helpCollect: friendGrowEnergy
           })
           if (_config.try_collect_by_multi_touch || _config.direct_use_img_collect_and_help) {
             // 如果是可帮助 且 无法获取控件信息的，以帮助收取的重新进入判断一次
@@ -521,7 +544,7 @@ const BaseScanner = function () {
           }
           if (_config.cutAndSaveTreeCollect && screen) {
             let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
-              + 'unknow_helped_' + gotEnergy + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
+              + 'unknow_helped_' + friendGrowEnergy + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
             files.ensureDir(savePath)
             images.save(screen, savePath)
             debugForDev(['保存可帮助能量球图片：「{}」', savePath])

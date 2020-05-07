@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-07 19:57:01
+ * @Last Modified time: 2020-05-08 00:49:20
  * @Description: 
  */
 'ui';
@@ -776,7 +776,7 @@ if (!isRunningMode) {
               </ScrollView>
             </frame>
             <frame>
-              <ScrollView>
+              <ScrollView id="parentScrollView3">
                 <vertical padding="12 24">
                   <text text="一般情况下不需要修改这一块的配置，除非你的支付宝是英文的" textSize="12sp" />
                   <horizontal gravity="center">
@@ -839,16 +839,14 @@ if (!isRunningMode) {
                   <vertical w="*" gravity="left" layout_gravity="left" margin="10">
                     <text text="帮收取能量球颜色" textColor="#666666" textSize="14sp" />
                     <frame>
-                      <ScrollView height="100">
-                        <list id="helpBallColorsList">
-                          <horizontal w="*" h="40" gravity="left" bg="#efefef" margin="0 5">
-                            <text id="name" layout_weight='1' h="30" gravity="left|center" layout_gravity="left|center" textSize="16sp" textColor="{{color}}" text="{{color}}" margin="10 0" />
-                            <card id="deleteHelpColor" w="30" h="30" cardBackgroundColor="#fafafa" cardCornerRadius="15dp" layout_gravity="center" marginRight="10">
-                              <text textSize="16dp" textColor="#555555" gravity="center">×</text>
-                            </card>
-                          </horizontal>
-                        </list>
-                      </ScrollView>
+                      <list id="helpBallColorsList" height="150">
+                        <horizontal w="*" h="40" gravity="left" bg="#efefef" margin="0 5">
+                          <text id="name" layout_weight='1' h="30" gravity="left|center" layout_gravity="left|center" textSize="16sp" textColor="{{color}}" text="{{color}}" margin="10 0" />
+                          <card id="deleteHelpColor" w="30" h="30" cardBackgroundColor="#fafafa" cardCornerRadius="15dp" layout_gravity="center" marginRight="10">
+                            <text textSize="16dp" textColor="#555555" gravity="center">×</text>
+                          </card>
+                        </horizontal>
+                      </list>
                     </frame>
                     <button w="*" id="addHelpBallColor" text="添加" gravity="center" layout_gravity="center" />
                   </vertical>
@@ -1096,6 +1094,18 @@ if (!isRunningMode) {
         })
       })
     })
+
+    ui.helpBallColorsList.setOnTouchListener(new View.OnTouchListener({
+      onTouch: function (v, event) {
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+          ui.parentScrollView3.requestDisallowInterceptTouchEvent(false)
+        } else {
+          // 屏蔽父控件的拦截事件
+          ui.parentScrollView3.requestDisallowInterceptTouchEvent(true)
+        }
+        return false
+      }
+    }))
 
     ui.addHelpBallColor.on('click', () => {
       dialogs.rawInput('请输入颜色')
