@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-07 20:20:26
+ * @Last Modified time: 2020-05-08 01:21:58
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -9,6 +9,15 @@ let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 
 if (config.base_on_image) {
   runtime.loadDex('./lib/color-region-center.dex')
+  try {
+    importClass(com.tony.ColorCenterCalculatorWithInterval)
+  } catch(e) {
+    let errorInfo = e + ''
+    if(/importClass must be called/.test(errorInfo)) {
+      toastLog('请强制关闭AutoJS并重新启动')
+      exit()
+    }
+  }
 }
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
