@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 01:14:25
+ * @Last Modified time: 2020-05-08 01:21:58
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)

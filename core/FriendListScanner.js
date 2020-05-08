@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-05 11:54:57
+ * @Last Modified time: 2020-05-05 13:35:53
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
