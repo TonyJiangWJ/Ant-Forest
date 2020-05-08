@@ -2,7 +2,7 @@ let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let _BaseScanner = require('../core/BaseScanner.js')
-
+let { config } = require('../config.js')
 let _base_scanner = new _BaseScanner()
 
 let TARGET_LAY = 1
@@ -11,7 +11,8 @@ var window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
 );
 
-window.setSize(1080, 2160)
+
+window.setSize(config.device_width, config.device_height)
 window.setTouchable(false)
 
 function convertArrayToRect (a) {

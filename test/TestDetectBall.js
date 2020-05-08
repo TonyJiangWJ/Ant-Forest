@@ -11,7 +11,7 @@ var window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
 );
 
-window.setSize(1080, 2160)
+window.setSize(config.device_width, config.device_height)
 window.setTouchable(false)
 
 function convertArrayToRect (a) {
@@ -211,10 +211,12 @@ window.canvas.on("draw", function (canvas) {
   if (clickPoints && clickPoints.length > 0) {
     drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint)
 
+    let startX = detectRegion[0]
+    let startY = detectRegion[1]
     clickPoints.forEach((p) => {
-      drawRectAndText('', [p.x + 145, p.y + 500 - 5, 10, 10], '#00ffff', canvas, paint)
-      drawRectAndText('', [p.x + 150 - 25 - 2, p.y + 500 - 2, 4, 4], '#ff00ff', canvas, paint)
-      drawRectAndText('', [p.x + 150 + 25 - 2, p.y + 500 - 2, 4, 4], '#ff00ff', canvas, paint)
+      drawRectAndText('', [p.x + startX - 5, p.y + startY - 5, 10, 10], '#00ffff', canvas, paint)
+      drawRectAndText('', [p.x + startX - 25 - 2, p.y + startY - 2, 4, 4], '#ff00ff', canvas, paint)
+      drawRectAndText('', [p.x + startX + 25 - 2, p.y + startY - 2, 4, 4], '#ff00ff', canvas, paint)
     })
   }
 
@@ -225,6 +227,7 @@ window.canvas.on("draw", function (canvas) {
   passwindow = new Date().getTime() - startTime
 
   if (passwindow > 1000) {
+    console.verbose('可点击点：' + JSON.stringify(clickPoints))
     startTime = new Date().getTime()
     // console.verbose('关闭倒计时：' + countdown.toFixed(2))
   }
