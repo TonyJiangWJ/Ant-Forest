@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 01:40:04
+ * @Last Modified time: 2020-05-08 07:55:27
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -563,6 +563,11 @@ function Ant_forest () {
     let enterFlag = _widgetUtils.friendListWaiting()
     if (!enterFlag) {
       debugInfo('进入好友排行榜失败')
+      return false
+    }
+    let loadedStatus = _widgetUtils.ensureRankListLoaded(3)
+    if (!loadedStatus) {
+      warnInfo('排行榜加载中')
       return false
     }
     debugInfo('进入好友排行榜成功')
