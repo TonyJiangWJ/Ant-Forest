@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 07:55:27
+ * @Last Modified time: 2020-05-08 15:13:17
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -611,7 +611,7 @@ function Ant_forest () {
             warnInfo('关闭脚本', true)
             _commonFunctions.cancelAllTimedTasks()
           } else if (keyCode === 25) {
-            if (_config.autoSetBrightness) {
+            if (_config.auto_set_brightness) {
               device.setBrightnessMode(1)
             }
             warnInfo('延迟五分钟后启动脚本', true)
@@ -644,7 +644,7 @@ function Ant_forest () {
         debugInfo('重新锁定屏幕')
         automator.lockScreen()
       }
-      if (_config.autoSetBrightness) {
+      if (_config.auto_set_brightness) {
         device.setBrightnessMode(1)
       }
     }
@@ -774,7 +774,7 @@ function Ant_forest () {
             _commonFunctions.setUpAutoStart(_min_countdown - delayTime)
             _runningQueueDispatcher.removeRunningTask()
             // 如果不驻留悬浮窗  则不延迟，直接关闭
-            if (_config.notLingeringFloatWindow) {
+            if (_config.not_lingering_float_window) {
               _runningQueueDispatcher.removeRunningTask()
               exit()
             } else {

@@ -75,14 +75,23 @@
 - 运行配置后可以看到百度API调用总次数和剩余次数
 - 配置导出导入功能，点击右上角菜单即可导出当前配置到local_config.cfg中，默认已加密加密密码为device.getAndriodId() 如果需要在免费版和付费版AutoJS之间同步 需要自行输入密码
 - 运行时数据导出导入功能同上所述
+- **重要** 基于图像分析模式必须按如下配置，否则脚本无法正常执行
+- 配置完之后可以运行`test/全局悬浮窗显示-配置信息.js` 查看配置生效状况
+- 请确保框选区域符合如下样例
+- 排行榜区域框选如下所示
+![rank_check](./resources/rank_region.jpg)
+- 底部区域框选住 `了` 的上半部分；或者选择其他区域，并配置相应的颜色值，比如 `邀请` 按钮
+![bottom_check](./resources/bottom_region.jpg)
 
-![基本配置](./resources/config-1.jpg)
+- 其他配置信息见如下所示
 
-![进阶配置](./resources/config-2.jpg)
+  ![基本配置](./resources/config-1.jpg)
 
-![控件文本配置](./resources/config-3.jpg)
+  ![进阶配置](./resources/config-2.jpg)
 
-![配置菜单](./resources/config-4.jpg)
+  ![控件文本配置](./resources/config-3.jpg)
+
+  ![配置菜单](./resources/config-4.jpg)
 
 ## 常见问题
 
@@ -157,7 +166,7 @@ module.exports = function (obj) {
   }
 ```
 
-- 修改扩展代码之后，可以运行 `test/全局悬浮窗显示-音量上键关闭.js` 可以进到森林页面实时查看配置效果，通过此方法可以随你调试编写各种花样点击，也可以仅仅修改y值，修正上下偏移量 默认是y=700 部分刘海屏可能需要修改成600
+- 修改扩展代码之后，可以运行 `test/全局悬浮窗显示-点击区域信息-音量上键关闭.js` 可以进到森林页面实时查看配置效果，通过此方法可以随你调试编写各种花样点击，也可以仅仅修改y值，修正上下偏移量 默认是y=700 部分刘海屏可能需要修改成600
 - ![全局悬浮窗显示](./resources/check_multi_position.jpg)
 
 ## 更新记录
