@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 01:04:40
+ * @Last Modified time: 2020-05-08 08:02:23
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -133,44 +133,10 @@ const BaseScanner = function () {
     }
   }
 
-  /**
-   * 校验一次 帮助收取 无视漏收
-   */
-  this.checkAndHelpOnce = function () {
-    this.checkAndClickByImg('#b5b5b5', '#d6d6d6', true)
-  }
-
-  /**
-   * 校验两次 帮助收取 避免漏收
-   */
-  this.checkAndHelpTwice = function () {
-    let start = new Date().getTime()
-    let firstCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
-    // 延迟一段时间二次检验
-    sleep(250)
-    let secondCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
-    let allPoints = firstCheckPoints.concat(secondCheckPoints)
-    debugInfo(['两次校验得到的点集合：「{}」', JSON.stringify(allPoints)])
-    // 整合两次校验的点，移除距离较近的，然后进行点击
-    let clickPoints = []
-    let lastPx = -200
-    let lastPy = -200
-    if (allPoints.length > 0) {
-      allPoints.forEach(p => {
-        if (this.getDistance(p, lastPx, lastPy) >= 100) {
-          clickPoints.push(p)
-          lastPx = p.x
-          lastPy = p.y
-        }
-      })
-      debugInfo(['过滤后的点集合：「{}」', JSON.stringify(clickPoints)])
-      this.clickCheckPoints(clickPoints)
-    }
-    debugInfo(['二次校验可帮收能量球总计耗时：{}ms', new Date().getTime() - start])
-  }
 
   this.checkAndCollectByImg = function () {
-    let clickPoints = this.checkByImg('#c8c8c8', '#cacaca', false)
+    let start = new Date().getTime()
+    let allPoints = this.checkByImg('#c8c8c8', '#cacaca', false)
     // 不需要帮助好友时，过滤帮助收取的点
     if (!_config.help_friend && clickPoints.length > 0) {
       let start = new Date().getTime()
@@ -192,8 +158,31 @@ const BaseScanner = function () {
         forCheckImg.recycle()
         screen.recycle()
       }
+    } else if (_config.help_friend) {
+      let firstCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
+      // 延迟一段时间二次检验
+      sleep(250)
+      let secondCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
+      allPoints = allPoints.concat(firstCheckPoints.concat(secondCheckPoints))
     }
-    this.clickCheckPoints(clickPoints)
+
+    debugInfo(['得到的点集合：「{}」', JSON.stringify(allPoints)])
+    // 整合校验的点，移除距离较近的，然后进行点击
+    let clickPoints = []
+    let lastPx = -200
+    let lastPy = -200
+    if (allPoints.length > 0) {
+      allPoints.forEach(p => {
+        if (this.getDistance(p, lastPx, lastPy) >= 100) {
+          clickPoints.push(p)
+          lastPx = p.x
+          lastPy = p.y
+        }
+      })
+      debugInfo(['过滤后的点集合：「{}」', JSON.stringify(clickPoints)])
+      this.clickCheckPoints(clickPoints)
+    }
+    debugInfo(['判断可收集能量球信息总耗时：{}ms', new Date().getTime() - start])
   }
 
   this.getDistance = function (p, lpx, lpy) {
@@ -282,12 +271,9 @@ const BaseScanner = function () {
     this.collectEnergy(needHelp)
     if (_config.direct_use_img_collect_and_help) {
       if (needHelp) {
-        this.checkAndHelpTwice()
         // 因为无法判断剩余多少个能量球，当需要帮助之后返回true 重新进入，下次调用时传递needHelp为false即可
         return true
       } else {
-        // needHelp=false 尝试一次帮助，后续判断是否有帮助来确定是否需要重进
-        this.checkAndHelpOnce()
         return
       }
     }
