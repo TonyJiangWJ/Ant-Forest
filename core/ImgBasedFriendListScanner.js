@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 00:15:48
+ * @Last Modified time: 2020-05-08 15:37:03
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -109,21 +109,12 @@ const ImgBasedFriendListScanner = function () {
     this.threadPool = null
   }
 
-  this.reachBottom = function (grayImg) {
-    let start = new Date().getTime()
-    let virtualButtonHeight = _config.virtualButtonHeight || 0
-    let height = _config.device_height - virtualButtonHeight
-    let flag = true
-    for (let startY = 5; startY < 50; startY++) {
-      let colorGreen = grayImg.getBitmap().getPixel(10, height - startY) >> 8 & 0xFF
-      if (Math.abs(colorGreen - 245) > 4) {
-        flag = false
-        break
-      }
-    }
-    debugInfo(['判断排行榜底部耗时：{}ms', new Date().getTime() - start])
-    return flag
-  }
+  /**
+   * 执行收集操作
+   * 
+   * @return { true } if failed
+   * @return { minCountdown, lostSomeone } if successful
+   */
   this.collecting = function () {
     let screen = null
     let grayScreen = null
@@ -146,7 +137,6 @@ const ImgBasedFriendListScanner = function () {
       intervalScreenForDetectHelp = images.medianBlur(tmp2, 5)
       tmp2.recycle()
       tmpImg.recycle()
-      debugInfo('获取到screen' + (screen === null ? '失败' : '成功'))
       screen.recycle()
       let countdown = new Countdown()
       let waitForCheckPoints = []
@@ -331,15 +321,15 @@ const ImgBasedFriendListScanner = function () {
         }
       }
       automator.scrollDown()
-      sleep(500)
+      sleep(300)
       count++
       if (_config.checkBottomBaseImg) {
-        let reached = this.reachBottom(grayScreen)
+        let reached = _widgetUtils.reachBottom(grayScreen)
         if (reached) {
           // 二次校验，避免因为加载中导致的错误判断
           let newScreen = _commonFunctions.checkCaptureScreenPermission()
           let newGrayScreen = images.grayscale(newScreen)
-          reached = this.reachBottom(newGrayScreen)
+          reached = _widgetUtils.reachBottom(newGrayScreen)
           newScreen.recycle()
           newGrayScreen.recycle()
         }
@@ -351,10 +341,13 @@ const ImgBasedFriendListScanner = function () {
       intervalScreenForDetectHelp.recycle()
       grayScreen.recycle()
       // 每5次滑动判断一次是否在排行榜中
-      if (hasNext && count % 5 == 0 && !_widgetUtils.friendListWaiting()) {
-        errorInfo('当前不在好友排行榜！')
-        // true is error
-        return true
+      if (hasNext && count % 5 == 0) {
+        if (!_widgetUtils.friendListWaiting()) {
+          errorInfo('当前不在好友排行榜！')
+          // true is error
+          return true
+        }
+        // TODO 列表加载失败，重新上划 触发加载
       }
     } while (hasNext)
     sleep(100)

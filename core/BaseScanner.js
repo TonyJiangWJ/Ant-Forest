@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 08:02:23
+ * @Last Modified time: 2020-05-08 15:21:44
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -526,6 +526,7 @@ const BaseScanner = function () {
           })
           if (_config.try_collect_by_multi_touch || _config.direct_use_img_collect_and_help) {
             // 如果是可帮助 且 无法获取控件信息的，以帮助收取的重新进入判断一次
+            debugInfo('帮助收取后需要再次进入好友页面检测')
             rentery = true
           }
           if (_config.cutAndSaveTreeCollect && screen) {
