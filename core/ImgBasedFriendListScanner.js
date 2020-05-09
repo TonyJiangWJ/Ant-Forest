@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 15:37:03
+ * @Last Modified time: 2020-05-09 09:54:39
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -39,6 +39,8 @@ const ImgBasedFriendListScanner = function () {
   this.threadPool = null
   this.min_countdown_pixels = 10
   this.resolved_pixels = {}
+  this.last_check_point = null
+  this.last_check_color = null
 
   this.init = function (option) {
     this.current_time = option.currentTime || 0
@@ -64,7 +66,8 @@ const ImgBasedFriendListScanner = function () {
    */
   this.sortAndReduce = function (points, gap) {
     let scaleRate = _config.device_width / 1080
-    gap = gap || 110 * scaleRate
+    gap = gap || 100 * scaleRate
+    debugInfo(['reduce gap: {}', gap])
     let lastY = -gap - 1
     let lastIsHelp = false
     let resultPoints = []
@@ -109,6 +112,44 @@ const ImgBasedFriendListScanner = function () {
     this.threadPool = null
   }
 
+  this.scrollUpIfNeeded = function (grayImg) {
+    let start = new Date().getTime()
+    let region = [parseInt(_config.device_width * 0.3), parseInt(_config.device_height * 0.6), 100, 200]
+    let shouldScrollUp = false
+    let last_p = null
+    if (this.last_check_point) {
+      let checkPointColor = grayImg.getBitmap().getPixel(this.last_check_point.x, this.last_check_point.y)
+      // e5
+      if ((this.last_check_color & 0xFF) === (checkPointColor & 0xFF)) {
+        shouldScrollUp = true
+        last_p = this.last_check_point
+      } else {
+        debugInfo([
+          '校验点:{} 颜色：{} 不匹配 {}，正常继续',
+          JSON.stringify(this.last_check_point), colors.toString(checkPointColor), colors.toString(this.last_check_color)
+        ])
+      }
+    }
+    this.last_check_point = images.findColor(grayImg, '#e5e5e5', { region: region })
+    if (this.last_check_point) {
+      this.last_check_color = grayImg.getBitmap().getPixel(this.last_check_point.x, this.last_check_point.y)
+    } else {
+      this.last_check_color
+    }
+    
+    grayImg.recycle()
+
+    if (shouldScrollUp) {
+      debugInfo(['校验点颜色相同，上划重新触发加载，{}', JSON.stringify(last_p)])
+      automator.scrollUp()
+    }
+    debugInfo([
+      '保存校验点数据：[{}] color:{} 滑动校验耗时：{}ms',
+      JSON.stringify(this.last_check_point), colors.toString(this.last_check_color),
+      new Date().getTime() - start
+    ])
+  }
+
   /**
    * 执行收集操作
    * 
@@ -140,7 +181,7 @@ const ImgBasedFriendListScanner = function () {
       screen.recycle()
       let countdown = new Countdown()
       let waitForCheckPoints = []
-      
+
       let helpPoints = this.detectHelp(intervalScreenForDetectHelp)
       if (helpPoints && helpPoints.length > 0) {
         waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
@@ -152,7 +193,7 @@ const ImgBasedFriendListScanner = function () {
           })
         )
       }
-    
+
       let collectPoints = this.detectCollect(intervalScreenForDetectCollect)
       if (collectPoints && collectPoints.length > 0) {
         waitForCheckPoints = waitForCheckPoints.concat(collectPoints.map(
@@ -339,7 +380,6 @@ const ImgBasedFriendListScanner = function () {
       }
       intervalScreenForDetectCollect.recycle()
       intervalScreenForDetectHelp.recycle()
-      grayScreen.recycle()
       // 每5次滑动判断一次是否在排行榜中
       if (hasNext && count % 5 == 0) {
         if (!_widgetUtils.friendListWaiting()) {
@@ -348,7 +388,9 @@ const ImgBasedFriendListScanner = function () {
           return true
         }
         // TODO 列表加载失败，重新上划 触发加载
+        this.scrollUpIfNeeded(images.copy(grayScreen))
       }
+      grayScreen.recycle()
     } while (hasNext)
     sleep(100)
     if (!_widgetUtils.friendListWaiting()) {
@@ -392,8 +434,9 @@ const ImgBasedFriendListScanner = function () {
 
   this.detectColors = function (img) {
     let use_img = images.copy(img)
-    let movingY = parseInt(200 * SCALE_RATE)
+    let movingY = parseInt(180 * SCALE_RATE)
     let movingX = parseInt(100 * SCALE_RATE)
+    debugInfo(['moving window size: [{},{}]', movingX, movingY])
     // 预留70左右的高度
     let endY = _config.device_height - movingY - 70 * SCALE_RATE
     let runningY = 440 * SCALE_RATE
