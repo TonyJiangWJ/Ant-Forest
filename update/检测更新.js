@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-23 22:54:22
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-09 16:39:24
+ * @Last Modified time: 2020-05-09 21:05:41
  * @Description: 
  */
 
@@ -31,7 +31,7 @@ if (chose === 0) {
 }
 
 
-let targetOutputDir = FileUtils.getRealMainScriptPath(true) + '/testUpdate'
+let targetOutputDir = FileUtils.getRealMainScriptPath(true)
 
 downloader.setListener(new DownloaderListener({
   updateGui: function (string) {
