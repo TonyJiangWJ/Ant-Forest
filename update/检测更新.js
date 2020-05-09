@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-23 22:54:22
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-09 21:05:41
+ * @Last Modified time: 2020-05-10 03:41:02
  * @Description: 
  */
 
@@ -26,8 +26,7 @@ if (chose === 0) {
   toastLog('使用Gitee Release 作为更新源')
   apiUrl = 'https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/releases/latest'
   // 设置包前缀，更新包所在的仓库 
-  downloader = new GiteeReleaseDownloader('Ant-Forest-', 'https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/Ant-Forest-1.3.0.4.1.zip')
-  downloader = new GiteeReleaseDownloader('Ant-Forest-', 'https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/Ant-Forest-v1.3.0.3.1.zip')
+  downloader = new GiteeReleaseDownloader('Ant-Forest-', 'https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/')
 }
 
 
@@ -46,7 +45,7 @@ downloader.setTargetReleasesApiUrl(apiUrl)
 downloader.setOutputDir(targetOutputDir)
 // 设置不需要解压覆盖的文件
 // 请勿移除'lib/autojs-tools.dex' 否则引起报错
-downloader.setUnzipSkipFiles(['.gitignore', 'lib/autojs-tools.dex'])
+downloader.setUnzipSkipFiles(['.gitignore', 'lib/autojs-tools.dex', 'lib/download.dex'])
 // 设置不需要备份的文件
 downloader.setBackupIgnoreFiles([])
 
