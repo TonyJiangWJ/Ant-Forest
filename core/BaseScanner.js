@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 15:21:44
+ * @Last Modified time: 2020-05-09 09:35:32
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -134,38 +134,43 @@ const BaseScanner = function () {
   }
 
 
-  this.checkAndCollectByImg = function () {
+  this.checkAndCollectByImg = function (isOwn) {
+    isOwn = isOwn || false
     let start = new Date().getTime()
     let allPoints = this.checkByImg('#c8c8c8', '#cacaca', false)
-    // 不需要帮助好友时，过滤帮助收取的点
-    if (!_config.help_friend && clickPoints.length > 0) {
-      let start = new Date().getTime()
-      let screen = _commonFunctions.checkCaptureScreenPermission()
-      if (screen) {
-        let forCheckImg = images.copy(screen)
-        clickPoints = clickPoints.filter(point => {
-          let region = [detectRegion[0] + point.x, detectRegion[1] + point.y, 50, 200]
-          for (let i = 0; i < _config.helpBallColors.length; i++) {
-            let color = _config.helpBallColors[i]
-            if (images.findColor(forCheckImg, color, { region: region, threshold: _config.color_offset })) {
-              return false
+    if (!isOwn) {
+      // 不需要帮助好友时，过滤帮助收取的点
+      if (!_config.help_friend && allPoints.length > 0) {
+        let start = new Date().getTime()
+        let screen = _commonFunctions.checkCaptureScreenPermission()
+        if (screen) {
+          let forCheckImg = images.copy(screen)
+          allPoints = allPoints.filter(point => {
+            let region = [detectRegion[0] + point.x, detectRegion[1] + point.y, 50, 200]
+            for (let i = 0; i < _config.helpBallColors.length; i++) {
+              let color = _config.helpBallColors[i]
+              if (images.findColor(forCheckImg, color, { region: region, threshold: _config.color_offset })) {
+                return false
+              }
+              debugInfo(['{} 未找到匹配的颜色：{}', region, color])
             }
-            debugInfo(['{} 未找到匹配的颜色：{}', region, color])
-          }
-          return true
-        })
-        debugInfo(['过滤可帮助能量球后：「{}」过滤耗时：{}ms', JSON.stringify(clickPoints), new Date().getTime() - start])
-        forCheckImg.recycle()
-        screen.recycle()
+            return true
+          })
+          debugInfo(['过滤可帮助能量球后：「{}」过滤耗时：{}ms', JSON.stringify(allPoints), new Date().getTime() - start])
+          forCheckImg.recycle()
+          screen.recycle()
+        }
+      } else if (_config.help_friend) {
+        let firstCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
+        // 延迟一段时间二次检验
+        sleep(250)
+        let secondCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
+        allPoints = allPoints.concat(firstCheckPoints.concat(secondCheckPoints))
       }
-    } else if (_config.help_friend) {
-      let firstCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
-      // 延迟一段时间二次检验
-      sleep(250)
-      let secondCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
-      allPoints = allPoints.concat(firstCheckPoints.concat(secondCheckPoints))
+    } else {
+      debugInfo('收取自己的能量球，跳过帮收能量球的校验')
+      // TODO 识别好友浇水能量球，暂时懒得实现 手动收呗
     }
-
     debugInfo(['得到的点集合：「{}」', JSON.stringify(allPoints)])
     // 整合校验的点，移除距离较近的，然后进行点击
     let clickPoints = []
