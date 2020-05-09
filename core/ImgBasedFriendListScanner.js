@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-09 09:54:39
+ * @Last Modified time: 2020-05-09 10:46:23
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -113,7 +113,7 @@ const ImgBasedFriendListScanner = function () {
   }
 
   this.scrollUpIfNeeded = function (grayImg) {
-    let start = new Date().getTime()
+    let countdown = new Countdown()
     let region = [parseInt(_config.device_width * 0.3), parseInt(_config.device_height * 0.6), 100, 200]
     let shouldScrollUp = false
     let last_p = null
@@ -136,18 +136,20 @@ const ImgBasedFriendListScanner = function () {
     } else {
       this.last_check_color
     }
-    
+
     grayImg.recycle()
 
     if (shouldScrollUp) {
       debugInfo(['校验点颜色相同，上划重新触发加载，{}', JSON.stringify(last_p)])
       automator.scrollUp()
     }
-    debugInfo([
-      '保存校验点数据：[{}] color:{} 滑动校验耗时：{}ms',
-      JSON.stringify(this.last_check_point), colors.toString(this.last_check_color),
-      new Date().getTime() - start
-    ])
+
+    countdown.summary(
+      _commonFunctions.formatString(
+        '滑动校验 保存校验点数据：[{}] color:{}', JSON.stringify(this.last_check_point),
+        colors.toString(this.last_check_color)
+      )
+    )
   }
 
   /**
@@ -584,7 +586,7 @@ function Countdown () {
   }
 
   this.summary = function (content) {
-    debugInfo(content + '耗时' + this.getCost() + 'ms')
+    debugInfo(content + ' 耗时' + this.getCost() + 'ms')
   }
 
   this.restart = function () {
