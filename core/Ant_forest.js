@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 15:13:17
+ * @Last Modified time: 2020-05-09 09:58:15
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -477,7 +477,7 @@ function Ant_forest () {
       debugInfo('无能量球可收取')
       if (_config.direct_use_img_collect_and_help) {
         debugInfo('尝试通过图像分析收取能量')
-        _base_scanner.checkAndCollectByImg()
+        _base_scanner.checkAndCollectByImg(true)
       } else if (_config.try_collect_by_multi_touch) {
         debugInfo('尝试通过直接点击区域收集能量')
         _base_scanner.multiTouchToCollect()
