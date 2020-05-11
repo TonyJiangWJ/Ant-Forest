@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-12 00:16:25
+ * @Last Modified time: 2020-05-12 00:30:56
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -357,8 +357,6 @@ const ImgBasedFriendListScanner = function () {
         }
         // TODO 列表加载失败，重新上划 触发加载
         this.scrollUpIfNeeded(images.copy(grayScreen))
-        // 释放图片资源
-        resourceMonitor.releaseAll()
       }
     } while (hasNext)
     sleep(100)
