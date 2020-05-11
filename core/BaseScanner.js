@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-09 09:35:32
+ * @Last Modified time: 2020-05-11 22:09:33
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -30,6 +30,8 @@ const BaseScanner = function () {
   this.current_time = 0
   this.collect_any = false
   this.min_countdown = 10000
+  this.lost_reason = ''
+  this.lost_someone = false
   /**
    * 展示当前累积收集能量信息，累加已记录的和当前运行轮次所增加的
    * 
@@ -71,7 +73,6 @@ const BaseScanner = function () {
     }
     debugInfo(isDesc ? energy_ball.desc() : energy_ball.text())
     automator.clickCenter(energy_ball)
-    this.collect_any = true
     sleep(300)
   }
 
@@ -95,7 +96,6 @@ const BaseScanner = function () {
             ballCheckContainer.target.length,
             (100 + (1000 * Math.random()) % 899).toFixed(0))
           )
-          screen.recycle()
         }
       }
       let that = this
@@ -157,8 +157,6 @@ const BaseScanner = function () {
             return true
           })
           debugInfo(['过滤可帮助能量球后：「{}」过滤耗时：{}ms', JSON.stringify(allPoints), new Date().getTime() - start])
-          forCheckImg.recycle()
-          screen.recycle()
         }
       } else if (_config.help_friend) {
         let firstCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
@@ -214,10 +212,7 @@ const BaseScanner = function () {
     let screen = _commonFunctions.checkCaptureScreenPermission()
     if (screen) {
       let start = new Date().getTime()
-      let copyImg = images.grayscale(screen)
-      let tmpImg = images.inRange(copyImg, lowColor, highColor)
-      let intervalImg = images.medianBlur(tmpImg, 5)
-      tmpImg.recycle()
+      let intervalImg = images.medianBlur(images.inRange(images.grayscale(screen), lowColor, highColor), 5)
       // 切割检测区域
       intervalImg = images.clip(intervalImg, detectRegion[0], detectRegion[1], detectRegion[2], detectRegion[3])
 
@@ -257,11 +252,6 @@ const BaseScanner = function () {
           lastPy = p.y
         }
       }
-      if (intervalImg !== null) {
-        intervalImg.recycle()
-      }
-      screen.recycle()
-      copyImg.recycle()
       debugInfo([
         '{} 点个数：「{}」列表：{} 耗时:{}ms',
         (isHelp ? '可帮助' : '可收取'), clickPoints.length, JSON.stringify(clickPoints), new Date().getTime() - start
@@ -335,13 +325,10 @@ const BaseScanner = function () {
             break
           }
         }
-        ball.recycle()
-        interval_ball.recycle()
       })
       if (!helped && needHelp) {
         warnInfo(['未能找到帮收能量球需要增加匹配颜色组 当前{}', colors])
       }
-      screen.recycle()
       // 当数量大于等于6且帮助收取后，重新进入
       if (helped && needHelp && length >= 6) {
         debugInfo('帮助了 且有六个球 重新进入')
@@ -463,7 +450,7 @@ const BaseScanner = function () {
   this.doCollectTargetFriend = function (obj) {
     debugInfo(['准备开始收取好友：「{}」', obj.name])
     let temp = this.protectDetect(_package_name, obj.name)
-    let preGot, preE, rentery = false
+    let preGot, postGet, preE, postE, rentery = false
     let screen = null
     if (_config.cutAndSaveTreeCollect) {
       screen = images.copy(_commonFunctions.checkCaptureScreenPermission(false))
@@ -480,77 +467,73 @@ const BaseScanner = function () {
     try {
       // 等待控件数据刷新
       sleep(150)
-      let postGet = _widgetUtils.getYouCollectEnergy() || 0
-      let postE = _widgetUtils.getFriendEnergy()
-      if (!obj.isHelp && postGet !== null && preGot !== null) {
-        let gotEnergy = postGet - preGot
-        let gotEnergyAfterWater = gotEnergy
-        debugInfo("开始收集前:" + preGot + "收集后:" + postGet)
-        if (gotEnergy) {
-          let needWaterback = _commonFunctions.recordFriendCollectInfo({
-            friendName: obj.name,
-            friendEnergy: postE,
-            postCollect: postGet,
-            preCollect: preGot,
-            helpCollect: 0
-          })
-          try {
-            if (needWaterback) {
-              _widgetUtils.wateringFriends()
-              gotEnergyAfterWater = _widgetUtils.getYouCollectEnergy() - preGot
-            }
-          } catch (e) {
-            errorInfo('收取[' + obj.name + ']' + gotEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
-          }
-          logInfo([
-            "收取好友:{} 能量 {}g {}",
-            obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (gotEnergy - gotEnergyAfterWater) + 'g' : '')
-          ])
-          this.showCollectSummaryFloaty(gotEnergy)
-          if (_config.cutAndSaveTreeCollect && screen) {
-            let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
-              + 'unknow_collected_' + gotEnergyAfterWater + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
-            files.ensureDir(savePath)
-            images.save(screen, savePath)
-            debugForDev(['保存可收取能量球图片：「{}」', savePath])
-          }
-        } else {
-          debugInfo("收取好友:" + obj.name + " 能量 " + gotEnergy + "g")
-        }
-      } else if (obj.isHelp && postE !== null && preE !== null) {
-        let friendGrowEnergy = postE - preE
-        debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
-        if (friendGrowEnergy > 0) {
-          logInfo("帮助好友:" + obj.name + " 回收能量 " + friendGrowEnergy + "g")
-          _commonFunctions.recordFriendCollectInfo({
-            friendName: obj.name,
-            friendEnergy: postE,
-            postCollect: postGet,
-            preCollect: preGot,
-            helpCollect: friendGrowEnergy
-          })
-          if (_config.try_collect_by_multi_touch || _config.direct_use_img_collect_and_help) {
-            // 如果是可帮助 且 无法获取控件信息的，以帮助收取的重新进入判断一次
-            debugInfo('帮助收取后需要再次进入好友页面检测')
-            rentery = true
-          }
-          if (_config.cutAndSaveTreeCollect && screen) {
-            let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
-              + 'unknow_helped_' + friendGrowEnergy + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
-            files.ensureDir(savePath)
-            images.save(screen, savePath)
-            debugForDev(['保存可帮助能量球图片：「{}」', savePath])
-          }
-        }
-      }
+      postGet = _widgetUtils.getYouCollectEnergy() || 0
+      postE = _widgetUtils.getFriendEnergy()
     } catch (e) {
       errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
-    } finally {
-      if (screen) {
-        screen.recycle()
+    }
+    let friendGrowEnergy = postE - preE
+    let collectEnergy = postGet - preGot
+    if (!obj.isHelp) {
+      debugInfo("开始收集前:" + preGot + " 收集后:" + postGet)
+    } else {
+      debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
+    }
+    if (collectEnergy > 0) {
+      let gotEnergyAfterWater
+      this.collect_any = true
+      let needWaterback = _commonFunctions.recordFriendCollectInfo({
+        friendName: obj.name,
+        friendEnergy: postE,
+        postCollect: postGet,
+        preCollect: preGot,
+        helpCollect: 0
+      })
+      try {
+        if (needWaterback) {
+          _widgetUtils.wateringFriends()
+          gotEnergyAfterWater = _widgetUtils.getYouCollectEnergy() - preGot
+        }
+      } catch (e) {
+        errorInfo('收取[' + obj.name + ']' + collectEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
+      }
+      logInfo([
+        "收取好友:{} 能量 {}g {}",
+        obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (collectEnergy - gotEnergyAfterWater) + 'g' : '')
+      ])
+      this.showCollectSummaryFloaty(collectEnergy)
+      if (_config.cutAndSaveTreeCollect && screen) {
+        let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+          + 'unknow_collected_' + gotEnergyAfterWater + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
+        files.ensureDir(savePath)
+        images.save(screen, savePath)
+        debugForDev(['保存可收取能量球图片：「{}」', savePath])
       }
     }
 
+    if (friendGrowEnergy > 0) {
+      this.collect_any = true
+      logInfo("帮助好友:" + obj.name + " 回收能量 " + friendGrowEnergy + "g")
+      _commonFunctions.recordFriendCollectInfo({
+        friendName: obj.name,
+        friendEnergy: postE,
+        postCollect: postGet,
+        preCollect: preGot,
+        helpCollect: friendGrowEnergy
+      })
+      if (_config.try_collect_by_multi_touch || _config.direct_use_img_collect_and_help) {
+        // 如果是可帮助 且 无法获取控件信息的，已帮助收取的重新进入判断一次
+        debugInfo('帮助收取后需要再次进入好友页面检测')
+        rentery = true
+      }
+      if (_config.cutAndSaveTreeCollect && screen) {
+        let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+          + 'unknow_helped_' + friendGrowEnergy + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
+        files.ensureDir(savePath)
+        images.save(screen, savePath)
+        debugForDev(['保存可帮助能量球图片：「{}」', savePath])
+      }
+    }
     temp.interrupt()
     debugInfo('好友能量收取完毕, 回到好友排行榜')
     if (false === this.returnToListAndCheck()) {
@@ -561,6 +544,20 @@ const BaseScanner = function () {
       return this.collectTargetFriend(obj)
     }
     return true
+  }
+
+  this.recordLost = function (reason) {
+    this.lost_someone = true
+    this.lost_reason = reason
+  }
+
+  this.getCollectResult = function () {
+    return {
+      minCountdown: this.min_countdown,
+      lostSomeone: this.lost_someone,
+      lostReason: this.lost_reason,
+      collectAny: this.collect_any
+    }
   }
 }
 module.exports = BaseScanner

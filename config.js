@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 21:55:07
+ * @Last Modified time: 2020-05-11 21:55:40
  * @Description: 
  */
 'ui';
@@ -51,9 +51,11 @@ let default_config = {
   // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
   saveLogFile: true,
   back_size: '100',
-
+  enable_call_state_control: false,
   collect_self_only: false,
   not_collect_self: false,
+  // 当有收集或者帮助后 重新检查排行榜
+  recheck_rank_list: true,
   base_on_image: true,
   // 自动判断基于图像还是基于控件识别
   auto_set_img_or_widget: true,
@@ -181,6 +183,15 @@ if (!isRunningMode) {
         storage_name: CONFIG_STORAGE_NAME,
         project_name: PROJECT_NAME
       }
+      events.broadcast.on(CONFIG_STORAGE_NAME + 'config_changed', function (params) {
+        let newConfig = params.config
+        let currentId = engines.myEngine().id
+        let senderId = params.id
+        if (currentId !== senderId) {
+          console.verbose(currentId + ' 获取从' + sender + '得到的新的配置信息' + JSON.stringify(newConfig))
+          scope.config_instance.config = newConfig
+        }
+      })
     }
     return scope.config_instance
   }
@@ -342,6 +353,7 @@ if (!isRunningMode) {
     ui.notLingeringFloatWindowChkBox.setChecked(config.not_lingering_float_window)
     ui.helpFriendChkBox.setChecked(config.help_friend)
 
+    ui.enableCallStateControlChkBox.setChecked(config.enable_call_state_control)
     ui.isCycleChkBox.setChecked(config.is_cycle)
     ui.cycleTimeContainer.setVisibility(config.is_cycle ? View.VISIBLE : View.INVISIBLE)
     ui.neverStopContainer.setVisibility(config.is_cycle ? View.GONE : View.VISIBLE)
@@ -393,6 +405,9 @@ if (!isRunningMode) {
     if (config.collect_self_only) {
       ui.notCollectSelfChkBox.setVisibility(View.GONE)
     }
+
+
+    ui.recheckRankListChkBox.setChecked(config.recheck_rank_list)
 
     ui.autoSetImgOrWidgetChkBox.setChecked(config.auto_set_img_or_widget)
     ui.baseOnImageChkBox.setChecked(config.base_on_image)
@@ -670,6 +685,7 @@ if (!isRunningMode) {
                   <checkbox id="autoSetBrightnessChkBox" text="锁屏启动设置最低亮度" />
                   {/* 是否锁屏启动关闭弹框提示 */}
                   <checkbox id="dismissDialogIfLockedChkBox" text="锁屏启动关闭弹框提示" />
+                  <checkbox id="enableCallStateControlChkBox" text="是否在通话时停止脚本" />
                   {/* 基本不需要修改的 */}
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <horizontal gravity="center">
@@ -700,6 +716,7 @@ if (!isRunningMode) {
                   {/* 只收集自己的能量 */}
                   <checkbox id="collectSelfOnlyChkBox" text="只收自己的能量" />
                   <checkbox id="notCollectSelfChkBox" text="不收自己的能量" />
+                  <checkbox id="recheckRankListChkBox" text="是否在收集或帮助后重新检查排行榜" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 使用模拟手势来实现上下滑动 */}
                   <horizontal gravity="center">
@@ -1439,6 +1456,10 @@ if (!isRunningMode) {
       config.dismiss_dialog_if_locked = ui.dismissDialogIfLockedChkBox.isChecked()
     })
 
+    ui.enableCallStateControlChkBox.on('click', () => {
+      config.enable_call_state_control = ui.enableCallStateControlChkBox.isChecked()
+    })
+
     ui.autoLockChkBox.on('click', () => {
       let checked = ui.autoLockChkBox.isChecked()
       config.auto_lock = checked
@@ -1588,6 +1609,10 @@ if (!isRunningMode) {
         config.useCustomScrollDown = true
       }
       setImageBasedUiVal()
+    })
+
+    ui.recheckRankListChkBox.on('click', () => {
+      config.recheck_rank_list = ui.recheckRankListChkBox.isChecked()
     })
 
     ui.checkBottomBaseImgChkBox.on('click', () => {
@@ -1820,5 +1845,7 @@ if (!isRunningMode) {
         storageConfig.put(key, default_config[key])
       }
     })
+    console.verbose(engines.myEngine().id + ' 发送广播 通知配置变更')
+    events.broadcast.emit(CONFIG_STORAGE_NAME + 'config_changed', { config: config, id: engines.myEngine().id});
   })
 }
