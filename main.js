@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-08 01:14:25
+ * @Last Modified time: 2020-05-11 21:49:16
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -25,11 +25,14 @@ let FloatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let tryRequestScreenCapture = singletonRequire('TryRequestScreenCapture')
+let callStateListener = singletonRequire('CallStateListener')
+let resourceMonitor = require('./lib/ResourceMonitor.js')(runtime, this)
 
 let unlocker = require('./lib/Unlock.js')
 let antForestRunner = require('./core/Ant_forest.js')
 let formatDate = require('./lib/DateUtil.js')
 
+callStateListener.exitIfNotIdle()
 // 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
 if (config.single_script) {
   logInfo('======单脚本运行直接清空任务队列=======')
@@ -127,7 +130,7 @@ if (config.develop_mode) {
     errorInfo('执行异常, 1分钟后重新开始' + e)
   }
 }
-
+resourceMonitor.releaseAll()
 events.removeAllListeners()
 events.recycle()
 runningQueueDispatcher.removeRunningTask(true)

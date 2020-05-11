@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-09 09:58:15
+ * @Last Modified time: 2020-05-11 21:53:02
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -11,6 +11,7 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
+let callStateListener = singletonRequire('CallStateListener')
 let FriendListScanner = require('./FriendListScanner.js')
 let ImgBasedFriendListScanner = null
 if (_config.base_on_image) {
@@ -32,6 +33,7 @@ function Ant_forest () {
     _collect_any = false, // 收集过能量
     _re_try = 0,
     _lost_someone = false, // 是否漏收,
+    _lost_reason = '', // 漏收原因
     _friends_min_countdown = null
   /***********************
    * 综合操作
@@ -48,6 +50,11 @@ function Ant_forest () {
       data: 'alipays://platformapi/startapp?appId=60000002',
       packageName: _package_name
     })
+  }
+
+  const recordLost = function (reason) {
+    _lost_someone = true
+    _lost_reason = reason
   }
 
   /**
@@ -491,9 +498,10 @@ function Ant_forest () {
     let executeResult = scanner.start()
     // 执行失败 返回 true
     if (executeResult === true) {
-      _lost_someone = true
+      recordLost('收集执行失败')
     } else {
       _lost_someone = executeResult.lostSomeone
+      _lost_reason = executeResult.lostReason
       _collect_any = executeResult.collectAny
       _friends_min_countdown = executeResult.minCountdown
     }
@@ -563,11 +571,13 @@ function Ant_forest () {
     let enterFlag = _widgetUtils.friendListWaiting()
     if (!enterFlag) {
       debugInfo('进入好友排行榜失败')
+      recordLost('进入好友排行榜失败')
       return false
     }
     let loadedStatus = _widgetUtils.ensureRankListLoaded(3)
     if (!loadedStatus) {
       warnInfo('排行榜加载中')
+      recordLost('排行榜加载中')
       return false
     }
     debugInfo('进入好友排行榜成功')
@@ -628,6 +638,8 @@ function Ant_forest () {
     }
 
     this.readyForStart = function () {
+      callStateListener.exitIfNotIdle()
+      callStateListener.enableListener()
       _runningQueueDispatcher.addRunningTask()
       unlocker.exec()
       _commonFunctions.showDialogAndWait(true)
@@ -636,9 +648,11 @@ function Ant_forest () {
     }
 
     this.endLoop = function () {
+      callStateListener.disableListener()
+      resourceMonitor.releaseAll()
       this.interruptStopListenThread()
-      events.removeAllListeners()
-      events.recycle()
+      events.removeAllListeners('key_down')
+      events.removeAllListeners('toast')
       _runningQueueDispatcher.removeRunningTask()
       if (_config.auto_lock === true && unlocker.needRelock() === true) {
         debugInfo('重新锁定屏幕')
@@ -707,7 +721,7 @@ function Ant_forest () {
         } catch (e) {
           errorInfo('发生异常 [' + e + '] [' + e.message + ']')
           _current_time = _current_time == 0 ? 0 : _current_time - 1
-          _lost_someone = true
+          recordLost('发生异常 [' + e + '] [' + e.message + ']')
           _has_next = true
           _re_try = 0
         }
@@ -736,15 +750,23 @@ function Ant_forest () {
         collectOwn()
       }
       let runSuccess = true
+      let executeNext = false
       if (!_config.collect_self_only) {
-        if (collectFriend() === false) {
-          // 收集失败，重新开始
-          _lost_someone = true
-          _current_time = _current_time == 0 ? 0 : _current_time - 1
-          _min_countdown = null
-          _has_next = true
-          runSuccess = false
-        }
+        do {
+          _collect_any = false
+          if (collectFriend() === false) {
+            // 收集失败，重新开始
+            _lost_someone = true
+            _current_time = _current_time == 0 ? 0 : _current_time - 1
+            _has_next = true
+            runSuccess = false
+          }
+          debugInfo(['收集好友能量结束，运行状态：{} 是否收集过: {} 是否重新校验排行榜：{}', runSuccess, _collect_any, _config.recheck_rank_list])
+          executeNext = runSuccess && _collect_any && _config.recheck_rank_list
+          if (executeNext) {
+            automator.back()
+          }
+        } while (executeNext)
       }
       if (runSuccess) {
         if (!_config.is_cycle && !_lost_someone) {
@@ -762,6 +784,7 @@ function Ant_forest () {
         _collect_any = false
         if (_lost_someone) {
           warnInfo('上一次收取有漏收，再次收集', true)
+          warnInfo('漏收原因：' + _lost_reason)
           automator.back()
           _commonFunctions.getAndUpdateDismissReason('lost_someone')
         } else {
@@ -810,6 +833,8 @@ function Ant_forest () {
           }
         }
         logInfo('========本轮结束========')
+        _lost_someone = false
+        _lost_reason = ''
       }
       this.endCollect()
     }

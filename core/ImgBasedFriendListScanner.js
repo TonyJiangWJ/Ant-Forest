@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-09 10:46:23
+ * @Last Modified time: 2020-05-12 00:16:25
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -137,19 +137,22 @@ const ImgBasedFriendListScanner = function () {
       this.last_check_color
     }
 
-    grayImg.recycle()
 
     if (shouldScrollUp) {
       debugInfo(['校验点颜色相同，上划重新触发加载，{}', JSON.stringify(last_p)])
       automator.scrollUp()
     }
 
-    countdown.summary(
-      _commonFunctions.formatString(
-        '滑动校验 保存校验点数据：[{}] color:{}', JSON.stringify(this.last_check_point),
-        colors.toString(this.last_check_color)
+    if (this.last_check_color) {
+      countdown.summary(
+        _commonFunctions.formatString(
+          '滑动校验 保存校验点数据：[{}] color:{}', JSON.stringify(this.last_check_point),
+          colors.toString(this.last_check_color)
+        )
       )
-    )
+    } else {
+      countdown.summary('滑动校验 未找到校验点')
+    }
   }
 
   /**
@@ -171,16 +174,9 @@ const ImgBasedFriendListScanner = function () {
     do {
       screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
       // 重新复制一份
-      let tmpImg = images.copy(screen)
-      grayScreen = images.grayscale(tmpImg)
-      let tmp2 = images.interval(grayScreen, '#828282', 1)
-      intervalScreenForDetectCollect = images.medianBlur(tmp2, 5)
-      tmp2.recycle()
-      tmp2 = images.interval(tmpImg, _config.can_help_color || '#f99236', _config.color_offset)
-      intervalScreenForDetectHelp = images.medianBlur(tmp2, 5)
-      tmp2.recycle()
-      tmpImg.recycle()
-      screen.recycle()
+      grayScreen = images.grayscale(images.copy(screen))
+      intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, '#828282', 1), 5)
+      intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
       let countdown = new Countdown()
       let waitForCheckPoints = []
 
@@ -227,7 +223,6 @@ const ImgBasedFriendListScanner = function () {
               )
               calculator.setScriptLogger(SCRIPT_LOGGER)
               let point = calculator.getCenterPoint()
-              calculator.getImg().recycle()
               debugInfo('可帮助收取位置：' + JSON.stringify(point))
               listWriteLock.lock()
               collectOrHelpList.push({
@@ -245,7 +240,6 @@ const ImgBasedFriendListScanner = function () {
               )
               calculator.setScriptLogger(SCRIPT_LOGGER)
               let point = calculator.getCenterPoint()
-              calculator.getImg().recycle()
               if (point.regionSame < (_config.finger_img_pixels || 2300)) {
                 debugInfo('可能可收取位置：' + JSON.stringify(point))
                 listWriteLock.lock()
@@ -261,7 +255,6 @@ const ImgBasedFriendListScanner = function () {
                   let base64String = null
                   try {
                     base64String = images.toBase64(countdownImg)
-                    countdownImg.recycle()
                     if (_config.saveBase64ImgInfo) {
                       debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「data:image/png;base64,{}」', point.regionSame, base64String])
                     }
@@ -277,48 +270,25 @@ const ImgBasedFriendListScanner = function () {
                     }
                     if (point.regionSame >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2) {
                       // 百度识图API获取文本
-                      if (!config.ocrUseCache) {
-                        let result = BaiduOcrUtil.recoginze(base64String)
-                        if (result && result.words_result_num > 0) {
-                          let filter = result.words_result.filter(r => isFinite(parseInt(r.words)))
-                          if (filter && filter.length > 0) {
-                            debugInfo('百度识图结果：' + JSON.stringify(filter))
-                            countdownLock.lock()
-                            let countdown = parseInt(filter[0].words)
-                            // 标记该像素点总数的图片已处理过
-                            that.resolved_pixels[point.regionSame] = true
-                            that.resolved_pixels[point.regionSame + 'count'] = countdown
-                            if (countdown < that.min_countdown) {
-                              debugInfo('设置最小倒计时：' + countdown)
-                              that.min_countdown = countdown
-                              that.min_countdown_pixels = point.regionSame
-                            }
-                            countingDownContainers.push({
-                              countdown: countdown,
-                              stamp: new Date().getTime()
-                            })
-                            countdownLock.unlock()
-                          }
+                      let countdown = config.ocrUseCache ? BaiduOcrUtil.tryGetByCache(base64String, point.regionSame)
+                        : BaiduOcrUtil.getDirectly(base64String, point.regionSame)
+                      if (isFinite(countdown) && countdown > 0) {
+                        countdownLock.lock()
+                        // 标记该像素点总数的图片已处理过
+                        that.resolved_pixels[point.regionSame] = true
+                        that.resolved_pixels[point.regionSame + 'count'] = countdown
+                        if (countdown < that.min_countdown) {
+                          debugInfo('设置最小倒计时：' + countdown)
+                          that.min_countdown = countdown
+                          that.min_countdown_pixels = point.regionSame
                         }
-                      } else {
-                        let countdown = BaiduOcrUtil.tryGetByCache(base64String, point.regionSame)
-                        if (isFinite(countdown)) {
-                          countdownLock.lock()
-                          // 标记该像素点总数的图片已处理过
-                          that.resolved_pixels[point.regionSame] = true
-                          that.resolved_pixels[point.regionSame + 'count'] = countdown
-                          if (countdown < that.min_countdown) {
-                            debugInfo('设置最小倒计时：' + countdown)
-                            that.min_countdown = countdown
-                            that.min_countdown_pixels = point.regionSame
-                          }
-                          countingDownContainers.push({
-                            countdown: countdown,
-                            stamp: new Date().getTime()
-                          })
-                          countdownLock.unlock()
-                        }
+                        countingDownContainers.push({
+                          countdown: countdown,
+                          stamp: new Date().getTime()
+                        })
+                        countdownLock.unlock()
                       }
+
                     } else {
                       debugInfo(['当前倒计时校验最小像素阈值：{} 已获取最小倒计时：{}', (_config.ocrThreshold || 2900), that.min_countdown])
                     }
@@ -373,15 +343,11 @@ const ImgBasedFriendListScanner = function () {
           let newScreen = _commonFunctions.checkCaptureScreenPermission()
           let newGrayScreen = images.grayscale(newScreen)
           reached = _widgetUtils.reachBottom(newGrayScreen)
-          newScreen.recycle()
-          newGrayScreen.recycle()
         }
         hasNext = !reached
       } else {
         hasNext = count < (_config.friendListScrollTime || 30)
       }
-      intervalScreenForDetectCollect.recycle()
-      intervalScreenForDetectHelp.recycle()
       // 每5次滑动判断一次是否在排行榜中
       if (hasNext && count % 5 == 0) {
         if (!_widgetUtils.friendListWaiting()) {
@@ -391,8 +357,9 @@ const ImgBasedFriendListScanner = function () {
         }
         // TODO 列表加载失败，重新上划 触发加载
         this.scrollUpIfNeeded(images.copy(grayScreen))
+        // 释放图片资源
+        resourceMonitor.releaseAll()
       }
-      grayScreen.recycle()
     } while (hasNext)
     sleep(100)
     if (!_widgetUtils.friendListWaiting()) {
@@ -416,10 +383,7 @@ const ImgBasedFriendListScanner = function () {
 
     this.checkRunningCountdown(countingDownContainers)
 
-    return {
-      minCountdown: this.min_countdown,
-      lostSomeone: this.lost_someone
-    }
+    return this.getCollectResult()
   }
 
   this.detectHelp = function (img) {
@@ -466,7 +430,6 @@ const ImgBasedFriendListScanner = function () {
       runningY += movingY
       countdown.restart()
     } while (hasNext)
-    use_img.recycle()
     return findColorPoints
   }
 }
@@ -500,8 +463,6 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
       let height = _config.device_height - startY > 190 ? 190 : _config.device_height - startY - 1
       let rangeImg = images.clip(screen, 0, startY, _config.device_width, height)
       let base64 = images.toBase64(rangeImg)
-      screen.recycle()
-      rangeImg.recycle()
       debugForDev(['点击区域「{}, {}」startY:{} 图片信息：「data:image/png;base64,{}」', obj.point.x, obj.point.y, startY, base64], false, true)
     }
     let restartLoop = false
@@ -559,6 +520,9 @@ ImgBasedFriendListScanner.prototype.checkRunningCountdown = function (countingDo
     debugInfo(['倒计时中的好友数[{}]', countingDownContainers.length])
     let that = this
     countingDownContainers.forEach((item, idx) => {
+      if (item.countdown <= 0) {
+        return
+      }
       let now = new Date()
       let stamp = item.stamp
       let count = item.countdown
@@ -570,7 +534,7 @@ ImgBasedFriendListScanner.prototype.checkRunningCountdown = function (countingDo
       if (passed >= count) {
         debugInfo('有一个记录倒计时结束')
         // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
-        that.lost_someone = true
+        that.recordLost('有倒计时结束')
       } else {
         let rest = count - passed
         that.min_countdown = rest < that.min_countdown ? rest : that.min_countdown
