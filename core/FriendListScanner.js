@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-05 11:54:57
+ * @Last Modified time: 2020-05-11 22:09:55
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -200,9 +200,6 @@ const FriendListScanner = function () {
     let screen = null
     do {
       try {
-        if (screen !== null) {
-          screen.recycle()
-        }
         iterEnd = -1
         iterStart = lastCheckedFriend
         _widgetUtils.waitRankListStable()
@@ -332,9 +329,6 @@ const FriendListScanner = function () {
           debugInfo('无好友可收集能量')
         }
         if (failed) {
-          if (screen !== null) {
-            screen.recycle()
-          }
           return true
         }
         // 重置为空列表
@@ -357,9 +351,6 @@ const FriendListScanner = function () {
               } else if (tryReloadCount >= 5) {
                 // 多次出发失败，直接返回重新开始
                 errorInfo('触发加载失败，重新开始')
-                if (screen !== null) {
-                  screen.recycle()
-                }
                 return true
               }
               automator.scrollUpAndDown()
@@ -381,9 +372,6 @@ const FriendListScanner = function () {
         }
       } catch (e) {
         errorInfo('主流程出错' + e)
-        if (screen !== null) {
-          screen.recycle()
-        }
         return true
       } finally {
         debugInfo('主流程释放锁')
@@ -402,16 +390,16 @@ const FriendListScanner = function () {
       debugInfo(['有未收集的可收取能量'])
       if (false == this.collectAvailableList()) {
         errorInfo('流程出错 向上抛出')
-        if (screen !== null) {
-          screen.recycle()
-        }
         return true
       }
     } else {
       debugInfo('无好友可收集能量')
     }
 
-    this.lost_someone = this.checkIsEveryFriendChecked(checkedList, totalValidLength)
+    if (this.checkIsEveryFriendChecked(checkedList, totalValidLength)) {
+      that.recordLost('有好友信息未校验')
+    }
+    
     this.checkRunningCountdown(countingDownContainers)
     _commonFunctions.addClosePlacehold(">>>><<<<")
     debugInfo([
@@ -425,14 +413,7 @@ const FriendListScanner = function () {
     if (this.lost_someone) {
       clearLogFile()
     }
-    if (screen !== null) {
-      screen.recycle()
-    }
-    return {
-      lostSomeone: this.lost_someone,
-      collectAny: this.collect_any,
-      minCountdown: this.min_countdown
-    }
+    return this.getCollectResult()
   }
 
   this.start = function () {
@@ -670,7 +651,7 @@ FriendListScanner.prototype.checkRunningCountdown = function (countingDownContai
       if (passed >= count) {
         debugInfo('[' + item.name + ']倒计时结束')
         // 标记有倒计时结束的漏收了，收集完之后进行第二次收集
-        that.lost_someone = true
+        that.recordLost('有倒计时结束')
       } else {
         let rest = count - passed
         that.min_countdown = rest < that.min_countdown ? rest : that.min_countdown
