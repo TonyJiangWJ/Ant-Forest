@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-11 22:09:55
+ * @Last Modified time: 2020-05-12 22:42:30
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -100,12 +100,13 @@ const FriendListScanner = function () {
           }
         } catch (e) {
           errorInfo('预载入异常' + e)
+          _commonFunctions.printExceptionStack(e)
         } finally {
           try {
             that.lock.unlock()
             debugInfo(threadName + "释放锁")
           } catch (e) {
-
+            _commonFunctions.printExceptionStack(e)
           }
         }
       }
@@ -165,6 +166,7 @@ const FriendListScanner = function () {
           sleep(100)
         } catch (e) {
           errorInfo('预获取异常' + e)
+          _commonFunctions.printExceptionStack(e)
         } finally {
           that.lock.unlock()
           debugInfo('预获取线程释放锁')
@@ -372,6 +374,7 @@ const FriendListScanner = function () {
         }
       } catch (e) {
         errorInfo('主流程出错' + e)
+        _commonFunctions.printExceptionStack(e)
         return true
       } finally {
         debugInfo('主流程释放锁')
@@ -487,6 +490,7 @@ FriendListScanner.prototype.cutAndSaveImage = function (screen, countdownInfo) {
       infoLog(['保存倒计时图片：{}', saveImgPath])
     } catch (e) {
       errorInfo('截取图片失败' + e)
+      _commonFunctions.printExceptionStack(e)
     }
   })
 }
@@ -583,6 +587,7 @@ FriendListScanner.prototype.isObtainable = function (obj, screen, name) {
     } catch (e) {
       // errorInfo(['图片分析失败{} base64:[data:image/png;base64, {}]', e, images.toBase64(screen, 'png', 50)])
       errorInfo(['图片分析失败{} imgsize:[w:{}, h:{}]', e, screen.getWidth(), screen.getHeight()])
+      _commonFunctions.printExceptionStack(e)
     }
   }
   return container

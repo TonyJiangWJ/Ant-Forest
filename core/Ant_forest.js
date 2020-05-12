@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-12 12:36:42
+ * @Last Modified time: 2020-05-12 23:37:38
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -133,7 +133,7 @@ function Ant_forest () {
     )
     window.stop.on('click', () => {
       _runningQueueDispatcher.removeRunningTask()
-      exit()
+      engines.myEngine().forceStop()
     })
     logInfo(text)
     ui.run(function () {
@@ -560,6 +560,12 @@ function Ant_forest () {
       debugInfo('准备计算最短时间')
       getMinCountdownOwn()
     }
+    let energyAfterCollect = getCurrentEnergy()
+    let collectedEnergy = energyAfterCollect - _pre_energy
+    if (collectedEnergy) {
+      logInfo(['收集自己能量：{}g', collectedEnergy])
+      _base_scanner.showCollectSummaryFloaty(collectedEnergy)
+    }
     _commonFunctions.addClosePlacehold("收集自己的能量完毕")
     _fisrt_running = false
   }
@@ -630,8 +636,8 @@ function Ant_forest () {
           }
           if (stop) {
             _runningQueueDispatcher.removeRunningTask()
+            resourceMonitor.releaseAll()
             engines.myEngine().forceStop()
-            exit()
           }
         })
       })
@@ -719,9 +725,9 @@ function Ant_forest () {
             getPostEnergy(!_config.collect_self_only)
           }
         } catch (e) {
-          errorInfo('发生异常 [' + e + '] [' + e.message + ']')
+          errorInfo('发生异常 [' + e + ']')
           _current_time = _current_time == 0 ? 0 : _current_time - 1
-          recordLost('发生异常 [' + e + '] [' + e.message + ']')
+          _commonFunctions.printExceptionStack(e)
           _has_next = true
           _re_try = 0
         }
@@ -819,7 +825,9 @@ function Ant_forest () {
           try {
             this.doInLoop()
           } catch (e) {
-            errorInfo('发生异常 [' + e + '] [' + e.message + ']')
+            errorInfo('发生异常 [' + e + ']')
+            recordLost('发生异常 [' + e + ']')
+            _commonFunctions.printExceptionStack(e)
             _current_time = _current_time == 0 ? 0 : _current_time - 1
             _lost_someone = true
             _min_countdown = null
