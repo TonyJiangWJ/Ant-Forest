@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-11 21:53:02
+ * @Last Modified time: 2020-05-12 12:36:42
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -570,7 +570,7 @@ function Ant_forest () {
     automator.enterFriendList()
     let enterFlag = _widgetUtils.friendListWaiting()
     if (!enterFlag) {
-      debugInfo('进入好友排行榜失败')
+      errorInfo('进入好友排行榜失败')
       recordLost('进入好友排行榜失败')
       return false
     }
@@ -787,6 +787,8 @@ function Ant_forest () {
           warnInfo('漏收原因：' + _lost_reason)
           automator.back()
           _commonFunctions.getAndUpdateDismissReason('lost_someone')
+          _lost_someone = false
+          _lost_reason = ''
         } else {
           debugInfo(['获取到的倒计时时间：{}', _min_countdown])
           if (_min_countdown > 0) {
@@ -833,8 +835,6 @@ function Ant_forest () {
           }
         }
         logInfo('========本轮结束========')
-        _lost_someone = false
-        _lost_reason = ''
       }
       this.endCollect()
     }

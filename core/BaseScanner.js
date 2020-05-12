@@ -480,7 +480,7 @@ const BaseScanner = function () {
       debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
     }
     if (collectEnergy > 0) {
-      let gotEnergyAfterWater
+      let gotEnergyAfterWater = collectEnergy
       this.collect_any = true
       let needWaterback = _commonFunctions.recordFriendCollectInfo({
         friendName: obj.name,
