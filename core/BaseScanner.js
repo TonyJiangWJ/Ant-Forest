@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-11 22:09:33
+ * @Last Modified time: 2020-05-12 22:51:33
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -458,7 +458,10 @@ const BaseScanner = function () {
     try {
       preGot = _widgetUtils.getYouCollectEnergy() || 0
       preE = _widgetUtils.getFriendEnergy()
-    } catch (e) { errorInfo("[" + obj.name + "]获取收集前能量异常" + e) }
+    } catch (e) {
+      errorInfo("[" + obj.name + "]获取收集前能量异常" + e)
+      _commonFunctions.printExceptionStack(e)
+    }
     if (_config.help_friend) {
       rentery = this.collectAndHelp(obj.isHelp)
     } else {
@@ -471,6 +474,7 @@ const BaseScanner = function () {
       postE = _widgetUtils.getFriendEnergy()
     } catch (e) {
       errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
+      _commonFunctions.printExceptionStack(e)
     }
     let friendGrowEnergy = postE - preE
     let collectEnergy = postGet - preGot
@@ -496,6 +500,7 @@ const BaseScanner = function () {
         }
       } catch (e) {
         errorInfo('收取[' + obj.name + ']' + collectEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
+        _commonFunctions.printExceptionStack(e)
       }
       logInfo([
         "收取好友:{} 能量 {}g {}",

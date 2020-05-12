@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-11 21:49:16
+ * @Last Modified time: 2020-05-12 22:40:57
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -85,6 +85,7 @@ try {
   unlocker.exec()
 } catch (e) {
   errorInfo('解锁发生异常, 三分钟后重新开始' + e)
+  commonFunctions.printExceptionStack(e)
   commonFunctions.setUpAutoStart(3)
   runningQueueDispatcher.removeRunningTask()
   exit()
@@ -128,6 +129,7 @@ if (config.develop_mode) {
   } catch (e) {
     commonFunctions.setUpAutoStart(1)
     errorInfo('执行异常, 1分钟后重新开始' + e)
+    commonFunctions.printExceptionStack(e)
   }
 }
 resourceMonitor.releaseAll()
