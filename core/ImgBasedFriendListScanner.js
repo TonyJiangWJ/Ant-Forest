@@ -260,6 +260,7 @@ const ImgBasedFriendListScanner = function () {
                     }
                   } catch (e) {
                     errorInfo('存储倒计时图片失败：' + e)
+                    _commonFunctions.printExceptionStack(e)
                   }
                   if (base64String) {
                     if (that.resolved_pixels[point.regionSame]) {
