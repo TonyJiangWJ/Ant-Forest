@@ -1,10 +1,3 @@
-/*
- * @Author: TonyJiangWJ
- * @Date: 2019-12-23 22:54:22
- * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-13 16:06:37
- * @Description: 
- */
 
 runtime.loadDex('../lib/download.dex')
 let FileUtils = require('../lib/prototype/FileUtils.js')
@@ -21,26 +14,12 @@ try {
 }
 
 importClass(com.tony.listener.DownloaderListener)
-importClass(com.tony.downloader.GithubReleaseDownloader)
-importClass(com.tony.downloader.GiteeReleaseDownloader)
+importClass(com.tony.downloader.GithubHistoryTagDownloader)
 
-let chose = dialogs.singleChoice('请选择更新源', ['Github Release(推荐)', 'Gitee Release(备用)'], 0)
+let apiUrl = 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/tags'
+let downloader = new GithubHistoryTagDownloader(apiUrl)
 
-let apiUrl = null
-let downloader = null
-if (chose === 0) {
-  toastLog('使用Github Release 作为更新源')
-  apiUrl = 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest'
-  downloader = new GithubReleaseDownloader()
-} else {
-  toastLog('使用Gitee Release 作为更新源')
-  apiUrl = 'https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/releases/latest'
-  // 设置包前缀，更新包所在的仓库 
-  downloader = new GiteeReleaseDownloader('Ant-Forest-', 'https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/')
-}
-
-
-let targetOutputDir = FileUtils.getRealMainScriptPath(true)
+let targetOutputDir = FileUtils.getRealMainScriptPath(true) + "/history_version"
 
 downloader.setListener(new DownloaderListener({
   updateGui: function (string) {
@@ -54,7 +33,6 @@ downloader.setListener(new DownloaderListener({
 log('下载并解压文件到目录：' + targetOutputDir)
 // 设置尝试获取总大小的次数，默认5次，github的content-length偶尔会给 偶尔不会给，主要原因是服务端用了分块传输的缘故
 downloader.setTryCount(2)
-downloader.setTargetReleasesApiUrl(apiUrl)
 downloader.setOutputDir(targetOutputDir)
 // 设置不需要解压覆盖的文件
 // 请勿移除'lib/autojs-tools.dex' 否则引起报错
@@ -64,24 +42,35 @@ downloader.setBackupIgnoreFiles([])
 
 loadingDialog = dialogs.build({
   cancelable: false,
-  title: '正在从' + (chose == 0 ? 'Github' : 'Gitee') + '获取更新信息',
+  title: '正在从Github获取更新信息',
   content: '加载中，请稍等...'
 }).show()
-let summary = downloader.getUpdateSummary()
-if (summary === null) {
-  loadingDialog.setContent('无法获取release版本信息，请多试几次或者切换更新源')
-  sleep(1000)
+
+let tagInfosString = downloader.getTagInfoList()
+console.log(tagInfosString)
+let tagInfoList = JSON.parse(tagInfosString)
+let choseTag = null
+if (tagInfoList) {
+  let chose = dialogs.singleChoice('请选择版本', tagInfoList.map(tagInfo => tagInfo.name), 0)
+  choseTag = tagInfoList[chose]
+  console.log('选择了下载版本：' + JSON.stringify(choseTag))
+  loadingDialog.dismiss()
+} else {
+  loadingDialog.setContent('无法获取历史更新信息')
+  sleep(2000)
   loadingDialog.dismiss()
   exit()
 }
-summary = JSON.parse(summary)
+
 let localVersion = downloader.getLocalVersion()
-let content = '线上版本：' + summary.tagName + '\n'
-content += '本地版本：' + (localVersion === null ? '无法获取本地版本信息' : localVersion) + '\n'
-content += '更新内容：\n' + summary.body
+let content = '本地版本：' + (localVersion === null ? '无法获取本地版本信息' : localVersion) + '\n'
+  + '目标版本：' + choseTag.name + '\n'
+  + '版本降级之后，如无法正常运行，请手动解压origin.zip之后使用\n\n'
+  + '解压地址：' + targetOutputDir
 
 loadingDialog.dismiss()
 
+downloader.setTargetTagInfo(JSON.stringify(choseTag))
 
 let downloadDialog = dialogs.build({
   title: '更新中...',
@@ -134,23 +123,17 @@ let downloadingExecutor = function (backup) {
       }
     })
   }
-  let extendMultiTouchPath = targetOutputDir + '/extends/MuiltiTouchCollect.js'
-  if (files.exists(extendMultiTouchPath)) {
-    let newName = targetOutputDir + '/extends/MultiTouchCollect.js'
-    log('重命名已存在的扩展：' + extendMultiTouchPath)
-    files.move(extendMultiTouchPath, newName)
-  }
-  downloadDialog.setContent('更新完成')
+  downloadDialog.setContent('下载完成')
   sleep(2000)
   downloadDialog.dismiss()
 }
 dialogs.build({
-  title: '是否下载更新',
+  title: '是否下载',
   content: content,
   cancelable: false,
-  neutral: '备份后更新',
+  neutral: '备份后下载',
   negative: '取消',
-  positive: '覆盖更新',
+  positive: '覆盖下载',
 
   negativeColor: 'red',
   positiveColor: '#f9a01c',
