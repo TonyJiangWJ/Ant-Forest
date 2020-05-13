@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-12 22:40:57
+ * @Last Modified time: 2020-05-13 13:09:23
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -11,9 +11,9 @@ if (config.base_on_image) {
   runtime.loadDex('./lib/color-region-center.dex')
   try {
     importClass(com.tony.ColorCenterCalculatorWithInterval)
-  } catch(e) {
+  } catch (e) {
     let errorInfo = e + ''
-    if(/importClass must be called/.test(errorInfo)) {
+    if (/importClass must be called/.test(errorInfo)) {
       toastLog('请强制关闭AutoJS并重新启动')
       exit()
     }
@@ -25,7 +25,7 @@ let FloatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let tryRequestScreenCapture = singletonRequire('TryRequestScreenCapture')
-let callStateListener = singletonRequire('CallStateListener')
+let callStateListener = config.enable_call_state_control ? singletonRequire('CallStateListener') : { exitIfNotIdle: () => { } }
 let resourceMonitor = require('./lib/ResourceMonitor.js')(runtime, this)
 
 let unlocker = require('./lib/Unlock.js')
