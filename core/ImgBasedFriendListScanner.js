@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-12 00:30:56
+ * @Last Modified time: 2020-05-13 08:16:25
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -338,12 +338,14 @@ const ImgBasedFriendListScanner = function () {
       sleep(300)
       count++
       if (_config.checkBottomBaseImg) {
+        screen = _commonFunctions.checkCaptureScreenPermission()
+        grayScreen = images.grayscale(screen)
         let reached = _widgetUtils.reachBottom(grayScreen)
         if (reached) {
           // 二次校验，避免因为加载中导致的错误判断
-          let newScreen = _commonFunctions.checkCaptureScreenPermission()
-          let newGrayScreen = images.grayscale(newScreen)
-          reached = _widgetUtils.reachBottom(newGrayScreen)
+          screen = _commonFunctions.checkCaptureScreenPermission()
+          grayScreen = images.grayscale(screen)
+          reached = _widgetUtils.reachBottom(grayScreen)
         }
         hasNext = !reached
       } else {
@@ -357,6 +359,8 @@ const ImgBasedFriendListScanner = function () {
           return true
         }
         // TODO 列表加载失败，重新上划 触发加载
+        screen = _commonFunctions.checkCaptureScreenPermission()
+        grayScreen = images.grayscale(screen)
         this.scrollUpIfNeeded(images.copy(grayScreen))
       }
     } while (hasNext)

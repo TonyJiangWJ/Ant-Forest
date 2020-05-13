@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-12 23:37:38
+ * @Last Modified time: 2020-05-13 13:10:25
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -11,7 +11,8 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
-let callStateListener = singletonRequire('CallStateListener')
+let callStateListener = config.enable_call_state_control ? singletonRequire('CallStateListener')
+  : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
 let FriendListScanner = require('./FriendListScanner.js')
 let ImgBasedFriendListScanner = null
 if (_config.base_on_image) {
