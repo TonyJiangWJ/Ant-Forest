@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-11 21:55:40
+ * @Last Modified time: 2020-05-14 15:18:25
  * @Description: 
  */
 'ui';
@@ -188,7 +188,7 @@ if (!isRunningMode) {
         let currentId = engines.myEngine().id
         let senderId = params.id
         if (currentId !== senderId) {
-          console.verbose(currentId + ' 获取从' + sender + '得到的新的配置信息' + JSON.stringify(newConfig))
+          console.verbose(currentId + ' 获取从' + senderId + '得到的新的配置信息' + JSON.stringify(newConfig))
           scope.config_instance.config = newConfig
         }
       })
