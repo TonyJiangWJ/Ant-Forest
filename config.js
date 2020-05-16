@@ -9,7 +9,7 @@
 
 let currentEngine = engines.myEngine().getSource() + ''
 let isRunningMode = currentEngine.endsWith('/config.js') && typeof module === 'undefined'
-
+let is_pro = Object.prototype.toString.call(com.stardust.autojs.core.timing.TimedTask.Companion).match(/Java(Class|Object)/)
 let default_config = {
   password: '',
   is_alipay_locked: false,
@@ -51,7 +51,7 @@ let default_config = {
   // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
   saveLogFile: true,
   back_size: '100',
-  enable_call_state_control: false,
+  enable_call_state_control: false && !is_pro,
   collect_self_only: false,
   not_collect_self: false,
   // 当有收集或者帮助后 重新检查排行榜
@@ -145,7 +145,9 @@ let default_config = {
   // 尝试全局点击收集能量，能量球控件无法获取时使用 默认开启
   try_collect_by_multi_touch: false,
   // 直接使用图像分析方式收取和帮助好友
-  direct_use_img_collect_and_help: true
+  direct_use_img_collect_and_help: true,
+  // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
+  is_pro: is_pro
 }
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
@@ -354,6 +356,11 @@ if (!isRunningMode) {
     ui.helpFriendChkBox.setChecked(config.help_friend)
 
     ui.enableCallStateControlChkBox.setChecked(config.enable_call_state_control)
+    if (is_pro) {
+      // pro版无法实现 通话监听
+      ui.enableCallStateControlChkBox.setVisibility(View.GONE)
+      config.enable_call_state_control = false
+    }
     ui.isCycleChkBox.setChecked(config.is_cycle)
     ui.cycleTimeContainer.setVisibility(config.is_cycle ? View.VISIBLE : View.INVISIBLE)
     ui.neverStopContainer.setVisibility(config.is_cycle ? View.GONE : View.VISIBLE)
