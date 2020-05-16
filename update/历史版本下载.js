@@ -42,9 +42,14 @@ downloader.setBackupIgnoreFiles([])
 
 loadingDialog = dialogs.build({
   cancelable: false,
+  negative: '取消',
   title: '正在从Github获取更新信息',
   content: '加载中，请稍等...'
-}).show()
+})
+.on('negative', () => {
+  exit()
+})
+.show()
 
 let tagInfosString = downloader.getTagInfoList()
 console.log(tagInfosString)
@@ -75,12 +80,16 @@ downloader.setTargetTagInfo(JSON.stringify(choseTag))
 let downloadDialog = dialogs.build({
   title: '更新中...',
   content: '更新中',
+  negative: '取消',
   cancelable: false,
   progress: {
     max: 100,
     horizontal: true,
     showMinMax: false
   }
+})
+.on('negative', () => {
+  exit()
 })
 
 downloader.setListener(new DownloaderListener({
