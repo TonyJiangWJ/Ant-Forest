@@ -2,14 +2,14 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-23 22:54:22
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-13 16:06:37
+ * @Last Modified time: 2020-05-16 12:47:15
  * @Description: 
  */
 
 runtime.loadDex('../lib/download.dex')
 let FileUtils = require('../lib/prototype/FileUtils.js')
 let loadingDialog = null
-
+let is_pro = Object.prototype.toString.call(com.stardust.autojs.core.timing.TimedTask.Companion).match(/Java(Class|Object)/)
 try {
   importClass(com.tony.listener.DownloaderListener)
 } catch (e) {
@@ -21,6 +21,7 @@ try {
 }
 
 importClass(com.tony.listener.DownloaderListener)
+importClass(com.tony.resolver.JSONResolver)
 importClass(com.tony.downloader.GithubReleaseDownloader)
 importClass(com.tony.downloader.GiteeReleaseDownloader)
 
@@ -38,7 +39,90 @@ if (chose === 0) {
   // 设置包前缀，更新包所在的仓库 
   downloader = new GiteeReleaseDownloader('Ant-Forest-', 'https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/')
 }
+if (is_pro) {
+  let origin = {}
+  let new_object = {}
+  downloader.setJsonResolver(new JSONResolver({
+    /**
+     * 将对象转换成 JSON字符串
+     *
+     * @param obj
+     * @return jsonString
+     */
+    toJSONString (obj) {
+      return JSON.stringify(obj)
+    },
 
+    /**
+     * 根据json字符串获取 指定json key内容 并转为String
+     *
+     * @param jsonString
+     * @param name       key
+     * @return
+     */
+    getString: function (jsonString, name) {
+      return JSON.parse(jsonString)[name].toString()
+    },
+
+    /**
+     * 可以嵌套调用 获取对象，不转为String
+     *
+     * @param jsonString
+     * @param name
+     * @return
+     */
+    getObject (jsonString, name) {
+      return JSON.parse(jsonString)[name]
+    },
+
+    //---------------
+
+    /**
+     * 设置原始JSONString
+     *
+     * @param jsonString
+     * @return
+     */
+    setOrigin: function (jsonString) {
+      origin = JSON.parse(jsonString)
+      return this
+    },
+
+    getString: function (name) {
+      return origin[name].toString()
+    },
+
+    getObject: function (name) {
+      return origin[name]
+    },
+
+    //---------------
+
+    /**
+     * 创建新的封装 内部new一个Map 创建JSON对象
+     *
+     * @return
+     */
+    newObject: function () {
+      new_object = {}
+      return this
+    },
+    put: function (name, value) {
+      new_object[name] = value
+      return this
+    },
+
+    /**
+     * 将创建的JSON对象转换成字符串
+     *
+     * @return
+     */
+    toJSONString: function () {
+      return JSON.stringify(new_object)
+    }
+  })
+  )
+}
 
 let targetOutputDir = FileUtils.getRealMainScriptPath(true)
 
@@ -64,9 +148,14 @@ downloader.setBackupIgnoreFiles([])
 
 loadingDialog = dialogs.build({
   cancelable: false,
+  negative: '取消',
   title: '正在从' + (chose == 0 ? 'Github' : 'Gitee') + '获取更新信息',
   content: '加载中，请稍等...'
-}).show()
+})
+  .on('negative', () => {
+    exit()
+  })
+  .show()
 let summary = downloader.getUpdateSummary()
 if (summary === null) {
   loadingDialog.setContent('无法获取release版本信息，请多试几次或者切换更新源')
@@ -87,12 +176,16 @@ let downloadDialog = dialogs.build({
   title: '更新中...',
   content: '更新中',
   cancelable: false,
+  negative: '取消',
   progress: {
     max: 100,
     horizontal: true,
     showMinMax: false
   }
 })
+  .on('negative', () => {
+    exit()
+  })
 
 downloader.setListener(new DownloaderListener({
   updateGui: function (string) {
