@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-23 22:54:22
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-16 12:47:15
+ * @Last Modified time: 2020-05-16 19:14:53
  * @Description: 
  */
 
@@ -61,7 +61,8 @@ if (is_pro) {
      * @return
      */
     getString: function (jsonString, name) {
-      return JSON.parse(jsonString)[name].toString()
+      let v = JSON.parse(jsonString)[name]
+      return v ? v.toString() : ''
     },
 
     /**
@@ -89,7 +90,8 @@ if (is_pro) {
     },
 
     getString: function (name) {
-      return origin[name].toString()
+      let v = origin[name]
+      return v ? v.toString() : ''
     },
 
     getObject: function (name) {

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-12 22:42:30
+ * @Last Modified time: 2020-05-16 18:51:28
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -65,49 +65,40 @@ const FriendListScanner = function () {
           if (_widgetUtils.foundNoMoreWidget()) {
             debugInfo(threadName + '发现没有更多按钮，获取好友列表')
             debugInfo(threadName + '正获取好友list中')
-            that.lock.lock()
-            debugInfo(threadName + "获取锁")
-            that.friends_list_parent = _widgetUtils.getFriendListParent()
-            that.valid_child_list = that.getValidChildList(that.friends_list_parent)
-            that.all_loaded = true
-            that.usedList = false
-            debugInfo(threadName + "重新获取好友列表数据")
-            sleep(100)
-            that.condition.signal()
-            debugInfo(threadName + '获取好友list完成')
-            let listLength = that.whetherFriendListValidLength(that.friends_list_parent)
-            if (listLength) {
-              // 动态修改预加载超时时间
-              let dynamicTimeout = Math.ceil(listLength / 20) * 800
-              _config.timeoutLoadFriendList = dynamicTimeout
-              var configStorage = storages.create(_storage_name)
-              configStorage.put('timeoutLoadFriendList', dynamicTimeout)
-              // let { config: anotherConfig } = require('../config.js')
-              // debugInfo('another config\'s timeoutLoadFriendList:[' + anotherConfig.timeoutLoadFriendList + ']')
-              debugInfo(threadName + '动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + _config.timeoutLoadFriendList)
+            try {
+              that.lock.lock()
+              debugInfo(threadName + "获取锁")
+              that.friends_list_parent = _widgetUtils.getFriendListParent()
+              that.valid_child_list = that.getValidChildList(that.friends_list_parent)
+              that.all_loaded = true
+              that.usedList = false
+              debugInfo(threadName + "重新获取好友列表数据")
+              sleep(100)
+              that.condition.signal()
+              debugInfo(threadName + '获取好友list完成')
+              let listLength = that.whetherFriendListValidLength(that.friends_list_parent)
+              if (listLength) {
+                // 动态修改预加载超时时间
+                let dynamicTimeout = Math.ceil(listLength / 20) * 800
+                _config.timeoutLoadFriendList = dynamicTimeout
+                var configStorage = storages.create(_storage_name)
+                configStorage.put('timeoutLoadFriendList', dynamicTimeout)
+                // let { config: anotherConfig } = require('../config.js')
+                // debugInfo('another config\'s timeoutLoadFriendList:[' + anotherConfig.timeoutLoadFriendList + ']')
+                debugInfo(threadName + '动态修改预加载超时时间为：' + dynamicTimeout + ' 设置完后缓存数据为：' + _config.timeoutLoadFriendList)
+              }
+            } finally {
+              try {
+                that.lock.unlock()
+                debugInfo(threadName + "释放锁")
+              } catch (e) {
+                //_commonFunctions.printExceptionStack(e)
+              }
             }
-            // } else if ((more.desc() && more.desc().match(loadMoreContent)) || (more.text() && more.text().match(loadMoreContent))) {
-
-            //   debugInfo(threadName + '点击加载前等待锁')
-            //   that.lock.lock()
-            //   debugInfo(threadName + '点击加载前获得锁')
-            //   debugInfo(threadName + '点击加载更多，热身中 速度较慢')
-            //   more.click()
-            //   that.condition.signal()
-            // } else {
-            //   debugInfo(threadName + 'find target j_rank_list_more but desc/text is :' + more.desc() + ', ' + more.text())
-            // }
           }
         } catch (e) {
           errorInfo('预载入异常' + e)
           _commonFunctions.printExceptionStack(e)
-        } finally {
-          try {
-            that.lock.unlock()
-            debugInfo(threadName + "释放锁")
-          } catch (e) {
-            _commonFunctions.printExceptionStack(e)
-          }
         }
       }
       debugInfo(threadName + '退出循环')
@@ -402,7 +393,7 @@ const FriendListScanner = function () {
     if (this.checkIsEveryFriendChecked(checkedList, totalValidLength)) {
       that.recordLost('有好友信息未校验')
     }
-    
+
     this.checkRunningCountdown(countingDownContainers)
     _commonFunctions.addClosePlacehold(">>>><<<<")
     debugInfo([
