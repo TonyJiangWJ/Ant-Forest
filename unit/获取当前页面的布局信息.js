@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-04-29 14:44:49
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-04-30 13:44:56
+ * @Last Modified time: 2020-05-18 15:27:40
  * @Description: 
  */
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
@@ -67,7 +67,7 @@ floatyInstance.close()
 if (uiObjectInfoList) {
   let timeCost = new Date().getTime() - start
   let total = uiObjectInfoList.length
-  let logInfoList = uiObjectInfoList.filter(v => v.hasUsableInfo()).map(v => v.toString())
+  let logInfoList = uiObjectInfoList.filter(v => v && v.hasUsableInfo()).map(v => v.toString())
   let content = removeMinPrefix(logInfoList).join('\n')
   logUtils.debugInfo(content)
   dialogs.build({
@@ -97,6 +97,9 @@ function getRootContainer (target) {
 
 
 function iterateAll (root, depth) {
+  if (isEmpty(root)) {
+    return null
+  }
   depth = depth || 1
   let uiObjectInfo = new UiObjectInfo(root, depth)
   logUtils.logInfo(uiObjectInfo.toString())
@@ -143,7 +146,12 @@ function UiObjectInfo (uiObject, depth) {
   }
 }
 
+function isEmpty (strOrList) {
+  return typeof strOrList === 'undefined' || strOrList === null || strOrList === '' || strOrList.length === 0
+}
+
 function flatMap (f, list) {
+  if (isEmpty(list)) return []
   return list.map(f).reduce((x, y) => x.concat(y), [])
 }
 
