@@ -1,8 +1,23 @@
+let currentEngine = engines.myEngine()
+let runningEngines = engines.all()
+let runningSize = runningEngines.length
+let currentSource = currentEngine.getSource() + ''
+if (runningSize > 1) {
+  runningEngines.forEach(engine => {
+    let compareEngine = engine
+    let compareSource = compareEngine.getSource() + ''
+    if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
+      engines.myEngine().forceStop()
+    }
+  })
+}
+
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let _BaseScanner = require('../core/BaseScanner.js')
 let { config } = require('../config.js')(runtime, this)
+let fileUtils = sRequire('FileUtils')
 
 var window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
@@ -77,15 +92,6 @@ function drawCoordinateAxis (canvas, paint) {
   }
 }
 
-function exitAndClean () {
-  if (window !== null) {
-    window.canvas.removeAllListeners()
-    toastLog('close in 1 seconds')
-    sleep(1000)
-    window.close()
-  }
-  exit()
-}
 
 let converted = false
 let startTime = new Date().getTime()
@@ -101,6 +107,28 @@ let bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bo
 let gap = parseInt(detectRegion[2] / 6)
 let scaleRate = config.device_width / 1080
 
+let refreshThread = threads.start(function () {
+  while (true) {
+    console.log('新获取的配置信息：' + JSON.stringify(config))
+    detectRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
+    rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
+    bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
+    gap = parseInt(detectRegion[2] / 6)
+    scaleRate = config.device_width / 1080
+    sleep(1000)
+  }
+})
+
+function exitAndClean () {
+  if (window !== null) {
+    window.canvas.removeAllListeners()
+    toastLog('close in 1 seconds')
+    sleep(1000)
+    window.close()
+  }
+  refreshThread.interrupt()
+  exit()
+}
 window.canvas.on("draw", function (canvas) {
   try {
     // 清空内容

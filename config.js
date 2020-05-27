@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-14 15:18:25
+ * @Last Modified time: 2020-05-28 01:22:32
  * @Description: 
  */
 'ui';
@@ -191,7 +191,7 @@ if (!isRunningMode) {
         let senderId = params.id
         if (currentId !== senderId) {
           console.verbose(currentId + ' 获取从' + senderId + '得到的新的配置信息' + JSON.stringify(newConfig))
-          scope.config_instance.config = newConfig
+          Object.assign(scope.config_instance.config, newConfig)
         }
       })
     }
@@ -219,6 +219,7 @@ if (!isRunningMode) {
   let _hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
   let commonFunctions = require('./lib/prototype/CommonFunction.js')
   let AesUtil = require('./lib/AesUtil.js')
+  let FileUtils = require('./lib/prototype/FileUtils.js')
   // 初始化list 为全局变量
   let whiteList = [], wateringBlackList = [], helpBallColorList = []
   let setImageBasedUiVal = function () {
@@ -692,6 +693,7 @@ if (!isRunningMode) {
                   <checkbox id="autoSetBrightnessChkBox" text="锁屏启动设置最低亮度" />
                   {/* 是否锁屏启动关闭弹框提示 */}
                   <checkbox id="dismissDialogIfLockedChkBox" text="锁屏启动关闭弹框提示" />
+                  <text text="通话状态监听需要授予AutoJS软件获取通话状态的权限" textSize = "12sp" />
                   <checkbox id="enableCallStateControlChkBox" text="是否在通话时停止脚本" />
                   {/* 基本不需要修改的 */}
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
@@ -725,6 +727,7 @@ if (!isRunningMode) {
                   <checkbox id="notCollectSelfChkBox" text="不收自己的能量" />
                   <checkbox id="recheckRankListChkBox" text="是否在收集或帮助后重新检查排行榜" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
+                  <button id="showRealTimeImgConfig" >实时查看可视化配置信息</button>
                   {/* 使用模拟手势来实现上下滑动 */}
                   <horizontal gravity="center">
                     <checkbox id="useCustomScrollDownChkBox" text="是否启用模拟滑动" layout_weight="40" />
@@ -1129,7 +1132,6 @@ if (!isRunningMode) {
           }
         })
     })
-
 
     ui.blackList.on('item_bind', function (itemView, itemHolder) {
       // 绑定删除事件
@@ -1583,6 +1585,12 @@ if (!isRunningMode) {
       config.not_collect_self = ui.notCollectSelfChkBox.isChecked()
     })
 
+    ui.showRealTimeImgConfig.on('click', () => {
+      let source = FileUtils.getCurrentWorkPath() + '/test/全局悬浮窗显示-配置信息.js'
+      engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')) })
+      sendConfigChangedBroadcast()
+    })
+
     ui.autoSetImgOrWidgetChkBox.on('click', () => {
       config.auto_set_img_or_widget = ui.autoSetImgOrWidgetChkBox.isChecked()
       if (config.auto_set_img_or_widget) {
@@ -1852,7 +1860,11 @@ if (!isRunningMode) {
         storageConfig.put(key, default_config[key])
       }
     })
-    console.verbose(engines.myEngine().id + ' 发送广播 通知配置变更')
-    events.broadcast.emit(CONFIG_STORAGE_NAME + 'config_changed', { config: config, id: engines.myEngine().id});
+    sendConfigChangedBroadcast()
   })
+
+  function sendConfigChangedBroadcast () {
+    console.verbose(engines.myEngine().id + ' 发送广播 通知配置变更')
+    events.broadcast.emit(CONFIG_STORAGE_NAME + 'config_changed', { config: config, id: engines.myEngine().id })
+  }
 }
