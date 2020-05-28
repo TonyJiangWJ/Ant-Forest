@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-12 22:51:33
+ * @Last Modified time: 2020-05-28 20:38:15
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -134,10 +134,14 @@ const BaseScanner = function () {
   }
 
 
+  /**
+   * 根据图像识别 帮助收取或者收取能量球
+   * @param isOwn 是否收集自己，收自己时不判断帮收能量球
+   */
   this.checkAndCollectByImg = function (isOwn) {
     isOwn = isOwn || false
     let start = new Date().getTime()
-    let allPoints = this.checkByImg('#c8c8c8', '#cacaca', false)
+    let allPoints = this.checkByImg('#c8c8c8', '#cacaca', '可收取')
     if (!isOwn) {
       // 不需要帮助好友时，过滤帮助收取的点
       if (!_config.help_friend && allPoints.length > 0) {
@@ -149,6 +153,7 @@ const BaseScanner = function () {
             let region = [detectRegion[0] + point.x, detectRegion[1] + point.y, 50, 200]
             for (let i = 0; i < _config.helpBallColors.length; i++) {
               let color = _config.helpBallColors[i]
+              // 校验是否匹配帮收能量球颜色
               if (images.findColor(forCheckImg, color, { region: region, threshold: _config.color_offset })) {
                 return false
               }
@@ -159,10 +164,10 @@ const BaseScanner = function () {
           debugInfo(['过滤可帮助能量球后：「{}」过滤耗时：{}ms', JSON.stringify(allPoints), new Date().getTime() - start])
         }
       } else if (_config.help_friend) {
-        let firstCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
+        let firstCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', '可帮助')
         // 延迟一段时间二次检验
         sleep(250)
-        let secondCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', true)
+        let secondCheckPoints = this.checkByImg('#b5b5b5', '#d6d6d6', '可帮助')
         allPoints = allPoints.concat(firstCheckPoints.concat(secondCheckPoints))
       }
     } else {
@@ -192,8 +197,8 @@ const BaseScanner = function () {
     return Math.sqrt(Math.pow(p.x - lpx, 2) + Math.pow(p.y - lpy, 2))
   }
 
-  this.checkAndClickByImg = function (lowColor, highColor, isHelp) {
-    let clickPoints = this.checkByImg(lowColor, highColor, isHelp)
+  this.checkAndClickByImg = function (lowColor, highColor, type) {
+    let clickPoints = this.checkByImg(lowColor, highColor, type)
     this.clickCheckPoints(clickPoints)
   }
 
@@ -208,7 +213,8 @@ const BaseScanner = function () {
     }
   }
 
-  this.checkByImg = function (lowColor, highColor, isHelp) {
+  this.checkByImg = function (lowColor, highColor, type) {
+    let isHelp = type === '可帮助'
     let screen = _commonFunctions.checkCaptureScreenPermission()
     if (screen) {
       let start = new Date().getTime()
@@ -232,6 +238,7 @@ const BaseScanner = function () {
           checkPoints.push([x, 0, '#ffffff'])
         }
         if (isHelp) {
+          // 帮收能量球追加校验 避免和倒计时能量球混了
           for (let y = 0; y <= parseInt(25 * SCALE_RATE); y += 2) {
             checkPoints.push([0, y, '#ffffff'])
           }
@@ -254,7 +261,7 @@ const BaseScanner = function () {
       }
       debugInfo([
         '{} 点个数：「{}」列表：{} 耗时:{}ms',
-        (isHelp ? '可帮助' : '可收取'), clickPoints.length, JSON.stringify(clickPoints), new Date().getTime() - start
+        type, clickPoints.length, JSON.stringify(clickPoints), new Date().getTime() - start
       ])
       return clickPoints
     }
