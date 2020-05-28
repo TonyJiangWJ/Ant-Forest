@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-13 13:10:25
+ * @Last Modified time: 2020-05-28 20:45:31
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -229,10 +229,12 @@ function Ant_forest () {
         })
     }
     let temp = []
+    let toasts = []
+    // 先分析控件是否存在，存在直接通过控件判断倒计时
     if (target && target.exists()) {
       let ball = target.untilFind()
       debugInfo('待收取球数' + ball.length)
-      let toasts = getToastAsync(_package_name, ball.length >= 2 ? 2 : ball.length, function () {
+      toasts = getToastAsync(_package_name, ball.length >= 2 ? 2 : ball.length, function () {
         let screen = _commonFunctions.checkCaptureScreenPermission()
         let count = 0
         for (let i = 0; i < ball.length; i++) {
@@ -252,19 +254,42 @@ function Ant_forest () {
             break
           }
         }
-        // 返回实际倒计时个数
+        // 返回实际倒计时个数，用于终止toast等待
         return count
       })
-      toasts.forEach(function (toast) {
-        let countdown = toast.match(/\d+/g)
-        if (countdown !== null && countdown.length >= 2) {
-          temp.push(countdown[0] * 60 - -countdown[1])
-        } else {
-          errorInfo('获取倒计时错误：' + countdown)
-        }
-      })
-      _min_countdown = Math.min.apply(null, temp)
+    } else {
+      // 无法获取到控件 通过图像分别判断白天和晚上的倒计时球颜色数据
+      let nightBall = _base_scanner.checkByImg('#a0a0a0', '#a3a3a3', '夜间倒计时')
+      let daytimeBall = _base_scanner.checkByImg('#dadada', '#dedede', '白天倒计时')
+      let ballPoints = nightBall.concat(daytimeBall)
+      debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
+      if (ballPoints && ballPoints.length > 0) {
+        toasts = getToastAsync(_package_name, ballPoints.length >= 2 ? 2 : ballPoints.length, function () {
+          let count = 0
+          for (let i = 0; i < ballPoints.length; i++) {
+            let point = ballPoints[i]
+            automator.click(point.x + _config.tree_collect_left, point.y + _config.tree_collect_top)
+            sleep(500)
+            count++
+            // 只需要点击两个球就够了
+            if (count >= 2) {
+              break
+            }
+          }
+          // 返回实际倒计时个数, 用于终止toast等待
+          return count
+        })
+      }
     }
+    toasts.forEach(function (toast) {
+      let countdown = toast.match(/\d+/g)
+      if (countdown !== null && countdown.length >= 2) {
+        temp.push(countdown[0] * 60 - -countdown[1])
+      } else {
+        errorInfo('获取倒计时错误：' + countdown)
+      }
+    })
+    _min_countdown = Math.min.apply(null, temp)
     _timestamp = new Date()
   }
 
