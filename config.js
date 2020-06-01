@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-28 01:22:32
+ * @Last Modified time: 2020-06-01 23:25:09
  * @Description: 
  */
 'ui';
@@ -108,7 +108,7 @@ let default_config = {
   apiKey: '',
   // 秘钥
   secretKey: '',
-
+  my_id: '',
   home_ui_content: '查看更多动态.*',
   friend_home_ui_content: '你收取TA',
   // 废弃
@@ -438,6 +438,7 @@ if (!isRunningMode) {
   }
 
   let setWidgetUiValues = function () {
+    ui.myIdInpt.text(config.my_id)
     ui.homeUiContentInpt.text(config.home_ui_content)
     ui.friendHomeUiContentInpt.text(config.friend_home_ui_content)
     ui.friendListIdInpt.text(config.friend_list_id)
@@ -872,6 +873,11 @@ if (!isRunningMode) {
               <ScrollView id="parentScrollView3">
                 <vertical padding="12 24">
                   <text text="一般情况下不需要修改这一块的配置，除非你的支付宝是英文的" textSize="12sp" />
+                  <text text="我的ID主要用来准确获取当前收集的能量数据，可不配置" textSize="8sp" />
+                  <horizontal gravity="center">
+                    <text text="我的ID:" layout_weight="20" />
+                    <input inputType="text" id="myIdInpt" layout_weight="80" />
+                  </horizontal>
                   <horizontal gravity="center">
                     <text text="个人首页:" layout_weight="20" />
                     <input inputType="text" id="homeUiContentInpt" layout_weight="80" />
@@ -1714,6 +1720,9 @@ if (!isRunningMode) {
       TextWatcherBuilder(text => { config.delayStartTime = parseInt(text) })
     )
     // 控件文本配置
+    ui.myIdInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.my_id = text + '' })
+    )
     ui.homeUiContentInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.home_ui_content = text + '' })
     )
