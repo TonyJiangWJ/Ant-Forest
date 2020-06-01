@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-28 20:38:15
+ * @Last Modified time: 2020-06-01 19:01:49
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -395,7 +395,7 @@ const BaseScanner = function () {
         time = parent.child(1).desc()
       }
       let isToday = true
-      let yesterday = _widgetUtils.widgetGetOne('昨天', 50, true, true)
+      let yesterday = _widgetUtils.widgetGetOne('昨天|Yesterday', 50, true, true)
       let yesterdayRow = null
       if (yesterday !== null) {
         yesterdayRow = yesterday.target.row()
