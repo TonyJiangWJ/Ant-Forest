@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-28 20:45:31
+ * @Last Modified time: 2020-06-02 15:16:30
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -580,6 +580,7 @@ function Ant_forest () {
   const collectOwn = function () {
     _commonFunctions.addOpenPlacehold('开始收集自己能量')
     debugInfo('准备收集自己能量')
+    let energyBeforeCollect = getCurrentEnergy()
     collectEnergy(true)
     // 计时模式和只收自己时都去点击倒计时能量球 避免只收自己时控件刷新不及时导致漏收
     if (!_config.is_cycle || _config.collect_self_only) {
@@ -587,7 +588,7 @@ function Ant_forest () {
       getMinCountdownOwn()
     }
     let energyAfterCollect = getCurrentEnergy()
-    let collectedEnergy = energyAfterCollect - _pre_energy
+    let collectedEnergy = energyAfterCollect - energyBeforeCollect
     if (collectedEnergy) {
       logInfo(['收集自己能量：{}g', collectedEnergy])
       _base_scanner.showCollectSummaryFloaty(collectedEnergy)
