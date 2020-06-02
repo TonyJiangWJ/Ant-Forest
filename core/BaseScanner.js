@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-01 19:01:49
+ * @Last Modified time: 2020-06-02 13:49:54
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -181,7 +181,7 @@ const BaseScanner = function () {
     let lastPy = -200
     if (allPoints.length > 0) {
       allPoints.forEach(p => {
-        if (this.getDistance(p, lastPx, lastPy) >= 100) {
+        if (this.getDistance(p, lastPx, lastPy) >= 100 * SCALE_RATE) {
           clickPoints.push(p)
           lastPx = p.x
           lastPy = p.y
@@ -253,7 +253,7 @@ const BaseScanner = function () {
             ]
           }
         )
-        if (p && this.getDistance(p, lastPx, lastPy) >= 100) {
+        if (p && this.getDistance(p, lastPx, lastPy) >= 100 * SCALE_RATE) {
           clickPoints.push(p)
           lastPx = p.x
           lastPy = p.y
@@ -348,7 +348,7 @@ const BaseScanner = function () {
 
   // 判断并记录保护罩
   this.recordProtected = function (toast, name) {
-    if (toast.indexOf('能量罩') > 0) {
+    if (toast && toast.indexOf('能量罩') > 0) {
       this.recordCurrentProtected(name)
     }
   }
@@ -494,6 +494,7 @@ const BaseScanner = function () {
       let gotEnergyAfterWater = collectEnergy
       this.collect_any = true
       let needWaterback = _commonFunctions.recordFriendCollectInfo({
+        hasSummaryWidget: _config.has_summary_widget,
         friendName: obj.name,
         friendEnergy: postE,
         postCollect: postGet,
@@ -503,7 +504,7 @@ const BaseScanner = function () {
       try {
         if (needWaterback) {
           _widgetUtils.wateringFriends()
-          gotEnergyAfterWater = _widgetUtils.getYouCollectEnergy() - preGot
+          gotEnergyAfterWater -= (_config.targetWateringAmount || 0)
         }
       } catch (e) {
         errorInfo('收取[' + obj.name + ']' + collectEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
@@ -511,7 +512,7 @@ const BaseScanner = function () {
       }
       logInfo([
         "收取好友:{} 能量 {}g {}",
-        obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (collectEnergy - gotEnergyAfterWater) + 'g' : '')
+        obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (_config.targetWateringAmount || 0) + 'g' : '')
       ])
       this.showCollectSummaryFloaty(collectEnergy)
       if (_config.cutAndSaveTreeCollect && screen) {
@@ -527,6 +528,8 @@ const BaseScanner = function () {
       this.collect_any = true
       logInfo("帮助好友:" + obj.name + " 回收能量 " + friendGrowEnergy + "g")
       _commonFunctions.recordFriendCollectInfo({
+        hasSummaryWidget: _config.has_summary_widget,
+        fromHelp: true,
         friendName: obj.name,
         friendEnergy: postE,
         postCollect: postGet,
