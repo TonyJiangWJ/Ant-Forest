@@ -176,6 +176,11 @@ module.exports = function (obj) {
 - 修改扩展代码之后，可以运行 `test/全局悬浮窗显示-点击区域信息-音量上键关闭.js` 可以进到森林页面实时查看配置效果，通过此方法可以随你调试编写各种花样点击，也可以仅仅修改y值，修正上下偏移量 默认是y=700 部分刘海屏可能需要修改成600
 - ![全局悬浮窗显示](./resources/check_multi_position.jpg)
 
+## 分享你的配置
+
+- 如果你想分享你的自定义扩展代码，可以提交到 [这个分支下](https://github.com/TonyJiangWJ/Ant-Forest/tree/share_configs)，比如解锁代码 可以命名为 `ExternalUnlockDevice-手机型号.js` 并提交到 `extends` 目录下，方便其他用户下载使用
+- 想获取其他网友分享的代码可以前往[这个分支](https://github.com/TonyJiangWJ/Ant-Forest/tree/share_configs)下载，或者等我集成发布
+
 ## 更新记录
 
 - 历史版本更新记录可前往[RELEASES 页面](https://github.com/TonyJiangWJ/Ant-Forest/releases) 和 [RELEASES(旧仓库)](https://github.com/TonyJiangWJ/Ant-Forest-autoscript/releases) 查看
