@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-01 23:25:09
+ * @Last Modified time: 2020-06-02 21:13:05
  * @Description: 
  */
 'ui';
@@ -110,7 +110,7 @@ let default_config = {
   secretKey: '',
   my_id: '',
   home_ui_content: '查看更多动态.*',
-  friend_home_ui_content: '你收取TA',
+  friend_home_ui_content: 'TA的好友.*|今天|浇水|.*大树养成记录',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
   // 用于判断是否在好友排行榜
