@@ -109,13 +109,13 @@ let scaleRate = config.device_width / 1080
 
 let refreshThread = threads.start(function () {
   while (true) {
-    console.log('新获取的配置信息：' + JSON.stringify(config))
+    // console.log('新获取的配置信息：' + JSON.stringify(config))
     detectRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
     rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
     bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
     gap = parseInt(detectRegion[2] / 6)
     scaleRate = config.device_width / 1080
-    sleep(1000)
+    sleep(100)
   }
 })
 
@@ -129,19 +129,23 @@ function exitAndClean () {
   refreshThread.interrupt()
   exit()
 }
+let back_img = null
+if (files.exists(fileUtils.getCurrentWorkPath() + '/resources/region_check.jpg')) {
+  back_img = images.read(fileUtils.getCurrentWorkPath() + '/resources/region_check.jpg')
+}
 window.canvas.on("draw", function (canvas) {
   try {
     // 清空内容
     canvas.drawColor(0xFFFFFF, android.graphics.PorterDuff.Mode.CLEAR);
-    var width = canvas.getWidth()
-    var height = canvas.getHeight()
+    let width = canvas.getWidth()
+    let height = canvas.getHeight()
     if (!converted) {
       toastLog('画布大小：' + width + ', ' + height)
     }
 
     // let canvas = new com.stardust.autojs.core.graphics.ScriptCanvas(width, height)
     let Typeface = android.graphics.Typeface
-    var paint = new Paint()
+    let paint = new Paint()
     paint.setStrokeWidth(1)
     paint.setTypeface(Typeface.DEFAULT_BOLD)
     paint.setTextAlign(Paint.Align.LEFT)
@@ -151,7 +155,12 @@ window.canvas.on("draw", function (canvas) {
     // 打印排行榜判断区域
     drawRectAndText('排行榜判断区域', rankRegion, '#FF00FF', canvas, paint)
     drawRectAndText('底部判断区域', bottomRegion, '#FF00FF', canvas, paint)
-
+    if (back_img) {
+      let matrix = new android.graphics.Matrix()
+      paint.setAlpha(50)
+      canvas.drawImage(back_img, matrix, paint)
+      paint.setAlpha(255)
+    }
 
 
     paint.setTextSize(30)
