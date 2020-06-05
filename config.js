@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-02 21:13:05
+ * @Last Modified time: 2020-06-06 01:40:22
  * @Description: 
  */
 'ui';
@@ -222,6 +222,28 @@ if (!isRunningMode) {
   let FileUtils = require('./lib/prototype/FileUtils.js')
   // 初始化list 为全局变量
   let whiteList = [], wateringBlackList = [], helpBallColorList = []
+
+  let scale = config.device_width / 1080
+  let treeCollectXRange, treeCollectYRange, treeCollectHRange, treeCollectWRange
+  let rankCheckRegionXRange, rankCheckRegionYRange, rankCheckRegionHRange, rankCheckRegionWRange
+  let bottomCheckRegionXRange, bottomCheckRegionYRange, bottomCheckRegionHRange, bottomCheckRegionWRange = [5, 50]
+
+  function resetRangeInfo () {
+    scale = config.device_width / 1080
+    treeCollectXRange = [100 * scale, config.device_width / 2]
+    treeCollectYRange = [100 * scale, config.device_height / 2]
+    treeCollectWRange = [config.device_width / 2, config.device_width]
+    treeCollectHRange = [100 * scale, config.device_height / 2]
+    rankCheckRegionXRange = [100 * scale, config.device_width / 2]
+    rankCheckRegionYRange = [100 * scale, config.device_height / 4]
+    rankCheckRegionWRange = [100 * scale, config.device_width * 0.66]
+    rankCheckRegionHRange = [100 * scale, config.device_width / 4]
+    bottomCheckRegionXRange = [100 * scale, config.device_width]
+    bottomCheckRegionYRange = [config.device_height / 2, config.device_height]
+    bottomCheckRegionWRange = [5, 50]
+    bottomCheckRegionHRange = [5, 50]
+  }
+
   let setImageBasedUiVal = function () {
     ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
     ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
@@ -246,7 +268,7 @@ if (!isRunningMode) {
     ui.useOcrParentContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.friendListScrollTimeContainer.setVisibility(config.checkBottomBaseImg ? View.GONE : View.VISIBLE)
     ui.bottomCheckContainer.setVisibility(!config.checkBottomBaseImg ? View.GONE : View.VISIBLE)
-    ui.bottomCheckRegion.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+    ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
     ui.bottomCheckGrayColorInpt.text(config.bottom_check_gray_color)
     if (colorRegex.test(config.bottom_check_gray_color)) {
       ui.bottomCheckGrayColorInpt.setTextColor(colors.parseColor(config.bottom_check_gray_color))
@@ -301,6 +323,8 @@ if (!isRunningMode) {
 
   let setDeviceSizeText = function () {
     ui.deviceSizeText.text(config.device_width + 'px ' + config.device_height + 'px')
+    // 重置范围
+    resetRangeInfo()
   }
 
   let setColorSeekBar = function () {
@@ -313,6 +337,36 @@ if (!isRunningMode) {
     ui.redSeekbar.setProgress(parseInt(rgbColors.red / 255 * 100))
     ui.greenSeekbar.setProgress(parseInt(rgbColors.green / 255 * 100))
     ui.blueSeekbar.setProgress(parseInt(rgbColors.blue / 255 * 100))
+  }
+
+  function getGap (rangeInfo) {
+    return rangeInfo[1] - rangeInfo[0]
+  }
+
+  function getProgress (configValue, rangeInfo) {
+    return parseInt((configValue - rangeInfo[0]) / getGap(rangeInfo) * 100)
+  }
+
+  let setRegionSeekBars = function () {
+
+    ui.collectRegionXSeekbar.setProgress(getProgress(config.tree_collect_left, treeCollectXRange))
+    ui.collectRegionYSeekbar.setProgress(getProgress(config.tree_collect_top, treeCollectYRange))
+    ui.collectRegionWSeekbar.setProgress(getProgress(config.tree_collect_width, treeCollectWRange))
+    ui.collectRegionHSeekbar.setProgress(getProgress(config.tree_collect_height, treeCollectHRange))
+
+    ui.rankCheckRegionXSeekbar.setProgress(getProgress(config.rank_check_left, rankCheckRegionXRange))
+    ui.rankCheckRegionYSeekbar.setProgress(getProgress(config.rank_check_top, rankCheckRegionYRange))
+    ui.rankCheckRegionWSeekbar.setProgress(getProgress(config.rank_check_width, rankCheckRegionWRange))
+    ui.rankCheckRegionHSeekbar.setProgress(getProgress(config.rank_check_height, rankCheckRegionHRange))
+
+
+    ui.bottomCheckRegionXSeekbar.setProgress(getProgress(config.bottom_check_left, bottomCheckRegionXRange))
+    ui.bottomCheckRegionYSeekbar.setProgress(getProgress(config.bottom_check_top, bottomCheckRegionYRange))
+    ui.bottomCheckRegionWSeekbar.setProgress(getProgress(config.bottom_check_width, bottomCheckRegionWRange))
+    ui.bottomCheckRegionHSeekbar.setProgress(getProgress(config.bottom_check_height, bottomCheckRegionHRange))
+
+    sendConfigChangedBroadcast()
+
   }
 
   let setWidgetOnlyVisiable = function () {
@@ -431,10 +485,18 @@ if (!isRunningMode) {
     ui.wateringThresholdInpt.text(config.wateringThreshold + '')
     ui.wateringThresholdContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.INVISIBLE)
     ui.wateringBlackListContainer.setVisibility(config.wateringBack ? View.VISIBLE : View.GONE)
-    ui.wateringBackAmountSpinner.setSelection([5, 10, 18].indexOf(config.targetWateringAmount))
-
+    let waterTargetIdx = [10, 18, 33, 66].indexOf(config.targetWateringAmount)
+    if (waterTargetIdx < 0) {
+      waterTargetIdx = 0
+      config.targetWateringAmount = 10
+    }
+    ui.wateringBackAmountSpinner.setSelection(waterTargetIdx)
+    ui.regionSeekChkBox.setChecked(false)
     setImageBasedUiVal()
     setOcrUiVal()
+    ui.treeCollectRegionContainer.setVisibility(View.GONE)
+    ui.rankCheckRegionContainer.setVisibility(View.GONE)
+    ui.bottomCheckRegionContainer.setVisibility(View.GONE)
   }
 
   let setWidgetUiValues = function () {
@@ -694,7 +756,7 @@ if (!isRunningMode) {
                   <checkbox id="autoSetBrightnessChkBox" text="锁屏启动设置最低亮度" />
                   {/* 是否锁屏启动关闭弹框提示 */}
                   <checkbox id="dismissDialogIfLockedChkBox" text="锁屏启动关闭弹框提示" />
-                  <text text="通话状态监听需要授予AutoJS软件获取通话状态的权限" textSize = "12sp" />
+                  <text text="通话状态监听需要授予AutoJS软件获取通话状态的权限" textSize="12sp" />
                   <checkbox id="enableCallStateControlChkBox" text="是否在通话时停止脚本" />
                   {/* 基本不需要修改的 */}
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
@@ -729,6 +791,7 @@ if (!isRunningMode) {
                   <checkbox id="recheckRankListChkBox" text="是否在收集或帮助后重新检查排行榜" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <button id="showRealTimeImgConfig" >实时查看可视化配置信息</button>
+                  <checkbox id="regionSeekChkBox" text="拖动输入区域" textColor="black" textSize="16sp" />
                   {/* 使用模拟手势来实现上下滑动 */}
                   <horizontal gravity="center">
                     <checkbox id="useCustomScrollDownChkBox" text="是否启用模拟滑动" layout_weight="40" />
@@ -744,10 +807,30 @@ if (!isRunningMode) {
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <checkbox id="directUseImgCollectChkBox" text="是否直接基于图像分析收取和帮助好友" />
-                  <horizontal gravity="center" id="collectRegionContainer">
-                    <text text="基于图像收集能量球范围:" layout_weight="20" />
-                    <input inputType="text" id="treeCollectRegionInpt" layout_weight="80" />
-                  </horizontal>
+                  <vertical id="collectRegionContainer">
+                    <horizontal gravity="center">
+                      <text text="基于图像收集能量球范围:" layout_weight="20" />
+                      <input inputType="text" id="treeCollectRegionInpt" layout_weight="80" />
+                    </horizontal>
+                    <vertical id="treeCollectRegionContainer" >
+                      <horizontal gravity="center">
+                        <text text="X坐标:" />
+                        <seekbar id="collectRegionXSeekbar" progress="20" layout_weight="85" />
+                      </horizontal>
+                      <horizontal gravity="center">
+                        <text text="Y坐标:" />
+                        <seekbar id="collectRegionYSeekbar" progress="20" layout_weight="85" />
+                      </horizontal>
+                      <horizontal gravity="center">
+                        <text text="宽度:" />
+                        <seekbar id="collectRegionWSeekbar" progress="20" layout_weight="85" />
+                      </horizontal>
+                      <horizontal gravity="center">
+                        <text text="高度:" />
+                        <seekbar id="collectRegionHSeekbar" progress="20" layout_weight="85" />
+                      </horizontal>
+                    </vertical>
+                  </vertical>
                   <vertical id="multiTouchContainer">
                     <text text="当可收取能量球控件无法获取时开启区域点击, 不同设备请扩展点击代码，当前建议开启 直接基于图像分析收取和帮助好友" textSize="9sp" />
                     <checkbox id="tryCollectByMultiTouchChkBox" text="是否尝试区域点击来收取能量" />
@@ -762,6 +845,24 @@ if (!isRunningMode) {
                       <text text="校验排行榜分析范围:" layout_weight="20" />
                       <input inputType="text" id="rankCheckRegionInpt" layout_weight="80" />
                     </horizontal>
+                    <vertical id="rankCheckRegionContainer" >
+                      <horizontal gravity="center">
+                        <text text="X坐标:" />
+                        <seekbar id="rankCheckRegionXSeekbar" progress="20" layout_weight="85" />
+                      </horizontal>
+                      <horizontal gravity="center">
+                        <text text="Y坐标:" />
+                        <seekbar id="rankCheckRegionYSeekbar" progress="20" layout_weight="85" />
+                      </horizontal>
+                      <horizontal gravity="center">
+                        <text text="宽度:" />
+                        <seekbar id="rankCheckRegionWSeekbar" progress="20" layout_weight="85" />
+                      </horizontal>
+                      <horizontal gravity="center">
+                        <text text="高度:" />
+                        <seekbar id="rankCheckRegionHSeekbar" progress="20" layout_weight="85" />
+                      </horizontal>
+                    </vertical>
                     <text text="可收取小手指的绿色像素点个数，颜色相似度20，1080P时小于1900判定为可收取，其他分辨率需要自行修改=1900*缩放比例^2" textSize="10sp" />
                     <text text="如果还是不行，请分析日志进行调整，日志中会打印同色点个数" textSize="10sp" />
                     <horizontal gravity="center" >
@@ -773,8 +874,26 @@ if (!isRunningMode) {
                     <vertical id="bottomCheckContainer">
                       <horizontal gravity="center">
                         <text text="基于图像判断底部的范围:" layout_weight="20" />
-                        <input inputType="text" id="bottomCheckRegion" layout_weight="80" />
+                        <input inputType="text" id="bottomCheckRegionInpt" layout_weight="80" />
                       </horizontal>
+                      <vertical id="bottomCheckRegionContainer" >
+                        <horizontal gravity="center">
+                          <text text="X坐标:" />
+                          <seekbar id="bottomCheckRegionXSeekbar" progress="20" layout_weight="85" />
+                        </horizontal>
+                        <horizontal gravity="center">
+                          <text text="Y坐标:" />
+                          <seekbar id="bottomCheckRegionYSeekbar" progress="20" layout_weight="85" />
+                        </horizontal>
+                        <horizontal gravity="center">
+                          <text text="宽度:" />
+                          <seekbar id="bottomCheckRegionWSeekbar" progress="20" layout_weight="85" />
+                        </horizontal>
+                        <horizontal gravity="center">
+                          <text text="高度:" />
+                          <seekbar id="bottomCheckRegionHSeekbar" progress="20" layout_weight="85" />
+                        </horizontal>
+                      </vertical>
                       <horizontal gravity="center">
                         <text text="底部判断的灰度颜色值:" layout_weight="20" />
                         <input inputType="text" id="bottomCheckGrayColorInpt" layout_weight="80" />
@@ -849,7 +968,7 @@ if (!isRunningMode) {
                       <input layout_weight="70" inputType="number" id="wateringThresholdInpt" />
                     </horizontal>
                     <text text="浇水数量" textSize="14sp" />
-                    <spinner id="wateringBackAmountSpinner" entries="5|10|18" />
+                    <spinner id="wateringBackAmountSpinner" entries="10|18|33|66" />
                   </horizontal>
                   {/* 浇水黑名单 */}
                   <vertical w="*" gravity="left" layout_gravity="left" margin="10" id="wateringBlackListContainer">
@@ -1233,6 +1352,21 @@ if (!isRunningMode) {
       }
     })
 
+    ui.regionSeekChkBox.on('click', () => {
+      let show = ui.regionSeekChkBox.isChecked()
+      if (show) {
+        setRegionSeekBars()
+        ui.treeCollectRegionContainer.setVisibility(View.VISIBLE)
+        ui.rankCheckRegionContainer.setVisibility(View.VISIBLE)
+        ui.bottomCheckRegionContainer.setVisibility(View.VISIBLE)
+      } else {
+        ui.treeCollectRegionContainer.setVisibility(View.GONE)
+        ui.rankCheckRegionContainer.setVisibility(View.GONE)
+        ui.bottomCheckRegionContainer.setVisibility(View.GONE)
+      }
+    })
+
+
     let resetColorTextBySelector = function () {
       let progress = ui.redSeekbar.getProgress()
       let red = parseInt(progress * 255 / 100)
@@ -1356,6 +1490,61 @@ if (!isRunningMode) {
       config.min_floaty_y = trueVal
       setFloatyStatusIfExist()
     })
+
+    function getTrueValue (progress, rangeInfo) {
+      return parseInt(rangeInfo[0] + getGap(rangeInfo) * progress / 100)
+    }
+    ui.collectRegionXSeekbar.on('touch', () => {
+      config.tree_collect_left = getTrueValue(ui.collectRegionXSeekbar.getProgress(), treeCollectXRange)
+      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+    })
+    ui.collectRegionYSeekbar.on('touch', () => {
+      config.tree_collect_top = getTrueValue(ui.collectRegionYSeekbar.getProgress(), treeCollectYRange)
+      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+    })
+    ui.collectRegionWSeekbar.on('touch', () => {
+      config.tree_collect_width = getTrueValue(ui.collectRegionWSeekbar.getProgress(), treeCollectWRange)
+      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+    })
+    ui.collectRegionHSeekbar.on('touch', () => {
+      config.tree_collect_height = getTrueValue(ui.collectRegionHSeekbar.getProgress(), treeCollectHRange)
+      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+    })
+
+    ui.rankCheckRegionXSeekbar.on('touch', () => {
+      config.rank_check_left = getTrueValue(ui.rankCheckRegionXSeekbar.getProgress(), rankCheckRegionXRange)
+      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
+    })
+    ui.rankCheckRegionYSeekbar.on('touch', () => {
+      config.rank_check_top = getTrueValue(ui.rankCheckRegionYSeekbar.getProgress(), rankCheckRegionYRange)
+      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
+    })
+    ui.rankCheckRegionWSeekbar.on('touch', () => {
+      config.rank_check_width = getTrueValue(ui.rankCheckRegionWSeekbar.getProgress(), rankCheckRegionWRange)
+      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
+    })
+    ui.rankCheckRegionHSeekbar.on('touch', () => {
+      config.rank_check_height = getTrueValue(ui.rankCheckRegionHSeekbar.getProgress(), rankCheckRegionHRange)
+      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
+    })
+
+    ui.bottomCheckRegionXSeekbar.on('touch', () => {
+      config.bottom_check_left = getTrueValue(ui.bottomCheckRegionXSeekbar.getProgress(), bottomCheckRegionXRange)
+      ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+    })
+    ui.bottomCheckRegionYSeekbar.on('touch', () => {
+      config.bottom_check_top = getTrueValue(ui.bottomCheckRegionYSeekbar.getProgress(), bottomCheckRegionYRange)
+      ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+    })
+    ui.bottomCheckRegionWSeekbar.on('touch', () => {
+      config.bottom_check_width = getTrueValue(ui.bottomCheckRegionWSeekbar.getProgress(), bottomCheckRegionHRange)
+      ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+    })
+    ui.bottomCheckRegionHSeekbar.on('touch', () => {
+      config.bottom_check_height = getTrueValue(ui.bottomCheckRegionHSeekbar.getProgress(), bottomCheckRegionWRange)
+      ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+    })
+
 
     ui.showFloatyPointConfig.on('click', () => {
       Promise.resolve().then(() => {
@@ -1703,7 +1892,17 @@ if (!isRunningMode) {
     })
 
     ui.wateringBackAmountSpinner.setOnItemSelectedListener(
-      SpinnerItemSelectedListenerBuilder(position => config.targetWateringAmount = [5, 10, 18][position])
+      SpinnerItemSelectedListenerBuilder(position => {
+        let chose = [10, 18, 33, 66][position]
+        if (chose > config.wateringThreshold) {
+          toastLog('当前选择的浇水量大于浇水阈值，请重新选择')
+        } else {
+          if (chose >= 33) {
+            toastLog('你可真是壕无人性！' + (chose > 33 ? '6的一批' : ''))
+          }
+          config.targetWateringAmount = chose
+        }
+      })
     )
 
     ui.wateringThresholdInpt.addTextChangedListener(
@@ -1760,6 +1959,7 @@ if (!isRunningMode) {
           config.rank_check_top = parseInt(match[2])
           config.rank_check_width = parseInt(match[3])
           config.rank_check_height = parseInt(match[4])
+          setRegionSeekBars()
         } else {
           toast('输入值无效')
         }
@@ -1775,13 +1975,14 @@ if (!isRunningMode) {
           config.tree_collect_top = parseInt(match[2])
           config.tree_collect_width = parseInt(match[3])
           config.tree_collect_height = parseInt(match[4])
+          setRegionSeekBars()
         } else {
           toast('输入值无效')
         }
       })
     )
 
-    ui.bottomCheckRegion.addTextChangedListener(
+    ui.bottomCheckRegionInpt.addTextChangedListener(
       TextWatcherBuilder(text => {
         let newVal = text + ''
         let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
@@ -1791,6 +1992,7 @@ if (!isRunningMode) {
           config.bottom_check_top = parseInt(match[2])
           config.bottom_check_width = parseInt(match[3])
           config.bottom_check_height = parseInt(match[4])
+          setRegionSeekBars()
         } else {
           toast('输入值无效')
         }
