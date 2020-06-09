@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-06 01:40:22
+ * @Last Modified time: 2020-06-09 13:30:18
  * @Description: 
  */
 'ui';
@@ -58,7 +58,7 @@ let default_config = {
   recheck_rank_list: true,
   base_on_image: true,
   // 自动判断基于图像还是基于控件识别
-  auto_set_img_or_widget: true,
+  auto_set_img_or_widget: false,
   // 是否基于图像分析是否到达底部
   checkBottomBaseImg: true,
   // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
