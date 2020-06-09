@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-09 13:30:18
+ * @Last Modified time: 2020-06-10 09:05:05
  * @Description: 
  */
 'ui';
@@ -35,6 +35,7 @@ let default_config = {
   show_debug_log: true,
   show_engine_id: false,
   develop_mode: false,
+  check_device_posture: false,
   // 开发用开关，截图并保存一些图片
   // 保存倒计时图片
   cutAndSaveCountdown: false,
@@ -450,6 +451,7 @@ if (!isRunningMode) {
     ui.lockDescNoRoot.setVisibility(!_hasRootPermission ? View.VISIBLE : View.INVISIBLE)
 
     ui.autoSetBrightnessChkBox.setChecked(config.auto_set_brightness)
+    ui.checkDevicePostureChkBox.setChecked(config.check_device_posture)
     ui.dismissDialogIfLockedChkBox.setChecked(config.dismiss_dialog_if_locked)
 
     ui.timeoutUnlockInpt.text(config.timeout_unlock + '')
@@ -754,6 +756,7 @@ if (!isRunningMode) {
                   </horizontal>
                   {/* 是否自动设置最低亮度 */}
                   <checkbox id="autoSetBrightnessChkBox" text="锁屏启动设置最低亮度" />
+                  <checkbox id="checkDevicePostureChkBox" text="锁屏启动检测是否在裤兜内，防止误触" />
                   {/* 是否锁屏启动关闭弹框提示 */}
                   <checkbox id="dismissDialogIfLockedChkBox" text="锁屏启动关闭弹框提示" />
                   <text text="通话状态监听需要授予AutoJS软件获取通话状态的权限" textSize="12sp" />
@@ -1654,6 +1657,10 @@ if (!isRunningMode) {
 
     ui.autoSetBrightnessChkBox.on('click', () => {
       config.auto_set_brightness = ui.autoSetBrightnessChkBox.isChecked()
+    })
+
+    ui.checkDevicePostureChkBox.on('click', () => {
+      config.check_device_posture = ui.checkDevicePostureChkBox.isChecked()
     })
 
     ui.dismissDialogIfLockedChkBox.on('click', () => {

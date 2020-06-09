@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-13 13:09:23
+ * @Last Modified time: 2020-06-10 00:14:50
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -42,6 +42,8 @@ logInfo('======加入任务队列，并关闭重复运行的脚本=======')
 runningQueueDispatcher.addRunningTask()
 // 加入任务队列
 commonFunctions.killDuplicateScript()
+// 注册自动移除运行中任务
+commonFunctions.registerOnEngineRemoved(function () { runningQueueDispatcher.removeRunningTask(true, true) })
 /***********************
  * 初始化
  ***********************/
