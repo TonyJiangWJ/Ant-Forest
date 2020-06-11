@@ -4,7 +4,7 @@
     "ignore": [
         "build"
     ],
-    "packageName": "com.ant-forest-autoscript",
+    "packageName": "com.tony.ant.forest",
     "versionName": "develop_version",
     "versionCode": 1
 }

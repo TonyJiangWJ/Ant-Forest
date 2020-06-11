@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-10 09:05:05
+ * @Last Modified time: 2020-06-11 23:02:46
  * @Description: 
  */
 'ui';
@@ -36,6 +36,7 @@ let default_config = {
   show_engine_id: false,
   develop_mode: false,
   check_device_posture: false,
+  check_distance: false,
   // 开发用开关，截图并保存一些图片
   // 保存倒计时图片
   cutAndSaveCountdown: false,
@@ -229,6 +230,29 @@ if (!isRunningMode) {
   let rankCheckRegionXRange, rankCheckRegionYRange, rankCheckRegionHRange, rankCheckRegionWRange
   let bottomCheckRegionXRange, bottomCheckRegionYRange, bottomCheckRegionHRange, bottomCheckRegionWRange = [5, 50]
 
+  let gravitySensor, distanceSensor
+
+
+  function registerSensors () {
+    if (!gravitySensor) {
+      gravitySensor = sensors.register('gravity', sensors.delay.ui).on('change', (event, x, y, z) => {
+        ui.gravityXText.setText(x.toFixed(3) + '')
+        ui.gravityYText.setText(y.toFixed(3) + '')
+        ui.gravityZText.setText(z.toFixed(3) + '')
+      })
+    }
+    if (!distanceSensor) {
+      distanceSensor = sensors.register('proximity', sensors.delay.ui).on('change', (event, d) => {
+        ui.distanceText.setText(d + '')
+      })
+    }
+  }
+
+  function unregisterSensors () {
+    sensors.unregister(gravitySensor)
+    sensors.unregister(distanceSensor)
+    gravitySensor = distanceSensor = null
+  }
   function resetRangeInfo () {
     scale = config.device_width / 1080
     treeCollectXRange = [100 * scale, config.device_width / 2]
@@ -452,6 +476,13 @@ if (!isRunningMode) {
 
     ui.autoSetBrightnessChkBox.setChecked(config.auto_set_brightness)
     ui.checkDevicePostureChkBox.setChecked(config.check_device_posture)
+    if (config.check_device_posture) {
+      registerSensors()
+    }
+    ui.checkDistanceChkBox.setVisibility(config.check_device_posture ? View.VISIBLE : View.GONE)
+    ui.postureThresholdYInpt.setText((config.posture_threshod_y || 6) + '')
+    ui.senrsorInfoContainer.setVisibility(config.check_device_posture ? View.VISIBLE : View.GONE)
+    ui.checkDistanceChkBox.setChecked(config.check_distance)
     ui.dismissDialogIfLockedChkBox.setChecked(config.dismiss_dialog_if_locked)
 
     ui.timeoutUnlockInpt.text(config.timeout_unlock + '')
@@ -757,6 +788,19 @@ if (!isRunningMode) {
                   {/* 是否自动设置最低亮度 */}
                   <checkbox id="autoSetBrightnessChkBox" text="锁屏启动设置最低亮度" />
                   <checkbox id="checkDevicePostureChkBox" text="锁屏启动检测是否在裤兜内，防止误触" />
+                  <checkbox id="checkDistanceChkBox" text="是否同时校验距离传感器，部分设备距离传感器不准，默认不开启" />
+                  <vertical id="senrsorInfoContainer" gravity="center">
+                    <text text="y轴重力加速度阈值：（绝对值超过该值判定为在兜里）" />
+                    <input layout_weight="70" inputType="number" id="postureThresholdYInpt" />
+                    <horizontal>
+                      <text text="x:" /><text id="gravityXText" margin="5 0" />
+                      <text text="y:" /><text id="gravityYText" margin="5 0" />
+                      <text text="z:" /><text id="gravityZText" margin="5 0" />
+                    </horizontal>
+                    <horizontal>
+                      <text text="距离传感器:" /><text id="distanceText" />
+                    </horizontal>
+                  </vertical>
                   {/* 是否锁屏启动关闭弹框提示 */}
                   <checkbox id="dismissDialogIfLockedChkBox" text="锁屏启动关闭弹框提示" />
                   <text text="通话状态监听需要授予AutoJS软件获取通话状态的权限" textSize="12sp" />
@@ -1661,6 +1705,17 @@ if (!isRunningMode) {
 
     ui.checkDevicePostureChkBox.on('click', () => {
       config.check_device_posture = ui.checkDevicePostureChkBox.isChecked()
+      ui.checkDistanceChkBox.setVisibility(config.check_device_posture ? View.VISIBLE : View.GONE)
+      ui.senrsorInfoContainer.setVisibility(config.check_device_posture ? View.VISIBLE : View.GONE)
+      if (config.check_device_posture) {
+        registerSensors()
+      } else {
+        unregisterSensors()
+      }
+    })
+
+    ui.checkDistanceChkBox.on('click', () => {
+      config.check_distance = ui.checkDistanceChkBox.isChecked()
     })
 
     ui.dismissDialogIfLockedChkBox.on('click', () => {
@@ -1763,6 +1818,17 @@ if (!isRunningMode) {
 
     ui.captureWaitingTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.capture_waiting_time = parseInt(text) })
+    )
+
+    ui.postureThresholdYInpt.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        let value = parseInt(text)
+        if (value > 0 && value < 9) {
+          config.posture_threshod_y = value
+        } else {
+          toast('请输入一个介于0-9的数字，推荐在4-7之间')
+        }
+      })
     )
 
     ui.fileSizeInpt.addTextChangedListener(

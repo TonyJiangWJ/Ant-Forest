@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-19 10:53:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-10 19:23:53
+ * @Last Modified time: 2020-06-10 19:31:15
  * @Description: 
  */
 let { config } = require('../config.js')(runtime, this)
@@ -12,7 +12,7 @@ let count = 0
 let configedAmount = config.targetWateringAmount
 config.targetWateringAmount = 66
 while (count++ < 3) {
-  WidgetUtils.wateringFriends()
+  WidgetUtils.wateringFriendFucked()
   sleep(1500)
 }
 config.targetWateringAmount = configedAmount

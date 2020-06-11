@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-13 08:16:25
+ * @Last Modified time: 2020-06-11 18:42:10
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -218,85 +218,117 @@ const ImgBasedFriendListScanner = function () {
         waitForCheckPoints.forEach(pointData => {
           if (pointData.isHelp) {
             this.threadPool.execute(function () {
-              let calculator = new ColorCenterCalculatorWithInterval(
-                images.copy(intervalScreenForDetectHelp), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
-              )
-              calculator.setScriptLogger(SCRIPT_LOGGER)
-              let point = calculator.getCenterPoint()
-              debugInfo('可帮助收取位置：' + JSON.stringify(point))
-              listWriteLock.lock()
-              collectOrHelpList.push({
-                point: point,
-                isHelp: true
-              })
-              countdownLatch.countDown()
-              listWriteLock.unlock()
-              calculator = null
+              let executeSuccess = false
+              try {
+                let calculator = new ColorCenterCalculatorWithInterval(
+                  images.copy(intervalScreenForDetectHelp), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
+                )
+                calculator.setScriptLogger(SCRIPT_LOGGER)
+                let point = calculator.getCenterPoint()
+                debugInfo('可帮助收取位置：' + JSON.stringify(point))
+                try {
+                  listWriteLock.lock()
+                  collectOrHelpList.push({
+                    point: point,
+                    isHelp: true
+                  })
+                } finally {
+                  executeSuccess = true
+                  countdownLatch.countDown()
+                  listWriteLock.unlock()
+                  calculator = null
+                }
+              } catch (e) {
+                errorInfo(['线程执行异常: {}', e])
+                _commonFunctions.printExceptionStack(e)
+              } finally {
+                if (!executeSuccess) {
+                  countdownLatch.countDown()
+                }
+              }
             })
           } else {
             this.threadPool.execute(function () {
-              let calculator = new ColorCenterCalculatorWithInterval(
-                images.copy(intervalScreenForDetectCollect), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
-              )
-              calculator.setScriptLogger(SCRIPT_LOGGER)
-              let point = calculator.getCenterPoint()
-              if (point.regionSame < (_config.finger_img_pixels || 2300)) {
-                debugInfo('可能可收取位置：' + JSON.stringify(point))
-                listWriteLock.lock()
-                collectOrHelpList.push({ point: point, isHelp: false })
-                countdownLatch.countDown()
-                listWriteLock.unlock()
-              } else {
-                debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame)
-                // 直接标记执行完毕 将OCR请求交给异步处理
-                countdownLatch.countDown()
-                if (_config.useOcr && !_config.is_cycle) {
-                  let countdownImg = images.clip(grayScreen, point.left, point.top, point.right - point.left, point.bottom - point.top)
-                  let base64String = null
+              let executeSuccess = false
+              try {
+                let calculator = new ColorCenterCalculatorWithInterval(
+                  images.copy(intervalScreenForDetectCollect), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
+                )
+                calculator.setScriptLogger(SCRIPT_LOGGER)
+                let point = calculator.getCenterPoint()
+                if (point.regionSame < (_config.finger_img_pixels || 2300)) {
+                  debugInfo('可能可收取位置：' + JSON.stringify(point))
                   try {
-                    base64String = images.toBase64(countdownImg)
-                    if (_config.saveBase64ImgInfo) {
-                      debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「data:image/png;base64,{}」', point.regionSame, base64String])
-                    }
-                  } catch (e) {
-                    errorInfo('存储倒计时图片失败：' + e)
-                    _commonFunctions.printExceptionStack(e)
+                    listWriteLock.lock()
+                    collectOrHelpList.push({ point: point, isHelp: false })
+                    countdownLatch.countDown()
+                    executeSuccess = true
+                  } finally {
+                    listWriteLock.unlock()
                   }
-                  if (base64String) {
-                    if (that.resolved_pixels[point.regionSame]) {
-                      debugInfo(['该像素点总数[{}]已校验过，倒计时值为：{}', point.regionSame, that.resolved_pixels[point.regionSame + 'count']])
-                      return
-                    } else {
-                      debugInfo(['该像素点总数[{}]未校验', point.regionSame])
-                    }
-                    if (point.regionSame >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2) {
-                      // 百度识图API获取文本
-                      let countdown = config.ocrUseCache ? BaiduOcrUtil.tryGetByCache(base64String, point.regionSame)
-                        : BaiduOcrUtil.getDirectly(base64String, point.regionSame)
-                      if (isFinite(countdown) && countdown > 0) {
-                        countdownLock.lock()
-                        // 标记该像素点总数的图片已处理过
-                        that.resolved_pixels[point.regionSame] = true
-                        that.resolved_pixels[point.regionSame + 'count'] = countdown
-                        if (countdown < that.min_countdown) {
-                          debugInfo('设置最小倒计时：' + countdown)
-                          that.min_countdown = countdown
-                          that.min_countdown_pixels = point.regionSame
-                        }
-                        countingDownContainers.push({
-                          countdown: countdown,
-                          stamp: new Date().getTime()
-                        })
-                        countdownLock.unlock()
+                } else {
+                  debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame)
+                  // 直接标记执行完毕 将OCR请求交给异步处理
+                  countdownLatch.countDown()
+                  executeSuccess = true
+                  if (_config.useOcr && !_config.is_cycle) {
+                    let countdownImg = images.clip(grayScreen, point.left, point.top, point.right - point.left, point.bottom - point.top)
+                    let base64String = null
+                    try {
+                      base64String = images.toBase64(countdownImg)
+                      if (_config.saveBase64ImgInfo) {
+                        debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「data:image/png;base64,{}」', point.regionSame, base64String])
                       }
+                    } catch (e) {
+                      errorInfo('存储倒计时图片失败：' + e)
+                      _commonFunctions.printExceptionStack(e)
+                    }
+                    if (base64String) {
+                      if (that.resolved_pixels[point.regionSame]) {
+                        debugInfo(['该像素点总数[{}]已校验过，倒计时值为：{}', point.regionSame, that.resolved_pixels[point.regionSame + 'count']])
+                        return
+                      } else {
+                        debugInfo(['该像素点总数[{}]未校验', point.regionSame])
+                      }
+                      if (point.regionSame >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2) {
+                        // 百度识图API获取文本
+                        let countdown = config.ocrUseCache ? BaiduOcrUtil.tryGetByCache(base64String, point.regionSame)
+                          : BaiduOcrUtil.getDirectly(base64String, point.regionSame)
+                        if (isFinite(countdown) && countdown > 0) {
+                          try {
+                            countdownLock.lock()
+                            // 标记该像素点总数的图片已处理过
+                            that.resolved_pixels[point.regionSame] = true
+                            that.resolved_pixels[point.regionSame + 'count'] = countdown
+                            if (countdown < that.min_countdown) {
+                              debugInfo('设置最小倒计时：' + countdown)
+                              that.min_countdown = countdown
+                              that.min_countdown_pixels = point.regionSame
+                            }
+                            countingDownContainers.push({
+                              countdown: countdown,
+                              stamp: new Date().getTime()
+                            })
+                          } finally {
+                            countdownLock.unlock()
+                          }
+                        }
 
-                    } else {
-                      debugInfo(['当前倒计时校验最小像素阈值：{} 已获取最小倒计时：{}', (_config.ocrThreshold || 2900), that.min_countdown])
+                      } else {
+                        debugInfo(['当前倒计时校验最小像素阈值：{} 已获取最小倒计时：{}', (_config.ocrThreshold || 2900), that.min_countdown])
+                      }
                     }
                   }
                 }
+                calculator = null
+              } catch (e) {
+                errorInfo('线程执行异常' + e)
+                _commonFunctions.printExceptionStack(e)
+              } finally {
+                if (!executeSuccess) {
+                  countdownLatch.countDown()
+                }
               }
-              calculator = null
             })
           }
         })
@@ -304,11 +336,11 @@ const ImgBasedFriendListScanner = function () {
         if (!countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)) {
           let activeCount = this.threadPool.getActiveCount()
           errorInfo('有线程执行失败 运行中的线程数：' + activeCount)
-          if (activeCount > 0) {
-            debugInfo('将线程池关闭然后重建线程池')
-            this.threadPool.shutdownNow()
-            this.createNewThreadPool()
-          }
+          // if (activeCount > 0) {
+          debugInfo('将线程池关闭然后重建线程池')
+          this.threadPool.shutdownNow()
+          this.createNewThreadPool()
+          // }
         }
         countdown.summary('分析所有可帮助和可收取的点')
         if (collectOrHelpList && collectOrHelpList.length > 0) {
