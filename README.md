@@ -5,7 +5,7 @@
 
 基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha2 版本开发。解锁模块参考自：[https://github.com/e1399579/autojs](https://github.com/e1399579/autojs)
 
-- 脚本执行依赖于：[AutoJs 4.1.1 alpha2](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0) 若无法访问请百度搜索一下
+- 脚本执行依赖于：[AutoJs 4.1.1 alpha2](https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/autojs-4.1.1-alpha2.apk) 若无法访问请百度搜索一下
 - 设备系统要求
 
   - 具有 ROOT 权限的安卓 5.0 及以上版本
@@ -20,7 +20,7 @@
 
 ## 使用
 
-- 下载安装 [AutoJs 4.1.1 alpha2](https://www.dropbox.com/s/pe3w53k0fugo1fa/Autojs%204.1.1%20Alpha2.apk?dl=0) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
+- 下载安装 [AutoJs 4.1.1 alpha2](https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/autojs-4.1.1-alpha2.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
 - 给与软件必要权限 `后台弹出界面`、`显示悬浮窗`、`自启动`、`电量无限制`，并将软件保持后台运行
 - 定时启动脚本，点击 `main.js` 的菜单，选择 `更多` `定时任务` 即可配置定时启动
 - 如果运行提示有任务正在队列中，请运行配置 `config.js` 然后进到 `进阶配置` 中勾选 `单脚本运行`，该功能是用于多个脚本同时运行时的任务队列 相当于一个调度程序，避免多个脚本抢占前台导致出错
