@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-02 13:49:54
+ * @Last Modified time: 2020-06-17 19:03:47
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -456,7 +456,6 @@ const BaseScanner = function () {
 
   this.doCollectTargetFriend = function (obj) {
     debugInfo(['准备开始收取好友：「{}」', obj.name])
-    let temp = this.protectDetect(_package_name, obj.name)
     let preGot, postGet, preE, postE, rentery = false
     let screen = null
     if (_config.cutAndSaveTreeCollect) {
@@ -469,6 +468,7 @@ const BaseScanner = function () {
       errorInfo("[" + obj.name + "]获取收集前能量异常" + e)
       _commonFunctions.printExceptionStack(e)
     }
+    let temp = this.protectDetect(_package_name, obj.name)
     if (_config.help_friend) {
       rentery = this.collectAndHelp(obj.isHelp)
     } else {
