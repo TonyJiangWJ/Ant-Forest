@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-11 23:02:46
+ * @Last Modified time: 2020-06-30 22:22:34
  * @Description: 
  */
 'ui';
@@ -37,6 +37,7 @@ let default_config = {
   develop_mode: false,
   check_device_posture: false,
   check_distance: false,
+  posture_threshod_z: 6,
   // 开发用开关，截图并保存一些图片
   // 保存倒计时图片
   cutAndSaveCountdown: false,
@@ -112,6 +113,7 @@ let default_config = {
   secretKey: '',
   my_id: '',
   home_ui_content: '查看更多动态.*',
+  friend_home_check_regex: '浇水',
   friend_home_ui_content: 'TA的好友.*|今天|浇水|.*大树养成记录',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
@@ -222,8 +224,9 @@ if (!isRunningMode) {
   let commonFunctions = require('./lib/prototype/CommonFunction.js')
   let AesUtil = require('./lib/AesUtil.js')
   let FileUtils = require('./lib/prototype/FileUtils.js')
+  let dateFormat = require('./lib/DateUtil.js')
   // 初始化list 为全局变量
-  let whiteList = [], wateringBlackList = [], helpBallColorList = []
+  let whiteList = [], wateringBlackList = [], helpBallColorList = [], protectList = []
 
   let scale = config.device_width / 1080
   let treeCollectXRange, treeCollectYRange, treeCollectHRange, treeCollectWRange
@@ -409,6 +412,7 @@ if (!isRunningMode) {
     whiteList = []
     wateringBlackList = []
     helpBallColorList = []
+    protectList = []
     // 基本配置
     ui.password.text(config.password + '')
     ui.alipayLockPasswordInpt.text(config.alipay_lock_password + '')
@@ -480,7 +484,7 @@ if (!isRunningMode) {
       registerSensors()
     }
     ui.checkDistanceChkBox.setVisibility(config.check_device_posture ? View.VISIBLE : View.GONE)
-    ui.postureThresholdYInpt.setText((config.posture_threshod_y || 6) + '')
+    ui.postureThresholdZInpt.setText((config.posture_threshod_z || 6) + '')
     ui.senrsorInfoContainer.setVisibility(config.check_device_posture ? View.VISIBLE : View.GONE)
     ui.checkDistanceChkBox.setChecked(config.check_distance)
     ui.dismissDialogIfLockedChkBox.setChecked(config.dismiss_dialog_if_locked)
@@ -535,6 +539,7 @@ if (!isRunningMode) {
   let setWidgetUiValues = function () {
     ui.myIdInpt.text(config.my_id)
     ui.homeUiContentInpt.text(config.home_ui_content)
+    ui.friendHomeCheckRegexInpt.text(config.friend_home_check_regex)
     ui.friendHomeUiContentInpt.text(config.friend_home_ui_content)
     ui.friendListIdInpt.text(config.friend_list_id)
     ui.enterFriendListUiContentInpt.text(config.enter_friend_list_ui_content)
@@ -581,6 +586,16 @@ if (!isRunningMode) {
       })
     }
     ui.helpBallColorsList.setDataSource(helpBallColorList)
+
+    // 保护罩使用信息
+    protectList = commonFunctions.getTodaysRuntimeStorage('protectList').protectList || []
+    protectList.map(protectInfo => protectInfo.timeout = dateFormat(new Date(protectInfo.timeout)))
+    ui.protectList.setDataSource(protectList)
+    if (protectList && protectList.length > 0) {
+      ui.protectInfoContainer.setVisibility(View.VISIBLE)
+    } else {
+      ui.protectInfoContainer.setVisibility(View.GONE)
+    }
   }
 
   /**
@@ -790,8 +805,8 @@ if (!isRunningMode) {
                   <checkbox id="checkDevicePostureChkBox" text="锁屏启动检测是否在裤兜内，防止误触" />
                   <checkbox id="checkDistanceChkBox" text="是否同时校验距离传感器，部分设备距离传感器不准，默认不开启" />
                   <vertical id="senrsorInfoContainer" gravity="center">
-                    <text text="y轴重力加速度阈值：（绝对值超过该值判定为在兜里）" />
-                    <input layout_weight="70" inputType="number" id="postureThresholdYInpt" />
+                    <text text="z轴重力加速度阈值：（绝对值小于该值判定为在兜里）" />
+                    <input layout_weight="70" inputType="number" id="postureThresholdZInpt" />
                     <horizontal>
                       <text text="x:" /><text id="gravityXText" margin="5 0" />
                       <text text="y:" /><text id="gravityYText" margin="5 0" />
@@ -1007,6 +1022,25 @@ if (!isRunningMode) {
                     <button w="*" id="addWhite" text="添加" gravity="center" layout_gravity="center" />
                   </vertical>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
+                  {/* 保护罩信息列表 */}
+                  <vertical w="*" gravity="left" layout_gravity="left" margin="10" id="protectInfoContainer">
+                    <text text="保护罩使用信息：（好友昵称 超时时间）" textColor="#666666" textSize="14sp" />
+                    <frame>
+                      <list id="protectList" height="150">
+                        <horizontal w="*" h="40" gravity="left" bg="#efefef" margin="0 5">
+                          <vertical layout_weight='1' gravity="left|center" layout_gravity="left|center">
+                            <text id="name" layout_weight='1' h="30" gravity="left|center" layout_gravity="left|center" textSize="16sp" text="{{name}}" margin="10 0" />
+                            <text id="outDateTime" layout_weight='1' h="30" gravity="left|center" layout_gravity="left|center" textSize="16sp" text="{{timeout}}" margin="10 0" />
+                          </vertical>
+                          <card id="deleteProtect" w="30" h="30" cardBackgroundColor="#fafafa" cardCornerRadius="15dp" layout_gravity="left|center" margin="10 10">
+                            <text textSize="16dp" textColor="#555555" gravity="center">×</text>
+                          </card>
+                        </horizontal>
+                      </list>
+                    </frame>
+                    {/* <button w="*" id="addWhite" text="添加" gravity="center" layout_gravity="center" /> */}
+                  </vertical>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 是否在收取到了一定阈值后自动浇水10克 */}
                   <horizontal gravity="center">
                     <checkbox id="wateringBackChkBox" text="是否浇水回馈" layout_weight="40" />
@@ -1047,6 +1081,10 @@ if (!isRunningMode) {
                   <horizontal gravity="center">
                     <text text="个人首页:" layout_weight="20" />
                     <input inputType="text" id="homeUiContentInpt" layout_weight="80" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="个人首页判断是否好友首页:" layout_weight="20" />
+                    <input inputType="text" id="friendHomeCheckRegexInpt" layout_weight="80" />
                   </horizontal>
                   <horizontal gravity="center">
                     <text text="好友首页:" layout_weight="20" />
@@ -1277,6 +1315,31 @@ if (!isRunningMode) {
           if (ok) {
             whiteList.splice(itemHolder.getPosition(), 1)
             config.white_list.splice(itemHolder.getPosition(), 1)
+          }
+        })
+      })
+    })
+
+    ui.whiteList.setOnTouchListener(new View.OnTouchListener({
+      onTouch: function (v, event) {
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+          ui.parentScrollView2.requestDisallowInterceptTouchEvent(false)
+        } else {
+          // 屏蔽父控件的拦截事件  
+          ui.parentScrollView2.requestDisallowInterceptTouchEvent(true)
+        }
+        return false
+      }
+    }))
+
+    // 保护罩
+    ui.protectList.on('item_bind', function (itemView, itemHolder) {
+      // 绑定删除事件
+      itemView.deleteProtect.on('click', function () {
+        confirm('确定要从保护罩使用列表移除[' + itemHolder.getItem().name + ']这个好友吗？').then(ok => {
+          if (ok) {
+            protectList.splice(itemHolder.getPosition(), 1)
+            commonFunctions.removeFromProtectList(itemHolder.getItem().name)
           }
         })
       })
@@ -1820,11 +1883,11 @@ if (!isRunningMode) {
       TextWatcherBuilder(text => { config.capture_waiting_time = parseInt(text) })
     )
 
-    ui.postureThresholdYInpt.addTextChangedListener(
+    ui.postureThresholdZInpt.addTextChangedListener(
       TextWatcherBuilder(text => {
         let value = parseInt(text)
         if (value > 0 && value < 9) {
-          config.posture_threshod_y = value
+          config.posture_threshod_z = value
         } else {
           toast('请输入一个介于0-9的数字，推荐在4-7之间')
         }
@@ -1997,6 +2060,9 @@ if (!isRunningMode) {
     )
     ui.homeUiContentInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.home_ui_content = text + '' })
+    )
+    ui.friendHomeCheckRegexInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.friend_home_check_regex = text + '' })
     )
     ui.friendHomeUiContentInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.friend_home_ui_content = text + '' })
