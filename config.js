@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-30 22:22:34
+ * @Last Modified time: 2020-07-01 16:13:58
  * @Description: 
  */
 'ui';
@@ -927,6 +927,7 @@ if (!isRunningMode) {
                     </vertical>
                     <text text="可收取小手指的绿色像素点个数，颜色相似度20，1080P时小于1900判定为可收取，其他分辨率需要自行修改=1900*缩放比例^2" textSize="10sp" />
                     <text text="如果还是不行，请分析日志进行调整，日志中会打印同色点个数" textSize="10sp" />
+                    <text text="或者在好友列表中运行test/MockDetect.js查看具体的像素点个数，详细使用见README" textSize="10sp" />
                     <horizontal gravity="center" >
                       <text text="小手指像素点个数:" />
                       <input layout_weight="70" inputType="number" id="fingerImgPixelsInpt" layout_weight="70" />
