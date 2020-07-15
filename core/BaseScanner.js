@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-17 19:03:47
+ * @Last Modified time: 2020-07-16 00:57:19
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -383,19 +383,19 @@ const BaseScanner = function () {
   }
 
   this.protectInfoDetect = function (name) {
-    let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 50, true, true)
+    let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 500, true, true)
     if (usingInfo !== null) {
       let target = usingInfo.target
       let usingTime = null
       debugInfo(['found using protect info, bounds:{}', target.bounds()], true)
       let parent = target.parent().parent()
       let targetRow = parent.row()
-      let time = parent.child(1).text()
+      let time = parent.child(2).text()
       if (!time) {
-        time = parent.child(1).desc()
+        time = parent.child(2).desc()
       }
       let isToday = true
-      let yesterday = _widgetUtils.widgetGetOne('昨天|Yesterday', 50, true, true)
+      let yesterday = _widgetUtils.widgetGetOne('昨天|Yesterday', 1000, true, true)
       let yesterdayRow = null
       if (yesterday !== null) {
         yesterdayRow = yesterday.target.row()
@@ -522,6 +522,12 @@ const BaseScanner = function () {
         images.save(screen, savePath)
         debugForDev(['保存可收取能量球图片：「{}」', savePath])
       }
+    }
+
+    if (collectEnergy === 0 && !obj.isHelp) {
+      // 没有收集到能量，可能有保护罩，等待2秒
+      warnInfo(['非帮助收集，未收集到能量，可能当前好友使用了保护罩，等待2秒'], true)
+      sleep(2000)
     }
 
     if (friendGrowEnergy > 0) {
