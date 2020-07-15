@@ -4,25 +4,24 @@ let WidgetUtils = singletonRequire('WidgetUtils')
 let commonFunctions = singletonRequire('CommonFunction')
 let { config } = require('../config.js')
 let automator = singletonRequire('Automator')
-let Timers = singletonRequire('Timers')(runtime, this)
 let {
   debugInfo, logInfo, infoLog, warnInfo, errorInfo
 } = singletonRequire('LogUtils')
 let formatDate = require('../lib/DateUtil.js')
 
 const protectInfoDetect = function () {
-  let usingInfo = WidgetUtils.widgetGetOne('使用了保护罩', 50, true)
+  let usingInfo = WidgetUtils.widgetGetOne('使用了保护罩', 500, true)
   if (usingInfo !== null) {
     let target = usingInfo.target
     warnInfo(['found using protect info, bounds:{}', target.bounds()], true)
     let parent = target.parent().parent()
     let targetRow = parent.row()
-    let time = parent.child(1).text()
+    let time = parent.child(2).text()
     if (!time) {
-      time = parent.child(1).desc()
+      time = parent.child(2).desc()
     }
     let isToday = true
-    let yesterday = WidgetUtils.widgetGetOne('昨天', 50, true)
+    let yesterday = WidgetUtils.widgetGetOne('昨天', 1000, true)
     let yesterdayRow = null
     if (yesterday !== null) {
       yesterdayRow = yesterday.target.row()
