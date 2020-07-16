@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 09:56:08
+ * @Last Modified time: 2020-07-16 21:33:35
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -33,6 +33,20 @@ let SCRIPT_LOGGER = new ScriptLogger({
 })
 
 const SCALE_RATE = _config.device_width / 1080
+const checkPoints = []
+for (let i = 0; i < 30 * SCALE_RATE; i++) {
+  for (let j = 0; j < 30 * SCALE_RATE; j++) {
+    if (i == j)
+      checkPoints.push([i, j, "#ffffff"])
+  }
+}
+for (let i = 20; i < 30 * SCALE_RATE; i++) {
+  for (let j = 30; j > 20 * SCALE_RATE; j--) {
+    if (i - 20 === (30 - j)) {
+      checkPoints.push([i, j, "#ffffff"])
+    }
+  }
+}
 
 const ImgBasedFriendListScanner = function () {
   BaseScanner.call(this)
@@ -156,6 +170,31 @@ const ImgBasedFriendListScanner = function () {
   }
 
   /**
+   * 判断指定点区域是否可收取
+   * 
+   * @param {*} img 
+   * @param {*} point 
+   */
+  this.checkIsCanCollect = function (img, point) {
+    
+    let height = point.bottom - point.top
+    let width = point.right - point.left
+    debugInfo(['checkPoints: {}', JSON.stringify(checkPoints)])
+    let p = images.findMultiColors(img, "#ffffff", checkPoints, {
+      region: [
+        point.left + width - width / Math.sqrt(2),
+        point.top,
+        width / Math.sqrt(2),
+        height / Math.sqrt(2)
+      ],
+      threshold: 0
+    })
+
+    let flag = p !== null
+    debugInfo(['point: {} 判定结果：{} {}', JSON.stringify(point), flag, JSON.stringify(p)])
+    return flag
+  }
+  /**
    * 执行收集操作
    * 
    * @return { true } if failed
@@ -175,6 +214,7 @@ const ImgBasedFriendListScanner = function () {
       screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
       // 重新复制一份
       grayScreen = images.grayscale(images.copy(screen))
+      let originScreen = images.copy(screen, true)
       intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, '#828282', 1), 5)
       intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
       let countdown = new Countdown()
@@ -256,7 +296,7 @@ const ImgBasedFriendListScanner = function () {
                 )
                 calculator.setScriptLogger(SCRIPT_LOGGER)
                 let point = calculator.getCenterPoint()
-                if (point.regionSame < (_config.finger_img_pixels || 2300)) {
+                if (that.checkIsCanCollect(images.copy(originScreen), point)) {
                   debugInfo('可能可收取位置：' + JSON.stringify(point))
                   try {
                     listWriteLock.lock()
@@ -342,6 +382,7 @@ const ImgBasedFriendListScanner = function () {
           this.createNewThreadPool()
           // }
         }
+        originScreen.recycle()
         countdown.summary('分析所有可帮助和可收取的点')
         if (collectOrHelpList && collectOrHelpList.length > 0) {
           debugInfo(['开始收集和帮助收取，总数：{}', collectOrHelpList.length])
