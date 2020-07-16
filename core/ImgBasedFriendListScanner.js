@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 21:33:35
+ * @Last Modified time: 2020-07-16 23:43:21
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -214,7 +214,7 @@ const ImgBasedFriendListScanner = function () {
       screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
       // 重新复制一份
       grayScreen = images.grayscale(images.copy(screen))
-      let originScreen = images.copy(screen, true)
+      let originScreen = images.copy(screen)
       intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, '#828282', 1), 5)
       intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
       let countdown = new Countdown()
