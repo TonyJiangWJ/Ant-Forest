@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 00:57:19
+ * @Last Modified time: 2020-07-16 09:17:53
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -524,7 +524,7 @@ const BaseScanner = function () {
       }
     }
 
-    if (collectEnergy === 0 && !obj.isHelp) {
+    if (collectEnergy === 0 && !obj.isHelp && !obj.recheck) {
       // 没有收集到能量，可能有保护罩，等待2秒
       warnInfo(['非帮助收集，未收集到能量，可能当前好友使用了保护罩，等待2秒'], true)
       sleep(2000)
@@ -562,6 +562,7 @@ const BaseScanner = function () {
     }
     if (rentery) {
       obj.isHelp = false
+      obj.recheck = true
       return this.collectTargetFriend(obj)
     }
     return true

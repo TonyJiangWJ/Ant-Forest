@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-16 18:51:28
+ * @Last Modified time: 2020-07-16 09:55:06
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -451,7 +451,7 @@ FriendListScanner.prototype.collectTargetFriend = function (obj) {
       errorInfo('页面流程出错，重新开始')
       return false
     }
-    if (this.protectInfoDetect(obj.name)) {
+    if (!obj.recheck && this.protectInfoDetect(obj.name)) {
       warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
       return this.returnToListAndCheck()
     }
