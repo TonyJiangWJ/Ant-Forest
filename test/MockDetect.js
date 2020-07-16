@@ -2,11 +2,10 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 00:37:31
+ * @Last Modified time: 2020-07-16 20:12:55
  * @Description: 
  */
 runtime.loadDex('../lib/color-region-center.dex')
-
 importClass(com.tony.ColorCenterCalculatorWithInterval)
 importClass(com.tony.ScriptLogger)
 importClass(java.util.concurrent.LinkedBlockingQueue)

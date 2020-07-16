@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-07-06 00:08:21
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 00:52:35
+ * @Last Modified time: 2020-07-16 20:12:39
  * @Description: 
  */ 
 
@@ -17,7 +17,7 @@ let {
 let formatDate = require('../lib/DateUtil.js')
 
 const protectInfoDetect = function () {
-  let usingInfo = WidgetUtils.widgetGetOne('.*使用了保护罩.*', 500, true)
+  let usingInfo = WidgetUtils.widgetGetOne('使用了保护罩', 500, true)
   if (usingInfo !== null) {
     let target = usingInfo.target
     warnInfo(['found using protect info, bounds:{}', target.bounds()], true)
