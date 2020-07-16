@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 00:53:34
+ * @Last Modified time: 2020-07-16 21:37:29
  * @Description: 
  */
 runtime.loadDex('../lib/color-region-center.dex')
@@ -61,7 +61,20 @@ function CollectDetect () {
   this.last_check_point = null
   this.last_check_color = null
   const SCALE_RATE = _config.device_width / 1080
-
+  const checkPoints = []
+  for (let i = 0; i < 30 * SCALE_RATE; i++) {
+    for (let j = 0; j < 30 * SCALE_RATE; j++) {
+      if (i == j)
+        checkPoints.push([i, j, "#ffffff"])
+    }
+  }
+  for (let i = 20; i < 30 * SCALE_RATE; i++) {
+    for (let j = 30; j > 20 * SCALE_RATE; j--) {
+      if (i - 20 === (30 - j)) {
+        checkPoints.push([i, j, "#ffffff"])
+      }
+    }
+  }
 
   this.init = function () {
     this.createNewThreadPool()
@@ -123,6 +136,26 @@ function CollectDetect () {
     this.threadPool = null
   }
 
+  this.checkIsCanCollect = function (img, point) {
+    
+    let height = point.bottom - point.top
+    let width = point.right - point.left
+    debugInfo(['checkPoints: {}', JSON.stringify(checkPoints)])
+    let p = images.findMultiColors(img, "#ffffff", checkPoints, {
+      region: [
+        point.left + width - width / Math.sqrt(2),
+        point.top,
+        width / Math.sqrt(2),
+        height / Math.sqrt(2)
+      ],
+      threshold: 0
+    })
+
+    let flag = p !== null
+    debugInfo(['point: {} 判定结果：{} {}', JSON.stringify(point), flag, JSON.stringify(p)])
+    return flag
+  }
+
   this.collecting = function () {
     let screen = null
     let grayScreen = null
@@ -131,6 +164,7 @@ function CollectDetect () {
     screen = captureScreen()
     // 重新复制一份
     grayScreen = images.grayscale(images.copy(screen))
+    let originScreen = images.copy(screen, true)
     intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, '#828282', 1), 5)
     intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
     let countdown = new Countdown()
@@ -171,6 +205,7 @@ function CollectDetect () {
       let listWriteLock = threads.lock()
       let collectOrHelpList = []
       let countdownList = []
+      let that = this
       waitForCheckPoints.forEach(pointData => {
         if (pointData.isHelp) {
           this.threadPool.execute(function () {
@@ -196,19 +231,23 @@ function CollectDetect () {
             )
             calculator.setScriptLogger(SCRIPT_LOGGER)
             let point = calculator.getCenterPoint()
-            if (point.regionSame < (_config.finger_img_pixels || 2300)) {
-              debugInfo('可能可收取位置：' + JSON.stringify(point))
-              listWriteLock.lock()
-              collectOrHelpList.push({ point: point, isHelp: false })
-              countdownLatch.countDown()
-              listWriteLock.unlock()
-            } else {
-              debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame)
-              // 直接标记执行完毕 将OCR请求交给异步处理
-              listWriteLock.lock()
-              countdownList.push({ point: point, isCountdown: true })
-              countdownLatch.countDown()
-              listWriteLock.unlock()
+            try {
+              if (that.checkIsCanCollect(images.copy(originScreen), point)) {
+                debugInfo('判定可收取位置：' + JSON.stringify(point))
+                listWriteLock.lock()
+                collectOrHelpList.push({ point: point, isHelp: false })
+                countdownLatch.countDown()
+                listWriteLock.unlock()
+              } else {
+                debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame)
+                // 直接标记执行完毕 将OCR请求交给异步处理
+                listWriteLock.lock()
+                countdownList.push({ point: point, isCountdown: true })
+                countdownLatch.countDown()
+                listWriteLock.unlock()
+              }
+            } catch (e) {
+              errorInfo('发生异常：' + e)
             }
             calculator = null
           })
@@ -224,6 +263,7 @@ function CollectDetect () {
           this.createNewThreadPool()
         }
       }
+      originScreen.recycle()
       countdown.summary('分析所有可帮助和可收取的点')
       return collectOrHelpList.concat(countdownList)
     }
@@ -238,7 +278,7 @@ function CollectDetect () {
 
   this.detectCollect = function (img) {
     let collectPoints = this.detectColors(img)
-    debugInfo('可收取的点：' + JSON.stringify(collectPoints))
+    debugInfo('可能可收取的点：' + JSON.stringify(collectPoints))
     return collectPoints
   }
 

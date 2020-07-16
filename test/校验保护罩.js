@@ -1,3 +1,10 @@
+/*
+ * @Author: TonyJiangWJ
+ * @Date: 2020-07-06 00:08:21
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2020-07-16 20:12:39
+ * @Description: 
+ */ 
 
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let WidgetUtils = singletonRequire('WidgetUtils')
