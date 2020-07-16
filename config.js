@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-01 16:13:58
+ * @Last Modified time: 2020-07-16 21:39:50
  * @Description: 
  */
 'ui';
@@ -66,8 +66,6 @@ let default_config = {
   checkBottomBaseImg: true,
   // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
   friendListScrollTime: 30,
-  // 可收取小手指绿色像素点个数，1080P分辨率是这个数值，其他分辨率请自己修改
-  finger_img_pixels: 1900,
   thread_pool_size: 4,
   thread_pool_max_size: 8,
   thread_pool_queue_size: 16,
@@ -274,7 +272,6 @@ if (!isRunningMode) {
 
   let setImageBasedUiVal = function () {
     ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
-    ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
     ui.checkBottomBaseImgChkBox.setChecked(config.checkBottomBaseImg)
     ui.baseOnImageContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
@@ -925,13 +922,6 @@ if (!isRunningMode) {
                         <seekbar id="rankCheckRegionHSeekbar" progress="20" layout_weight="85" />
                       </horizontal>
                     </vertical>
-                    <text text="可收取小手指的绿色像素点个数，颜色相似度20，1080P时小于1900判定为可收取，其他分辨率需要自行修改=1900*缩放比例^2" textSize="10sp" />
-                    <text text="如果还是不行，请分析日志进行调整，日志中会打印同色点个数" textSize="10sp" />
-                    <text text="或者在好友列表中运行test/MockDetect.js查看具体的像素点个数，详细使用见README" textSize="10sp" />
-                    <horizontal gravity="center" >
-                      <text text="小手指像素点个数:" />
-                      <input layout_weight="70" inputType="number" id="fingerImgPixelsInpt" layout_weight="70" />
-                    </horizontal>
                     <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                     <checkbox id="checkBottomBaseImgChkBox" text="基于图像判断列表底部" />
                     <vertical id="bottomCheckContainer">
@@ -2048,9 +2038,6 @@ if (!isRunningMode) {
 
     ui.friendListScrollTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.friendListScrollTime = parseInt(text) })
-    )
-    ui.fingerImgPixelsInpt.addTextChangedListener(
-      TextWatcherBuilder(text => { config.finger_img_pixels = parseInt(text) })
     )
     ui.delayStartTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.delayStartTime = parseInt(text) })

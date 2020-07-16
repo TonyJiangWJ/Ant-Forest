@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 20:12:55
+ * @Last Modified time: 2020-07-16 21:37:29
  * @Description: 
  */
 runtime.loadDex('../lib/color-region-center.dex')
@@ -61,7 +61,20 @@ function CollectDetect () {
   this.last_check_point = null
   this.last_check_color = null
   const SCALE_RATE = _config.device_width / 1080
-
+  const checkPoints = []
+  for (let i = 0; i < 30 * SCALE_RATE; i++) {
+    for (let j = 0; j < 30 * SCALE_RATE; j++) {
+      if (i == j)
+        checkPoints.push([i, j, "#ffffff"])
+    }
+  }
+  for (let i = 20; i < 30 * SCALE_RATE; i++) {
+    for (let j = 30; j > 20 * SCALE_RATE; j--) {
+      if (i - 20 === (30 - j)) {
+        checkPoints.push([i, j, "#ffffff"])
+      }
+    }
+  }
 
   this.init = function () {
     this.createNewThreadPool()
@@ -124,22 +137,19 @@ function CollectDetect () {
   }
 
   this.checkIsCanCollect = function (img, point) {
-    let checkPoints = []
-    for (let i = 0; i < 30 * SCALE_RATE; i++) {
-      for (let j = 0; j < 30 * SCALE_RATE; j++) {
-        if (i == j)
-          checkPoints.push([i, j, "#ffffff"])
-      }
-    }
-    for (let i = 20; i<30*SCALE_RATE;i++) {
-      for (let j = 30;j>20*SCALE_RATE;j--) {
-        if (i-20 === (30-j)) {
-          checkPoints.push([i, j, "#ffffff"])
-        }
-      }
-    }
+    
+    let height = point.bottom - point.top
+    let width = point.right - point.left
     debugInfo(['checkPoints: {}', JSON.stringify(checkPoints)])
-    let p = images.findMultiColors(img, "#ffffff", checkPoints, { region: [point.left, point.top, point.bottom - point.top, point.right - point.left] })
+    let p = images.findMultiColors(img, "#ffffff", checkPoints, {
+      region: [
+        point.left + width - width / Math.sqrt(2),
+        point.top,
+        width / Math.sqrt(2),
+        height / Math.sqrt(2)
+      ],
+      threshold: 0
+    })
 
     let flag = p !== null
     debugInfo(['point: {} 判定结果：{} {}', JSON.stringify(point), flag, JSON.stringify(p)])
