@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-02 15:16:30
+ * @Last Modified time: 2020-07-22 17:41:58
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -19,6 +19,7 @@ if (_config.base_on_image) {
   ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
 }
 let BaseScanner = require('./BaseScanner.js')
+let _scope_ = this
 
 function Ant_forest () {
   const _package_name = 'com.eg.android.AlipayGphone'
@@ -42,7 +43,7 @@ function Ant_forest () {
 
   // 进入蚂蚁森林主页
   const startApp = function () {
-    _commonFunctions.launchPackage(_package_name, false)
+    _commonFunctions.launchPackage(_package_name)
     if (_config.is_alipay_locked) {
       alipayUnlocker.unlockAlipay()
     }
@@ -369,8 +370,9 @@ function Ant_forest () {
     } else {
       // 永不终止模式，判断倒计时不存在，直接等待配置的激活时间
       if (_config.never_stop) {
-        if (_commonFunctions.isEmpty(_min_countdown) || _min_countdown > _config.reactive_time) {
-          _min_countdown = _config.reactive_time || 60
+        let reactiveTime = _config.getReactiveTime()
+        if (_commonFunctions.isEmpty(_min_countdown) || _min_countdown > reactiveTime) {
+          _min_countdown = reactiveTime || 60
         }
         _has_next = true
         return
@@ -678,6 +680,14 @@ function Ant_forest () {
       _commonFunctions.showDialogAndWait(true)
       this.listenStopCollect()
       _commonFunctions.showEnergyInfo()
+      if (!(images.hasOwnProperty('isDelegated') && images.isDelegated())) {
+        warnInfo('图片资源代理丢失，重新启动')
+        _commonFunctions.getAndUpdateDismissReason('_lost_image_delegate')
+        _runningQueueDispatcher.executeTargetScript(FileUtils.getRealMainScriptPath())
+        exit()
+      } else {
+        debugInfo('图片资源代理正常')
+      }
     }
 
     this.endLoop = function () {

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 21:39:50
+ * @Last Modified time: 2020-07-22 17:52:03
  * @Description: 
  */
 'ui';
@@ -181,6 +181,18 @@ if (!isRunningMode) {
   }
   module.exports = function (__runtime__, scope) {
     if (typeof scope.config_instance === 'undefined') {
+      config.getReactiveTime = () => {
+        let reactiveTime = config.reactive_time
+        if (isNaN(reactiveTime)) {
+          let rangeRegex = /^(\d+)-(\d+)$/
+          let result = rangeRegex.exec(reactiveTime)
+          let start = parseInt(result[1])
+          let end = parseInt(result[2])
+          return parseInt(start + Math.random() * (end - start))
+        } else {
+          return reactiveTime
+        }
+      }
       scope.config_instance = {
         config: config,
         default_config: default_config,
@@ -452,6 +464,16 @@ if (!isRunningMode) {
     ui.isNeverStopChkBox.setChecked(config.never_stop)
     ui.reactiveTimeContainer.setVisibility(config.never_stop ? View.VISIBLE : View.INVISIBLE)
     ui.reactiveTimeInpt.text(config.reactive_time + '')
+    let reactiveTime = config.reactive_time
+    let rangeCheckRegex = /^(\d+)-(\d+)$/
+    if (rangeCheckRegex.test(reactiveTime)) {
+      let execResult = rangeCheckRegex.exec(reactiveTime)
+      let start = parseInt(execResult[1])
+      let end = parseInt(execResult[2])
+      ui.reactiveTimeDisplay.setText('当前设置为从 ' + start + ' 到 ' + end + ' 分钟的随机范围')
+    } else {
+      ui.reactiveTimeDisplay.setText('当前设置为 ' + reactiveTime + ' 分钟')
+    }
 
     ui.delayStartTimeInpt.text(config.delayStartTime + '')
 
@@ -732,6 +754,8 @@ if (!isRunningMode) {
                   {/* 是否永不停止 */}
                   <vertical id="neverStopContainer">
                     <text text="永不停止模式请不要全天24小时运行，具体见README" />
+                    <text text="重新激活时间可以选择随机范围，按如下格式输入即可：30-40" textSize="10sp" />
+                    <text id="reactiveTimeDisplay" textSize="10sp" />
                     <horizontal gravity="center">
                       <checkbox id="isNeverStopChkBox" text="是否永不停止" />
                       <horizontal padding="10 0" id="reactiveTimeContainer" gravity="center" layout_weight="75">
@@ -1855,7 +1879,31 @@ if (!isRunningMode) {
     )
 
     ui.reactiveTimeInpt.addTextChangedListener(
-      TextWatcherBuilder(text => { config.reactive_time = parseInt(text) })
+      TextWatcherBuilder(text => {
+        let reactiveTime = text
+        let rangeCheckRegex = /^(\d+)-(\d+)$/
+        if (isNaN(reactiveTime)) {
+          if (rangeCheckRegex.test(reactiveTime)) {
+            let execResult = rangeCheckRegex.exec(reactiveTime)
+            let start = parseInt(execResult[1])
+            let end = parseInt(execResult[2])
+            if (start < end && start > 0) {
+              config.reactive_time = reactiveTime
+              ui.reactiveTimeDisplay.setText('当前设置为从 ' + start + ' 到 ' + end + ' 分钟的随机范围')
+            } else {
+              toast('随机范围应当大于零，且 start < end')
+            }
+          } else {
+            toast('随机范围请按此格式输入: 5-10')
+          }
+        } else {
+          reactiveTime = parseInt(reactiveTime)
+          if (reactiveTime > 0) {
+            config.reactive_time = reactiveTime
+            ui.reactiveTimeDisplay.setText('当前设置为 ' + reactiveTime + ' 分钟')
+          }
+        }
+      })
     )
 
     ui.timeoutUnlockInpt.addTextChangedListener(
