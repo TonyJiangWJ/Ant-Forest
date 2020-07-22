@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 09:17:53
+ * @Last Modified time: 2020-07-22 09:09:47
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -490,6 +490,21 @@ const BaseScanner = function () {
     } else {
       debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
     }
+    if (collectEnergy === 0 && !obj.isHelp && !obj.recheck) {
+      // 没有收集到能量，可能有保护罩，等待2秒
+      warnInfo(['非帮助收集，未收集到能量，可能当前好友使用了保护罩，等待2秒'], true)
+      sleep(2000)
+      try {
+        // 2秒后重新获取能量值
+        postGet = _widgetUtils.getYouCollectEnergy() || 0
+        postE = _widgetUtils.getFriendEnergy()
+        collectEnergy = postGet - preGot
+        friendGrowEnergy = postE - preE
+      } catch (e) {
+        errorInfo("[" + obj.name + "]二次获取收取后能量异常" + e)
+        _commonFunctions.printExceptionStack(e)
+      }
+    }
     if (collectEnergy > 0) {
       let gotEnergyAfterWater = collectEnergy
       this.collect_any = true
@@ -522,12 +537,6 @@ const BaseScanner = function () {
         images.save(screen, savePath)
         debugForDev(['保存可收取能量球图片：「{}」', savePath])
       }
-    }
-
-    if (collectEnergy === 0 && !obj.isHelp && !obj.recheck) {
-      // 没有收集到能量，可能有保护罩，等待2秒
-      warnInfo(['非帮助收集，未收集到能量，可能当前好友使用了保护罩，等待2秒'], true)
-      sleep(2000)
     }
 
     if (friendGrowEnergy > 0) {

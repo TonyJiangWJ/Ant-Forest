@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-06-10 00:14:50
+ * @Last Modified time: 2020-07-22 19:49:51
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -21,8 +21,20 @@ if (config.base_on_image) {
 }
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
-let FloatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
+// 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
+if (config.single_script) {
+  logInfo('======单脚本运行直接清空任务队列=======')
+  runningQueueDispatcher.clearAll()
+}
+logInfo('======尝试加入任务队列，并关闭重复运行的脚本=======')
+// 加入任务队列
+runningQueueDispatcher.addRunningTask()
+commonFunctions.killDuplicateScript()
+logInfo('======加入任务队列成功=======')
+
+
+let FloatyInstance = singletonRequire('FloatyUtil')
 let FileUtils = singletonRequire('FileUtils')
 let tryRequestScreenCapture = singletonRequire('TryRequestScreenCapture')
 let callStateListener = config.enable_call_state_control ? singletonRequire('CallStateListener') : { exitIfNotIdle: () => { } }
@@ -33,17 +45,15 @@ let antForestRunner = require('./core/Ant_forest.js')
 let formatDate = require('./lib/DateUtil.js')
 
 callStateListener.exitIfNotIdle()
-// 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
-if (config.single_script) {
-  logInfo('======单脚本运行直接清空任务队列=======')
-  runningQueueDispatcher.clearAll()
-}
-logInfo('======加入任务队列，并关闭重复运行的脚本=======')
-runningQueueDispatcher.addRunningTask()
-// 加入任务队列
-commonFunctions.killDuplicateScript()
 // 注册自动移除运行中任务
-commonFunctions.registerOnEngineRemoved(function () { runningQueueDispatcher.removeRunningTask(true, true) })
+commonFunctions.registerOnEngineRemoved(function () {
+  // 移除运行中任务
+  runningQueueDispatcher.removeRunningTask(true, true)
+  // 重置自动亮度
+  if (_config.auto_set_brightness) {
+    device.setBrightnessMode(1)
+  }
+})
 /***********************
  * 初始化
  ***********************/

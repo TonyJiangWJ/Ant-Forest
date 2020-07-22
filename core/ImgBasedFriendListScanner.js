@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 23:43:21
+ * @Last Modified time: 2020-07-21 10:59:30
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -179,7 +179,7 @@ const ImgBasedFriendListScanner = function () {
     
     let height = point.bottom - point.top
     let width = point.right - point.left
-    debugInfo(['checkPoints: {}', JSON.stringify(checkPoints)])
+    debugForDev(['checkPoints: {}', JSON.stringify(checkPoints)])
     let p = images.findMultiColors(img, "#ffffff", checkPoints, {
       region: [
         point.left + width - width / Math.sqrt(2),
