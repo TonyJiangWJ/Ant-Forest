@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-22 17:41:58
+ * @Last Modified time: 2020-07-29 17:08:58
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -19,7 +19,6 @@ if (_config.base_on_image) {
   ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
 }
 let BaseScanner = require('./BaseScanner.js')
-let _scope_ = this
 
 function Ant_forest () {
   const _package_name = 'com.eg.android.AlipayGphone'
@@ -370,9 +369,10 @@ function Ant_forest () {
     } else {
       // 永不终止模式，判断倒计时不存在，直接等待配置的激活时间
       if (_config.never_stop) {
-        let reactiveTime = _config.getReactiveTime()
+        let reactiveTime = _config.getReactiveTime() || 60
         if (_commonFunctions.isEmpty(_min_countdown) || _min_countdown > reactiveTime) {
-          _min_countdown = reactiveTime || 60
+          debugInfo(['永不停止模式，已经获取倒计时[{}]大于重新激活时间，设置倒计时时间为：{}', _min_countdowm, reactiveTime])
+          _min_countdown = reactiveTime
         }
         _has_next = true
         return

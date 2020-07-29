@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-21 10:59:30
+ * @Last Modified time: 2020-07-29 15:55:08
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -170,7 +170,7 @@ const ImgBasedFriendListScanner = function () {
   }
 
   /**
-   * 判断指定点区域是否可收取
+   * 判断指定点区域是否为可收取的小手图标
    * 
    * @param {*} img 
    * @param {*} point 

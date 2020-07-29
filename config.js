@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-22 17:52:03
+ * @Last Modified time: 2020-07-29 13:44:58
  * @Description: 
  */
 'ui';
@@ -21,6 +21,7 @@ let default_config = {
   min_floaty_x: 150,
   min_floaty_y: 20,
   min_floaty_color: '#00ff00',
+  min_floaty_text_size: 8,
   help_friend: true,
   is_cycle: false,
   cycle_times: 10,
@@ -441,6 +442,7 @@ if (!isRunningMode) {
     ui.floatyXSeekBar.setProgress(parseInt(config.min_floaty_x / config.device_width * 100))
     ui.floatyY.text(config.min_floaty_y + '')
     ui.floatyYSeekBar.setProgress(parseInt(config.min_floaty_y / config.device_height * 100))
+    ui.floatyTextSizeInpt.text(config.min_floaty_text_size + '')
     ui.colorSelectorChkBox.setChecked(false)
     ui.colorSelectorContainer.setVisibility(View.GONE)
     setColorSeekBar()
@@ -649,8 +651,7 @@ if (!isRunningMode) {
       onTextChanged: (text) => {
         textCallback(text + '')
       },
-      beforeTextChanged: function (s) { }
-      ,
+      beforeTextChanged: function (s) { },
       afterTextChanged: function (s) { }
     })
   }
@@ -717,6 +718,10 @@ if (!isRunningMode) {
                         <text text="y:" />
                         <seekbar id="floatyYSeekBar" progress="20" layout_weight="80" />
                         <text id="floatyY" />
+                      </horizontal>
+                      <horizontal margin="10 0" gravity="center">
+                        <text text="悬浮窗字体大小:" />
+                        <input id="floatyTextSizeInpt" inputType="number" />
                       </horizontal>
                     </vertical>
                     <vertical padding="12" layout_weight="25">
@@ -1550,6 +1555,7 @@ if (!isRunningMode) {
                 floatyWindow.content.setTextColor(colors.parseColor(config.min_floaty_color))
                 floatyWindow.setPosition(config.min_floaty_x, config.min_floaty_y)
                 floatyWindow.content.text('悬浮窗' + count + '秒后关闭')
+                floatyWindow.content.setTextSize(config.min_floaty_text_size)
               }
             } finally {
               floatyLock.unlock()
@@ -1868,6 +1874,12 @@ if (!isRunningMode) {
       ui.alipayLockPasswordContainer.setVisibility(config.is_alipay_locked ? View.VISIBLE : View.GONE)
     })
 
+    ui.floatyTextSizeInpt.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        config.min_floaty_text_size = parseInt(text)
+        setFloatyStatusIfExist()
+      })
+    )
     ui.cycleTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.cycle_times = parseInt(text) })
     )
@@ -1901,6 +1913,8 @@ if (!isRunningMode) {
           if (reactiveTime > 0) {
             config.reactive_time = reactiveTime
             ui.reactiveTimeDisplay.setText('当前设置为 ' + reactiveTime + ' 分钟')
+          } else {
+            toast('请输入正整数')
           }
         }
       })
