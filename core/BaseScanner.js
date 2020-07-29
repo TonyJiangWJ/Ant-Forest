@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-22 09:09:47
+ * @Last Modified time: 2020-07-29 17:07:53
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -306,6 +306,11 @@ const BaseScanner = function () {
       let that = this
       energyBalls.forEach(function (energy_ball) {
         let bounds = energy_ball.bounds()
+        let text = energy_ball.text() || ''
+        let desc = energy_ball.desc() || ''
+        if (!(/^\s*$/.test(text) && /^\s*$/.test(desc))) {
+          return
+        }
         let o_x = bounds.left,
           o_y = bounds.top,
           o_w = bounds.width() + 5,
