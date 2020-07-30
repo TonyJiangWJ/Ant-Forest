@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-29 15:55:08
+ * @Last Modified time: 2020-07-30 17:56:02
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -154,6 +154,7 @@ const ImgBasedFriendListScanner = function () {
 
     if (shouldScrollUp) {
       debugInfo(['校验点颜色相同，上划重新触发加载，{}', JSON.stringify(last_p)])
+      _widgetUtils.tryFindBottomRegion(grayImg)
       automator.scrollUp()
     }
 

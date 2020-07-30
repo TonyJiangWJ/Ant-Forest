@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-29 13:44:58
+ * @Last Modified time: 2020-07-30 20:54:43
  * @Description: 
  */
 'ui';
@@ -175,9 +175,24 @@ if (!isRunningMode) {
       exit()
     }
 
-    if (config.checkBottomBaseImg && config.bottom_check_top > config.device_height) {
-      toastLog('请运行config.js 修改基于图像判断底部的范围')
-      exit()
+    if (config.base_on_image && config.direct_use_img_collect_and_help) {
+      if (config.tree_collect_width + config.tree_collect_left > config.device_width) {
+        toastLog('请先运行config.js修改能量球识别区域，具体操作见README.md')
+        exit()
+      }
+    }
+    if (config.bottom_check_top > config.device_height) {
+      config.bottom_check_top = config.device_height - 50
+      config.bottom_check_width = config.device_width - 50
+      storageConfig.put('bottom_check_top', config.bottom_check_top)
+      storageConfig.put('bottom_check_width', config.bottom_check_width)
+    }
+
+    if (config.rank_check_left + config.rank_check_width > config.device_width) {
+      onfig.rank_check_left = 100
+      config.rank_check_width = 100
+      storageConfig.put('rank_check_left', config.rank_check_left)
+      storageConfig.put('rank_check_width', config.rank_check_width)
     }
   }
   module.exports = function (__runtime__, scope) {
@@ -245,6 +260,7 @@ if (!isRunningMode) {
   let bottomCheckRegionXRange, bottomCheckRegionYRange, bottomCheckRegionHRange, bottomCheckRegionWRange = [5, 50]
 
   let gravitySensor, distanceSensor
+  let stopEmitUntil = 0
 
 
   function registerSensors () {
@@ -1625,55 +1641,69 @@ if (!isRunningMode) {
     function getTrueValue (progress, rangeInfo) {
       return parseInt(rangeInfo[0] + getGap(rangeInfo) * progress / 100)
     }
+    let textChangeCall = () => {
+      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+    }
+    let setRegionInptVal = () => {
+      textChangeCall()
+      stopEmitUntil = new Date().getTime() + 3000
+      sendConfigChangedBroadcast()
+    }
     ui.collectRegionXSeekbar.on('touch', () => {
       config.tree_collect_left = getTrueValue(ui.collectRegionXSeekbar.getProgress(), treeCollectXRange)
-      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+      setRegionInptVal()
     })
     ui.collectRegionYSeekbar.on('touch', () => {
       config.tree_collect_top = getTrueValue(ui.collectRegionYSeekbar.getProgress(), treeCollectYRange)
-      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+      setRegionInptVal()
     })
     ui.collectRegionWSeekbar.on('touch', () => {
       config.tree_collect_width = getTrueValue(ui.collectRegionWSeekbar.getProgress(), treeCollectWRange)
-      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+      setRegionInptVal()
     })
     ui.collectRegionHSeekbar.on('touch', () => {
       config.tree_collect_height = getTrueValue(ui.collectRegionHSeekbar.getProgress(), treeCollectHRange)
-      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+      setRegionInptVal()
     })
 
+    textChangeCall = () => {
+      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
+    }
     ui.rankCheckRegionXSeekbar.on('touch', () => {
       config.rank_check_left = getTrueValue(ui.rankCheckRegionXSeekbar.getProgress(), rankCheckRegionXRange)
-      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
+      setRegionInptVal()
     })
     ui.rankCheckRegionYSeekbar.on('touch', () => {
       config.rank_check_top = getTrueValue(ui.rankCheckRegionYSeekbar.getProgress(), rankCheckRegionYRange)
-      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
+      setRegionInptVal()
     })
     ui.rankCheckRegionWSeekbar.on('touch', () => {
       config.rank_check_width = getTrueValue(ui.rankCheckRegionWSeekbar.getProgress(), rankCheckRegionWRange)
-      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
+      setRegionInptVal()
     })
     ui.rankCheckRegionHSeekbar.on('touch', () => {
       config.rank_check_height = getTrueValue(ui.rankCheckRegionHSeekbar.getProgress(), rankCheckRegionHRange)
-      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
+      setRegionInptVal()
     })
 
+    textChangeCall = () => {
+      ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+    }
     ui.bottomCheckRegionXSeekbar.on('touch', () => {
       config.bottom_check_left = getTrueValue(ui.bottomCheckRegionXSeekbar.getProgress(), bottomCheckRegionXRange)
-      ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+      setRegionInptVal()
     })
     ui.bottomCheckRegionYSeekbar.on('touch', () => {
       config.bottom_check_top = getTrueValue(ui.bottomCheckRegionYSeekbar.getProgress(), bottomCheckRegionYRange)
-      ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+      setRegionInptVal()
     })
     ui.bottomCheckRegionWSeekbar.on('touch', () => {
       config.bottom_check_width = getTrueValue(ui.bottomCheckRegionWSeekbar.getProgress(), bottomCheckRegionHRange)
-      ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+      setRegionInptVal()
     })
     ui.bottomCheckRegionHSeekbar.on('touch', () => {
       config.bottom_check_height = getTrueValue(ui.bottomCheckRegionHSeekbar.getProgress(), bottomCheckRegionWRange)
-      ui.bottomCheckRegionInpt.text(config.bottom_check_left + ',' + config.bottom_check_top + ',' + config.bottom_check_width + ',' + config.bottom_check_height)
+      setRegionInptVal()
     })
 
 
@@ -2140,50 +2170,56 @@ if (!isRunningMode) {
     )
     ui.rankCheckRegionInpt.addTextChangedListener(
       TextWatcherBuilder(text => {
-        let newVal = text + ''
-        let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
-        if (regex.test(newVal)) {
-          let match = regex.exec(newVal)
-          config.rank_check_left = parseInt(match[1])
-          config.rank_check_top = parseInt(match[2])
-          config.rank_check_width = parseInt(match[3])
-          config.rank_check_height = parseInt(match[4])
-          setRegionSeekBars()
-        } else {
-          toast('输入值无效')
+        if (new Date().getTime() > stopEmitUntil) {
+          let newVal = text + ''
+          let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
+          if (regex.test(newVal)) {
+            let match = regex.exec(newVal)
+            config.rank_check_left = parseInt(match[1])
+            config.rank_check_top = parseInt(match[2])
+            config.rank_check_width = parseInt(match[3])
+            config.rank_check_height = parseInt(match[4])
+            setRegionSeekBars()
+          } else {
+            toast('输入值无效')
+          }
         }
       })
     )
     ui.treeCollectRegionInpt.addTextChangedListener(
       TextWatcherBuilder(text => {
-        let newVal = text + ''
-        let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
-        if (regex.test(newVal)) {
-          let match = regex.exec(newVal)
-          config.tree_collect_left = parseInt(match[1])
-          config.tree_collect_top = parseInt(match[2])
-          config.tree_collect_width = parseInt(match[3])
-          config.tree_collect_height = parseInt(match[4])
-          setRegionSeekBars()
-        } else {
-          toast('输入值无效')
+        if (new Date().getTime() > stopEmitUntil) {
+          let newVal = text + ''
+          let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
+          if (regex.test(newVal)) {
+            let match = regex.exec(newVal)
+            config.tree_collect_left = parseInt(match[1])
+            config.tree_collect_top = parseInt(match[2])
+            config.tree_collect_width = parseInt(match[3])
+            config.tree_collect_height = parseInt(match[4])
+            setRegionSeekBars()
+          } else {
+            toast('输入值无效')
+          }
         }
       })
     )
 
     ui.bottomCheckRegionInpt.addTextChangedListener(
       TextWatcherBuilder(text => {
-        let newVal = text + ''
-        let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
-        if (regex.test(newVal)) {
-          let match = regex.exec(newVal)
-          config.bottom_check_left = parseInt(match[1])
-          config.bottom_check_top = parseInt(match[2])
-          config.bottom_check_width = parseInt(match[3])
-          config.bottom_check_height = parseInt(match[4])
-          setRegionSeekBars()
-        } else {
-          toast('输入值无效')
+        if (new Date().getTime() > stopEmitUntil) {
+          let newVal = text + ''
+          let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
+          if (regex.test(newVal)) {
+            let match = regex.exec(newVal)
+            config.bottom_check_left = parseInt(match[1])
+            config.bottom_check_top = parseInt(match[2])
+            config.bottom_check_width = parseInt(match[3])
+            config.bottom_check_height = parseInt(match[4])
+            setRegionSeekBars()
+          } else {
+            toast('输入值无效')
+          }
         }
       })
     )
