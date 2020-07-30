@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-22 19:49:51
+ * @Last Modified time: 2020-07-30 21:23:52
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -80,6 +80,7 @@ if (files.exists('version.json')) {
 } else {
   logInfo('无法获取脚本版本信息')
 }
+infoLog('本脚本免费使用，更多说明可前往github查阅README.md，地址：https://github.com/TonyJiangWJ/Ant-Forest')
 logInfo(['AutoJS version: {}', app.autojs.versionName])
 logInfo(['device info: {} {} {}', device.brand, device.product, device.release])
 logInfo(['运行模式：{}{} {} {} {}',
@@ -92,6 +93,22 @@ logInfo(['运行模式：{}{} {} {} {}',
   config.useCustomScrollDown ? '使用模拟滑动, 速度：' + config.scrollDownSpeed + 'ms 底部高度：' + config.bottomHeight : ''
 ])
 logInfo(['设备分辨率：[{}, {}]', config.device_width, config.device_height])
+// -------- WARING --------
+if (config.auto_set_img_or_widget || !config.base_on_image) {
+  warnInfo('支付宝基本去除了排行榜的控件，还请尽量直接使用图像分析模式，后续控件分析模式不再花精力维护')
+}
+if (config.base_on_image) {
+  if (!config.useOcr) {
+    warnInfo('请配置百度OCR API用于获取列表倒计时时间')
+  }
+  if (!config.direct_use_img_collect_and_help) {
+    warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友，并做好相应的识别区域配置')
+  }
+  warnInfo('排行榜识别区域可不配置，脚本会自动识别')
+  warnInfo('如果列表底部有邀请按钮，排行榜识别底部区域可不配置，脚本会自动识别。如果没有请将识别区域框柱`没有更多了`文字 `了`的上半部分')
+  warnInfo('以上配置的详细内容请见README.md')
+}
+// ------ WARING END ------
 logInfo('======解锁并校验截图权限======')
 try {
   unlocker.exec()
