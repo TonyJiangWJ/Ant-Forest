@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-29 23:35:17
+ * @Last Modified time: 2020-07-30 19:16:52
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -300,6 +300,14 @@ function Ant_forest () {
     logInfo(['获取最终倒计时时间：{}', _min_countdown])
   }
 
+  const peekCountdownContainer = function (container) {
+    if (container) {
+      return _commonFunctions.formatString('倒计时数据总长度：{} 文本属性来自[{}]', container.target.length, (container.isDesc ? 'desc' : 'text'))
+    } else {
+      return null
+    }
+  }
+
   const calculateMinCountdown = function (lastMin, lastTimestamp) {
     let temp = []
     if (_friends_min_countdown && isFinite(_friends_min_countdown)) {
@@ -321,15 +329,9 @@ function Ant_forest () {
     }
     // 基于图像处理且已开启OCR 倒计时已通过ocr获取，尝试一秒获取控件倒计时 否则按配置的时间获取
     // 后期基于图像分析有可能直接放弃控件获取
-    let existTimeout = _config.base_on_image && _config.useOcr ? 1000 : null
+    let existTimeout = _config.base_on_image && _config.useOcr ? 1000 : 3000
     let friCountDownContainer = _widgetUtils.widgetGetAll('\\d+’', existTimeout, true)
-    let peekCountdownContainer = function (container) {
-      if (container) {
-        return _commonFunctions.formatString('倒计时数据总长度：{} 文本属性来自[{}]', container.target.length, (container.isDesc ? 'desc' : 'text'))
-      } else {
-        return null
-      }
-    }
+
     debugInfo('get \\d+’ container:' + peekCountdownContainer(friCountDownContainer))
     if (friCountDownContainer) {
       let isDesc = friCountDownContainer.isDesc
@@ -520,8 +522,27 @@ function Ant_forest () {
     }
   }
 
+  const checkAndNewImageBasedScanner = function () {
+    if (ImgBasedFriendListScanner === null) {
+      warnInfo('未加载基于图像分析的资源，重新加载')
+      runtime.loadDex('../lib/color-region-center.dex')
+      try {
+        importClass(com.tony.ColorCenterCalculatorWithInterval)
+      } catch (e) {
+        let errorInfo = e + ''
+        if (/importClass must be called/.test(errorInfo)) {
+          errorInfo('请强制关闭AutoJS并重新启动', true)
+          _runningQueueDispatcher.removeRunningTask()
+          exit()
+        }
+      }
+      ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
+    }
+    return new ImgBasedFriendListScanner()
+  }
+
   const findAndCollect = function () {
-    let scanner = _config.base_on_image ? new ImgBasedFriendListScanner() : new FriendListScanner()
+    let scanner = _config.base_on_image ? checkAndNewImageBasedScanner() : new FriendListScanner()
     scanner.init({ currentTime: _current_time, increaseEnergy: _post_energy - _pre_energy })
     let executeResult = scanner.start()
     // 执行失败 返回 true
