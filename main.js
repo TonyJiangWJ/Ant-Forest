@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-30 21:23:52
+ * @Last Modified time: 2020-07-31 21:15:17
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -105,7 +105,7 @@ if (config.base_on_image) {
     warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友，并做好相应的识别区域配置')
   }
   warnInfo('排行榜识别区域可不配置，脚本会自动识别')
-  warnInfo('如果列表底部有邀请按钮，排行榜识别底部区域可不配置，脚本会自动识别。如果没有请将识别区域框柱`没有更多了`文字 `了`的上半部分')
+  warnInfo('排行榜识别底部区域可不配置，脚本会自动识别')
   warnInfo('以上配置的详细内容请见README.md')
 }
 // ------ WARING END ------

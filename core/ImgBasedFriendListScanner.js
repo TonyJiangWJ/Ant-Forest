@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-30 17:56:02
+ * @Last Modified time: 2020-07-31 21:08:28
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -177,7 +177,7 @@ const ImgBasedFriendListScanner = function () {
    * @param {*} point 
    */
   this.checkIsCanCollect = function (img, point) {
-    
+
     let height = point.bottom - point.top
     let width = point.right - point.left
     debugForDev(['checkPoints: {}', JSON.stringify(checkPoints)])
@@ -214,7 +214,7 @@ const ImgBasedFriendListScanner = function () {
     do {
       screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
       // 重新复制一份
-      grayScreen = images.grayscale(images.copy(screen))
+      grayScreen = images.copy(images.grayscale(images.copy(screen)), true)
       let originScreen = images.copy(screen)
       intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, '#828282', 1), 5)
       intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
@@ -412,10 +412,13 @@ const ImgBasedFriendListScanner = function () {
       sleep(300)
       count++
       if (_config.checkBottomBaseImg) {
-        screen = _commonFunctions.checkCaptureScreenPermission()
-        grayScreen = images.grayscale(screen)
+        if (!images.isValidImg(grayScreen)) {
+          screen = _commonFunctions.checkCaptureScreenPermission()
+          grayScreen = images.grayscale(screen)
+        }
         let reached = _widgetUtils.reachBottom(grayScreen)
         if (reached) {
+          grayScreen.recycle()
           // 二次校验，避免因为加载中导致的错误判断
           screen = _commonFunctions.checkCaptureScreenPermission()
           grayScreen = images.grayscale(screen)
@@ -432,11 +435,14 @@ const ImgBasedFriendListScanner = function () {
           // true is error
           return true
         }
-        // TODO 列表加载失败，重新上划 触发加载
-        screen = _commonFunctions.checkCaptureScreenPermission()
-        grayScreen = images.grayscale(screen)
+        if (!images.isValidImg(grayScreen)) {
+          // 判断列表是否加载失败，重新上划 触发加载
+          screen = _commonFunctions.checkCaptureScreenPermission()
+          grayScreen = images.grayscale(screen)
+        }
         this.scrollUpIfNeeded(images.copy(grayScreen))
       }
+      grayScreen && grayScreen.recycle()
     } while (hasNext)
     sleep(100)
     if (!_widgetUtils.friendListWaiting()) {

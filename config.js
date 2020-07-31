@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-30 20:54:43
+ * @Last Modified time: 2020-07-31 10:51:20
  * @Description: 
  */
 'ui';
@@ -1038,7 +1038,7 @@ if (!isRunningMode) {
                       <input inputType="number" id="ocrThresholdInpt" w="*" />
                       <text text="百度AI平台申请到的ApiKey和SecretKey" />
                       <input id="apiKeyInpt" hint="apiKey" />
-                      <input id="secretKeyInpt" inputType="textPassword" hint="apiKey" />
+                      <input id="secretKeyInpt" inputType="textPassword" hint="secretKey" />
                     </vertical>
                   </vertical>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
