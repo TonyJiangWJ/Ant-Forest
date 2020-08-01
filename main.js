@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-31 21:15:17
+ * @Last Modified time: 2020-08-01 09:39:18
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -83,13 +83,14 @@ if (files.exists('version.json')) {
 infoLog('本脚本免费使用，更多说明可前往github查阅README.md，地址：https://github.com/TonyJiangWJ/Ant-Forest')
 logInfo(['AutoJS version: {}', app.autojs.versionName])
 logInfo(['device info: {} {} {}', device.brand, device.product, device.release])
-logInfo(['运行模式：{}{} {} {} {}',
+logInfo(['运行模式：{}{} {} {} 排行榜可收取判定方式：{} {}',
   config.develop_mode ? '开发模式 ' : '',
   config.single_script ? '单脚本运行无视运行队列' : '多脚本调度运行',
   config.is_cycle ? '循环' + config.cycle_times + '次' : (config.never_stop ? '永不停止，重新激活时间：' + config.reactive_time : '计时模式，超时时间：' + config.max_collect_wait_time),
   config.auto_set_img_or_widget ? '自动分析基于图像还是控件分析' : (
     config.base_on_image ? '基于图像分析' + (config.useOcr ? '-使用OCR识别倒计时 ' : '') : '基于控件分析'
   ),
+  config.check_finger_by_pixels_amount ? '基于像素点个数判断是否可收取，阈值<=' + config.finger_img_pixels : '自动判断是否可收取',
   config.useCustomScrollDown ? '使用模拟滑动, 速度：' + config.scrollDownSpeed + 'ms 底部高度：' + config.bottomHeight : ''
 ])
 logInfo(['设备分辨率：[{}, {}]', config.device_width, config.device_height])
@@ -104,8 +105,11 @@ if (config.base_on_image) {
   if (!config.direct_use_img_collect_and_help) {
     warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友，并做好相应的识别区域配置')
   }
+  if (!config.useCustomScrollDown) {
+    warnInfo('排行榜中控件不存在时无法使用自带的scrollDown，请开启模拟滑动并自行调试设置滑动速度和底部高度')
+  }
   warnInfo('排行榜识别区域可不配置，脚本会自动识别')
-  warnInfo('排行榜识别底部区域可不配置，脚本会自动识别')
+  warnInfo('排行榜识别底部区域可不配置，脚本会自动识别，首次运行时自动识别需要一定时间，请不要手动关闭脚本')
   warnInfo('以上配置的详细内容请见README.md')
 }
 // ------ WARING END ------

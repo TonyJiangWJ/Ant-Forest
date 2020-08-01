@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-31 10:51:20
+ * @Last Modified time: 2020-08-01 09:48:59
  * @Description: 
  */
 'ui';
@@ -67,6 +67,10 @@ let default_config = {
   checkBottomBaseImg: true,
   // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
   friendListScrollTime: 30,
+  // 基于像素点个数判断是否可收取，默认关闭
+  check_finger_by_pixels_amount: false,
+  // 可收取小手指绿色像素点个数，1080P分辨率是这个数值，其他分辨率请自己修改	
+  finger_img_pixels: 1900,
   thread_pool_size: 4,
   thread_pool_max_size: 8,
   thread_pool_queue_size: 16,
@@ -304,7 +308,9 @@ if (!isRunningMode) {
     ui.checkBottomBaseImgChkBox.setChecked(config.checkBottomBaseImg)
     ui.baseOnImageContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
-
+    ui.checkFingerByPixelsAmountChkBox.setChecked(config.check_finger_by_pixels_amount)
+    ui.checkFingerByPixelsAmountContainer.setVisibility(config.check_finger_by_pixels_amount ? View.VISIBLE : View.GONE)
+    ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
     ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     ui.directUseImgCollectChkBox.setChecked(config.direct_use_img_collect_and_help)
 
@@ -967,6 +973,16 @@ if (!isRunningMode) {
                         <seekbar id="rankCheckRegionHSeekbar" progress="20" layout_weight="85" />
                       </horizontal>
                     </vertical>
+                    <text text="一般情况下不需要开启，自动识别失效后再开启该项" textSize="10sp" />
+                    <checkbox id="checkFingerByPixelsAmountChkBox" text="基于像素点个数判断小手" />
+                    <vertical id="checkFingerByPixelsAmountContainer">
+                      <text text="可收取小手指的绿色像素点个数，颜色相似度20，1080P时小于1900判定为可收取，其他分辨率需要自行修改=1900*缩放比例^2" textSize="10sp" />
+                      <text text="或者在好友列表中运行test/MockDetect.js查看具体的像素点个数，详细使用见README" textSize="10sp" />
+                      <horizontal gravity="center" >
+                        <text text="小手指像素点个数:" />
+                        <input layout_weight="70" inputType="number" id="fingerImgPixelsInpt" layout_weight="70" />
+                      </horizontal>
+                    </vertical>
                     <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                     <checkbox id="checkBottomBaseImgChkBox" text="基于图像判断列表底部" />
                     <vertical id="bottomCheckContainer">
@@ -1030,11 +1046,12 @@ if (!isRunningMode) {
                   <vertical id="useOcrParentContainer">
                     <checkbox id="useOcrChkBox" text="是否启用百度的OCR识别倒计时" />
                     <vertical id="useOcrContainer">
-                      <text text="缓存数据仅仅是像素点个数和倒计时的键值对，所以可能返回的是错误的值" textSize="10sp" />
+                      <text text="缓存数据仅仅是像素点个数和倒计时的键值对，所以可能返回的是错误的值，大约十分之一的概率会进行联网校验重置缓存值" textSize="10sp" />
                       <checkbox id="ocrUseCacheChkBox" text="是否从缓存中获取OCR识别的倒计时，非精确值" />
+                      <text text="Base64图片信息仅仅为了开发用，日常使用请关闭" textSize="10sp" />
                       <checkbox id="saveBase64ImgInfoChkBox" text="是否记录图片Base64数据到日志" />
                       <text id="ocrInvokeCount" textSize="12sp" />
-                      <text text="需要识别的倒计时绿色像素点数量，像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
+                      <text text="需要识别的倒计时绿色像素点数量阈值，当像素点个数大于该值才会调用，理论上像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
                       <input inputType="number" id="ocrThresholdInpt" w="*" />
                       <text text="百度AI平台申请到的ApiKey和SecretKey" />
                       <input id="apiKeyInpt" hint="apiKey" />
@@ -2050,6 +2067,11 @@ if (!isRunningMode) {
       ui.bottomCheckContainer.setVisibility(!config.checkBottomBaseImg ? View.GONE : View.VISIBLE)
     })
 
+    ui.checkFingerByPixelsAmountChkBox.on('click', () => {
+      config.check_finger_by_pixels_amount = ui.checkFingerByPixelsAmountChkBox.isChecked()
+      ui.checkFingerByPixelsAmountContainer.setVisibility(config.check_finger_by_pixels_amount ? View.VISIBLE : View.GONE)
+    })
+
     ui.useCustomScrollDownChkBox.on('click', () => {
       config.useCustomScrollDown = ui.useCustomScrollDownChkBox.isChecked()
       ui.scrollDownContainer.setVisibility(config.useCustomScrollDown ? View.VISIBLE : View.INVISIBLE)
@@ -2131,6 +2153,11 @@ if (!isRunningMode) {
     ui.friendListScrollTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.friendListScrollTime = parseInt(text) })
     )
+
+    ui.fingerImgPixelsInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.finger_img_pixels = parseInt(text) })
+    )
+
     ui.delayStartTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.delayStartTime = parseInt(text) })
     )
