@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-31 21:08:28
+ * @Last Modified time: 2020-08-01 09:39:25
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -178,22 +178,27 @@ const ImgBasedFriendListScanner = function () {
    */
   this.checkIsCanCollect = function (img, point) {
 
-    let height = point.bottom - point.top
-    let width = point.right - point.left
-    debugForDev(['checkPoints: {}', JSON.stringify(checkPoints)])
-    let p = images.findMultiColors(img, "#ffffff", checkPoints, {
-      region: [
-        point.left + width - width / Math.sqrt(2),
-        point.top,
-        width / Math.sqrt(2),
-        height / Math.sqrt(2)
-      ],
-      threshold: 0
-    })
+    if (_config.check_finger_by_pixels_amount) {
+      debugInfo(['使用像素点个数判断是否是可收集，当前点像素点个数为：{} 判断阈值为<={}', point.regionSame, _config.finger_img_pixels])
+      return point.regionSame <= _config.finger_img_pixels
+    } else {
+      let height = point.bottom - point.top
+      let width = point.right - point.left
+      debugForDev(['checkPoints: {}', JSON.stringify(checkPoints)])
+      let p = images.findMultiColors(img, "#ffffff", checkPoints, {
+        region: [
+          point.left + width - width / Math.sqrt(2),
+          point.top,
+          width / Math.sqrt(2),
+          height / Math.sqrt(2)
+        ],
+        threshold: 0
+      })
 
-    let flag = p !== null
-    debugInfo(['point: {} 判定结果：{} {}', JSON.stringify(point), flag, JSON.stringify(p)])
-    return flag
+      let flag = p !== null
+      debugInfo(['point: {} 判定结果：{} {}', JSON.stringify(point), flag, JSON.stringify(p)])
+      return flag
+    }
   }
   /**
    * 执行收集操作
