@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-01 09:48:59
+ * @Last Modified time: 2020-08-02 11:34:37
  * @Description: 
  */
 'ui';
@@ -30,6 +30,8 @@ let default_config = {
   timeout_unlock: 1000,
   timeout_findOne: 1000,
   timeout_existing: 8000,
+  // 异步等待截图，当截图超时后重新获取截图 默认开启
+  async_waiting_capture: true,
   capture_waiting_time: 500,
   max_collect_repeat: 20,
   max_collect_wait_time: 60,
@@ -174,11 +176,6 @@ if (typeof config.collectable_energy_ball_content !== 'string') {
 
 if (!isRunningMode) {
   if (!currentEngine.endsWith('/config.js')) {
-    if (config.device_height <= 10 || config.device_width <= 10) {
-      toastLog('请先运行config.js并输入设备分辨率宽高')
-      exit()
-    }
-
     if (config.base_on_image && config.direct_use_img_collect_and_help) {
       if (config.tree_collect_width + config.tree_collect_left > config.device_width) {
         toastLog('请先运行config.js修改能量球识别区域，具体操作见README.md')
@@ -536,7 +533,8 @@ if (!isRunningMode) {
     ui.timeoutFindOneInpt.text(config.timeout_findOne + '')
     ui.timeoutExistingInpt.text(config.timeout_existing + '')
     ui.captureWaitingTimeInpt.text(config.capture_waiting_time + '')
-
+    ui.asyncWaitingCaptureChkBox.setChecked(config.async_waiting_capture)
+    ui.asyncWaitingCaptureContainer.setVisibility(config.async_waiting_capture ? View.VISIBLE : View.GONE)
     setDeviceSizeText()
   }
 
@@ -882,7 +880,9 @@ if (!isRunningMode) {
                     <text text="校验控件是否存在超时（ms）:" />
                     <input id="timeoutExistingInpt" inputType="number" layout_weight="60" />
                   </horizontal>
-                  <horizontal gravity="center">
+                  <text text="偶尔通过captureScreen获取截图需要等待很久，或者一直阻塞无法进行下一步操作，建议开启异步等待，然后设置截图等待时间(默认500ms,需自行调试找到合适自己设备的数值)。失败多次后脚本会自动重启，重新获取截图权限" textSize="10dp" />
+                  <checkbox id="asyncWaitingCaptureChkBox" text="是否异步等待截图" />
+                  <horizontal gravity="center" id="asyncWaitingCaptureContainer">
                     <text text="获取截图等待时间（ms）:" />
                     <input id="captureWaitingTimeInpt" inputType="number" layout_weight="60" />
                   </horizontal>
@@ -1855,6 +1855,11 @@ if (!isRunningMode) {
 
     ui.enableCallStateControlChkBox.on('click', () => {
       config.enable_call_state_control = ui.enableCallStateControlChkBox.isChecked()
+    })
+
+    ui.asyncWaitingCaptureChkBox.on('click', () => {
+      config.async_waiting_capture = ui.asyncWaitingCaptureChkBox.isChecked()
+      ui.asyncWaitingCaptureContainer.setVisibility(config.async_waiting_capture ? View.VISIBLE : View.GONE)
     })
 
     ui.autoLockChkBox.on('click', () => {
