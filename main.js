@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-01 09:39:18
+ * @Last Modified time: 2020-08-02 10:09:21
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
@@ -142,6 +142,22 @@ if (!actionSuccess || !screenPermission) {
   exit()
 } else {
   logInfo('请求截屏权限成功')
+}
+// 根据截图重新获取设备分辨率
+let screen = commonFunctions.checkCaptureScreenPermission(3)
+if (screen) {
+  let width = screen.width
+  let height = screen.height
+  if (width > height) {
+    errorInfo(['检测到截图的宽度大于高度，可能截图方法出现了问题，请尝试强制重启AutoJS，否则脚本无法正常运行! w:{} h:{}', width, height], true)
+    runningQueueDispatcher.removeRunningTask()
+    exit()
+  }
+  if (width !== config.device_width || height !== config.device_height) {
+    config.device_height = height
+    config.device_width = width
+    warnInfo(['设备分辨率设置不正确，宽高已修正为：[{}, {}]', width, height])
+  }
 }
 // 初始化悬浮窗
 if (!FloatyInstance.init()) {
