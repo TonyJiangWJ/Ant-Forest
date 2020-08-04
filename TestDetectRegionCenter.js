@@ -2,15 +2,17 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-04 14:35:59
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-07 17:25:33
+ * @Last Modified time: 2020-08-04 20:27:09
  * @Description: 
  */
-
+let resolver = require('./lib/AutoJSRemoveDexResolver.js')
+resolver()
 runtime.loadDex('./lib/color-region-center.dex')
 
 importClass(com.tony.ColorCenterCalculator)
 importClass(com.tony.ColorCenterCalculatorWithInterval)
 importClass(com.tony.ScriptLogger)
+resolver()
 
 let { config } = require('./config.js')(runtime, this)
 let sRequire = require('./lib/SingletonRequirer.js')(runtime, this)

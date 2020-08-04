@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-01 09:39:25
+ * @Last Modified time: 2020-08-04 21:08:33
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -11,12 +11,14 @@ importClass(java.util.concurrent.LinkedBlockingQueue)
 importClass(java.util.concurrent.ThreadPoolExecutor)
 importClass(java.util.concurrent.TimeUnit)
 importClass(java.util.concurrent.CountDownLatch)
-let { config: _config } = require('../config.js')(runtime, this)
+let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
+let TesseracOcrUtil = require('../lib/TesseracOcrUtil.js')
+let OcrUtil = _config.useTesseracOcr ? TesseracOcrUtil : BaiduOcrUtil
 
 let BaseScanner = require('./BaseScanner.js')
 
@@ -303,7 +305,13 @@ const ImgBasedFriendListScanner = function () {
                 calculator.setScriptLogger(SCRIPT_LOGGER)
                 let point = calculator.getCenterPoint()
                 if (that.checkIsCanCollect(images.copy(originScreen), point)) {
-                  debugInfo('可能可收取位置：' + JSON.stringify(point))
+                  debugInfo('可收取位置：' + JSON.stringify(point))
+                  if (_config.ocrThreshold > point.regionSame * 1.44) {
+                    _config.ocrThreshold = parseInt(point.regionSame * 1.44)
+                    infoLog('自动设置ocr阈值：' + _config.ocrThreshold)
+                    let configStorage = storages.create(_storage_name)
+                    configStorage.put('ocrThreshold', _config.ocrThreshold)
+                  }
                   try {
                     listWriteLock.lock()
                     collectOrHelpList.push({ point: point, isHelp: false })
@@ -317,8 +325,13 @@ const ImgBasedFriendListScanner = function () {
                   // 直接标记执行完毕 将OCR请求交给异步处理
                   countdownLatch.countDown()
                   executeSuccess = true
-                  if (_config.useOcr && !_config.is_cycle) {
-                    let countdownImg = images.clip(grayScreen, point.left, point.top, point.right - point.left, point.bottom - point.top)
+                  if ((_config.useOcr || _config.useTesseracOcr) && !_config.is_cycle) {
+                    let width = point.right - point.left
+                    let height = point.bottom - point.top
+                    let offset = parseInt((width > height ? height - height / Math.sqrt(2) : width - width / Math.sqrt(2)) * 0.9)
+                    let countdownImg = images.clip(grayScreen, point.left + offset, point.top + parseInt(offset / 4), point.right - point.left - offset, point.bottom - point.top - offset)
+                    let scale = 30 / countdownImg.width
+                    countdownImg = images.interval(images.resize(countdownImg, [parseInt(countdownImg.width * scale), parseInt(countdownImg.height * scale)]), '#FFFFFF', 20)
                     let base64String = null
                     try {
                       base64String = images.toBase64(countdownImg)
@@ -337,9 +350,9 @@ const ImgBasedFriendListScanner = function () {
                         debugInfo(['该像素点总数[{}]未校验', point.regionSame])
                       }
                       if (point.regionSame >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2) {
-                        // 百度识图API获取文本
-                        let countdown = config.ocrUseCache ? BaiduOcrUtil.tryGetByCache(base64String, point.regionSame)
-                          : BaiduOcrUtil.getDirectly(base64String, point.regionSame)
+                        // Ocr识图API获取文本
+                        let countdown = _config.ocrUseCache ? OcrUtil.tryGetByCache(base64String, point.regionSame)
+                          : OcrUtil.getDirectly(base64String, point.regionSame)
                         if (isFinite(countdown) && countdown > 0) {
                           try {
                             countdownLock.lock()
