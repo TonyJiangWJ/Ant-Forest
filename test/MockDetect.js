@@ -2,9 +2,11 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 21:37:29
+ * @Last Modified time: 2020-08-04 20:20:53
  * @Description: 
  */
+let resolver = require('../lib/AutoJSRemoveDexResolver.js')
+resolver()
 runtime.loadDex('../lib/color-region-center.dex')
 importClass(com.tony.ColorCenterCalculatorWithInterval)
 importClass(com.tony.ScriptLogger)
@@ -12,7 +14,7 @@ importClass(java.util.concurrent.LinkedBlockingQueue)
 importClass(java.util.concurrent.ThreadPoolExecutor)
 importClass(java.util.concurrent.TimeUnit)
 importClass(java.util.concurrent.CountDownLatch)
-
+resolver()
 
 let { config: _config } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)

@@ -1,4 +1,6 @@
 
+let resolver = require('../lib/AutoJSRemoveDexResolver.js')
+resolver()
 runtime.loadDex('../lib/download.dex')
 let FileUtils = require('../lib/prototype/FileUtils.js')
 let loadingDialog = null
@@ -15,7 +17,7 @@ try {
 
 importClass(com.tony.listener.DownloaderListener)
 importClass(com.tony.downloader.GithubHistoryTagDownloader)
-
+resolver()
 let apiUrl = 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/tags'
 let downloader = new GithubHistoryTagDownloader(apiUrl)
 

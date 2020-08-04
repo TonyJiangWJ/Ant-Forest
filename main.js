@@ -1,23 +1,16 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-02 10:09:21
+ * @Last Modified time: 2020-08-04 21:11:36
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
+const resolver = require('./lib/AutoJSRemoveDexResolver.js')
 
 if (config.base_on_image) {
+  resolver()
   runtime.loadDex('./lib/color-region-center.dex')
-  try {
-    importClass(com.tony.ColorCenterCalculatorWithInterval)
-  } catch (e) {
-    let errorInfo = e + ''
-    if (/importClass must be called/.test(errorInfo)) {
-      toastLog('请强制关闭AutoJS并重新启动')
-      exit()
-    }
-  }
 }
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
@@ -47,6 +40,7 @@ let formatDate = require('./lib/DateUtil.js')
 callStateListener.exitIfNotIdle()
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
+  resolver()
   // 移除运行中任务
   runningQueueDispatcher.removeRunningTask(true, true)
   // 重置自动亮度
@@ -88,7 +82,7 @@ logInfo(['运行模式：{}{} {} {} 排行榜可收取判定方式：{} {}',
   config.single_script ? '单脚本运行无视运行队列' : '多脚本调度运行',
   config.is_cycle ? '循环' + config.cycle_times + '次' : (config.never_stop ? '永不停止，重新激活时间：' + config.reactive_time : '计时模式，超时时间：' + config.max_collect_wait_time),
   config.auto_set_img_or_widget ? '自动分析基于图像还是控件分析' : (
-    config.base_on_image ? '基于图像分析' + (config.useOcr ? '-使用OCR识别倒计时 ' : '') : '基于控件分析'
+    config.base_on_image ? '基于图像分析' + (config.useOcr||config.useTesseracOcr ? '-使用OCR识别倒计时 ' : '') : '基于控件分析'
   ),
   config.check_finger_by_pixels_amount ? '基于像素点个数判断是否可收取，阈值<=' + config.finger_img_pixels : '自动判断是否可收取',
   config.useCustomScrollDown ? '使用模拟滑动, 速度：' + config.scrollDownSpeed + 'ms 底部高度：' + config.bottomHeight : ''
@@ -99,8 +93,8 @@ if (config.auto_set_img_or_widget || !config.base_on_image) {
   warnInfo('支付宝基本去除了排行榜的控件，还请尽量直接使用图像分析模式，后续控件分析模式不再花精力维护')
 }
 if (config.base_on_image) {
-  if (!config.useOcr) {
-    warnInfo('请配置百度OCR API用于获取列表倒计时时间')
+  if (!(config.useOcr || config.useTesseracOcr)) {
+    warnInfo('请配置百度OCR API, 或者启用自建tesserac服务，用于获取列表倒计时时间')
   }
   if (!config.direct_use_img_collect_and_help) {
     warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友，并做好相应的识别区域配置')
