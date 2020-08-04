@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-02 11:34:37
+ * @Last Modified time: 2020-08-04 21:04:20
  * @Description: 
  */
 'ui';
@@ -106,10 +106,12 @@ let default_config = {
   delayStartTime: 5,
   // 是否使用百度的ocr识别倒计时
   useOcr: false,
+  // 使用自建tesserac_ocr服务
+  useTesseracOcr: true,
   // 从缓存中获取ocr识别结果 根据像素点个数来获取 因此不是很准确
   ocrUseCache: false,
   // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
-  ocrThreshold: 2900,
+  ocrThreshold: 2600,
   // 是否记录图片base64信息到日志中
   saveBase64ImgInfo: false,
   // ApiKey和SecretKey都来自百度AI平台 需要自己申请
@@ -340,6 +342,15 @@ if (!isRunningMode) {
   }
 
   let setOcrUiVal = function () {
+    ui.useTesseracOcrChkBox.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
+    ui.useTesseracOcrChkBox.setChecked(config.useTesseracOcr)
+
+
+    ui.useOcrChkBox.setVisibility(config.useTesseracOcr ? View.GONE : View.VISIBLE)
+    ui.apiKeyInpt.setVisibility(config.useTesseracOcr ? View.GONE : View.VISIBLE)
+    ui.secretKeyInpt.setVisibility(config.useTesseracOcr ? View.GONE : View.VISIBLE)
+    ui.baiduDescText.setVisibility(config.useTesseracOcr ? View.GONE : View.VISIBLE)
+
     ui.useOcrChkBox.setChecked(config.useOcr)
     ui.ocrUseCacheChkBox.setChecked(config.ocrUseCache)
     ui.ocrThresholdInpt.text(config.ocrThreshold + '')
@@ -347,9 +358,9 @@ if (!isRunningMode) {
     ui.apiKeyInpt.text(config.apiKey + '')
     ui.secretKeyInpt.text(config.secretKey + '')
 
-    let invokeStorage = commonFunctions.getBaiduInvokeCountStorage()
-    ui.ocrInvokeCount.text(invokeStorage.date + '已调用次数:' + invokeStorage.count + ' 剩余:' + (500 - invokeStorage.count))
-    ui.useOcrContainer.setVisibility(config.useOcr ? View.VISIBLE : View.GONE)
+    let invokeStorage = config.useTesseracOcr ? commonFunctions.getTesseracInvokeCountStorage() : commonFunctions.getBaiduInvokeCountStorage()
+    ui.ocrInvokeCount.text(invokeStorage.date + '已调用次数:' + invokeStorage.count + (config.useTesseracOcr ? '' : ' 剩余:' + (500 - invokeStorage.count)))
+    ui.useOcrContainer.setVisibility(config.useOcr || config.useTesseracOcr ? View.VISIBLE : View.GONE)
   }
 
   let inputDeviceSize = function () {
@@ -1042,6 +1053,7 @@ if (!isRunningMode) {
                     </horizontal>
                   </vertical>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
+                  <checkbox id="useTesseracOcrChkBox" text="是否启用自建tesserac_ocr服务器识别倒计时" />
                   {/* 是否启用百度的OCR */}
                   <vertical id="useOcrParentContainer">
                     <checkbox id="useOcrChkBox" text="是否启用百度的OCR识别倒计时" />
@@ -1053,7 +1065,7 @@ if (!isRunningMode) {
                       <text id="ocrInvokeCount" textSize="12sp" />
                       <text text="需要识别的倒计时绿色像素点数量阈值，当像素点个数大于该值才会调用，理论上像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
                       <input inputType="number" id="ocrThresholdInpt" w="*" />
-                      <text text="百度AI平台申请到的ApiKey和SecretKey" />
+                      <text id="baiduDescText" text="百度AI平台申请到的ApiKey和SecretKey" />
                       <input id="apiKeyInpt" hint="apiKey" />
                       <input id="secretKeyInpt" inputType="textPassword" hint="secretKey" />
                     </vertical>
@@ -2109,6 +2121,11 @@ if (!isRunningMode) {
 
     ui.useOcrChkBox.on('click', () => {
       config.useOcr = ui.useOcrChkBox.isChecked()
+      setOcrUiVal()
+    })
+
+    ui.useTesseracOcrChkBox.on('click', () => {
+      config.useTesseracOcr = ui.useTesseracOcrChkBox.isChecked()
       setOcrUiVal()
     })
 

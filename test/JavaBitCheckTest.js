@@ -1,6 +1,8 @@
+let resolver = require('../lib/AutoJSRemoveDexResolver.js')
+resolver()
 runtime.loadDex('../lib/autojs-tools.dex')
 importClass(com.tony.BitCheck)
-
+resolver()
 let checker = new BitCheck(2160 << 8 | 200)
 //checker.init()
 let count = 0

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-31 14:04:11
+ * @Last Modified time: 2020-08-04 21:09:40
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -329,7 +329,7 @@ function Ant_forest () {
     }
     // 基于图像处理且已开启OCR 倒计时已通过ocr获取，尝试一秒获取控件倒计时 否则按配置的时间获取
     // 后期基于图像分析有可能直接放弃控件获取
-    let existTimeout = _config.base_on_image && _config.useOcr ? 1000 : 3000
+    let existTimeout = _config.base_on_image && (_config.useOcr || _config.useTesseracOcr) ? 1000 : 2000
     let friCountDownContainer = _widgetUtils.widgetGetAll('\\d+’', existTimeout, true)
 
     debugInfo('get \\d+’ container:' + peekCountdownContainer(friCountDownContainer))
@@ -525,6 +525,7 @@ function Ant_forest () {
   const checkAndNewImageBasedScanner = function () {
     if (ImgBasedFriendListScanner === null) {
       warnInfo('未加载基于图像分析的资源，重新加载')
+      resolver()
       runtime.loadDex('../lib/color-region-center.dex')
       try {
         importClass(com.tony.ColorCenterCalculatorWithInterval)
