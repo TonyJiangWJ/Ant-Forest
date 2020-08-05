@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-04 21:04:20
+ * @Last Modified time: 2020-08-06 00:10:27
  * @Description: 
  */
 'ui';
@@ -112,6 +112,7 @@ let default_config = {
   ocrUseCache: false,
   // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
   ocrThreshold: 2600,
+  autoSetThreshold: true,
   // 是否记录图片base64信息到日志中
   saveBase64ImgInfo: false,
   // ApiKey和SecretKey都来自百度AI平台 需要自己申请
@@ -353,6 +354,8 @@ if (!isRunningMode) {
 
     ui.useOcrChkBox.setChecked(config.useOcr)
     ui.ocrUseCacheChkBox.setChecked(config.ocrUseCache)
+    ui.autoSetThresholdChkBox.setChecked(config.autoSetThreshold)
+    ui.setThresholdContainer.setVisibility(config.autoSetThreshold ? View.GONE : View.VISIBLE)
     ui.ocrThresholdInpt.text(config.ocrThreshold + '')
     ui.saveBase64ImgInfoChkBox.setChecked(config.saveBase64ImgInfo)
     ui.apiKeyInpt.text(config.apiKey + '')
@@ -1063,8 +1066,11 @@ if (!isRunningMode) {
                       <text text="Base64图片信息仅仅为了开发用，日常使用请关闭" textSize="10sp" />
                       <checkbox id="saveBase64ImgInfoChkBox" text="是否记录图片Base64数据到日志" />
                       <text id="ocrInvokeCount" textSize="12sp" />
-                      <text text="需要识别的倒计时绿色像素点数量阈值，当像素点个数大于该值才会调用，理论上像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
-                      <input inputType="number" id="ocrThresholdInpt" w="*" />
+                      <checkbox id="autoSetThresholdChkBox" text="自动设置OCR像素点阈值" />
+                      <vertical id="setThresholdContainer">
+                        <text text="需要识别的倒计时绿色像素点数量阈值，当像素点个数大于该值才会调用，理论上像素点越多倒计时数值越小，此时调用接口可以节省调用次数" textSize="10sp" />
+                        <input inputType="number" id="ocrThresholdInpt" w="*" />
+                      </vertical>
                       <text id="baiduDescText" text="百度AI平台申请到的ApiKey和SecretKey" />
                       <input id="apiKeyInpt" hint="apiKey" />
                       <input id="secretKeyInpt" inputType="textPassword" hint="secretKey" />
@@ -2131,6 +2137,11 @@ if (!isRunningMode) {
 
     ui.ocrUseCacheChkBox.on('click', () => {
       config.ocrUseCache = ui.ocrUseCacheChkBox.isChecked()
+    })
+
+    ui.autoSetThresholdChkBox.on('click', () => {
+      config.autoSetThreshold = ui.autoSetThresholdChkBox.isChecked()
+      ui.setThresholdContainer.setVisibility(config.autoSetThreshold ? View.GONE : View.VISIBLE)
     })
 
     ui.saveBase64ImgInfoChkBox.on('click', () => {

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-04 21:08:33
+ * @Last Modified time: 2020-08-06 00:06:01
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -262,6 +262,7 @@ const ImgBasedFriendListScanner = function () {
         let countdownLatch = new CountDownLatch(waitForCheckPoints.length)
         let listWriteLock = threads.lock()
         let countdownLock = threads.lock()
+        let imgResolveLock = threads.lock()
         let collectOrHelpList = []
         waitForCheckPoints.forEach(pointData => {
           if (pointData.isHelp) {
@@ -306,7 +307,7 @@ const ImgBasedFriendListScanner = function () {
                 let point = calculator.getCenterPoint()
                 if (that.checkIsCanCollect(images.copy(originScreen), point)) {
                   debugInfo('可收取位置：' + JSON.stringify(point))
-                  if (_config.ocrThreshold > point.regionSame * 1.44) {
+                  if (_config.autoSetThreshold && _config.ocrThreshold > point.regionSame * 1.44) {
                     _config.ocrThreshold = parseInt(point.regionSame * 1.44)
                     infoLog('自动设置ocr阈值：' + _config.ocrThreshold)
                     let configStorage = storages.create(_storage_name)
@@ -329,19 +330,29 @@ const ImgBasedFriendListScanner = function () {
                     let width = point.right - point.left
                     let height = point.bottom - point.top
                     let offset = parseInt((width > height ? height - height / Math.sqrt(2) : width - width / Math.sqrt(2)) * 0.9)
-                    let countdownImg = images.clip(grayScreen, point.left + offset, point.top + parseInt(offset / 4), point.right - point.left - offset, point.bottom - point.top - offset)
-                    let scale = 30 / countdownImg.width
-                    countdownImg = images.interval(images.resize(countdownImg, [parseInt(countdownImg.width * scale), parseInt(countdownImg.height * scale)]), '#FFFFFF', 20)
+                    let down_off = parseInt(offset / 4)
                     let base64String = null
                     try {
-                      base64String = images.toBase64(countdownImg)
-                      if (_config.saveBase64ImgInfo) {
-                        debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「data:image/png;base64,{}」', point.regionSame, base64String])
+                      imgResolveLock.lock()
+                      let countdownImg = images.clip(grayScreen, point.left + offset + down_off, point.top + down_off, point.right - point.left - offset - down_off, point.bottom - point.top - offset)
+                      let scale = 30 / countdownImg.width
+                      if (_config.develop_mode) {
+                        debugForDev(['图片压缩前base64 「data:image/png;base64,{}」', images.toBase64(countdownImg)])
                       }
-                    } catch (e) {
-                      errorInfo('存储倒计时图片失败：' + e)
-                      _commonFunctions.printExceptionStack(e)
+                      countdownImg = images.interval(images.resize(countdownImg, [parseInt(countdownImg.width * scale), parseInt(countdownImg.height * scale)]), '#FFFFFF', 40)
+                      try {
+                        base64String = images.toBase64(countdownImg)
+                        if (_config.saveBase64ImgInfo) {
+                          debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「data:image/png;base64,{}」', point.regionSame, base64String])
+                        }
+                      } catch (e) {
+                        errorInfo('存储倒计时图片失败：' + e)
+                        _commonFunctions.printExceptionStack(e)
+                      }
+                    } finally {
+                      imgResolveLock.unlock()
                     }
+
                     if (base64String) {
                       if (that.resolved_pixels[point.regionSame]) {
                         debugInfo(['该像素点总数[{}]已校验过，倒计时值为：{}', point.regionSame, that.resolved_pixels[point.regionSame + 'count']])
