@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-06 00:06:01
+ * @Last Modified time: 2020-08-06 19:40:48
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -362,8 +362,7 @@ const ImgBasedFriendListScanner = function () {
                       }
                       if (point.regionSame >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2) {
                         // Ocr识图API获取文本
-                        let countdown = _config.ocrUseCache ? OcrUtil.tryGetByCache(base64String, point.regionSame)
-                          : OcrUtil.getDirectly(base64String, point.regionSame)
+                        let countdown = OcrUtil.getImageNumber(base64String)
                         if (isFinite(countdown) && countdown > 0) {
                           try {
                             countdownLock.lock()

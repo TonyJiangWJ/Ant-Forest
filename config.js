@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-06 00:10:27
+ * @Last Modified time: 2020-08-06 19:48:46
  * @Description: 
  */
 'ui';
@@ -108,8 +108,6 @@ let default_config = {
   useOcr: false,
   // 使用自建tesserac_ocr服务
   useTesseracOcr: true,
-  // 从缓存中获取ocr识别结果 根据像素点个数来获取 因此不是很准确
-  ocrUseCache: false,
   // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
   ocrThreshold: 2600,
   autoSetThreshold: true,
@@ -353,7 +351,6 @@ if (!isRunningMode) {
     ui.baiduDescText.setVisibility(config.useTesseracOcr ? View.GONE : View.VISIBLE)
 
     ui.useOcrChkBox.setChecked(config.useOcr)
-    ui.ocrUseCacheChkBox.setChecked(config.ocrUseCache)
     ui.autoSetThresholdChkBox.setChecked(config.autoSetThreshold)
     ui.setThresholdContainer.setVisibility(config.autoSetThreshold ? View.GONE : View.VISIBLE)
     ui.ocrThresholdInpt.text(config.ocrThreshold + '')
@@ -1061,8 +1058,6 @@ if (!isRunningMode) {
                   <vertical id="useOcrParentContainer">
                     <checkbox id="useOcrChkBox" text="是否启用百度的OCR识别倒计时" />
                     <vertical id="useOcrContainer">
-                      <text text="缓存数据仅仅是像素点个数和倒计时的键值对，所以可能返回的是错误的值，大约十分之一的概率会进行联网校验重置缓存值" textSize="10sp" />
-                      <checkbox id="ocrUseCacheChkBox" text="是否从缓存中获取OCR识别的倒计时，非精确值" />
                       <text text="Base64图片信息仅仅为了开发用，日常使用请关闭" textSize="10sp" />
                       <checkbox id="saveBase64ImgInfoChkBox" text="是否记录图片Base64数据到日志" />
                       <text id="ocrInvokeCount" textSize="12sp" />
@@ -2133,10 +2128,6 @@ if (!isRunningMode) {
     ui.useTesseracOcrChkBox.on('click', () => {
       config.useTesseracOcr = ui.useTesseracOcrChkBox.isChecked()
       setOcrUiVal()
-    })
-
-    ui.ocrUseCacheChkBox.on('click', () => {
-      config.ocrUseCache = ui.ocrUseCacheChkBox.isChecked()
     })
 
     ui.autoSetThresholdChkBox.on('click', () => {

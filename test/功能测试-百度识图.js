@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-12 17:46:17
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-01-16 10:48:08
+ * @Last Modified time: 2020-08-06 20:05:24
  * @Description: 
  */
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
@@ -26,3 +26,6 @@ if (result) {
 } else {
   log('识别失败')
 }
+
+let imgResult = BaiduOcrUtil.getImageNumber(base64)
+log('imageNumber调用结果：' + imgResult)
