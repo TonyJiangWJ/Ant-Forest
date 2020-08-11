@@ -327,10 +327,7 @@ function Ant_forest () {
       debugInfo('重新获取倒计时经过了：[' + passedTime + ']分，最终记录上轮倒计时：[' + lastMin + ']分')
       lastMin >= 0 ? temp.push(lastMin) : temp.push(0)
     }
-    // 基于图像处理且已开启OCR 倒计时已通过ocr获取，尝试一秒获取控件倒计时 否则按配置的时间获取
-    // 后期基于图像分析有可能直接放弃控件获取
-    let existTimeout = _config.base_on_image && (_config.useOcr || _config.useTesseracOcr) ? 1000 : 2000
-    let friCountDownContainer = _widgetUtils.widgetGetAll('\\d+’', existTimeout, true)
+    let friCountDownContainer = _widgetUtils.widgetGetAll('\\d+’', 1000, true)
 
     debugInfo('get \\d+’ container:' + peekCountdownContainer(friCountDownContainer))
     if (friCountDownContainer) {

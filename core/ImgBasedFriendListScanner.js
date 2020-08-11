@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-06 19:40:48
+ * @Last Modified time: 2020-08-11 17:11:53
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -19,6 +19,11 @@ let _commonFunctions = singletonRequire('CommonFunction')
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
 let TesseracOcrUtil = require('../lib/TesseracOcrUtil.js')
 let OcrUtil = _config.useTesseracOcr ? TesseracOcrUtil : BaiduOcrUtil
+let useMockOcr = false
+if (!_config.useTesseracOcr || !_config.useOcr) {
+  OcrUtil = require('../lib/MockNumberOcrUtil.js')
+  useMockOcr = true
+}
 
 let BaseScanner = require('./BaseScanner.js')
 
@@ -54,7 +59,6 @@ const ImgBasedFriendListScanner = function () {
   BaseScanner.call(this)
   this.threadPool = null
   this.min_countdown_pixels = 10
-  this.resolved_pixels = {}
   this.last_check_point = null
   this.last_check_color = null
 
@@ -72,7 +76,6 @@ const ImgBasedFriendListScanner = function () {
     this.increased_energy = 0
     this.min_countdown = 10000
     this.min_countdown_pixels = 10
-    this.resolved_pixels = {}
     debugInfo('图像分析即将开始')
     return this.collecting()
   }
@@ -323,10 +326,11 @@ const ImgBasedFriendListScanner = function () {
                   }
                 } else {
                   debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame)
+                  let forOcrScreen = images.copy(grayScreen)
                   // 直接标记执行完毕 将OCR请求交给异步处理
                   countdownLatch.countDown()
                   executeSuccess = true
-                  if ((_config.useOcr || _config.useTesseracOcr) && !_config.is_cycle) {
+                  if (!_config.is_cycle) {
                     let width = point.right - point.left
                     let height = point.bottom - point.top
                     let offset = parseInt((width > height ? height - height / Math.sqrt(2) : width - width / Math.sqrt(2)) * 0.9)
@@ -334,12 +338,20 @@ const ImgBasedFriendListScanner = function () {
                     let base64String = null
                     try {
                       imgResolveLock.lock()
-                      let countdownImg = images.clip(grayScreen, point.left + offset + down_off, point.top + down_off, point.right - point.left - offset - down_off, point.bottom - point.top - offset)
+                      let countdownImg = images.clip(forOcrScreen, point.left + offset + down_off, point.top + down_off, point.right - point.left - offset - down_off, point.bottom - point.top - offset)
                       let scale = 30 / countdownImg.width
                       if (_config.develop_mode) {
                         debugForDev(['图片压缩前base64 「data:image/png;base64,{}」', images.toBase64(countdownImg)])
                       }
-                      countdownImg = images.interval(images.resize(countdownImg, [parseInt(countdownImg.width * scale), parseInt(countdownImg.height * scale)]), '#FFFFFF', 40)
+                      if (useMockOcr) {
+                        // 将图片压缩或者放大到1080P下的分辨率
+                        scale = 1080 / _config.device_width
+                      }
+                      if (scale !== 1) {
+                        countdownImg = images.resize(countdownImg, [parseInt(countdownImg.width * scale), parseInt(countdownImg.height * scale)])
+                      }                      
+                      countdownImg = images.interval(countdownImg, '#FFFFFF', 40)
+
                       try {
                         base64String = images.toBase64(countdownImg)
                         if (_config.saveBase64ImgInfo) {
@@ -354,21 +366,13 @@ const ImgBasedFriendListScanner = function () {
                     }
 
                     if (base64String) {
-                      if (that.resolved_pixels[point.regionSame]) {
-                        debugInfo(['该像素点总数[{}]已校验过，倒计时值为：{}', point.regionSame, that.resolved_pixels[point.regionSame + 'count']])
-                        return
-                      } else {
-                        debugInfo(['该像素点总数[{}]未校验', point.regionSame])
-                      }
-                      if (point.regionSame >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2) {
+                      if (point.regionSame >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2 || useMockOcr) {
                         // Ocr识图API获取文本
                         let countdown = OcrUtil.getImageNumber(base64String)
                         if (isFinite(countdown) && countdown > 0) {
                           try {
                             countdownLock.lock()
-                            // 标记该像素点总数的图片已处理过
-                            that.resolved_pixels[point.regionSame] = true
-                            that.resolved_pixels[point.regionSame + 'count'] = countdown
+                            debugInfo('获取倒计时数据为：' + countdown)
                             if (countdown < that.min_countdown) {
                               debugInfo('设置最小倒计时：' + countdown)
                               that.min_countdown = countdown
