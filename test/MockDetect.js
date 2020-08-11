@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-04 20:20:53
+ * @Last Modified time: 2020-08-11 13:59:54
  * @Description: 
  */
 let resolver = require('../lib/AutoJSRemoveDexResolver.js')
@@ -23,7 +23,9 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
 require('../lib/ResourceMonitor.js')(runtime, this)
+let numberUtil = require('../lib/MockNumberOcrUtil.js')
 _config.show_debug_log = true
+_config.develop_mode = true
 requestScreenCapture(false)
 
 let SCRIPT_LOGGER = new ScriptLogger({
@@ -139,7 +141,7 @@ function CollectDetect () {
   }
 
   this.checkIsCanCollect = function (img, point) {
-    
+
     let height = point.bottom - point.top
     let width = point.right - point.left
     debugInfo(['checkPoints: {}', JSON.stringify(checkPoints)])
@@ -241,10 +243,20 @@ function CollectDetect () {
                 countdownLatch.countDown()
                 listWriteLock.unlock()
               } else {
-                debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame)
+                let height = point.bottom - point.top
+                let width = point.right - point.left
+                let countdownImg = images.clip(
+                  images.copy(originScreen),
+                  point.left + width - width / Math.sqrt(2),
+                  point.top,
+                  width / Math.sqrt(2),
+                  height / Math.sqrt(2)
+                )
+                let num = numberUtil.doRecognize(countdownImg)
+                debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame + ' 倒计时值：' + num)
                 // 直接标记执行完毕 将OCR请求交给异步处理
                 listWriteLock.lock()
-                countdownList.push({ point: point, isCountdown: true })
+                countdownList.push({ point: point, isCountdown: true, num: num })
                 countdownLatch.countDown()
                 listWriteLock.unlock()
               }
@@ -450,7 +462,7 @@ window.canvas.on("draw", function (canvas) {
     points.forEach(pointData => {
       let point = pointData.point
       if (pointData.isCountdown) {
-        drawRectAndText('倒计时', [point.left - 10, point.top - 10, point.right + 10, point.bottom + 10], '#ff0000', canvas, paint)
+        drawRectAndText('倒计时:' + pointData.num, [point.left - 10, point.top - 10, point.right + 10, point.bottom + 10], '#ff0000', canvas, paint)
       } else {
         drawRectAndText(pointData.isHelp ? '帮收' : '可收', [point.left - 10, point.top - 10, point.right + 10, point.bottom + 10], '#ff0000', canvas, paint)
       }
