@@ -1,17 +1,13 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-04 21:11:36
+ * @Last Modified time: 2020-08-12 12:51:17
  * @Description: 蚂蚁森林自动收能量
  */
 let { config } = require('./config.js')(runtime, this)
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 const resolver = require('./lib/AutoJSRemoveDexResolver.js')
 
-if (config.base_on_image) {
-  resolver()
-  runtime.loadDex('./lib/color-region-center.dex')
-}
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
 let commonFunctions = singletonRequire('CommonFunction')
@@ -26,6 +22,12 @@ runningQueueDispatcher.addRunningTask()
 commonFunctions.killDuplicateScript()
 logInfo('======加入任务队列成功=======')
 
+if (config.base_on_image) {
+  logInfo('======基于图像分析模式：加载dex=======')
+  resolver()
+  runtime.loadDex('./lib/color-region-center.dex')
+  logInfo('=======加载dex完成=======')
+}
 
 let FloatyInstance = singletonRequire('FloatyUtil')
 let FileUtils = singletonRequire('FileUtils')
@@ -40,13 +42,17 @@ let formatDate = require('./lib/DateUtil.js')
 callStateListener.exitIfNotIdle()
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
-  resolver()
   // 移除运行中任务
-  runningQueueDispatcher.removeRunningTask(true, true)
-  // 重置自动亮度
-  if (_config.auto_set_brightness) {
-    device.setBrightnessMode(1)
-  }
+  runningQueueDispatcher.removeRunningTask(true, true,
+    () => {
+      // 重置自动亮度
+      if (_config.auto_set_brightness) {
+        device.setBrightnessMode(1)
+      }
+      debugInfo('校验并移除已加载的dex')
+      resolver()
+    }
+  )
 })
 /***********************
  * 初始化
@@ -82,7 +88,7 @@ logInfo(['运行模式：{}{} {} {} 排行榜可收取判定方式：{} {}',
   config.single_script ? '单脚本运行无视运行队列' : '多脚本调度运行',
   config.is_cycle ? '循环' + config.cycle_times + '次' : (config.never_stop ? '永不停止，重新激活时间：' + config.reactive_time : '计时模式，超时时间：' + config.max_collect_wait_time),
   config.auto_set_img_or_widget ? '自动分析基于图像还是控件分析' : (
-    config.base_on_image ? '基于图像分析' + (config.useOcr||config.useTesseracOcr ? '-使用OCR识别倒计时 ' : '') : '基于控件分析'
+    config.base_on_image ? '基于图像分析' + (config.useOcr || config.useTesseracOcr ? '-使用OCR识别倒计时 ' : '') : '基于控件分析'
   ),
   config.check_finger_by_pixels_amount ? '基于像素点个数判断是否可收取，阈值<=' + config.finger_img_pixels : '自动判断是否可收取',
   config.useCustomScrollDown ? '使用模拟滑动, 速度：' + config.scrollDownSpeed + 'ms 底部高度：' + config.bottomHeight : ''
