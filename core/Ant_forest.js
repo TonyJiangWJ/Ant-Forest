@@ -1,17 +1,17 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-04 21:09:40
+ * @Last Modified time: 2020-08-17 23:12:31
  * @Description: 蚂蚁森林操作集
  */
-let { config: _config } = require('../config.js')(runtime, this)
+let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
-let callStateListener = config.enable_call_state_control ? singletonRequire('CallStateListener')
+let callStateListener = _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
 let FriendListScanner = require('./FriendListScanner.js')
 let ImgBasedFriendListScanner = null
@@ -557,7 +557,33 @@ function Ant_forest () {
     return _lost_someone
   }
 
-
+  const autoDetectTreeCollectRegion = function () {
+    if (_config.auto_detect_tree_collect_region) {
+      let balls = _widgetUtils.widgetGetAll(/合种|看林区/)
+      if (balls && balls.length >= 2) {
+        balls = balls.sort((b1, b2) => b1.bounds().bottom > b2.bounds().bottom ? -1 : 1)
+        let bounds1 = balls[1].bounds()
+        let bounds2 = balls[0].bounds()
+        _config.tree_collect_left = bounds1.width()
+        _config.tree_collect_top = bounds1.top
+        _config.tree_collect_width = parseInt(_config.device_width - 2 * bounds1.width())
+        _config.tree_collect_height = bounds2.top - bounds1.top
+        detectRegion = [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height]
+        infoLog('自动识别区域：' + JSON.stringify(detectRegion))
+        let configStorage = storages.create(_storage_name)
+        configStorage.put('tree_collect_left', _config.tree_collect_left)
+        configStorage.put('tree_collect_top', _config.tree_collect_top)
+        configStorage.put('tree_collect_width', _config.tree_collect_width)
+        configStorage.put('tree_collect_height', _config.tree_collect_height)
+      } else {
+        warnInfo('自动识别能量球识别区域失败，未识别到对象：' + (balls ? JSON.stringify(
+          balls.map(b => {
+            return { 'content': b.desc() || b.text(), 'bounds': b.bounds() }
+          })
+        ) : ''))
+      }
+    }
+  }
   /***********************
    * 主要函数
    ***********************/
@@ -593,6 +619,8 @@ function Ant_forest () {
       engines.myEngine().forceStop()
     }
     logInfo('进入个人首页成功')
+    // 自动识别能量球区域
+    autoDetectTreeCollectRegion()
     clearPopup()
     getPreEnergy()
   }

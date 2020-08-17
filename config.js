@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-06 19:48:46
+ * @Last Modified time: 2020-08-17 23:05:51
  * @Description: 
  */
 'ui';
@@ -139,6 +139,7 @@ let default_config = {
   rank_check_width: 550,
   rank_check_height: 130,
   // 收集能量球区域
+  auto_detect_tree_collect_region: true,
   tree_collect_left: 150,
   tree_collect_top: 550,
   tree_collect_width: 800,
@@ -177,12 +178,6 @@ if (typeof config.collectable_energy_ball_content !== 'string') {
 
 if (!isRunningMode) {
   if (!currentEngine.endsWith('/config.js')) {
-    if (config.base_on_image && config.direct_use_img_collect_and_help) {
-      if (config.tree_collect_width + config.tree_collect_left > config.device_width) {
-        toastLog('请先运行config.js修改能量球识别区域，具体操作见README.md')
-        exit()
-      }
-    }
     if (config.bottom_check_top > config.device_height) {
       config.bottom_check_top = config.device_height - 50
       config.bottom_check_width = config.device_width - 50
@@ -191,7 +186,7 @@ if (!isRunningMode) {
     }
 
     if (config.rank_check_left + config.rank_check_width > config.device_width) {
-      onfig.rank_check_left = 100
+      config.rank_check_left = 100
       config.rank_check_width = 100
       storageConfig.put('rank_check_left', config.rank_check_left)
       storageConfig.put('rank_check_width', config.rank_check_width)
@@ -312,15 +307,19 @@ if (!isRunningMode) {
     ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     ui.directUseImgCollectChkBox.setChecked(config.direct_use_img_collect_and_help)
 
+    ui.autoDetectTreeCollectRegionChkBox.setChecked(config.auto_detect_tree_collect_region)
     ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
 
     if (config.direct_use_img_collect_and_help) {
       ui.multiTouchContainer.setVisibility(View.GONE)
-      ui.collectRegionContainer.setVisibility(View.VISIBLE)
+      ui.autoDetectTreeCollectRegionChkBox.setVisibility(View.VISIBLE)
+      ui.collectRegionContainer.setVisibility(config.auto_detect_tree_collect_region ? View.GONE : View.VISIBLE)
       config.try_collect_by_multi_touch = false
     } else {
-      ui.collectRegionContainer.setVisibility(View.GONE)
       ui.multiTouchContainer.setVisibility(View.VISIBLE)
+      ui.autoDetectTreeCollectRegionChkBox.setVisibility(View.GONE)
+      ui.collectRegionContainer.setVisibility(View.GONE)
+      ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     }
 
     ui.useOcrParentContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
@@ -928,6 +927,7 @@ if (!isRunningMode) {
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <checkbox id="directUseImgCollectChkBox" text="是否直接基于图像分析收取和帮助好友" />
+                  <checkbox id="autoDetectTreeCollectRegionChkBox" text="是否自动分析能量球识别区域" />
                   <vertical id="collectRegionContainer">
                     <horizontal gravity="center">
                       <text text="基于图像收集能量球范围:" layout_weight="20" />
@@ -1368,11 +1368,9 @@ if (!isRunningMode) {
 
     ui.viewpager.setTitles(['基本配置', '进阶配置', '控件文本配置'])
     ui.tabs.setupWithViewPager(ui.viewpager)
-    if (config.device_height <= 10 || config.device_width <= 10) {
-      inputDeviceSize().then(() => resetUiValues())
-    } else {
-      resetUiValues()
-    }
+
+    resetUiValues()
+
     // 列表监听
     ui.whiteList.on('item_bind', function (itemView, itemHolder) {
       // 绑定删除事件
@@ -2058,13 +2056,19 @@ if (!isRunningMode) {
       config.direct_use_img_collect_and_help = ui.directUseImgCollectChkBox.isChecked()
       if (config.direct_use_img_collect_and_help) {
         ui.multiTouchContainer.setVisibility(View.GONE)
-        ui.collectRegionContainer.setVisibility(View.VISIBLE)
+        ui.autoDetectTreeCollectRegionChkBox.setVisibility(View.VISIBLE)
+        ui.collectRegionContainer.setVisibility(config.auto_detect_tree_collect_region ? View.GONE : View.VISIBLE)
         config.try_collect_by_multi_touch = false
       } else {
         ui.multiTouchContainer.setVisibility(View.VISIBLE)
+        ui.autoDetectTreeCollectRegionChkBox.setVisibility(View.GONE)
         ui.collectRegionContainer.setVisibility(View.GONE)
         ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
       }
+    })
+    ui.autoDetectTreeCollectRegionChkBox.on('click', () => {
+      config.auto_detect_tree_collect_region = ui.autoDetectTreeCollectRegionChkBox.isChecked()
+      ui.collectRegionContainer.setVisibility(config.auto_detect_tree_collect_region ? View.GONE : View.VISIBLE)
     })
 
     ui.baseOnImageChkBox.on('click', () => {
