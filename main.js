@@ -1,10 +1,10 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-12 12:51:17
+ * @Last Modified time: 2020-08-17 15:46:46
  * @Description: 蚂蚁森林自动收能量
  */
-let { config } = require('./config.js')(runtime, this)
+let { config, storage_name } = require('./config.js')(runtime, this)
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 const resolver = require('./lib/AutoJSRemoveDexResolver.js')
 
@@ -46,11 +46,12 @@ commonFunctions.registerOnEngineRemoved(function () {
   runningQueueDispatcher.removeRunningTask(true, true,
     () => {
       // 重置自动亮度
-      if (_config.auto_set_brightness) {
+      if (config.auto_set_brightness) {
         device.setBrightnessMode(1)
       }
       debugInfo('校验并移除已加载的dex')
       resolver()
+      console.clear()
     }
   )
 })
@@ -157,6 +158,9 @@ if (screen) {
     config.device_height = height
     config.device_width = width
     warnInfo(['设备分辨率设置不正确，宽高已修正为：[{}, {}]', width, height])
+    let configStorage = storages.create(storage_name)
+    configStorage.put('device_height', height)
+    configStorage.put('device_width', width)
   }
 }
 // 初始化悬浮窗
