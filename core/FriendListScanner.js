@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-16 09:55:06
+ * @Last Modified time: 2020-08-25 00:11:45
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -207,7 +207,7 @@ const FriendListScanner = function () {
           this.condition.await()
         }
         // 获取截图 用于判断是否可收取 截图失败时终止程序并几秒后重启，主要是因为丢失了截图权限
-        screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
+        screen = _commonFunctions.checkCaptureScreenPermission(5)
         if (this.friends_list_parent && this.friends_list_parent.children) {
           friendListLength = this.friends_list_parent.children().length
           debugInfo(

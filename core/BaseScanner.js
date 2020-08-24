@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-07-29 17:07:53
+ * @Last Modified time: 2020-08-25 00:11:35
  * @Description: 排行榜扫描基类
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -464,7 +464,7 @@ const BaseScanner = function () {
     let preGot, postGet, preE, postE, rentery = false
     let screen = null
     if (_config.cutAndSaveTreeCollect) {
-      screen = images.copy(_commonFunctions.checkCaptureScreenPermission(false))
+      screen = images.copy(_commonFunctions.checkCaptureScreenPermission())
     }
     try {
       preGot = _widgetUtils.getYouCollectEnergy() || 0
