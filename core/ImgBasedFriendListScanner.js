@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-11 17:11:53
+ * @Last Modified time: 2020-08-24 17:58:32
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -222,7 +222,7 @@ const ImgBasedFriendListScanner = function () {
     let hasNext = true
     let that = this
     do {
-      screen = _commonFunctions.checkCaptureScreenPermission(false, 5)
+      screen = _commonFunctions.checkCaptureScreenPermission(5)
       // 重新复制一份
       grayScreen = images.copy(images.grayscale(images.copy(screen)), true)
       let originScreen = images.copy(screen)
@@ -517,7 +517,7 @@ const ImgBasedFriendListScanner = function () {
     let use_img = images.copy(img)
     let movingY = parseInt(180 * SCALE_RATE)
     let movingX = parseInt(100 * SCALE_RATE)
-    debugInfo(['moving window size: [{},{}]', movingX, movingY])
+    debugForDev(['moving window size: [{},{}]', movingX, movingY])
     // 预留70左右的高度
     let endY = _config.device_height - movingY - 70 * SCALE_RATE
     let runningY = 440 * SCALE_RATE
