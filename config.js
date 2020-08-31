@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-17 23:05:51
+ * @Last Modified time: 2020-08-31 16:44:21
  * @Description: 
  */
 'ui';
@@ -175,10 +175,9 @@ Object.keys(default_config).forEach(key => {
 if (typeof config.collectable_energy_ball_content !== 'string') {
   config.collectable_energy_ball_content = default_config.collectable_energy_ball_content
 }
-
-if (!isRunningMode) {
-  if (!currentEngine.endsWith('/config.js')) {
-    if (config.bottom_check_top > config.device_height) {
+config.recalculateRegion = () => {
+  if (config.device_height > 10 && config.device_width > 10) {
+    if (config.bottom_check_top > config.device_height || config.bottom_check_top <= 0) {
       config.bottom_check_top = config.device_height - 50
       config.bottom_check_width = config.device_width - 50
       storageConfig.put('bottom_check_top', config.bottom_check_top)
@@ -191,6 +190,11 @@ if (!isRunningMode) {
       storageConfig.put('rank_check_left', config.rank_check_left)
       storageConfig.put('rank_check_width', config.rank_check_width)
     }
+  }
+}
+if (!isRunningMode) {
+  if (!currentEngine.endsWith('/config.js')) {
+    config.recalculateRegion()
   }
   module.exports = function (__runtime__, scope) {
     if (typeof scope.config_instance === 'undefined') {

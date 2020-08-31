@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-17 15:46:46
+ * @Last Modified time: 2020-08-31 10:51:19
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
@@ -49,6 +49,8 @@ commonFunctions.registerOnEngineRemoved(function () {
       if (config.auto_set_brightness) {
         device.setBrightnessMode(1)
       }
+      events.removeAllListeners()
+      events.recycle()
       debugInfo('校验并移除已加载的dex')
       resolver()
       console.clear()
@@ -161,6 +163,7 @@ if (screen) {
     let configStorage = storages.create(storage_name)
     configStorage.put('device_height', height)
     configStorage.put('device_width', width)
+    config.recalculateRegion()
   }
 }
 // 初始化悬浮窗
@@ -186,8 +189,6 @@ if (config.develop_mode) {
   }
 }
 resourceMonitor.releaseAll()
-events.removeAllListeners()
-events.recycle()
 runningQueueDispatcher.removeRunningTask(true)
 // 30秒后关闭，防止立即停止
 setTimeout(() => { exit() }, 1000 * 30)
