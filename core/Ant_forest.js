@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-17 23:12:31
+ * @Last Modified time: 2020-08-26 20:46:30
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -890,6 +890,9 @@ function Ant_forest () {
             _runningQueueDispatcher.removeRunningTask()
             // 如果不驻留悬浮窗  则不延迟，直接关闭
             if (_config.not_lingering_float_window) {
+              // 展示一下悬浮窗信息 提示还剩多久启动
+              _commonFunctions.showTextFloaty('脚本将在' + _min_countdown + '分钟后自动执行')
+              sleep(3000)
               _runningQueueDispatcher.removeRunningTask()
               exit()
             } else {
