@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-26 20:46:30
+ * @Last Modified time: 2020-09-05 00:33:35
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -34,6 +34,7 @@ function Ant_forest () {
     _collect_any = false, // 收集过能量
     _re_try = 0,
     _lost_someone = false, // 是否漏收,
+    _lost_count = 0, // 漏收异常次数,
     _lost_reason = '', // 漏收原因
     _friends_min_countdown = null
   /***********************
@@ -703,14 +704,12 @@ function Ant_forest () {
             warnInfo('关闭脚本', true)
             _commonFunctions.cancelAllTimedTasks()
           } else if (keyCode === 25) {
-            if (_config.auto_set_brightness) {
-              device.setBrightnessMode(1)
-            }
             warnInfo('延迟五分钟后启动脚本', true)
             _commonFunctions.setUpAutoStart(5)
             stop = true
           }
           if (stop) {
+            unlocker && unlocker.saveNeedRelock(true)
             _runningQueueDispatcher.removeRunningTask()
             resourceMonitor.releaseAll()
             engines.myEngine().forceStop()
@@ -723,6 +722,8 @@ function Ant_forest () {
       callStateListener.exitIfNotIdle()
       callStateListener.enableListener()
       _runningQueueDispatcher.addRunningTask()
+      // 取消定时任务
+      _commonFunctions.cancelAllTimedTasks()
       unlocker.exec()
       _commonFunctions.showDialogAndWait(true)
       this.listenStopCollect()
@@ -734,6 +735,10 @@ function Ant_forest () {
         exit()
       } else {
         debugInfo('图片资源代理正常')
+      }
+      if (_commonFunctions.inLimitTimeRange()) {
+        warnInfo('当前在限制运行时间范围，停止运行', true)
+        exit()
       }
     }
 
@@ -879,6 +884,17 @@ function Ant_forest () {
           _commonFunctions.getAndUpdateDismissReason('lost_someone')
           _lost_someone = false
           _lost_reason = ''
+          _lost_count++
+          if (_lost_count >= 5) {
+            warnInfo('连续漏收达到五次，可能存在不可恢复错误，重新启动脚本')
+            _commonFunctions.getAndUpdateDismissReason('_lost_someone_over_limit')
+            _commonFunctions.setUpAutoStart(1)
+            if (_config.auto_lock === true && unlocker.needRelock() === true) {
+              debugInfo('重新锁定屏幕')
+              automator.lockScreen()
+            }
+            exit()
+          }
         } else {
           debugInfo(['获取到的倒计时时间：{}', _min_countdown])
           if (_min_countdown > 0) {
@@ -924,6 +940,7 @@ function Ant_forest () {
         }
         // 当前没有遗漏 准备结束当前循环
         if (!_lost_someone) {
+          _lost_count = 0
           this.endLoop()
           if (_has_next === false || _re_try > 5) {
             break
