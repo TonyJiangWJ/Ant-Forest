@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-07 21:57:35
+ * @Last Modified time: 2020-09-07 23:14:15
  * @Description: 排行榜扫描基类
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -220,6 +220,7 @@ const BaseScanner = function () {
 
   /**
    * 根据图像识别 帮助收取或者收取能量球
+   * @deprecated 废弃，改用霍夫变换
    * @param isOwn 是否收集自己，收自己时不判断帮收能量球
    */
   this.checkAndCollectByImg = function (isOwn) {
@@ -277,15 +278,31 @@ const BaseScanner = function () {
     debugInfo(['判断可收集能量球信息总耗时：{}ms', new Date().getTime() - start])
   }
 
+  /**
+   * @deprecated 废弃改用霍夫变换
+   * @param {*} p 
+   * @param {*} lpx 
+   * @param {*} lpy 
+   */
   this.getDistance = function (p, lpx, lpy) {
     return Math.sqrt(Math.pow(p.x - lpx, 2) + Math.pow(p.y - lpy, 2))
   }
 
+  /**
+   * @deprecated 废弃改用霍夫变换
+   * @param {*} lowColor 
+   * @param {*} highColor 
+   * @param {*} type 
+   */
   this.checkAndClickByImg = function (lowColor, highColor, type) {
     let clickPoints = this.checkByImg(lowColor, highColor, type)
     this.clickCheckPoints(clickPoints)
   }
 
+  /**
+   * @deprecated 废弃改用霍夫变换
+   * @param {*} clickPoints 
+   */
   this.clickCheckPoints = function (clickPoints) {
     if (clickPoints.length > 0) {
       clickPoints.forEach(p => {
@@ -297,6 +314,12 @@ const BaseScanner = function () {
     }
   }
 
+  /**
+   * @deprecated 废弃改用霍夫变换
+   * @param {*} lowColor 
+   * @param {*} highColor 
+   * @param {*} type 
+   */
   this.checkByImg = function (lowColor, highColor, type) {
     let isHelp = type === '可帮助'
     let screen = _commonFunctions.checkCaptureScreenPermission()

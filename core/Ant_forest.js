@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-07 22:00:36
+ * @Last Modified time: 2020-09-07 23:11:45
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -635,7 +635,7 @@ function Ant_forest () {
     }
     logInfo('进入个人首页成功')
     // 自动识别能量球区域
-    autoDetectTreeCollectRegion()
+    // autoDetectTreeCollectRegion()
     clearPopup()
     getPreEnergy()
   }
