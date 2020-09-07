@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-24 17:58:32
+ * @Last Modified time: 2020-09-07 21:30:17
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -73,7 +73,6 @@ const ImgBasedFriendListScanner = function () {
   }
 
   this.start = function () {
-    this.increased_energy = 0
     this.min_countdown = 10000
     this.min_countdown_pixels = 10
     debugInfo('图像分析即将开始')
@@ -86,7 +85,7 @@ const ImgBasedFriendListScanner = function () {
   this.sortAndReduce = function (points, gap) {
     let scaleRate = _config.device_width / 1080
     gap = gap || 100 * scaleRate
-    debugInfo(['reduce gap: {}', gap])
+    debugForDev(['reduce gap: {}', gap])
     let lastY = -gap - 1
     let lastIsHelp = false
     let resultPoints = []
@@ -552,21 +551,6 @@ const ImgBasedFriendListScanner = function () {
 ImgBasedFriendListScanner.prototype = Object.create(BaseScanner.prototype)
 ImgBasedFriendListScanner.prototype.constructor = ImgBasedFriendListScanner
 
-ImgBasedFriendListScanner.prototype.returnToListAndCheck = function () {
-  automator.back()
-  sleep(500)
-  let returnCount = 0
-  while (!_widgetUtils.friendListWaiting()) {
-    if (returnCount++ === 2) {
-      // 等待两秒后再次触发
-      automator.back()
-    }
-    if (returnCount > 5) {
-      errorInfo('返回好友排行榜失败，重新开始')
-      return false
-    }
-  }
-}
 
 ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
   if (!obj.protect) {
