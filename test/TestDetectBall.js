@@ -4,6 +4,7 @@ let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
 
 config.show_debug_log = true
 requestScreenCapture(false)
@@ -137,12 +138,19 @@ function exitAndClean () {
     toastLog('close in 1 seconds')
     sleep(1000)
     window.close()
+    window = null
   }
   if (detectThread) {
     detectThread.interrupt()
+    detectThread = null
   }
+  resourceMonitor.releaseAll()
   exit()
 }
+
+commonFunction.registerOnEngineRemoved(function () {
+  exitAndClean()
+})
 
 let getDistance = function (p, lpx, lpy) {
   return Math.sqrt(Math.pow(p.x - lpx, 2) + Math.pow(p.y - lpy, 2))
@@ -243,10 +251,6 @@ window.canvas.on("draw", function (canvas) {
   }
   drawCoordinateAxis(canvas, paint)
   converted = true
-  // } catch (e) {
-  //   toastLog(e)
-  //   exitAndClean()
-  // }
 });
 
 let lastChangedTime = new Date().getTime()

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-05 00:33:35
+ * @Last Modified time: 2020-09-07 22:00:36
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -14,6 +14,7 @@ let alipayUnlocker = singletonRequire('AlipayUnlocker')
 let callStateListener = _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
 let FriendListScanner = require('./FriendListScanner.js')
+let StrollScanner = require('./StrollScanner.js')
 let ImgBasedFriendListScanner = null
 if (_config.base_on_image) {
   ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
@@ -512,7 +513,8 @@ function Ant_forest () {
       debugInfo('无能量球可收取')
       if (_config.direct_use_img_collect_and_help) {
         debugInfo('尝试通过图像分析收取能量')
-        _base_scanner.checkAndCollectByImg(true)
+        // _base_scanner.checkAndCollectByImg(true)
+        _base_scanner.checkAndCollectByHough(true)
       } else if (_config.try_collect_by_multi_touch) {
         debugInfo('尝试通过直接点击区域收集能量')
         _base_scanner.multiTouchToCollect()
@@ -556,6 +558,18 @@ function Ant_forest () {
     scanner.destory()
     scanner = null
     return _lost_someone
+  }
+
+  const tryCollectByStroll = function () {
+    debugInfo('尝试逛一逛收集能量')
+    let scanner = new StrollScanner()
+    scanner.init({ currentTime: _current_time, increaseEnergy: _post_energy - _pre_energy })
+    let runResult = scanner.start()
+    scanner.destory()
+    if (runResult && runResult.doSuccess) {
+      automator.back()
+      _widgetUtils.homePageWaiting()
+    }
   }
 
   const autoDetectTreeCollectRegion = function () {
@@ -650,6 +664,8 @@ function Ant_forest () {
   // 收取好友的能量
   const collectFriend = function () {
     _commonFunctions.addOpenPlacehold('开始收集好友能量')
+    // 首先尝试逛一逛收集
+    tryCollectByStroll()
     automator.enterFriendList()
     let enterFlag = _widgetUtils.friendListWaiting()
     if (!enterFlag) {
