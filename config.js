@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-07 23:00:05
+ * @Last Modified time: 2020-09-09 00:23:36
  * @Description: 
  */
 'ui';
@@ -138,8 +138,6 @@ let default_config = {
   rank_check_top: 250,
   rank_check_width: 550,
   rank_check_height: 130,
-  // 收集能量球区域
-  auto_detect_tree_collect_region: false,
   tree_collect_left: 150,
   tree_collect_top: 550,
   tree_collect_width: 800,
