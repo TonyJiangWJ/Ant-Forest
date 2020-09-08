@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-09 00:17:55
+ * @Last Modified time: 2020-09-09 00:23:09
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -575,30 +575,28 @@ function Ant_forest () {
   }
 
   const autoDetectTreeCollectRegion = function () {
-    if (_config.auto_detect_tree_collect_region) {
-      let balls = _widgetUtils.widgetGetAll(/合种|看林区/)
-      if (balls && balls.length >= 2) {
-        balls = balls.sort((b1, b2) => b1.bounds().bottom > b2.bounds().bottom ? -1 : 1)
-        let bounds1 = balls[1].bounds()
-        let bounds2 = balls[0].bounds()
-        _config.tree_collect_left = bounds1.width()
-        _config.tree_collect_top = bounds1.top
-        _config.tree_collect_width = parseInt(_config.device_width - 2 * bounds1.width())
-        _config.tree_collect_height = bounds2.top - bounds1.top
-        detectRegion = [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height]
-        infoLog('自动识别区域：' + JSON.stringify(detectRegion))
-        let configStorage = storages.create(_storage_name)
-        configStorage.put('tree_collect_left', _config.tree_collect_left)
-        configStorage.put('tree_collect_top', _config.tree_collect_top)
-        configStorage.put('tree_collect_width', _config.tree_collect_width)
-        configStorage.put('tree_collect_height', _config.tree_collect_height)
-      } else {
-        warnInfo('自动识别能量球识别区域失败，未识别到对象：' + (balls ? JSON.stringify(
-          balls.map(b => {
-            return { 'content': b.desc() || b.text(), 'bounds': b.bounds() }
-          })
-        ) : ''))
-      }
+    let balls = _widgetUtils.widgetGetAll(/合种|看林区/)
+    if (balls && balls.length >= 2) {
+      balls = balls.sort((b1, b2) => b1.bounds().bottom > b2.bounds().bottom ? -1 : 1)
+      let bounds1 = balls[1].bounds()
+      let bounds2 = balls[0].bounds()
+      _config.tree_collect_left = bounds1.width()
+      _config.tree_collect_top = bounds1.top
+      _config.tree_collect_width = parseInt(_config.device_width - 2 * bounds1.width())
+      _config.tree_collect_height = bounds2.top - bounds1.top
+      detectRegion = [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height]
+      infoLog('自动识别区域：' + JSON.stringify(detectRegion))
+      let configStorage = storages.create(_storage_name)
+      configStorage.put('tree_collect_left', _config.tree_collect_left)
+      configStorage.put('tree_collect_top', _config.tree_collect_top)
+      configStorage.put('tree_collect_width', _config.tree_collect_width)
+      configStorage.put('tree_collect_height', _config.tree_collect_height)
+    } else {
+      warnInfo('自动识别能量球识别区域失败，未识别到对象：' + (balls ? JSON.stringify(
+        balls.map(b => {
+          return { 'content': b.desc() || b.text(), 'bounds': b.bounds() }
+        })
+      ) : ''))
     }
   }
   /***********************
@@ -637,7 +635,7 @@ function Ant_forest () {
     }
     logInfo('进入个人首页成功')
     // 自动识别能量球区域
-    // autoDetectTreeCollectRegion()
+    autoDetectTreeCollectRegion()
     clearPopup()
     getPreEnergy()
   }
