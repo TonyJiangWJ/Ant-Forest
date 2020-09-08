@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-31 16:44:21
+ * @Last Modified time: 2020-09-07 23:00:05
  * @Description: 
  */
 'ui';
@@ -139,7 +139,7 @@ let default_config = {
   rank_check_width: 550,
   rank_check_height: 130,
   // 收集能量球区域
-  auto_detect_tree_collect_region: true,
+  auto_detect_tree_collect_region: false,
   tree_collect_left: 150,
   tree_collect_top: 550,
   tree_collect_width: 800,
@@ -256,7 +256,6 @@ if (!isRunningMode) {
   let whiteList = [], wateringBlackList = [], helpBallColorList = [], protectList = []
 
   let scale = config.device_width / 1080
-  let treeCollectXRange, treeCollectYRange, treeCollectHRange, treeCollectWRange
   let rankCheckRegionXRange, rankCheckRegionYRange, rankCheckRegionHRange, rankCheckRegionWRange
   let bottomCheckRegionXRange, bottomCheckRegionYRange, bottomCheckRegionHRange, bottomCheckRegionWRange = [5, 50]
 
@@ -286,10 +285,6 @@ if (!isRunningMode) {
   }
   function resetRangeInfo () {
     scale = config.device_width / 1080
-    treeCollectXRange = [100 * scale, config.device_width / 2]
-    treeCollectYRange = [100 * scale, config.device_height / 2]
-    treeCollectWRange = [config.device_width / 2, config.device_width]
-    treeCollectHRange = [100 * scale, config.device_height / 2]
     rankCheckRegionXRange = [100 * scale, config.device_width / 2]
     rankCheckRegionYRange = [100 * scale, config.device_height / 4]
     rankCheckRegionWRange = [100 * scale, config.device_width * 0.66]
@@ -311,18 +306,11 @@ if (!isRunningMode) {
     ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     ui.directUseImgCollectChkBox.setChecked(config.direct_use_img_collect_and_help)
 
-    ui.autoDetectTreeCollectRegionChkBox.setChecked(config.auto_detect_tree_collect_region)
-    ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
-
     if (config.direct_use_img_collect_and_help) {
       ui.multiTouchContainer.setVisibility(View.GONE)
-      ui.autoDetectTreeCollectRegionChkBox.setVisibility(View.VISIBLE)
-      ui.collectRegionContainer.setVisibility(config.auto_detect_tree_collect_region ? View.GONE : View.VISIBLE)
       config.try_collect_by_multi_touch = false
     } else {
       ui.multiTouchContainer.setVisibility(View.VISIBLE)
-      ui.autoDetectTreeCollectRegionChkBox.setVisibility(View.GONE)
-      ui.collectRegionContainer.setVisibility(View.GONE)
       ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     }
 
@@ -420,10 +408,6 @@ if (!isRunningMode) {
 
   let setRegionSeekBars = function () {
 
-    ui.collectRegionXSeekbar.setProgress(getProgress(config.tree_collect_left, treeCollectXRange))
-    ui.collectRegionYSeekbar.setProgress(getProgress(config.tree_collect_top, treeCollectYRange))
-    ui.collectRegionWSeekbar.setProgress(getProgress(config.tree_collect_width, treeCollectWRange))
-    ui.collectRegionHSeekbar.setProgress(getProgress(config.tree_collect_height, treeCollectHRange))
 
     ui.rankCheckRegionXSeekbar.setProgress(getProgress(config.rank_check_left, rankCheckRegionXRange))
     ui.rankCheckRegionYSeekbar.setProgress(getProgress(config.rank_check_top, rankCheckRegionYRange))
@@ -586,7 +570,6 @@ if (!isRunningMode) {
     ui.regionSeekChkBox.setChecked(false)
     setImageBasedUiVal()
     setOcrUiVal()
-    ui.treeCollectRegionContainer.setVisibility(View.GONE)
     ui.rankCheckRegionContainer.setVisibility(View.GONE)
     ui.bottomCheckRegionContainer.setVisibility(View.GONE)
   }
@@ -931,31 +914,7 @@ if (!isRunningMode) {
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <checkbox id="directUseImgCollectChkBox" text="是否直接基于图像分析收取和帮助好友" />
-                  <checkbox id="autoDetectTreeCollectRegionChkBox" text="是否自动分析能量球识别区域" />
-                  <vertical id="collectRegionContainer">
-                    <horizontal gravity="center">
-                      <text text="基于图像收集能量球范围:" layout_weight="20" />
-                      <input inputType="text" id="treeCollectRegionInpt" layout_weight="80" />
-                    </horizontal>
-                    <vertical id="treeCollectRegionContainer" >
-                      <horizontal gravity="center">
-                        <text text="X坐标:" />
-                        <seekbar id="collectRegionXSeekbar" progress="20" layout_weight="85" />
-                      </horizontal>
-                      <horizontal gravity="center">
-                        <text text="Y坐标:" />
-                        <seekbar id="collectRegionYSeekbar" progress="20" layout_weight="85" />
-                      </horizontal>
-                      <horizontal gravity="center">
-                        <text text="宽度:" />
-                        <seekbar id="collectRegionWSeekbar" progress="20" layout_weight="85" />
-                      </horizontal>
-                      <horizontal gravity="center">
-                        <text text="高度:" />
-                        <seekbar id="collectRegionHSeekbar" progress="20" layout_weight="85" />
-                      </horizontal>
-                    </vertical>
-                  </vertical>
+                  
                   <vertical id="multiTouchContainer">
                     <text text="当可收取能量球控件无法获取时开启区域点击, 不同设备请扩展点击代码，当前建议开启 直接基于图像分析收取和帮助好友" textSize="9sp" />
                     <checkbox id="tryCollectByMultiTouchChkBox" text="是否尝试区域点击来收取能量" />
@@ -1534,11 +1493,9 @@ if (!isRunningMode) {
       let show = ui.regionSeekChkBox.isChecked()
       if (show) {
         setRegionSeekBars()
-        ui.treeCollectRegionContainer.setVisibility(View.VISIBLE)
         ui.rankCheckRegionContainer.setVisibility(View.VISIBLE)
         ui.bottomCheckRegionContainer.setVisibility(View.VISIBLE)
       } else {
-        ui.treeCollectRegionContainer.setVisibility(View.GONE)
         ui.rankCheckRegionContainer.setVisibility(View.GONE)
         ui.bottomCheckRegionContainer.setVisibility(View.GONE)
       }
@@ -1673,33 +1630,15 @@ if (!isRunningMode) {
     function getTrueValue (progress, rangeInfo) {
       return parseInt(rangeInfo[0] + getGap(rangeInfo) * progress / 100)
     }
+
     let textChangeCall = () => {
-      ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
     }
+
     let setRegionInptVal = () => {
       textChangeCall()
       stopEmitUntil = new Date().getTime() + 3000
       sendConfigChangedBroadcast()
-    }
-    ui.collectRegionXSeekbar.on('touch', () => {
-      config.tree_collect_left = getTrueValue(ui.collectRegionXSeekbar.getProgress(), treeCollectXRange)
-      setRegionInptVal()
-    })
-    ui.collectRegionYSeekbar.on('touch', () => {
-      config.tree_collect_top = getTrueValue(ui.collectRegionYSeekbar.getProgress(), treeCollectYRange)
-      setRegionInptVal()
-    })
-    ui.collectRegionWSeekbar.on('touch', () => {
-      config.tree_collect_width = getTrueValue(ui.collectRegionWSeekbar.getProgress(), treeCollectWRange)
-      setRegionInptVal()
-    })
-    ui.collectRegionHSeekbar.on('touch', () => {
-      config.tree_collect_height = getTrueValue(ui.collectRegionHSeekbar.getProgress(), treeCollectHRange)
-      setRegionInptVal()
-    })
-
-    textChangeCall = () => {
-      ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
     }
     ui.rankCheckRegionXSeekbar.on('touch', () => {
       config.rank_check_left = getTrueValue(ui.rankCheckRegionXSeekbar.getProgress(), rankCheckRegionXRange)
@@ -2060,19 +1999,11 @@ if (!isRunningMode) {
       config.direct_use_img_collect_and_help = ui.directUseImgCollectChkBox.isChecked()
       if (config.direct_use_img_collect_and_help) {
         ui.multiTouchContainer.setVisibility(View.GONE)
-        ui.autoDetectTreeCollectRegionChkBox.setVisibility(View.VISIBLE)
-        ui.collectRegionContainer.setVisibility(config.auto_detect_tree_collect_region ? View.GONE : View.VISIBLE)
         config.try_collect_by_multi_touch = false
       } else {
         ui.multiTouchContainer.setVisibility(View.VISIBLE)
-        ui.autoDetectTreeCollectRegionChkBox.setVisibility(View.GONE)
-        ui.collectRegionContainer.setVisibility(View.GONE)
         ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
       }
-    })
-    ui.autoDetectTreeCollectRegionChkBox.on('click', () => {
-      config.auto_detect_tree_collect_region = ui.autoDetectTreeCollectRegionChkBox.isChecked()
-      ui.collectRegionContainer.setVisibility(config.auto_detect_tree_collect_region ? View.GONE : View.VISIBLE)
     })
 
     ui.baseOnImageChkBox.on('click', () => {
@@ -2238,24 +2169,6 @@ if (!isRunningMode) {
             config.rank_check_top = parseInt(match[2])
             config.rank_check_width = parseInt(match[3])
             config.rank_check_height = parseInt(match[4])
-            setRegionSeekBars()
-          } else {
-            toast('输入值无效')
-          }
-        }
-      })
-    )
-    ui.treeCollectRegionInpt.addTextChangedListener(
-      TextWatcherBuilder(text => {
-        if (new Date().getTime() > stopEmitUntil) {
-          let newVal = text + ''
-          let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
-          if (regex.test(newVal)) {
-            let match = regex.exec(newVal)
-            config.tree_collect_left = parseInt(match[1])
-            config.tree_collect_top = parseInt(match[2])
-            config.tree_collect_width = parseInt(match[3])
-            config.tree_collect_height = parseInt(match[4])
             setRegionSeekBars()
           } else {
             toast('输入值无效')

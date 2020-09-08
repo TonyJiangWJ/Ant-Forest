@@ -15,7 +15,6 @@ if (runningSize > 1) {
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
-let _BaseScanner = require('../core/BaseScanner.js')
 let { config } = require('../config.js')(runtime, this)
 let fileUtils = sRequire('FileUtils')
 
@@ -100,20 +99,16 @@ let targetEndTime = startTime + 120000
 let passwindow = 0
 let showAxis = false
 
-let detectRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
 let rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
 let bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
 
-let gap = parseInt(detectRegion[2] / 6)
 let scaleRate = config.device_width / 1080
 
 let refreshThread = threads.start(function () {
   while (true) {
     // console.log('新获取的配置信息：' + JSON.stringify(config))
-    detectRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
     rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
     bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
-    gap = parseInt(detectRegion[2] / 6)
     scaleRate = config.device_width / 1080
     sleep(100)
   }
@@ -175,20 +170,6 @@ window.canvas.on("draw", function (canvas) {
     }
 
 
-
-
-
-    let step = parseInt(75 * scaleRate)
-    let o = step * 3
-    drawRectAndText('能量球判断区域', detectRegion, '#FF00FF', canvas, paint)
-    // 能量球判断区域
-    for (let x = 0; x <= detectRegion[2] - gap; x += gap) {
-      let offset = x == 3 * gap ? o : Math.abs(o -= step)
-      if (offset == step) {
-        offset = parseInt(90 * scaleRate)
-      }
-      drawRectAndText('' + offset, [detectRegion[0] + x, detectRegion[1] + offset, gap, detectRegion[3] - offset], '#00ff00', canvas, paint)
-    }
     if (showAxis) {
       drawCoordinateAxis(canvas, paint)
     }

@@ -2,8 +2,8 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-07 21:57:35
- * @Description: 排行榜扫描基类
+ * @Last Modified time: 2020-09-08 10:07:58
+ * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
 importClass(java.util.concurrent.ThreadPoolExecutor)
@@ -114,6 +114,9 @@ const BaseScanner = function () {
       // 尝试全局点击
       if (_config.try_collect_by_multi_touch) {
         this.multiTouchToCollect()
+      } else {
+        // 尝试通过图像识别收取
+        this.checkAndCollectByHough()
       }
     }
   }
@@ -183,7 +186,7 @@ const BaseScanner = function () {
                   clickPoints.push({ ball: p, isHelp: true })
                   lock.unlock()
                 } else {
-                  p = images.findColor(rgbImg, '#2dad39', { region: region, threshold: 6 }) || images.findColor(rgbImg, '#0fe4ff', { region: region, threshold: 6 })
+                  p = images.findColor(rgbImg, '#2dad39', { region: recheckRegion, threshold: 1 }) || images.findColor(rgbImg, '#2dad39', { region: region, threshold: 6 }) || images.findColor(rgbImg, '#0fe4ff', { region: region, threshold: 6 })
                   if (p) {
                     lock.lock()
                     clickPoints.push({ ball: p, isHelp: false })
@@ -203,9 +206,13 @@ const BaseScanner = function () {
             debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
             clickPoints.forEach(point => {
               let b = point.ball
+              if (b.y < _config.tree_collect_top) {
+                // 可能是左上角的活动图标
+                return
+              }
               if (isOwn || _config.help_friend && point.isHelp || !point.isHelp) {
                 automator.click(b.x, b.y)
-                sleep(500)
+                sleep(100)
               }
             })
           } else {
@@ -220,6 +227,7 @@ const BaseScanner = function () {
 
   /**
    * 根据图像识别 帮助收取或者收取能量球
+   * @deprecated 废弃，改用霍夫变换
    * @param isOwn 是否收集自己，收自己时不判断帮收能量球
    */
   this.checkAndCollectByImg = function (isOwn) {
@@ -277,15 +285,31 @@ const BaseScanner = function () {
     debugInfo(['判断可收集能量球信息总耗时：{}ms', new Date().getTime() - start])
   }
 
+  /**
+   * @deprecated 废弃改用霍夫变换
+   * @param {*} p 
+   * @param {*} lpx 
+   * @param {*} lpy 
+   */
   this.getDistance = function (p, lpx, lpy) {
     return Math.sqrt(Math.pow(p.x - lpx, 2) + Math.pow(p.y - lpy, 2))
   }
 
+  /**
+   * @deprecated 废弃改用霍夫变换
+   * @param {*} lowColor 
+   * @param {*} highColor 
+   * @param {*} type 
+   */
   this.checkAndClickByImg = function (lowColor, highColor, type) {
     let clickPoints = this.checkByImg(lowColor, highColor, type)
     this.clickCheckPoints(clickPoints)
   }
 
+  /**
+   * @deprecated 废弃改用霍夫变换
+   * @param {*} clickPoints 
+   */
   this.clickCheckPoints = function (clickPoints) {
     if (clickPoints.length > 0) {
       clickPoints.forEach(p => {
@@ -297,6 +321,12 @@ const BaseScanner = function () {
     }
   }
 
+  /**
+   * @deprecated 废弃改用霍夫变换
+   * @param {*} lowColor 
+   * @param {*} highColor 
+   * @param {*} type 
+   */
   this.checkByImg = function (lowColor, highColor, type) {
     let isHelp = type === '可帮助'
     let screen = _commonFunctions.checkCaptureScreenPermission()
