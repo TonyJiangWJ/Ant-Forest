@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-07 16:06:24
+ * @Last Modified time: 2020-09-08 10:00:14
  * @Description: 逛一逛收集器
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -59,7 +59,7 @@ const StrollScanner = function () {
         doSuccess = true
         automator.click(point.x, point.y)
         sleep(500)
-        if (_widgetUtils.idCheck(_config.energy_id || 'J_userEnergy', 1500) && !_widgetUtils.widgetCheck('startapp\?.*', 500)) {
+        if (_widgetUtils.idCheck(_config.energy_id || 'J_userEnergy', 1500) && !_widgetUtils.widgetCheck('startapp\\?.*', 500)) {
             //sleep(200)
           hasNext = this.collectTargetFriend()
         } else {
@@ -91,16 +91,16 @@ StrollScanner.prototype.constructor = StrollScanner
 StrollScanner.prototype.collectTargetFriend = function (obj) {
   obj = obj || {}
   if (!obj.protect) {
-    if (_widgetUtils.widgetCheck('startapp\?.*', 500)) {
-      debugInfo('逛一逛啥也没有，不再瞎逛')
-      return false
-    }
     //automator.click(obj.target.centerX(), obj.target.centerY())
     debugInfo('等待进入好友主页')
     let restartLoop = false
     let count = 1
     ///sleep(1000)
     while (!_widgetUtils.friendHomeWaiting()) {
+      if (_widgetUtils.widgetCheck('startapp\\?.*', 500)) {
+        debugInfo('逛一逛啥也没有，不再瞎逛')
+        return false
+      }
       debugInfo(
         '未能进入主页，等待500ms count:' + count++
       )

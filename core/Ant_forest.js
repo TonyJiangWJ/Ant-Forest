@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-07 23:11:45
+ * @Last Modified time: 2020-09-09 00:17:55
  * @Description: 蚂蚁森林操作集
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -569,6 +569,8 @@ function Ant_forest () {
     if (runResult && runResult.doSuccess) {
       automator.back()
       _widgetUtils.homePageWaiting()
+      _post_energy = getCurrentEnergy()
+      logInfo('逛一逛结束 当前能量：' + _post_energy)
     }
   }
 
