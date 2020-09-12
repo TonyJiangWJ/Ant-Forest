@@ -149,7 +149,7 @@ function exitAndClean () {
 }
 
 commonFunction.registerOnEngineRemoved(function () {
-  exitAndClean()
+  resourceMonitor.releaseAll()
 })
 
 let getDistance = function (p, lpx, lpy) {

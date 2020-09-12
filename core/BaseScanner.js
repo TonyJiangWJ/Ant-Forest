@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-08 10:07:58
+ * @Last Modified time: 2020-09-12 15:52:54
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -29,7 +29,10 @@ const BaseScanner = function () {
     _config.tree_collect_width, _config.tree_collect_height
   ]
   let GAP = parseInt(detectRegion[2] / 6)
-
+  let multiCheckPoints = []
+  for (let x = -parseInt(25 * SCALE_RATE); x <= parseInt(25 * SCALE_RATE); x += 2) {
+    multiCheckPoints.push([x, 0, '#ffffff'])
+  }
 
   this.increased_energy = 0
   this.current_time = 0
@@ -145,8 +148,12 @@ const BaseScanner = function () {
   /**
    * 根据图像识别 帮助收取或者收取能量球
    * @param isOwn 是否收集自己，收自己时不判断帮收能量球
+   * @param {function} findBallsCallback 测试用 回调找到的球列表
+   * @param {function} findPointCallback 测试用 回调可点击的点
    */
-  this.checkAndCollectByHough = function (isOwn) {
+  this.checkAndCollectByHough = function (isOwn, findBallsCallback, findPointCallback) {
+    findBallsCallback = findBallsCallback || function () { }
+    findPointCallback = findPointCallback || function () { }
     isOwn = isOwn || false
     let start = new Date().getTime()
     let recheck = false, recheckLimit = 3
@@ -170,35 +177,47 @@ const BaseScanner = function () {
             // region: detectRegion
           }
         )
+        // 多点找色用
+        let intervalImg = images.medianBlur(images.inRange(grayImgInfo, '#c8c8c8', '#cacaca'), 5)
+        intervalImg = com.stardust.autojs.core.image.ImageWrapper.ofBitmap(intervalImg.getBitmap())
         debugInfo(['找到的球:{}', JSON.stringify(findBalls)])
         if (findBalls && findBalls.length > 0) {
+          findBallsCallback(findBalls)
           let clickPoints = []
           let countdownLatch = new CountDownLatch(findBalls.length)
           findBalls.forEach(b => {
             let region = [b.x - cvt(40), b.y + cvt(70), cvt(60), cvt(30)]
             let recheckRegion = [b.x - cvt(40), b.y - cvt(40), cvt(80), cvt(80)]
             threadPool.execute(function () {
-              if (rgbImg.getMat().dims() >= 2) {
-                let p = images.findColor(rgbImg, '#f2a45a', { region: region, threshold: 30 }) || images.findColor(rgbImg, '#dc9423', { region: region, threshold: 30 }) || images.findColor(rgbImg, '#e6cca6', { region: region, threshold: 30 })
-                if (p && (isOwn || images.findColor(rgbImg, '#2dad39', { region: recheckRegion, threshold: 30 }) || images.findColor(rgbImg, '#278a70', { region: recheckRegion, threshold: 30 }))) {
-                  recheck = true
-                  lock.lock()
-                  clickPoints.push({ ball: p, isHelp: true })
-                  lock.unlock()
-                } else {
-                  p = images.findColor(rgbImg, '#2dad39', { region: recheckRegion, threshold: 1 }) || images.findColor(rgbImg, '#2dad39', { region: region, threshold: 6 }) || images.findColor(rgbImg, '#0fe4ff', { region: region, threshold: 6 })
-                  if (p) {
+              try {
+                if (rgbImg.getMat().dims() >= 2) {
+                  let p = images.findColor(rgbImg, '#f2a45a', { region: region, threshold: 30 }) || images.findColor(rgbImg, '#dc9423', { region: region, threshold: 30 }) || images.findColor(rgbImg, '#e6cca6', { region: region, threshold: 30 })
+                  if (p && (isOwn || images.findColor(rgbImg, '#2dad39', { region: recheckRegion, threshold: 30 }) || images.findColor(rgbImg, '#278a70', { region: recheckRegion, threshold: 30 }))) {
+                    recheck = true
                     lock.lock()
-                    clickPoints.push({ ball: p, isHelp: false })
+                    clickPoints.push({ ball: p, isHelp: true, color: colors.toString(rgbImg.getBitmap().getPixel(p.x, p.y)) })
                     lock.unlock()
+                  } else {
+                    p = images.findMultiColors(intervalImg, '#ffffff', multiCheckPoints, { region: recheckRegion, threshold: 1 }) || images.findColor(rgbImg, '#2dad39', { region: region, threshold: 6 }) || images.findColor(rgbImg, '#0fe4ff', { region: region, threshold: 6 })
+                    if (p) {
+                      lock.lock()
+                      clickPoints.push({ ball: p, isHelp: false, color: colors.toString(rgbImg.getBitmap().getPixel(p.x, p.y)) })
+                      lock.unlock()
+                    }
                   }
+                } else {
+                  debugInfo(['mat dims is not smaller then two, {}', rgbImg.getMat().dims()])
                 }
-              } else {
-                debugInfo(['mat dims is not smaller then two, {}', rgbImg.getMat().dims()])
+              } catch (e) {
+                errorInfo('线程执行异常：' + e)
+                _commonFunctions.printExceptionStack(e)
+              } finally {
+                countdownLatch.countDown()
               }
-              countdownLatch.countDown()
+
             })
           })
+          debugInfo(['countdownLatch waiting count: {}', countdownLatch.getCount()])
           countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)
           rgbImg.recycle()
           debugInfo(['判断可收集或帮助能量球信息总耗时：{}ms', new Date().getTime() - start])
@@ -206,10 +225,11 @@ const BaseScanner = function () {
             debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
             clickPoints.forEach(point => {
               let b = point.ball
-              if (b.y < _config.tree_collect_top) {
-                // 可能是左上角的活动图标
+              if (b.y < _config.tree_collect_top - (isOwn ? cvt(80) : 0)  || b.y > _config.tree_collect_top + _config.tree_collect_height) {
+                // 可能是左上角的活动图标 或者 识别到了其他范围的球
                 return
               }
+              findPointCallback(point)
               if (isOwn || _config.help_friend && point.isHelp || !point.isHelp) {
                 automator.click(b.x, b.y)
                 sleep(100)
@@ -221,6 +241,7 @@ const BaseScanner = function () {
         }
       }
     } while (recheck && isOwn && --recheckLimit > 0)
+    threadPool.shutdownNow()
     threadPool = null
     debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
   }

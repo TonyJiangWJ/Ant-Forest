@@ -5,6 +5,7 @@ let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
+let _BaseScanner = require('../core/BaseScanner.js')
 
 let offset = -90
 
@@ -17,98 +18,39 @@ var window = floaty.rawWindow(
 window.setSize(config.device_width, config.device_height)
 window.setTouchable(false)
 
-
+let SCALE_RATE = config.device_width / 1080
+let cvt = (v) => parseInt(v * SCALE_RATE)
 let converted = false
 let startTime = new Date().getTime()
 // 两分钟后自动关闭
 let targetEndTime = startTime + 120000
 let passwindow = 0
-let grayImgInfo = null
 let birthTime = new Date().getTime()
-let threshold = 0
 let flag = 1
 let clickPoints = []
 let findBalls = []
-
-let rgbImg = null
-
-let scaleRate = config.device_width / 1080
 let lock = threads.lock()
 let condition = lock.newCondition()
-
+let inCapture = false
+let detectRegion = [config.tree_collect_left, config.tree_collect_top - cvt(80), config.tree_collect_width, config.tree_collect_height + cvt(80)]
 let detectThread = threads.start(function () {
-
+  let scanner = new _BaseScanner()
+  automator.click = () => { }
   while (true) {
-    let start = new Date().getTime()
     if (new Date().getTime() - birthTime > 1500) {
-      findBalls = []
-      lock.lock()
-      condition.await()
-      lock.unlock()
+      inCapture = true
       sleep(200)
-      let screen = checkCaptureScreenPermission()
-      if (screen) {
-        rgbImg = images.copy(screen, true)
-        if (rgbImg != null)
-          log('copy rgbImg')
-        else
-          log('copy rgbImg failed')
-        if (flag == 1) {
-          screen = images.medianBlur(screen, 5)
-        } else {
-          screen = images.gaussianBlur(screen, 5)
-        }
-        grayImgInfo = images.grayscale(screen)
-        birthTime = new Date().getTime()
-        findBalls = images.findCircles(
-          grayImgInfo,
-          {
-            param1: 100,
-            param2: 30,
-            minRadius: 65 * scaleRate,
-            maxRadius: 75 * scaleRate,
-            minDst: 100 * scaleRate,
-            // region: detectRegion
-          }
-        )
-        debugInfo(['grayImage: [data:image/png,base64 {}]', images.toBase64(grayImgInfo)])
-        debugInfo(['找到的球:{}', JSON.stringify(findBalls)])
-        clickPoints = []
-        findBalls.forEach(b => {
-          if (!(b.x > 40 && b.y > 40 && b.x < config.device_width - 80 && b.y < config.device_height - 40)) {
-            return
-          }
-          let p = null
-          let region = [b.x - 40, b.y + 70, 60, 50]
-          if (rgbImg != null) {
-            log('rgbImg is not null')
-            p = images.findColor(rgbImg, '#f2a45a', { region: region, threshold: 30 }) || images.findColor(rgbImg, '#e6cca6', { region: region, threshold: 30 })
-            if (p && (!true || images.findColor(rgbImg, '#2dad39', { region: [b.x - 40, b.y - 40, 80, 80], threshold: 30 }) || images.findColor(rgbImg, '#278a70', { region: [b.x - 40, b.y - 40, 80, 80], threshold: 30 }))) {
-              clickPoints.push({ ball: p, isHelp: true, color: colors.toString(rgbImg.getBitmap().getPixel(p.x, p.y)) })
-              return
-            }
-          } else {
-            log('rgbImg is null')
-          }
-          // drawRectAndText('', region , '#808080', canvas, paint)
-          p = images.findColor(rgbImg, '#2dad39', { region: region, threshold: 6 }) || images.findColor(rgbImg, '#0fe4ff', { region: region, threshold: 6 })
-          if (p) {
-            clickPoints.push({ ball: p, isHelp: false, color: colors.toString(rgbImg.getBitmap().getPixel(p.x, p.y)) })
-          }
-          /* else if ((p = images.findColor(grayImgInfo, '#c6c6c6', { region: [b.x - 40, b.y - 40, 80, 80], threshold: 16 })) !== null) {
-            clickPoints.push({ ball: p, isHelp: true, color: colors.toString(grayImgInfo.getBitmap().getPixel(p.x, p.y)) })
-          }*/
-        })
-        rgbImg && rgbImg.recycle()
-        logInfo(['寻找可收取点耗时:{}ms', new Date().getTime() - start])
-      } else {
-        warnInfo(['重新申请截图权限:{}', requestScreenCapture(false)])
-      }
+      clickPoints = []
+      findBalls = []
+      scanner.checkAndCollectByHough(flag === 1, balls => findBalls = balls, point => clickPoints.push(point))
+      birthTime = new Date().getTime()
+      inCapture = false
     }
-    sleep(1000)
+    sleep(300)
   }
 })
 
+// 防止崩溃
 function exitAndClean () {
   if (window !== null) {
     window.canvas.removeAllListeners()
@@ -126,7 +68,7 @@ function exitAndClean () {
 }
 
 commonFunction.registerOnEngineRemoved(function () {
-  exitAndClean()
+  resourceMonitor.releaseAll()
 })
 
 window.canvas.on("draw", function (canvas) {
@@ -154,21 +96,16 @@ window.canvas.on("draw", function (canvas) {
   paint.setAntiAlias(true)
   paint.setStrokeJoin(Paint.Join.ROUND)
   paint.setDither(true)
-  // drawRectAndText('检测区域', detectRegion, '#ffffff', canvas, paint)
   paint.setTextSize(30)
   let countdown = (targetEndTime - new Date().getTime()) / 1000
   drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 200 }, canvas, paint)
-  // drawText('当前相似度' + threshold, { x: 100, y: 500 }, canvas, paint)
-  drawText('滤波方式：' + (flag == 1 ? '中值滤波' : '高斯滤波'), { x: 100, y: 400 }, canvas, paint)
-  // if (drawPoint) {
-  //   drawRectAndText('Matched', [drawPoint.x - 50, drawPoint.y - 50, 100, 100], '#00ff00', canvas, paint)
-  // }
-  if (findBalls && findBalls.length > 0) {
+  drawText('收集自身能量：' + (flag === 1 ? '是' : '否'), { x: 100, y: 400 }, canvas, paint)
+  drawRectAndText('能量球有效区域', detectRegion, '#808080', canvas, paint)
+  if (!inCapture && findBalls && findBalls.length > 0) {
     // canvas.drawImage(grayImgInfo, 0, 0, paint)
     findBalls.forEach(b => {
       let region = [b.x - 40, b.y + 70, 60, 50]
       drawRectAndText('', region, '#808080', canvas, paint)
-      // drawRectAndText('', [b.x + detectRegion[0], b.y + detectRegion[1], b.radius, b.radius], '#00ffff', canvas, paint)
       paint.setStrokeWidth(3)
       paint.setStyle(Paint.Style.STROKE)
       canvas.drawCircle(b.x, b.y + offset, b.radius, paint)
@@ -176,7 +113,7 @@ window.canvas.on("draw", function (canvas) {
   }
 
   //******* */
-  if (clickPoints && clickPoints.length > 0) {
+  if (!inCapture && clickPoints && clickPoints.length > 0) {
     drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint)
 
     let startX = 0
@@ -210,20 +147,19 @@ threads.start(function () {
   events.observeKey()
   events.on("key_down", function (keyCode, event) {
     if (keyCode === 24) {
-      // 设置最低间隔200毫秒，避免修改太快
       exitAndClean()
     } else if (keyCode === 25) {
       // 设置最低间隔200毫秒，避免修改太快
       if (new Date().getTime() - lastChangedTime > 200) {
         flag = (flag + 1) % 2
+        if (flag === 1) {
+          detectRegion = [config.tree_collect_left, config.tree_collect_top - cvt(80), config.tree_collect_width, config.tree_collect_height + cvt(80)]
+        } else {
+          detectRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
+        }
       }
     }
 
-    if (threshold < 0) {
-      threshold = 0
-    } else if (threshold > 255) {
-      threshold = 255
-    }
   })
 })
 
