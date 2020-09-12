@@ -14,8 +14,8 @@ module.exports = function (obj) {
       }
       sleep(100)
     }
-    // 解锁完毕后返回check_lock方法，模块自动判断是否成功
-    return this.check_lock()
+    // 解锁完毕后返回check_unlock方法，模块自动判断是否成功
+    return this.check_unlock()
   }
 
 
