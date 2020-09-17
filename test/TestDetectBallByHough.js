@@ -6,8 +6,8 @@ let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire
 let commonFunction = sRequire('CommonFunction')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
 let _BaseScanner = require('../core/BaseScanner.js')
-
-let offset = -90
+commonFunction.autoSetUpBangOffset()
+let offset = config.bang_offset
 
 config.show_debug_log = true
 requestScreenCapture(false)
