@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-09 00:23:36
+ * @Last Modified time: 2020-09-17 19:57:37
  * @Description: 
  */
 'ui';
@@ -155,8 +155,14 @@ let default_config = {
   try_collect_by_multi_touch: false,
   // 直接使用图像分析方式收取和帮助好友
   direct_use_img_collect_and_help: true,
+  // 通过霍夫变换识别能量球
+  detect_balls_by_hough: true,
   // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
-  is_pro: is_pro
+  is_pro: is_pro,
+  // 尝试先逛一逛进行能量收取
+  try_collect_by_stroll: true,
+  auto_set_bang_offset: true,
+  bang_offset: 0
 }
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
@@ -303,12 +309,15 @@ if (!isRunningMode) {
     ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
     ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     ui.directUseImgCollectChkBox.setChecked(config.direct_use_img_collect_and_help)
+    ui.directBallsByHoughChkBox.setChecked(config.detect_balls_by_hough)
 
     if (config.direct_use_img_collect_and_help) {
       ui.multiTouchContainer.setVisibility(View.GONE)
+      ui.directBallsByHoughChkBox.setVisibility(View.VISIBLE)
       config.try_collect_by_multi_touch = false
     } else {
       ui.multiTouchContainer.setVisibility(View.VISIBLE)
+      ui.directBallsByHoughChkBox.setVisibility(View.GONE)
       ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     }
 
@@ -448,6 +457,7 @@ if (!isRunningMode) {
     let precent = parseInt(config.color_offset / 255 * 100)
     ui.colorThresholdSeekbar.setProgress(precent)
 
+    ui.bangOffsetText.text('' + config.bang_offset)
     let configColor = config.min_floaty_color
     ui.floatyColor.text(configColor)
     if (/^#[\dabcdef]{6}$/i.test(configColor)) {
@@ -544,6 +554,7 @@ if (!isRunningMode) {
 
 
     ui.recheckRankListChkBox.setChecked(config.recheck_rank_list)
+    ui.tryCollectByStrollChkBox.setChecked(config.try_collect_by_stroll)
 
     ui.autoSetImgOrWidgetChkBox.setChecked(config.auto_set_img_or_widget)
     ui.baseOnImageChkBox.setChecked(config.base_on_image)
@@ -716,6 +727,12 @@ if (!isRunningMode) {
                   <horizontal gravity="center">
                     <text id="colorThresholdInput" />
                     <seekbar id="colorThresholdSeekbar" progress="20" layout_weight="85" />
+                  </horizontal>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
+                  <text text="刘海屏或者挖孔屏悬浮窗显示位置和实际目测位置不同，需要施加一个偏移量一般是负值，脚本运行时会自动设置：" textSize="12sp" margin="10 5"/>
+                  <horizontal padding="10 10" gravity="center">
+                    <text text="当前自动设置的刘海偏移量为：" textSize="12sp" layout_weight="60" />
+                    <text id="bangOffsetText" textSize="12sp" layout_weight="40" />
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 悬浮窗配置 不再提供关闭 */}
@@ -894,6 +911,7 @@ if (!isRunningMode) {
                   <checkbox id="collectSelfOnlyChkBox" text="只收自己的能量" />
                   <checkbox id="notCollectSelfChkBox" text="不收自己的能量" />
                   <checkbox id="recheckRankListChkBox" text="是否在收集或帮助后重新检查排行榜" />
+                  <checkbox id="tryCollectByStrollChkBox" text="是否通过逛一逛收集能量" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <button id="showRealTimeImgConfig" >实时查看可视化配置信息</button>
                   <checkbox id="regionSeekChkBox" text="拖动输入区域" textColor="black" textSize="16sp" />
@@ -912,6 +930,7 @@ if (!isRunningMode) {
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <checkbox id="directUseImgCollectChkBox" text="是否直接基于图像分析收取和帮助好友" />
+                  <checkbox id="directBallsByHoughChkBox" text="是否通过findCircles识别能量球" />
                   
                   <vertical id="multiTouchContainer">
                     <text text="当可收取能量球控件无法获取时开启区域点击, 不同设备请扩展点击代码，当前建议开启 直接基于图像分析收取和帮助好友" textSize="9sp" />
@@ -1556,7 +1575,7 @@ if (!isRunningMode) {
               floatyLock.lock()
               if (floatyWindow !== null) {
                 floatyWindow.content.setTextColor(colors.parseColor(config.min_floaty_color))
-                floatyWindow.setPosition(config.min_floaty_x, config.min_floaty_y)
+                floatyWindow.setPosition(config.min_floaty_x, config.min_floaty_y + config.bang_offset)
                 floatyWindow.content.text('悬浮窗' + count + '秒后关闭')
                 floatyWindow.content.setTextSize(config.min_floaty_text_size)
               }
@@ -1993,13 +2012,18 @@ if (!isRunningMode) {
     ui.tryCollectByMultiTouchChkBox.on('click', () => {
       config.try_collect_by_multi_touch = ui.tryCollectByMultiTouchChkBox.isChecked()
     })
+    ui.directBallsByHoughChkBox.on('click', () => {
+      config.detect_balls_by_hough = ui.directBallsByHoughChkBox.isChecked()
+    })
     ui.directUseImgCollectChkBox.on('click', () => {
       config.direct_use_img_collect_and_help = ui.directUseImgCollectChkBox.isChecked()
       if (config.direct_use_img_collect_and_help) {
         ui.multiTouchContainer.setVisibility(View.GONE)
+        ui.directBallsByHoughChkBox.setVisibility(View.VISIBLE)
         config.try_collect_by_multi_touch = false
       } else {
         ui.multiTouchContainer.setVisibility(View.VISIBLE)
+        ui.directBallsByHoughChkBox.setVisibility(View.GONE)
         ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
       }
     })
@@ -2014,6 +2038,9 @@ if (!isRunningMode) {
 
     ui.recheckRankListChkBox.on('click', () => {
       config.recheck_rank_list = ui.recheckRankListChkBox.isChecked()
+    })
+    ui.tryCollectByStrollChkBox.on('click', () => {
+      config.try_collect_by_stroll = ui.tryCollectByStrollChkBox.isChecked()
     })
 
     ui.checkBottomBaseImgChkBox.on('click', () => {
