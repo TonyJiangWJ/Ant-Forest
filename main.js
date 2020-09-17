@@ -1,15 +1,16 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-01 23:58:19
+ * @Last Modified time: 2020-09-17 19:33:24
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
+config.isRunning = true
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 const resolver = require('./lib/AutoJSRemoveDexResolver.js')
 
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
-let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
+let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 let commonFunctions = singletonRequire('CommonFunction')
 // 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
 if (config.single_script) {
@@ -55,6 +56,8 @@ commonFunctions.registerOnEngineRemoved(function () {
       events.recycle()
       debugInfo('校验并移除已加载的dex')
       resolver()
+      flushAllLogs()
+      config.isRunning = false
       console.clear()
     }
   )
@@ -104,17 +107,13 @@ if (config.auto_set_img_or_widget || !config.base_on_image) {
   warnInfo('支付宝基本去除了排行榜的控件，还请尽量直接使用图像分析模式，后续控件分析模式不再花精力维护')
 }
 if (config.base_on_image) {
-  if (!(config.useOcr || config.useTesseracOcr)) {
-    warnInfo('请配置百度OCR API, 或者启用自建tesserac服务，用于获取列表倒计时时间')
-  }
   if (!config.direct_use_img_collect_and_help) {
-    warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友，并做好相应的识别区域配置')
+    warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友')
   }
   if (!config.useCustomScrollDown) {
     warnInfo('排行榜中控件不存在时无法使用自带的scrollDown，请开启模拟滑动并自行调试设置滑动速度和底部高度')
   }
-  warnInfo('排行榜识别区域可不配置，脚本会自动识别')
-  warnInfo('排行榜识别底部区域可不配置，脚本会自动识别，首次运行时自动识别需要一定时间，请不要手动关闭脚本')
+  warnInfo('脚本会自动识别排行榜顶部和底部区域，首次运行时自动识别需要一定时间，请不要手动关闭脚本')
   warnInfo('以上配置的详细内容请见README.md')
 }
 // ------ WARING END ------
@@ -176,6 +175,8 @@ if (!FloatyInstance.init()) {
   runningQueueDispatcher.executeTargetScript(FileUtils.getRealMainScriptPath())
   exit()
 }
+// 自动设置刘海偏移量
+commonFunctions.autoSetUpBangOffset()
 /************************
  * 主程序
  ***********************/
@@ -191,6 +192,8 @@ if (config.develop_mode) {
   }
 }
 resourceMonitor.releaseAll()
+flushAllLogs()
+config.isRunning = false
 runningQueueDispatcher.removeRunningTask(true)
 // 30秒后关闭，防止立即停止
 setTimeout(() => { exit() }, 1000 * 30)

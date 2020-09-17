@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-12 15:52:54
+ * @Last Modified time: 2020-09-17 17:19:27
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -16,7 +16,7 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let customMultiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/MultiTouchCollect.js') ? require('../extends/MultiTouchCollect.js') : null
-let { debugInfo, logInfo, errorInfo, warnInfo, infoLog } = singletonRequire('LogUtils')
+let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev } = singletonRequire('LogUtils')
 
 let _package_name = 'com.eg.android.AlipayGphone'
 
@@ -33,7 +33,7 @@ const BaseScanner = function () {
   for (let x = -parseInt(25 * SCALE_RATE); x <= parseInt(25 * SCALE_RATE); x += 2) {
     multiCheckPoints.push([x, 0, '#ffffff'])
   }
-
+  this.temp_img = null
   this.increased_energy = 0
   this.current_time = 0
   this.collect_any = false
@@ -87,8 +87,7 @@ const BaseScanner = function () {
   // 收取能量
   this.collectEnergy = function (isHelp) {
     if (_config.direct_use_img_collect_and_help) {
-      this.checkAndCollectByHough()
-      //this.checkAndCollectByImg()
+      this.checkAndCollectByImg()
       return
     }
     let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, isHelp ? 200 : 500, true)
@@ -119,7 +118,7 @@ const BaseScanner = function () {
         this.multiTouchToCollect()
       } else {
         // 尝试通过图像识别收取
-        this.checkAndCollectByHough()
+        this.checkAndCollectByImg()
       }
     }
   }
@@ -163,6 +162,7 @@ const BaseScanner = function () {
       recheck = false
       let screen = _commonFunctions.checkCaptureScreenPermission()
       if (screen) {
+        this.temp_img = images.copy(screen, true)
         let rgbImg = images.copy(screen, true)
         screen = images.medianBlur(screen, 5)
         let grayImgInfo = images.grayscale(screen)
@@ -191,13 +191,16 @@ const BaseScanner = function () {
             threadPool.execute(function () {
               try {
                 if (rgbImg.getMat().dims() >= 2) {
+                  // 先判断能量球底部 文字的颜色是否匹配帮收
                   let p = images.findColor(rgbImg, '#f2a45a', { region: region, threshold: 30 }) || images.findColor(rgbImg, '#dc9423', { region: region, threshold: 30 }) || images.findColor(rgbImg, '#e6cca6', { region: region, threshold: 30 })
+                  // 帮收能量球，判断能量球中心点的颜色是否匹配
                   if (p && (isOwn || images.findColor(rgbImg, '#2dad39', { region: recheckRegion, threshold: 30 }) || images.findColor(rgbImg, '#278a70', { region: recheckRegion, threshold: 30 }))) {
                     recheck = true
                     lock.lock()
                     clickPoints.push({ ball: p, isHelp: true, color: colors.toString(rgbImg.getBitmap().getPixel(p.x, p.y)) })
                     lock.unlock()
                   } else {
+                    // 非帮收能量球，校验是否是可收取能量球
                     p = images.findMultiColors(intervalImg, '#ffffff', multiCheckPoints, { region: recheckRegion, threshold: 1 }) || images.findColor(rgbImg, '#2dad39', { region: region, threshold: 6 }) || images.findColor(rgbImg, '#0fe4ff', { region: region, threshold: 6 })
                     if (p) {
                       lock.lock()
@@ -219,7 +222,6 @@ const BaseScanner = function () {
           })
           debugInfo(['countdownLatch waiting count: {}', countdownLatch.getCount()])
           countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)
-          rgbImg.recycle()
           debugInfo(['判断可收集或帮助能量球信息总耗时：{}ms', new Date().getTime() - start])
           if (clickPoints && clickPoints.length > 0) {
             debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
@@ -237,7 +239,11 @@ const BaseScanner = function () {
             })
           } else {
             debugInfo('未找到匹配的可收取或帮助的点')
+            if (_config.develop_mode) {
+              debugForDev(['图片数据：[data:image/png;base64,{}]', images.toBase64(rgbImg)], false, true)
+            }
           }
+          rgbImg.recycle()
         }
       }
     } while (recheck && isOwn && --recheckLimit > 0)
@@ -252,6 +258,10 @@ const BaseScanner = function () {
    * @param isOwn 是否收集自己，收自己时不判断帮收能量球
    */
   this.checkAndCollectByImg = function (isOwn) {
+    // 是否通过霍夫变换识别能量球
+    if (_config.detect_balls_by_hough) {
+      return this.checkAndCollectByHough(isOwn)
+    }
     isOwn = isOwn || false
     let start = new Date().getTime()
     let allPoints = this.checkByImg('#c8c8c8', '#cacaca', '可收取')
@@ -261,6 +271,7 @@ const BaseScanner = function () {
         let start = new Date().getTime()
         let screen = _commonFunctions.checkCaptureScreenPermission()
         if (screen) {
+          this.temp_img = images.copy(screen, true)
           let forCheckImg = images.copy(screen)
           allPoints = allPoints.filter(point => {
             let region = [detectRegion[0] + point.x, detectRegion[1] + point.y, 50, 200]
@@ -578,6 +589,22 @@ const BaseScanner = function () {
     return false
   }
 
+  this.savingDevelopImageForNotFound = function () {
+    if (_config.cutAndSaveTreeCollect && this.temp_img) {
+      try {
+        let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect_not_found/'
+          + 'unknow_not_found_' + (Math.random() * 9999 + 100).toFixed(0) + '.png'
+        files.ensureDir(savePath)
+        images.save(this.temp_img, savePath)
+        this.temp_img.recycle()
+        this.temp_img = null
+        debugForDev(['保存未识别能量球图片：「{}」', savePath])
+      } catch (e) {
+        errorInfo('保存未识别能量球图片异常' + e)
+      }
+    }
+  }
+
   this.returnToListAndCheck = function () {
     automator.back()
     sleep(500)
@@ -594,7 +621,7 @@ const BaseScanner = function () {
     }
   }
 
-  this.doCollectTargetFriend = function (obj) {
+  this.doCollectTargetFriend = function (obj, temp) {
     debugInfo(['准备开始收取好友：「{}」', obj.name])
     let preGot, postGet, preE, postE, rentery = false
     let screen = null
@@ -608,7 +635,7 @@ const BaseScanner = function () {
       errorInfo("[" + obj.name + "]获取收集前能量异常" + e)
       _commonFunctions.printExceptionStack(e)
     }
-    let temp = this.protectDetect(_package_name, obj.name)
+    let temp = temp || this.protectDetect(_package_name, obj.name)
     if (_config.help_friend) {
       rentery = this.collectAndHelp(obj.isHelp)
     } else {
@@ -631,9 +658,17 @@ const BaseScanner = function () {
       debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
     }
     if (friendGrowEnergy === 0 && collectEnergy === 0 && !obj.isHelp && !obj.recheck) {
+      if (!obj.doubleCheck) {
+        warnInfo(['非帮助收集，未收集到能量，1秒后重试'], true)
+        sleep(1000)
+        obj.doubleCheck = true
+        this.savingDevelopImageForNotFound()
+        return this.doCollectTargetFriend(obj, temp)
+      }
       // 没有收集到能量，可能有保护罩，等待2秒
-      warnInfo(['非帮助收集，未收集到能量，可能当前好友使用了保护罩，等待2秒'], true)
-      sleep(2000)
+      warnInfo(['非帮助收集，未收集到能量，可能当前好友使用了保护罩，等待1.5秒'], true)
+      this.savingDevelopImageForNotFound()
+      sleep(1500)
       try {
         // 2秒后重新获取能量值
         postGet = _widgetUtils.getYouCollectEnergy() || 0
@@ -709,14 +744,16 @@ const BaseScanner = function () {
   }
 
   this.backToListIfNeeded = function (rentery, obj) {
+    if (rentery) {
+      debugInfo('好友能量收取完毕, 有帮助收取 重新校验是否有新能量球')
+      sleep(500)
+      obj.isHelp = false
+      obj.recheck = true
+      return this.doCollectTargetFriend(obj)
+    }
     debugInfo('好友能量收取完毕, 回到好友排行榜')
     if (false === this.returnToListAndCheck()) {
       return false
-    }
-    if (rentery) {
-      obj.isHelp = false
-      obj.recheck = true
-      return this.collectTargetFriend(obj)
     }
     return true
   }

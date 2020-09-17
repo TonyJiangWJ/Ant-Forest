@@ -24,9 +24,9 @@ module.exports = function (obj) {
    * 但是如果机型特殊，可以直接重写run_unlock()方法
    * 在run_unlock中编写自己的解锁方式
    */
-  this.run_unlock = function () {
-    // 在这个里面编写解锁逻辑
-  }
+  // this.run_unlock = function () {
+  //   // 在这个里面编写解锁逻辑
+  // }
 
   /**
    * 又或者只有某一个小方法不适用，可以只修改对应的方法即可

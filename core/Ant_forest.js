@@ -1,8 +1,9 @@
 /*
  * @Author: NickHopps
+ * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-09 00:23:09
- * @Description: 蚂蚁森林操作集
+ * @Last Modified time: 2020-09-17 20:14:27
+ * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
@@ -150,6 +151,7 @@ function Ant_forest () {
 
   // 异步获取 toast 内容
   const getToastAsync = function (filter, limit, exec) {
+    limit = limit >= 6 ? 6 : limit
     filter = typeof filter == null ? '' : filter
     let lock = threads.lock()
     let complete = lock.newCondition()
@@ -273,10 +275,6 @@ function Ant_forest () {
             automator.click(point.x + _config.tree_collect_left, point.y + _config.tree_collect_top)
             sleep(500)
             count++
-            // 只需要点击两个球就够了
-            if (count >= 2) {
-              break
-            }
           }
           // 返回实际倒计时个数, 用于终止toast等待
           return count
@@ -401,15 +399,19 @@ function Ant_forest () {
    * 记录能量
    ***********************/
 
-  // 记录当前能量
-  const getCurrentEnergy = function () {
+  /**
+   * 获取当前能量值
+   * 
+   * @param {boolean} noStore 是否不记录当前能量值到缓存
+   */ 
+  const getCurrentEnergy = function (noStore) {
     let currentEnergyWidget = _widgetUtils.widgetGetById(_config.energy_id || 'J_userEnergy')
     let currentEnergy = undefined
     if (currentEnergyWidget) {
       let content = currentEnergyWidget.text() || currentEnergyWidget.desc()
       currentEnergy = parseInt(content.match(/\d+/))
     }
-    if (currentEnergy) {
+    if (!noStore && currentEnergy) {
       // 存储能量值数据
       _commonFunctions.storeEnergy(currentEnergy)
     }
@@ -513,8 +515,7 @@ function Ant_forest () {
       debugInfo('无能量球可收取')
       if (_config.direct_use_img_collect_and_help) {
         debugInfo('尝试通过图像分析收取能量')
-        // _base_scanner.checkAndCollectByImg(true)
-        _base_scanner.checkAndCollectByHough(true)
+        _base_scanner.checkAndCollectByImg(true)
       } else if (_config.try_collect_by_multi_touch) {
         debugInfo('尝试通过直接点击区域收集能量')
         _base_scanner.multiTouchToCollect()
@@ -569,7 +570,7 @@ function Ant_forest () {
     if (runResult && runResult.doSuccess) {
       automator.back()
       _widgetUtils.homePageWaiting()
-      _post_energy = getCurrentEnergy()
+      _post_energy = getCurrentEnergy(true)
       logInfo('逛一逛结束 当前能量：' + _post_energy)
     }
   }
@@ -644,14 +645,14 @@ function Ant_forest () {
   const collectOwn = function () {
     _commonFunctions.addOpenPlacehold('开始收集自己能量')
     debugInfo('准备收集自己能量')
-    let energyBeforeCollect = getCurrentEnergy()
+    let energyBeforeCollect = getCurrentEnergy(true)
     collectEnergy(true)
     // 计时模式和只收自己时都去点击倒计时能量球 避免只收自己时控件刷新不及时导致漏收
     if (!_config.is_cycle || _config.collect_self_only) {
       debugInfo('准备计算最短时间')
       getMinCountdownOwn()
     }
-    let energyAfterCollect = getCurrentEnergy()
+    let energyAfterCollect = getCurrentEnergy(true)
     let collectedEnergy = energyAfterCollect - energyBeforeCollect
     if (collectedEnergy) {
       logInfo(['收集自己能量：{}g', collectedEnergy])
@@ -664,8 +665,10 @@ function Ant_forest () {
   // 收取好友的能量
   const collectFriend = function () {
     _commonFunctions.addOpenPlacehold('开始收集好友能量')
-    // 首先尝试逛一逛收集
-    tryCollectByStroll()
+    if (_config.try_collect_by_stroll) {
+      // 首先尝试逛一逛收集
+      tryCollectByStroll()
+    }
     automator.enterFriendList()
     let enterFlag = _widgetUtils.friendListWaiting()
     if (!enterFlag) {
@@ -772,6 +775,7 @@ function Ant_forest () {
       if (_config.auto_set_brightness) {
         device.setBrightnessMode(1)
       }
+      flushAllLogs()
     }
 
     this.interruptStopListenThread = function () {

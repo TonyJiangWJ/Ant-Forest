@@ -17,6 +17,9 @@ let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let { config } = require('../config.js')(runtime, this)
 let fileUtils = sRequire('FileUtils')
+let commonFunction = sRequire('CommonFunction')
+commonFunction.autoSetUpBangOffset()
+let offset = config.bang_offset
 
 var window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
@@ -28,7 +31,7 @@ window.setTouchable(false)
 function convertArrayToRect (a) {
   // origin array left top width height
   // left top right bottom
-  return new android.graphics.Rect(a[0], a[1], (a[0] + a[2]), (a[1] + a[3]))
+  return new android.graphics.Rect(a[0], a[1] + offset, (a[0] + a[2] + offset), (a[1] + a[3]))
 }
 
 function getPositionDesc (position) {
@@ -54,7 +57,7 @@ function drawRectAndText (desc, position, colorStr, canvas, paint) {
   paint.setStrokeWidth(1)
   paint.setTextSize(20)
   paint.setStyle(Paint.Style.FILL)
-  canvas.drawText(desc, position[0], position[1], paint)
+  canvas.drawText(desc, position[0], position[1] + offset, paint)
   paint.setTextSize(10)
   paint.setStrokeWidth(1)
   paint.setARGB(255, 0, 0, 0)
@@ -66,7 +69,7 @@ function drawText (text, position, canvas, paint) {
   paint.setARGB(255, 0, 0, 255)
   paint.setStrokeWidth(1)
   paint.setStyle(Paint.Style.FILL)
-  canvas.drawText(text, position.x, position.y, paint)
+  canvas.drawText(text, position.x, position.y + offset, paint)
 }
 
 function drawCoordinateAxis (canvas, paint) {
@@ -78,16 +81,16 @@ function drawCoordinateAxis (canvas, paint) {
   paint.setARGB(255, colorVal >> 16 & 0xFF, colorVal >> 8 & 0xFF, colorVal & 0xFF)
   for (let x = 50; x < width; x += 50) {
     paint.setStrokeWidth(0)
-    canvas.drawText(x, x, 10, paint)
+    canvas.drawText(x, x + offset, 10, paint)
     paint.setStrokeWidth(0.5)
-    canvas.drawLine(x, 0, x, height, paint)
+    canvas.drawLine(x, 0 + offset, x, height + offset, paint)
   }
 
   for (let y = 50; y < height; y += 50) {
     paint.setStrokeWidth(0)
-    canvas.drawText(y, 0, y, paint)
+    canvas.drawText(y, 0 + offset, y, paint)
     paint.setStrokeWidth(0.5)
-    canvas.drawLine(0, y, width, y, paint)
+    canvas.drawLine(0, y + offset, width, y + offset, paint)
   }
 }
 
@@ -160,7 +163,7 @@ window.canvas.on("draw", function (canvas) {
 
     paint.setTextSize(30)
     let countdown = (targetEndTime - new Date().getTime()) / 1000
-    drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 100 }, canvas, paint)
+    drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 100 + offset }, canvas, paint)
 
     passwindow = new Date().getTime() - startTime
 
