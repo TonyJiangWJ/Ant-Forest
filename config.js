@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-17 19:57:37
+ * @Last Modified time: 2020-09-22 20:11:22
  * @Description: 
  */
 'ui';
@@ -55,9 +55,11 @@ let default_config = {
   dismiss_dialog_if_locked: true,
   request_capture_permission: true,
   // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
-  saveLogFile: true,
+  save_log_file: true,
+  // 异步写入日志文件
+  async_save_log_file: true,
   back_size: '100',
-  enable_call_state_control: false && !is_pro,
+  enable_call_state_control: false,
   collect_self_only: false,
   not_collect_self: false,
   // 当有收集或者帮助后 重新检查排行榜
@@ -120,7 +122,8 @@ let default_config = {
   my_id: '',
   home_ui_content: '查看更多动态.*',
   friend_home_check_regex: '浇水',
-  friend_home_ui_content: 'TA的好友.*|今天|浇水|.*大树养成记录',
+  friend_home_ui_content: 'TA的好友.*|今天',
+  friend_name_getting_regex: '(.*)的蚂蚁森林',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
   // 用于判断是否在好友排行榜
@@ -195,6 +198,10 @@ config.recalculateRegion = () => {
       storageConfig.put('rank_check_width', config.rank_check_width)
     }
   }
+}
+
+if (config.friend_home_ui_content.indexOf('|.*大树成长记录') > 0) {
+  config.friend_home_ui_content.replace('|.*大树成长记录', '')
 }
 if (!isRunningMode) {
   if (!currentEngine.endsWith('/config.js')) {
@@ -476,11 +483,6 @@ if (!isRunningMode) {
     ui.helpFriendChkBox.setChecked(config.help_friend)
 
     ui.enableCallStateControlChkBox.setChecked(config.enable_call_state_control)
-    if (is_pro) {
-      // pro版无法实现 通话监听
-      ui.enableCallStateControlChkBox.setVisibility(View.GONE)
-      config.enable_call_state_control = false
-    }
     ui.isCycleChkBox.setChecked(config.is_cycle)
     ui.cycleTimeContainer.setVisibility(config.is_cycle ? View.VISIBLE : View.INVISIBLE)
     ui.neverStopContainer.setVisibility(config.is_cycle ? View.GONE : View.VISIBLE)
@@ -505,14 +507,16 @@ if (!isRunningMode) {
     ui.delayStartTimeInpt.text(config.delayStartTime + '')
 
     ui.showDebugLogChkBox.setChecked(config.show_debug_log)
-    ui.saveLogFileChkBox.setChecked(config.saveLogFile)
+    ui.saveLogFileChkBox.setChecked(config.save_log_file)
+    ui.asyncSaveLogFileChkBox.setChecked(config.async_save_log_file)
+    ui.asyncSaveLogFileChkBox.setVisibility(config.save_log_file ? View.VISIBLE : View.GONE)
+    ui.fileSizeInpt.text(config.back_size + '')
+    ui.fileSizeContainer.setVisibility(config.save_log_file ? View.VISIBLE : View.GONE)
     ui.showEngineIdChkBox.setChecked(config.show_engine_id)
     ui.developModeChkBox.setChecked(config.develop_mode)
     ui.cutAndSaveCountdownChkBox.setChecked(config.cutAndSaveCountdown)
     ui.cutAndSaveTreeCollectChkBox.setChecked(config.cutAndSaveTreeCollect)
     ui.developModeContainer.setVisibility(config.develop_mode ? View.VISIBLE : View.GONE)
-    ui.fileSizeInpt.text(config.back_size + '')
-    ui.fileSizeContainer.setVisibility(config.saveLogFile ? View.VISIBLE : View.INVISIBLE)
 
     ui.requestCapturePermissionChkBox.setChecked(config.request_capture_permission)
 
@@ -588,6 +592,7 @@ if (!isRunningMode) {
     ui.homeUiContentInpt.text(config.home_ui_content)
     ui.friendHomeCheckRegexInpt.text(config.friend_home_check_regex)
     ui.friendHomeUiContentInpt.text(config.friend_home_ui_content)
+    ui.friendNameGettingRegexInpt.text(config.friend_name_getting_regex)
     ui.friendListIdInpt.text(config.friend_list_id)
     ui.enterFriendListUiContentInpt.text(config.enter_friend_list_ui_content)
     ui.noMoreUiContentInpt.text(config.no_more_ui_content)
@@ -826,13 +831,12 @@ if (!isRunningMode) {
                   {/* 是否显示debug日志 */}
                   <checkbox id="showDebugLogChkBox" text="是否显示debug日志" />
                   <checkbox id="showEngineIdChkBox" text="是否在控制台中显示脚本引擎id" />
-                  <horizontal gravity="center">
-                    <checkbox id="saveLogFileChkBox" text="是否保存日志到文件" />
-                    <horizontal padding="10 0" id="fileSizeContainer" gravity="center" layout_weight="75">
-                      <text text="文件滚动大小：" layout_weight="20" />
-                      <input id="fileSizeInpt" textSize="14sp" layout_weight="80" />
-                      <text text="kb" />
-                    </horizontal>
+                  <checkbox id="saveLogFileChkBox" text="是否保存日志到文件" />
+                  <checkbox id="asyncSaveLogFileChkBox" text="异步保存日志到文件" />
+                  <horizontal padding="10 0" id="fileSizeContainer" gravity="center" layout_weight="75">
+                    <text text="文件滚动大小：" layout_weight="20" />
+                    <input id="fileSizeInpt" textSize="14sp" layout_weight="80" />
+                    <text text="kb" />
                   </horizontal>
                   {/* 是否自动点击授权录屏权限 */}
                   <checkbox id="requestCapturePermissionChkBox" text="是否需要自动授权截图权限" />
@@ -1135,6 +1139,10 @@ if (!isRunningMode) {
                   <horizontal gravity="center">
                     <text text="好友首页:" layout_weight="20" />
                     <input inputType="text" id="friendHomeUiContentInpt" layout_weight="80" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="好友名称正则表达式:" layout_weight="20" />
+                    <input inputType="text" id="friendNameGettingRegexInpt" layout_weight="80" />
                   </horizontal>
                   <horizontal gravity="center">
                     <text text="查看更多好友按钮:" layout_weight="20" />
@@ -1793,8 +1801,13 @@ if (!isRunningMode) {
     })
 
     ui.saveLogFileChkBox.on('click', () => {
-      config.saveLogFile = ui.saveLogFileChkBox.isChecked()
-      ui.fileSizeContainer.setVisibility(config.saveLogFile ? View.VISIBLE : View.INVISIBLE)
+      config.save_log_file = ui.saveLogFileChkBox.isChecked()
+      ui.fileSizeContainer.setVisibility(config.save_log_file ? View.VISIBLE : View.GONE)
+      ui.asyncSaveLogFileChkBox.setVisibility(config.save_log_file ? View.VISIBLE : View.GONE)
+    })
+
+    ui.asyncSaveLogFileChkBox.on('click', () => {
+      config.async_save_log_file = ui.asyncSaveLogFileChkBox.isChecked()
     })
 
     ui.requestCapturePermissionChkBox.on('click', () => {
@@ -2161,6 +2174,9 @@ if (!isRunningMode) {
     )
     ui.friendHomeUiContentInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.friend_home_ui_content = text + '' })
+    )
+    ui.friendNameGettingRegexInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.friend_name_getting_regex = text + '' })
     )
     ui.friendListIdInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.friend_list_id = text + '' })
