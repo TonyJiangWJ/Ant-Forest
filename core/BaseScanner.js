@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-17 17:19:27
+ * @Last Modified time: 2020-09-22 20:39:32
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -40,6 +40,23 @@ const BaseScanner = function () {
   this.min_countdown = 10000
   this.lost_reason = ''
   this.lost_someone = false
+  this.threadPool = null
+
+  this.createNewThreadPool = function () {
+    this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256))
+  }
+
+  this.baseDestory = function () {
+    if (this.threadPool !== null) {
+      this.threadPool.shutdownNow()
+      this.threadPool = null
+    }
+  }
+
+  this.destory = function () {
+    this.baseDestory()
+  }
+
   /**
    * 展示当前累积收集能量信息，累加已记录的和当前运行轮次所增加的
    * 
@@ -156,8 +173,8 @@ const BaseScanner = function () {
     isOwn = isOwn || false
     let start = new Date().getTime()
     let recheck = false, recheckLimit = 3
-    let threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256))
     let lock = threads.lock()
+    this.ensureThreadPoolCreated()
     do {
       recheck = false
       let screen = _commonFunctions.checkCaptureScreenPermission()
@@ -179,6 +196,7 @@ const BaseScanner = function () {
         )
         // 多点找色用
         let intervalImg = images.medianBlur(images.inRange(grayImgInfo, '#c8c8c8', '#cacaca'), 5)
+        // 将色彩空间恢复成 RGBA，否则images.pixel会报错
         intervalImg = com.stardust.autojs.core.image.ImageWrapper.ofBitmap(intervalImg.getBitmap())
         debugInfo(['找到的球:{}', JSON.stringify(findBalls)])
         if (findBalls && findBalls.length > 0) {
@@ -188,7 +206,7 @@ const BaseScanner = function () {
           findBalls.forEach(b => {
             let region = [b.x - cvt(40), b.y + cvt(70), cvt(60), cvt(30)]
             let recheckRegion = [b.x - cvt(40), b.y - cvt(40), cvt(80), cvt(80)]
-            threadPool.execute(function () {
+            this.threadPool.execute(function () {
               try {
                 if (rgbImg.getMat().dims() >= 2) {
                   // 先判断能量球底部 文字的颜色是否匹配帮收
@@ -227,7 +245,7 @@ const BaseScanner = function () {
             debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
             clickPoints.forEach(point => {
               let b = point.ball
-              if (b.y < _config.tree_collect_top - (isOwn ? cvt(80) : 0)  || b.y > _config.tree_collect_top + _config.tree_collect_height) {
+              if (b.y < _config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > _config.tree_collect_top + _config.tree_collect_height) {
                 // 可能是左上角的活动图标 或者 识别到了其他范围的球
                 return
               }
@@ -239,7 +257,7 @@ const BaseScanner = function () {
             })
           } else {
             debugInfo('未找到匹配的可收取或帮助的点')
-            if (_config.develop_mode) {
+            if (_config.develop_mode && !isOwn) {
               debugForDev(['图片数据：[data:image/png;base64,{}]', images.toBase64(rgbImg)], false, true)
             }
           }
@@ -247,8 +265,6 @@ const BaseScanner = function () {
         }
       }
     } while (recheck && isOwn && --recheckLimit > 0)
-    threadPool.shutdownNow()
-    threadPool = null
     debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
   }
 
@@ -509,13 +525,22 @@ const BaseScanner = function () {
       _commonFunctions.addNameToProtect(name, timeout)
       return
     }
-    let title = textContains('的蚂蚁森林')
-      .findOne(_config.timeout_findOne)
-      .text().match(/(.*)的蚂蚁森林/)
-    if (title) {
-      _commonFunctions.addNameToProtect(title[1], timeout)
+    name = this.getFriendName()
+    if (name) {
+      _commonFunctions.addNameToProtect(title, timeout)
     } else {
-      errorInfo(['获取好友名称失败，无法加入保护罩列表，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
+      errorInfo(['获取好友名称失败，无法加入保护罩列表'])
+    }
+  }
+
+  this.getFriendName = function () {
+    let titleContainer = _widgetUtils.widgetGetOne(_config.friend_name_getting_regex || '.*的蚂蚁森林', null, true)
+    let regex = new RegExp(_config.friend_name_getting_regex || '(.*)的蚂蚁森林')
+    if (titleContainer && regex.test(titleContainer.content)) {
+      return regex.exec(titleContainer.content)[1]
+    } else {
+      errorInfo(['获取好友名称失败，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
+      return null
     }
   }
 

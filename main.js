@@ -1,11 +1,10 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-17 19:33:24
+ * @Last Modified time: 2020-09-22 20:41:13
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
-config.isRunning = true
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 const resolver = require('./lib/AutoJSRemoveDexResolver.js')
 
@@ -61,7 +60,7 @@ commonFunctions.registerOnEngineRemoved(function () {
       console.clear()
     }
   )
-})
+}, 'main')
 /***********************
  * 初始化
  ***********************/
@@ -193,7 +192,6 @@ if (config.develop_mode) {
 }
 resourceMonitor.releaseAll()
 flushAllLogs()
-config.isRunning = false
 runningQueueDispatcher.removeRunningTask(true)
 // 30秒后关闭，防止立即停止
 setTimeout(() => { exit() }, 1000 * 30)
