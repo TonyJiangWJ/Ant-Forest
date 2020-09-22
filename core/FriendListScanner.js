@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-07 10:44:14
+ * @Last Modified time: 2020-09-22 20:39:41
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -44,6 +44,7 @@ const FriendListScanner = function () {
     this.preloadingThread.interrupt()
     this.pregettingThread.interrupt()
     this.friends_list_parent = null
+    this.baseDestory()
   }
 
 

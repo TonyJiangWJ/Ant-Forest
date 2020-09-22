@@ -2,13 +2,11 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-07 21:30:17
+ * @Last Modified time: 2020-09-22 20:39:48
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
 importClass(com.tony.ScriptLogger)
-importClass(java.util.concurrent.LinkedBlockingQueue)
-importClass(java.util.concurrent.ThreadPoolExecutor)
 importClass(java.util.concurrent.TimeUnit)
 importClass(java.util.concurrent.CountDownLatch)
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -68,10 +66,6 @@ const ImgBasedFriendListScanner = function () {
     this.createNewThreadPool()
   }
 
-  this.createNewThreadPool = function () {
-    this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256))
-  }
-
   this.start = function () {
     this.min_countdown = 10000
     this.min_countdown_pixels = 10
@@ -126,8 +120,7 @@ const ImgBasedFriendListScanner = function () {
   }
 
   this.destory = function () {
-    this.threadPool.shutdownNow()
-    this.threadPool = null
+    this.baseDestory()
   }
 
   this.scrollUpIfNeeded = function (grayImg) {
@@ -490,7 +483,7 @@ const ImgBasedFriendListScanner = function () {
       if (poolWaitCount > 20) {
         warnInfo(['线程池等待执行结束超时，当前剩余运行中数量：{} 强制结束', this.threadPool.getActiveCount()])
         this.threadPool.shutdownNow()
-        this.threadPool = new ThreadPoolExecutor(4, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(256))
+        this.createNewThreadPool()
         break
       }
     }
@@ -584,11 +577,9 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
       errorInfo('页面流程出错，重新开始')
       return false
     }
-    let title = textContains('的蚂蚁森林')
-      .findOne(_config.timeout_findOne)
-      .text().match(/(.*)的蚂蚁森林/)
-    if (title) {
-      obj.name = title[1]
+    let name = this.getFriendName()
+    if (name) {
+      obj.name = name
       debugInfo(['进入好友[{}]首页成功', obj.name])
     } else {
       errorInfo(['获取好友名称失败，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])

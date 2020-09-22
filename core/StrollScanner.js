@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-16 21:59:41
+ * @Last Modified time: 2020-09-22 20:39:55
  * @Description: 逛一逛收集器
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -54,6 +54,7 @@ const StrollScanner = function () {
   this.init = function (option) {
     this.current_time = option.currentTime || 0
     this.increased_energy = option.increasedEnergy || 0
+    this.createNewThreadPool()
   }
 
   this.start = function () {
@@ -63,6 +64,7 @@ const StrollScanner = function () {
 
   this.destory = function () {
     debugInfo('逛一逛结束')
+    this.baseDestory()
   }
 
   /**
@@ -95,7 +97,7 @@ const StrollScanner = function () {
       grayScreen = images.grayscale(_commonFunctions.checkCaptureScreenPermission(5))
       let point = images.findColor(grayScreen, '#909090', { region: region })
       if (point) {
-        debugInfo('逛下一个')
+        debugInfo(['逛下一个, click position: [{}, {}]', point.x, point.y])
         doSuccess = true
         automator.click(point.x, point.y)
         sleep(500)
@@ -161,11 +163,9 @@ StrollScanner.prototype.collectTargetFriend = function () {
     errorInfo('页面流程出错，重新开始')
     return false
   }
-  let title = textContains('的蚂蚁森林')
-    .findOne(_config.timeout_findOne)
-    .text().match(/(.*)的蚂蚁森林/)
-  if (title) {
-    obj.name = title[1]
+  let name = this.getFriendName()
+  if (name) {
+    obj.name = name
     debugInfo(['进入好友[{}]首页成功', obj.name])
   } else {
     errorInfo(['获取好友名称失败，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
