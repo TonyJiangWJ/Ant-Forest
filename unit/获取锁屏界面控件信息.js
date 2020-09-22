@@ -1,17 +1,23 @@
 /*
  * @Author: TonyJiangWJ
- * @Date: 2020-04-29 14:44:49
+ * @Date: 2020-09-22 10:47:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-22 20:40:50
+ * @Last Modified time: 2020-09-22 20:40:59
  * @Description: 
  */
+let { config } = require('../config.js')(runtime, this)
+config.show_debug_log = true
+config.save_log_file = true
+config.back_size = 1024
+
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let widgetUtils = singletonRequire('WidgetUtils')
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
-let { config } = require('../config.js')(runtime, this)
-
+let unlocker = require('../lib/Unlock.js').unlocker
+// 清空所有日志
+logUtils.clearLogFile()
 if (!floatyInstance.init()) {
   toast('创建悬浮窗失败')
   exit()
@@ -27,61 +33,123 @@ if (!floatyInstance.hasOwnProperty('setFloatyInfo')) {
     this.setFloatyInfo({ x: x, y: y }, null, null)
   }
 }
-
-
-floatyInstance.setFloatyInfo({ x: parseInt(config.device_width / 2.7), y: parseInt(config.device_height / 2) }, '即将开始分析', { textSize: 20 })
-sleep(1000)
-let limit = 3
-while (limit > 0) {
-  floatyInstance.setFloatyText('倒计时' + limit-- + '秒')
-  sleep(1000)
-}
-floatyInstance.setFloatyText('正在分析中...')
-
-
-let uiObjectInfoList = null
-let start = new Date().getTime()
-
-let any = widgetUtils.widgetGetOne(/.+/)
-if (any) {
-  let root = getRootContainer(any)
-  let boundsInfo = root.bounds()
-  let content = root.text() || root.desc()
-  let id = root.id()
-  logUtils.logInfo([
-    'rootInfo id:{} content: {} bounds:[{}, {}, {}, {}]',
-    id, content,
-    boundsInfo.left, boundsInfo.top, boundsInfo.width(), boundsInfo.height()
-  ])
-  let resultList = iterateAll(root, 1)
-  uiObjectInfoList = flatMap(flatArrayList, resultList)
-
-  floatyInstance.setPosition(parseInt(config.device_width / 5), parseInt(config.device_height / 2))
-  floatyInstance.setFloatyText('分析完成，请查看日志页面')
-} else {
-  floatyInstance.setPosition(parseInt(config.device_width / 5), parseInt(config.device_height / 2))
-  floatyInstance.setFloatyText('无法获取任何控件信息')
-}
-sleep(1000)
-floatyInstance.close()
-if (uiObjectInfoList) {
-  let timeCost = new Date().getTime() - start
-  let total = uiObjectInfoList.length
-  let logInfoList = uiObjectInfoList.filter(v => v && v.hasUsableInfo()).map(v => v.toString())
-  let content = removeMinPrefix(logInfoList).join('\n')
-  logUtils.debugInfo(content)
-  dialogs.build({
-    title: '布局分析结果',
-    content: commonFunctions.formatString("总分析耗时：{}ms 总控件数：{}\n{}", timeCost, total, content),
-    negative: '关闭',
-    negativeColor: 'red',
-    cancelable: false
+floatyInstance.setFloatyInfo({ x: parseInt(config.device_width / 2.7), y: parseInt(config.device_height / 2) }, ' ', { textSize: 20 })
+while (!unlocker.is_locked()) {
+  let lock = threads.lock()
+  let complete = lock.newCondition()
+  let awaitDialog = dialogs.build({
+    cancelable: false,
+    negative: '取消',
+    positive: '确定',
+    title: '请手动锁屏',
+    content: '请手动锁定屏幕，脚本将在点击确定5秒后开始识别\n短振动开始分析\n长振动后请解锁查看结果'
   })
     .on('negative', () => {
       exit()
     })
+    .on('positive', () => {
+      lock.lock()
+      complete.signal()
+      lock.unlock()
+      awaitDialog.dismiss()
+    })
     .show()
+  lock.lock()
+  complete.await()
+  lock.unlock()
+  let limit = 5
+  while (limit > 0) {
+    floatyInstance.setFloatyText('倒计时' + limit-- + '秒')
+    sleep(1000)
+  }
 }
+
+let fStart = new Date().getTime()
+let contentData = []
+
+floatyInstance.setFloatyInfo({ x: parseInt(config.device_width / 2.7), y: parseInt(config.device_height / 2) }, '即将开始分析', { textSize: 20 })
+unlocker.wakeup()
+contentData.push(analyzeLayout('锁屏界面'))
+sleep(1000)
+unlocker.swipe_layer()
+sleep(1500)
+
+sleep(150)
+floatyInstance.setFloatyText('正在分析中...')
+
+contentData.push(analyzeLayout('密码输入界面'))
+
+logUtils.debugInfo('分析页面数：' + contentData.length)
+
+let displayContent = '', total = 0
+contentData.map(data => {
+  total += data.total
+  displayContent += '\n=================\n' + data.desc + ':\n' + '分析耗时：' + data.cost + 'ms\n'
+    + '控件总数：' + data.total + '\n分析控件内容：\n' + data.content
+})
+let timeCost = new Date().getTime() - fStart
+let logContents = commonFunctions.formatString("总分析耗时：{}ms 总控件数：{}\n{}", timeCost, total, displayContent)
+logUtils.infoLog(logContents)
+logUtils.flushAllLogs()
+dialogs.build({
+  title: '布局分析结果更多内容请查看logs/info.log',
+  content: logContents,
+  negative: '关闭',
+  negativeColor: 'red',
+  cancelable: false
+})
+  .on('negative', () => {
+    exit()
+  })
+  .show()
+
+
+sleep(1000)
+device.vibrate(1000)
+sleep(1000)
+floatyInstance.close()
+
+// ----------------
+
+function analyzeLayout (desc) {
+  device.vibrate(200)
+  logUtils.debugInfo('开始分析：' + desc)
+
+  let uiObjectInfoList = null
+  let start = new Date().getTime()
+
+  let any = widgetUtils.widgetGetOne(/.+/)
+  if (any) {
+    let root = getRootContainer(any)
+    let boundsInfo = root.bounds()
+    let content = root.text() || root.desc()
+    let id = root.id()
+    logUtils.logInfo([
+      'rootInfo id:{} content: {} bounds:[{}, {}, {}, {}]',
+      id, content,
+      boundsInfo.left, boundsInfo.top, boundsInfo.width(), boundsInfo.height()
+    ])
+    let resultList = iterateAll(root, 1)
+    uiObjectInfoList = flatMap(flatArrayList, resultList)
+
+    floatyInstance.setPosition(parseInt(config.device_width / 5), parseInt(config.device_height / 2))
+    floatyInstance.setFloatyText('分析完成，请查看日志页面')
+  } else {
+    floatyInstance.setPosition(parseInt(config.device_width / 5), parseInt(config.device_height / 2))
+    floatyInstance.setFloatyText('无法获取任何控件信息')
+  }
+
+
+  let cost = new Date().getTime() - start
+  if (uiObjectInfoList) {
+    let logInfoList = uiObjectInfoList.filter(v => v && v.hasUsableInfo()).map(v => v.toString())
+    let content = removeMinPrefix(logInfoList).join('\n')
+    logUtils.debugInfo(['{} 分析耗时：{}ms', desc, cost])
+    return { content: content, total: logInfoList.length, cost: cost, desc: desc }
+  }
+  return { desc: desc, content: '', total: 0, cost: cost }
+}
+
 
 
 function getRootContainer (target) {
