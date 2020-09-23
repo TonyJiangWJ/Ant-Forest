@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-22 20:39:32
+ * @Last Modified time: 2020-09-23 09:12:50
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -44,6 +44,15 @@ const BaseScanner = function () {
 
   this.createNewThreadPool = function () {
     this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256))
+  }
+
+  /**
+   * 确保线程池已经创建
+   */
+  this.ensureThreadPoolCreated = function () {
+    if (this.threadPool === null) {
+      this.createNewThreadPool()
+    }
   }
 
   this.baseDestory = function () {
