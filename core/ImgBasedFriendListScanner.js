@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-22 20:39:48
+ * @Last Modified time: 2020-09-23 23:54:26
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -403,7 +403,8 @@ const ImgBasedFriendListScanner = function () {
           errorInfo('有线程执行失败 运行中的线程数：' + activeCount)
           // if (activeCount > 0) {
           debugInfo('将线程池关闭然后重建线程池')
-          this.threadPool.shutdownNow()
+          this.threadPool.shutdown()
+          debugInfo(['等待imgBasedScanner线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
           this.createNewThreadPool()
           // }
         }
@@ -482,7 +483,8 @@ const ImgBasedFriendListScanner = function () {
       // 当等待超过两秒时 结束线程池
       if (poolWaitCount > 20) {
         warnInfo(['线程池等待执行结束超时，当前剩余运行中数量：{} 强制结束', this.threadPool.getActiveCount()])
-        this.threadPool.shutdownNow()
+        this.threadPool.shutdown()
+        debugInfo(['强制关闭imgBasedScanner线程池，等待线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
         this.createNewThreadPool()
         break
       }

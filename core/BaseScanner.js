@@ -2,13 +2,15 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-23 09:12:50
+ * @Last Modified time: 2020-09-23 23:54:34
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
 importClass(java.util.concurrent.ThreadPoolExecutor)
 importClass(java.util.concurrent.TimeUnit)
 importClass(java.util.concurrent.CountDownLatch)
+importClass(java.util.concurrent.ThreadFactory)
+importClass(java.util.concurrent.Executors)
 let { config: _config } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _widgetUtils = singletonRequire('WidgetUtils')
@@ -17,7 +19,7 @@ let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let customMultiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/MultiTouchCollect.js') ? require('../extends/MultiTouchCollect.js') : null
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev } = singletonRequire('LogUtils')
-
+let ENGINE_ID = engines.myEngine().id
 let _package_name = 'com.eg.android.AlipayGphone'
 
 const BaseScanner = function () {
@@ -43,7 +45,21 @@ const BaseScanner = function () {
   this.threadPool = null
 
   this.createNewThreadPool = function () {
-    this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256))
+    this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 4, 60,
+      TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256),
+      new ThreadFactory({
+        newThread: function (runnable) {
+          let thread = Executors.defaultThreadFactory().newThread(runnable)
+          thread.setName(ENGINE_ID + '-scanner-' + thread.getName())
+          return thread
+        }
+      })
+    )
+    let self = this
+    // 注册生命周期结束后关闭线程池，防止脚本意外中断时未调用destroy导致线程池一直运行
+    _commonFunctions.registerOnEngineRemoved(function() {
+      self.baseDestory()
+    }, 'shutdown scanner thread pool')
   }
 
   /**
@@ -57,7 +73,8 @@ const BaseScanner = function () {
 
   this.baseDestory = function () {
     if (this.threadPool !== null) {
-      this.threadPool.shutdownNow()
+      this.threadPool.shutdown()
+      debugInfo(['等待scanner线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
       this.threadPool = null
     }
   }
