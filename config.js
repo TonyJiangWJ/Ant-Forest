@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-22 20:11:22
+ * @Last Modified time: 2020-09-23 23:44:15
  * @Description: 
  */
 'ui';
@@ -165,7 +165,9 @@ let default_config = {
   // 尝试先逛一逛进行能量收取
   try_collect_by_stroll: true,
   auto_set_bang_offset: true,
-  bang_offset: 0
+  bang_offset: 0,
+  // 更新后需要强制执行的标记v1.3.2.5
+  updated_temp_flag_1325: true
 }
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
@@ -248,8 +250,16 @@ if (!isRunningMode) {
   importClass(java.util.concurrent.LinkedBlockingQueue)
   importClass(java.util.concurrent.ThreadPoolExecutor)
   importClass(java.util.concurrent.TimeUnit)
+  importClass(java.util.concurrent.ThreadFactory)
+  importClass(java.util.concurrent.Executors)
 
-  let threadPool = new ThreadPoolExecutor(4, 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(16))
+  let threadPool = new ThreadPoolExecutor(4, 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(16), new ThreadFactory({
+    newThread: function (runnable) {
+      let thread = Executors.defaultThreadFactory().newThread(runnable)
+      thread.setName(ENGINE_ID + '-configing-' + thread.getName())
+      return thread
+    }
+  }))
   let floatyWindow = null
   let floatyLock = threads.lock()
   let count = 10
@@ -273,7 +283,13 @@ if (!isRunningMode) {
   let gravitySensor, distanceSensor
   let stopEmitUntil = 0
 
-
+  // 注册关闭线程池
+  commonFunctions.registerOnEngineRemoved(function () {
+    if (threadPool !== null) {
+      threadPool.shutdown()
+      debugInfo(['等待configing线程池关闭, 结果: {}', threadPool.awaitTermination(5, TimeUnit.SECONDS)])
+    }
+  }, 'shutdown configing thread pool')
   function registerSensors () {
     if (!gravitySensor) {
       gravitySensor = sensors.register('gravity', sensors.delay.ui).on('change', (event, x, y, z) => {
@@ -464,7 +480,11 @@ if (!isRunningMode) {
     let precent = parseInt(config.color_offset / 255 * 100)
     ui.colorThresholdSeekbar.setProgress(precent)
 
-    ui.bangOffsetText.text('' + config.bang_offset)
+    if (config.auto_set_bang_offset) {
+      ui.bangOffsetText.text('下次运行时重新检测')
+    } else {
+      ui.bangOffsetText.text('' + config.bang_offset)
+    }
     let configColor = config.min_floaty_color
     ui.floatyColor.text(configColor)
     if (/^#[\dabcdef]{6}$/i.test(configColor)) {
@@ -739,6 +759,7 @@ if (!isRunningMode) {
                     <text text="当前自动设置的刘海偏移量为：" textSize="12sp" layout_weight="60" />
                     <text id="bangOffsetText" textSize="12sp" layout_weight="40" />
                   </horizontal>
+                  <button id="resetOffsetBtn">下次运行时重新检测</button>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 悬浮窗配置 不再提供关闭 */}
                   <horizontal margin="10 0" gravity="center">
@@ -1552,6 +1573,11 @@ if (!isRunningMode) {
 
     ui.changeDeviceSizeBtn.on('click', () => {
       inputDeviceSize().then(() => setDeviceSizeText())
+    })
+
+    ui.resetOffsetBtn.on('click', () => {
+      config.auto_set_bang_offset = true
+      ui.bangOffsetText.text('下次运行时重新检测')
     })
 
     ui.showThresholdConfig.on('click', () => {

@@ -2,12 +2,12 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-17 18:58:30
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-17 19:24:52
+ * @Last Modified time: 2020-09-23 23:30:42
  * @Description: 
  */
 requestScreenCapture()
 let DETECT_COLOR = '#10FF1F'
-let window = floaty.window(
+let window = floaty.rawWindow(
   <frame id="container" gravity="center" bg="#10FF1F">
     <horizontal margin="10 0" gravity="center">
       <text id="text" text="TEXT FLOATY" textSize="10sp" />
@@ -17,10 +17,6 @@ let window = floaty.window(
 let offset = null
 window.setPosition(100, 0)
 window.exitOnClose()
-
-window.container.click(() => {
-  window.setAdjustEnabled(!window.isAdjustEnabled())
-})
 
 setInterval(() => {
   // 啥也不干 防止退出

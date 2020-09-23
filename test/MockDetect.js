@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-11 13:59:54
+ * @Last Modified time: 2020-09-23 23:54:17
  * @Description: 
  */
 let resolver = require('../lib/AutoJSRemoveDexResolver.js')
@@ -14,6 +14,8 @@ importClass(java.util.concurrent.LinkedBlockingQueue)
 importClass(java.util.concurrent.ThreadPoolExecutor)
 importClass(java.util.concurrent.TimeUnit)
 importClass(java.util.concurrent.CountDownLatch)
+importClass(java.util.concurrent.ThreadFactory)
+importClass(java.util.concurrent.Executors)
 resolver()
 
 let { config: _config } = require('../config.js')(runtime, this)
@@ -86,7 +88,20 @@ function CollectDetect () {
 
 
   this.createNewThreadPool = function () {
-    this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256))
+    this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 8, 60,
+      TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256),
+      new ThreadFactory({
+        newThread: function (runnable) {
+          let thread = Executors.defaultThreadFactory().newThread(runnable)
+          thread.setName(ENGINE_ID + '-mock-detect-' + thread.getName())
+          return thread
+        }
+      })
+    )
+    let self = this
+    _commonFunctions.registerOnEngineRemoved(function () {
+      self.destory()
+    }, 'shutdown mockdetect thread pool')
   }
 
   /**
@@ -136,8 +151,11 @@ function CollectDetect () {
   }
 
   this.destory = function () {
-    this.threadPool.shutdownNow()
-    this.threadPool = null
+    if (this.threadPool !== null) {
+      this.threadPool.shutdown()
+      debugInfo(['等待mockDetect线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
+      this.threadPool = null
+    }
   }
 
   this.checkIsCanCollect = function (img, point) {
@@ -273,7 +291,8 @@ function CollectDetect () {
         errorInfo('有线程执行失败 运行中的线程数：' + activeCount)
         if (activeCount > 0) {
           debugInfo('将线程池关闭然后重建线程池')
-          this.threadPool.shutdownNow()
+          this.threadPool.shutdown()
+          debugInfo(['强制关闭mockDetect线程池，等待线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
           this.createNewThreadPool()
         }
       }

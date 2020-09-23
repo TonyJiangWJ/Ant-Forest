@@ -33,8 +33,8 @@ let lock = threads.lock()
 let condition = lock.newCondition()
 let inCapture = false
 let detectRegion = [config.tree_collect_left, config.tree_collect_top - cvt(80), config.tree_collect_width, config.tree_collect_height + cvt(80)]
+let scanner = new _BaseScanner()
 let detectThread = threads.start(function () {
-  let scanner = new _BaseScanner()
   automator.click = () => { }
   while (true) {
     if (new Date().getTime() - birthTime > 1500) {
@@ -49,7 +49,6 @@ let detectThread = threads.start(function () {
     sleep(300)
   }
 })
-
 // 防止崩溃
 function exitAndClean () {
   if (window !== null) {
@@ -69,6 +68,9 @@ function exitAndClean () {
 
 commonFunction.registerOnEngineRemoved(function () {
   resourceMonitor.releaseAll()
+  if (scanner !== null) {
+    scanner.destory()
+  }
 })
 
 window.canvas.on("draw", function (canvas) {

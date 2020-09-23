@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-17 20:14:27
+ * @Last Modified time: 2020-09-23 23:54:02
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -25,6 +25,12 @@ let BaseScanner = require('./BaseScanner.js')
 function Ant_forest () {
   const _package_name = 'com.eg.android.AlipayGphone'
   let _base_scanner = new BaseScanner()
+  _commonFunctions.registerOnEngineRemoved(function () {
+    if (_base_scanner !== null) {
+      _base_scanner.destory()
+      _base_scanner = null
+    }
+  }, 'release threadPool')
 
   let _pre_energy = 0, // 记录收取前能量值
     _post_energy = 0, // 记录收取后能量值
