@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-24 20:33:41
+ * @Last Modified time: 2020-09-24 21:41:59
  * @Description: 
  */
 
@@ -44,7 +44,7 @@ let scanner = new _BaseScanner()
 let detectThread = threads.start(function () {
   automator.click = () => { }
   while (true) {
-    if (new Date().getTime() - birthTime > 1500) {
+    if (new Date().getTime() - birthTime > 500) {
       inCapture = true
       sleep(200)
       clickPoints = []
