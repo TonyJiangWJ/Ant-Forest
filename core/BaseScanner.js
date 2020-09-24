@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-23 23:54:34
+ * @Last Modified time: 2020-09-24 20:32:58
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -232,9 +232,11 @@ const BaseScanner = function () {
           findBalls.forEach(b => {
             let region = [b.x - cvt(40), b.y + cvt(70), cvt(60), cvt(30)]
             let recheckRegion = [b.x - cvt(40), b.y - cvt(40), cvt(80), cvt(80)]
+            _commonFunctions.ensureRegionInScreen(region)
+            _commonFunctions.ensureRegionInScreen(recheckRegion)
             this.threadPool.execute(function () {
               try {
-                if (rgbImg.getMat().dims() >= 2) {
+                if (rgbImg.getMat().dims() >= 2 && intervalImg.getMat().dims() >= 2) {
                   // 先判断能量球底部 文字的颜色是否匹配帮收
                   let p = images.findColor(rgbImg, '#f2a45a', { region: region, threshold: 30 }) || images.findColor(rgbImg, '#dc9423', { region: region, threshold: 30 }) || images.findColor(rgbImg, '#e6cca6', { region: region, threshold: 30 })
                   // 帮收能量球，判断能量球中心点的颜色是否匹配
@@ -253,7 +255,7 @@ const BaseScanner = function () {
                     }
                   }
                 } else {
-                  debugInfo(['mat dims is not smaller then two, {}', rgbImg.getMat().dims()])
+                  debugInfo(['mat dims is smaller then two, rgb: {} interval: {}', rgbImg.getMat().dims(), intervalImg.getMat().dims()])
                 }
               } catch (e) {
                 errorInfo('线程执行异常：' + e)
@@ -287,7 +289,6 @@ const BaseScanner = function () {
               debugForDev(['图片数据：[data:image/png;base64,{}]', images.toBase64(rgbImg)], false, true)
             }
           }
-          rgbImg.recycle()
         }
       }
     } while (recheck && isOwn && --recheckLimit > 0)
@@ -317,6 +318,7 @@ const BaseScanner = function () {
           let forCheckImg = images.copy(screen)
           allPoints = allPoints.filter(point => {
             let region = [detectRegion[0] + point.x, detectRegion[1] + point.y, 50, 200]
+            _commonFunctions.ensureRegionInScreen(region)
             for (let i = 0; i < _config.helpBallColors.length; i++) {
               let color = _config.helpBallColors[i]
               // 校验是否匹配帮收能量球颜色

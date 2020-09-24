@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-22 20:39:55
+ * @Last Modified time: 2020-09-24 20:33:30
  * @Description: 逛一逛收集器
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -82,9 +82,10 @@ const StrollScanner = function () {
     if (jTreeWarp) {
       let warpBounds = jTreeWarp.bounds()
       region = [
-        parseInt(warpBounds.right - 0.18 * warpBounds.width()), parseInt(warpBounds.bottom - 0.12 * warpBounds.height()),
-        parseInt(0.18 * warpBounds.width()), parseInt(0.12 * warpBounds.height())
+        Math.floor(warpBounds.right - 0.18 * warpBounds.width()), Math.floor(warpBounds.bottom - 0.12 * warpBounds.height()),
+        Math.floor(0.18 * warpBounds.width()), Math.floor(0.12 * warpBounds.height())
       ]
+      _commonFunctions.ensureRegionInScreen(region)
     } else {
       hasNext = false
     }
