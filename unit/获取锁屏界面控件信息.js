@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-22 10:47:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-22 20:40:59
+ * @Last Modified time: 2020-09-24 19:59:28
  * @Description: 
  */
 let { config } = require('../config.js')(runtime, this)
@@ -16,6 +16,9 @@ let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let unlocker = require('../lib/Unlock.js').unlocker
+commonFunctions.registerOnEngineRemoved(function () {
+  logUtils.showCostingInfo()
+}, 'logging cost')
 // 清空所有日志
 logUtils.clearLogFile()
 if (!floatyInstance.init()) {
@@ -129,7 +132,19 @@ function analyzeLayout (desc) {
       id, content,
       boundsInfo.left, boundsInfo.top, boundsInfo.width(), boundsInfo.height()
     ])
-    let resultList = iterateAll(root, 1)
+
+    let resultList = iterateAll(root).filter(v => v !== null).sort((a, b) => {
+      let depth1 = getCompareDepth(a)
+      let depth2 = getCompareDepth(b)
+      logUtils.debugInfo(['depth1:{} depth2: {}', depth1, depth2])
+      if (depth1 > depth2) {
+        return 1
+      } else if (depth1 === depth2) {
+        return 0
+      } else {
+        return -1
+      }
+    })
     uiObjectInfoList = flatMap(flatArrayList, resultList)
 
     floatyInstance.setPosition(parseInt(config.device_width / 5), parseInt(config.device_height / 2))
@@ -143,7 +158,8 @@ function analyzeLayout (desc) {
   let cost = new Date().getTime() - start
   if (uiObjectInfoList) {
     let logInfoList = uiObjectInfoList.filter(v => v && v.hasUsableInfo()).map(v => v.toString())
-    let content = removeMinPrefix(logInfoList).join('\n')
+    // let content = removeMinPrefix(logInfoList).join('\n')
+    let content = logInfoList.join('\n')
     logUtils.debugInfo(['{} 分析耗时：{}ms', desc, cost])
     return { content: content, total: logInfoList.length, cost: cost, desc: desc }
   }
@@ -164,33 +180,35 @@ function getRootContainer (target) {
 }
 
 
-function iterateAll (root, depth) {
+function iterateAll (root, depth, index) {
   if (isEmpty(root)) {
     return null
   }
-  depth = depth || 1
-  let uiObjectInfo = new UiObjectInfo(root, depth)
+  index = index || 0
+  depth = depth || 0
+  let uiObjectInfo = new UiObjectInfo(root, depth, index)
   logUtils.logInfo(uiObjectInfo.toString())
   if (root.getChildCount() > 0) {
-    return [uiObjectInfo].concat(root.children().map(child => iterateAll(child, depth + 1)))
+    return [uiObjectInfo].concat(root.children().map((child, index) => iterateAll(child, depth + 1, index)))
   } else {
     return uiObjectInfo
   }
 }
 
-function UiObjectInfo (uiObject, depth) {
+function UiObjectInfo (uiObject, depth, index) {
   this.content = uiObject.text() || uiObject.desc() || ''
   this.isDesc = typeof uiObject.desc() !== 'undefined' && uiObject.desc() !== ''
   this.id = uiObject.id()
   this.boundsInfo = uiObject.bounds()
   this.depth = depth
+  this.index = index
 
 
   this.toString = function () {
     return commonFunctions.formatString(
-      // ---- id:[] [text/desc]content:[] bounds:[]
-      '{}{}{}{}',
-      new Array(this.depth).join('-'),
+      // ----[depth:index] id:[] [text/desc]content:[] bounds:[]
+      '{}[{}:{}]{}{}{}',
+      new Array(this.depth + 1).join('-'), this.depth, this.index,
       this.isEmpty(this.id) ? '' : 'id:[' + this.id + ']',
       this.isEmpty(this.content) ? '' :
         commonFunctions.formatString(
@@ -223,6 +241,34 @@ function flatMap (f, list) {
   return list.map(f).reduce((x, y) => x.concat(y), [])
 }
 
+/**
+ * 将嵌套数组转换成单个数组
+ * @param {*} a 
+ */
+function flatArrayList (a) {
+  if (a instanceof UiObjectInfo) {
+    return a
+  } else {
+    return flatMap(flatArrayList, a)
+  }
+}
+
+function getCompareDepth (a) {
+  if (a instanceof Array) {
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] instanceof Array) {
+        return getCompareDepth(a[i])
+      } else {
+        let data = a[i]
+        if (data.id || data.content)
+          return data.depth
+      }
+    }
+  } else {
+    return a.depth
+  }
+}
+
 function Queue (size) {
   this.size = size || 10
   this.pushTime = 0
@@ -242,15 +288,6 @@ function Queue (size) {
 
   this.peek = function () {
     return this.queue[0]
-  }
-}
-
-
-function flatArrayList (a) {
-  if (a instanceof UiObjectInfo) {
-    return a
-  } else {
-    return flatMap(flatArrayList, a)
   }
 }
 
