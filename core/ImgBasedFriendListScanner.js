@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-23 23:54:26
+ * @Last Modified time: 2020-09-24 20:33:21
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -497,13 +497,17 @@ const ImgBasedFriendListScanner = function () {
 
   this.detectHelp = function (img) {
     let helpPoints = this.detectColors(img)
-    debugInfo('可帮助的点：' + JSON.stringify(helpPoints))
+    if (helpPoints && helpPoints.length > 0) {
+      debugInfo('可帮助的点：' + JSON.stringify(helpPoints))
+    }
     return helpPoints
   }
 
   this.detectCollect = function (img) {
     let collectPoints = this.detectColors(img)
-    debugInfo('可收取的点：' + JSON.stringify(collectPoints))
+    if (collectPoints && collectPoints.length > 0) {
+      debugInfo('可收取的点：' + JSON.stringify(collectPoints))
+    }
     return collectPoints
   }
 

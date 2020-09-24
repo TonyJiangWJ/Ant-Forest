@@ -1,3 +1,10 @@
+/*
+ * @Author: TonyJiangWJ
+ * @Date: 2020-09-23 23:56:10
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2020-09-24 20:33:41
+ * @Description: 
+ */
 
 let { config } = require('../config.js')(runtime, this)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
