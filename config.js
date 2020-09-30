@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-27 16:16:30
+ * @Last Modified time: 2020-09-30 23:07:54
  * @Description: 
  */
 'ui';
@@ -300,7 +300,7 @@ if (!isRunningMode) {
   commonFunctions.registerOnEngineRemoved(function () {
     if (threadPool !== null) {
       threadPool.shutdown()
-      debugInfo(['等待configing线程池关闭, 结果: {}', threadPool.awaitTermination(5, TimeUnit.SECONDS)])
+      console.verbose('等待configing线程池关闭, 结果: ' + threadPool.awaitTermination(5, TimeUnit.SECONDS))
     }
   }, 'shutdown configing thread pool')
   function registerSensors () {
