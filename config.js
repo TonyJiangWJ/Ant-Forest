@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-23 23:44:15
+ * @Last Modified time: 2020-09-27 16:16:30
  * @Description: 
  */
 'ui';
@@ -33,7 +33,6 @@ let default_config = {
   // 异步等待截图，当截图超时后重新获取截图 默认开启
   async_waiting_capture: true,
   capture_waiting_time: 500,
-  max_collect_repeat: 20,
   max_collect_wait_time: 60,
   show_debug_log: true,
   show_engine_id: false,
@@ -166,8 +165,11 @@ let default_config = {
   try_collect_by_stroll: true,
   auto_set_bang_offset: true,
   bang_offset: 0,
+  limit_runnable_time_range: true,
   // 更新后需要强制执行的标记v1.3.2.5
-  updated_temp_flag_1325: true
+  updated_temp_flag_1325: true,
+  updated_temp_flag_1326: true,
+  thread_name_prefix: 'antforest_'
 }
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
@@ -204,6 +206,17 @@ config.recalculateRegion = () => {
 
 if (config.friend_home_ui_content.indexOf('|.*大树成长记录') > 0) {
   config.friend_home_ui_content.replace('|.*大树成长记录', '')
+  storageConfig.put('friend_home_ui_content', config.friend_home_ui_content)
+}
+// 首次更新 直接关闭控件分析，开启图像分析
+if (config.updated_temp_flag_1326) {
+  config.auto_set_img_or_widget = false
+  config.base_on_image = true
+  config.direct_use_img_collect_and_help = true
+  storageConfig.put('updated_temp_flag_1326', false)
+  storageConfig.put('auto_set_img_or_widget', false)
+  storageConfig.put('base_on_image', true)
+  storageConfig.put('direct_use_img_collect_and_help', true)
 }
 if (!isRunningMode) {
   if (!currentEngine.endsWith('/config.js')) {
@@ -256,7 +269,7 @@ if (!isRunningMode) {
   let threadPool = new ThreadPoolExecutor(4, 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(16), new ThreadFactory({
     newThread: function (runnable) {
       let thread = Executors.defaultThreadFactory().newThread(runnable)
-      thread.setName(ENGINE_ID + '-configing-' + thread.getName())
+      thread.setName(config.thread_name_prefix + ENGINE_ID + '-configing-' + thread.getName())
       return thread
     }
   }))
@@ -509,7 +522,6 @@ if (!isRunningMode) {
     ui.countdownContainer.setVisibility(config.is_cycle || config.never_stop ? View.GONE : View.VISIBLE)
     ui.cycleTimeInpt.text(config.cycle_times + '')
     ui.maxCollectWaitTimeInpt.text(config.max_collect_wait_time + '')
-    ui.maxCollectRepeatInpt.text(config.max_collect_repeat + '')
     ui.isNeverStopChkBox.setChecked(config.never_stop)
     ui.reactiveTimeContainer.setVisibility(config.never_stop ? View.VISIBLE : View.INVISIBLE)
     ui.reactiveTimeInpt.text(config.reactive_time + '')
@@ -579,6 +591,7 @@ if (!isRunningMode) {
 
     ui.recheckRankListChkBox.setChecked(config.recheck_rank_list)
     ui.tryCollectByStrollChkBox.setChecked(config.try_collect_by_stroll)
+    ui.limitRunnableTimeRangeChkBox.setChecked(config.limit_runnable_time_range)
 
     ui.autoSetImgOrWidgetChkBox.setChecked(config.auto_set_img_or_widget)
     ui.baseOnImageChkBox.setChecked(config.base_on_image)
@@ -754,7 +767,7 @@ if (!isRunningMode) {
                     <seekbar id="colorThresholdSeekbar" progress="20" layout_weight="85" />
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
-                  <text text="刘海屏或者挖孔屏悬浮窗显示位置和实际目测位置不同，需要施加一个偏移量一般是负值，脚本运行时会自动设置：" textSize="12sp" margin="10 5"/>
+                  <text text="刘海屏或者挖孔屏悬浮窗显示位置和实际目测位置不同，需要施加一个偏移量一般是负值，脚本运行时会自动设置：" textSize="12sp" margin="10 5" />
                   <horizontal padding="10 10" gravity="center">
                     <text text="当前自动设置的刘海偏移量为：" textSize="12sp" layout_weight="60" />
                     <text id="bangOffsetText" textSize="12sp" layout_weight="40" />
@@ -828,13 +841,10 @@ if (!isRunningMode) {
                     </horizontal>
                   </vertical>
                   <vertical id="countdownContainer">
+                    <text text="倒计时等待的最大时间，默认是60分钟内有可收取的就会设置倒计时，你如果只需要收集一次，可以将它设置为0即可。" textSize="10sp"/>
                     <horizontal gravity="center" >
                       <text text="计时最大等待时间:" />
                       <input id="maxCollectWaitTimeInpt" inputType="number" layout_weight="60" />
-                    </horizontal>
-                    <horizontal gravity="center">
-                      <text text="单次运行最大收集次数:" />
-                      <input id="maxCollectRepeatInpt" inputType="number" layout_weight="60" />
                     </horizontal>
                   </vertical>
                   {/* 脚本延迟启动 */}
@@ -937,6 +947,7 @@ if (!isRunningMode) {
                   <checkbox id="notCollectSelfChkBox" text="不收自己的能量" />
                   <checkbox id="recheckRankListChkBox" text="是否在收集或帮助后重新检查排行榜" />
                   <checkbox id="tryCollectByStrollChkBox" text="是否通过逛一逛收集能量" />
+                  <checkbox id="limitRunnableTimeRangeChkBox" text="是否限制0:30-6:50不可运行" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <button id="showRealTimeImgConfig" >实时查看可视化配置信息</button>
                   <checkbox id="regionSeekChkBox" text="拖动输入区域" textColor="black" textSize="16sp" />
@@ -956,7 +967,6 @@ if (!isRunningMode) {
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <checkbox id="directUseImgCollectChkBox" text="是否直接基于图像分析收取和帮助好友" />
                   <checkbox id="directBallsByHoughChkBox" text="是否通过findCircles识别能量球" />
-                  
                   <vertical id="multiTouchContainer">
                     <text text="当可收取能量球控件无法获取时开启区域点击, 不同设备请扩展点击代码，当前建议开启 直接基于图像分析收取和帮助好友" textSize="9sp" />
                     <checkbox id="tryCollectByMultiTouchChkBox" text="是否尝试区域点击来收取能量" />
@@ -1948,9 +1958,6 @@ if (!isRunningMode) {
     ui.maxCollectWaitTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.max_collect_wait_time = parseInt(text) })
     )
-    ui.maxCollectRepeatInpt.addTextChangedListener(
-      TextWatcherBuilder(text => { config.max_collect_repeat = parseInt(text) })
-    )
 
     ui.reactiveTimeInpt.addTextChangedListener(
       TextWatcherBuilder(text => {
@@ -2080,6 +2087,10 @@ if (!isRunningMode) {
     })
     ui.tryCollectByStrollChkBox.on('click', () => {
       config.try_collect_by_stroll = ui.tryCollectByStrollChkBox.isChecked()
+    })
+
+    ui.limitRunnableTimeRangeChkBox.on('click', () => {
+      config.limit_runnable_time_range = ui.limitRunnableTimeRangeChkBox.isChecked()
     })
 
     ui.checkBottomBaseImgChkBox.on('click', () => {
