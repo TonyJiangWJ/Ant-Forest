@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-24 20:32:58
+ * @Last Modified time: 2020-09-30 21:05:36
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -50,7 +50,7 @@ const BaseScanner = function () {
       new ThreadFactory({
         newThread: function (runnable) {
           let thread = Executors.defaultThreadFactory().newThread(runnable)
-          thread.setName(ENGINE_ID + '-scanner-' + thread.getName())
+          thread.setName(_config.thread_name_prefix + ENGINE_ID + '-scanner-' + thread.getName())
           return thread
         }
       })

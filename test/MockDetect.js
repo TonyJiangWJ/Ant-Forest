@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-23 23:54:17
+ * @Last Modified time: 2020-09-27 14:11:21
  * @Description: 
  */
 let resolver = require('../lib/AutoJSRemoveDexResolver.js')
@@ -93,7 +93,7 @@ function CollectDetect () {
       new ThreadFactory({
         newThread: function (runnable) {
           let thread = Executors.defaultThreadFactory().newThread(runnable)
-          thread.setName(ENGINE_ID + '-mock-detect-' + thread.getName())
+          thread.setName(_config.thread_name_prefix + ENGINE_ID + '-mock-detect-' + thread.getName())
           return thread
         }
       })

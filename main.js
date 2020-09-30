@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-22 20:41:13
+ * @Last Modified time: 2020-09-30 10:16:57
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
@@ -11,6 +11,8 @@ const resolver = require('./lib/AutoJSRemoveDexResolver.js')
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 let commonFunctions = singletonRequire('CommonFunction')
+// 避免定时任务打断前台运行中的任务
+commonFunctions.checkAnyReadyAndSleep()
 // 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
 if (config.single_script) {
   logInfo('======单脚本运行直接清空任务队列=======')
@@ -190,7 +192,6 @@ if (config.develop_mode) {
     commonFunctions.printExceptionStack(e)
   }
 }
-resourceMonitor.releaseAll()
 flushAllLogs()
 runningQueueDispatcher.removeRunningTask(true)
 // 30秒后关闭，防止立即停止

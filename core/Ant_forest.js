@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-23 23:54:02
+ * @Last Modified time: 2020-09-30 22:06:00
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -382,12 +382,6 @@ function Ant_forest () {
         _has_next = true
         return
       }
-      // 计时模式 超过最大循环次数 退出执行
-      if (_current_time >= _config.max_collect_repeat) {
-        _has_next = false
-        logInfo("达到最大循环次数")
-        return
-      }
       // 计时模式，超过最大等待时间 退出执行
       if (
         _min_countdown != null &&
@@ -592,7 +586,7 @@ function Ant_forest () {
       _config.tree_collect_width = parseInt(_config.device_width - 2 * bounds1.width())
       _config.tree_collect_height = bounds2.top - bounds1.top
       detectRegion = [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height]
-      infoLog('自动识别区域：' + JSON.stringify(detectRegion))
+      infoLog('自动识别能量球区域：' + JSON.stringify(detectRegion))
       let configStorage = storages.create(_storage_name)
       configStorage.put('tree_collect_left', _config.tree_collect_left)
       configStorage.put('tree_collect_top', _config.tree_collect_top)
@@ -736,7 +730,6 @@ function Ant_forest () {
           if (stop) {
             unlocker && unlocker.saveNeedRelock(true)
             _runningQueueDispatcher.removeRunningTask()
-            resourceMonitor.releaseAll()
             engines.myEngine().forceStop()
           }
         })
@@ -761,10 +754,6 @@ function Ant_forest () {
       } else {
         debugInfo('图片资源代理正常')
       }
-      if (_commonFunctions.inLimitTimeRange()) {
-        warnInfo('当前在限制运行时间范围，停止运行', true)
-        exit()
-      }
     }
 
     this.endLoop = function () {
@@ -773,15 +762,16 @@ function Ant_forest () {
       this.interruptStopListenThread()
       events.removeAllListeners('key_down')
       events.removeAllListeners('toast')
-      _runningQueueDispatcher.removeRunningTask()
       if (_config.auto_lock === true && unlocker.needRelock() === true) {
         debugInfo('重新锁定屏幕')
         automator.lockScreen()
+        unlocker.saveNeedRelock(true)
       }
       if (_config.auto_set_brightness) {
         device.setBrightnessMode(1)
       }
       flushAllLogs()
+      _runningQueueDispatcher.removeRunningTask()
     }
 
     this.interruptStopListenThread = function () {
