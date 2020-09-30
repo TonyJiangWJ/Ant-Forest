@@ -67,7 +67,7 @@
 - 脚本运行时可以显示悬浮窗展示当前状态
 - 开始收集的时候按 `音量减` 可以延迟五分钟再执行，适合需要使用手机的时候使用，按 `音量加` 则关闭脚本终止执行
 - 收取完毕后悬浮框显示收取的能量数量
-- 可以自动打开无障碍，需要配合adb赋权
+- 可以自动打开无障碍，需要配合adb赋权，不同的软件请自行替换包名: Pro版为 `org.autojs.autojspro` 可以通过 `context.getPackageName()` 获取
 
   ```shell
   adb shell pm grant org.autojs.autojs android.permission.WRITE_SECURE_SETTINGS
