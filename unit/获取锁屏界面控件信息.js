@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-22 10:47:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-24 19:59:28
+ * @Last Modified time: 2020-10-19 18:59:12
  * @Description: 
  */
 let { config } = require('../config.js')(runtime, this)
@@ -98,11 +98,16 @@ dialogs.build({
   title: '布局分析结果更多内容请查看logs/info.log',
   content: logContents,
   negative: '关闭',
+  positive: '复制内容',
   negativeColor: 'red',
   cancelable: false
 })
   .on('negative', () => {
     exit()
+  })
+  .on('positive', () => {
+    setClip(content)
+    toastLog('布局日志已复制到剪切板！')
   })
   .show()
 

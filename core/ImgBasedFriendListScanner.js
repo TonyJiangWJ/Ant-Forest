@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-24 20:33:21
+ * @Last Modified time: 2020-10-09 16:31:22
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -599,12 +599,14 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
       warnInfo(['{} 使用了保护罩 不收取他', obj.name])
       skip = true
     }
-    if (!skip && !obj.recheck && this.protectInfoDetect(obj.name)) {
-      warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
-      skip = true
-    }
     if (skip) {
       return this.returnToListAndCheck()
+    }
+    if (!obj.recheck) {
+      this.protectInfoDetect(obj.name)
+    } else {
+      this.isProtected = false
+      this.isProtectDetectDone = true
     }
     return this.doCollectTargetFriend(obj)
   }

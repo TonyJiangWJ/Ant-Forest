@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-24 21:41:59
+ * @Last Modified time: 2020-10-09 22:19:05
  * @Description: 
  */
 
@@ -49,7 +49,11 @@ let detectThread = threads.start(function () {
       sleep(200)
       clickPoints = []
       findBalls = []
-      scanner.checkAndCollectByHough(flag === 1, balls => findBalls = balls, point => clickPoints.push(point))
+      try {
+        scanner.checkAndCollectByHough(flag === 1, balls => findBalls = balls, point => clickPoints.push(point))
+      } catch (e) {
+
+      }
       birthTime = new Date().getTime()
       inCapture = false
     }

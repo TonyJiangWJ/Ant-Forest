@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-30 23:07:54
+ * @Last Modified time: 2020-10-09 15:29:45
  * @Description: 
  */
 'ui';
@@ -37,6 +37,7 @@ let default_config = {
   show_debug_log: true,
   show_engine_id: false,
   develop_mode: false,
+  develop_saving_mode: false,
   check_device_posture: false,
   check_distance: false,
   posture_threshod_z: 6,
@@ -121,7 +122,7 @@ let default_config = {
   my_id: '',
   home_ui_content: '查看更多动态.*',
   friend_home_check_regex: '浇水',
-  friend_home_ui_content: 'TA的好友.*|今天',
+  friend_home_ui_content: 'TA收取你.*|今天|浇水',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
@@ -169,6 +170,7 @@ let default_config = {
   // 更新后需要强制执行的标记v1.3.2.5
   updated_temp_flag_1325: true,
   updated_temp_flag_1326: true,
+  updated_temp_flag_1327: true,
   thread_name_prefix: 'antforest_'
 }
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
@@ -204,20 +206,7 @@ config.recalculateRegion = () => {
   }
 }
 
-if (config.friend_home_ui_content.indexOf('|.*大树成长记录') > 0) {
-  config.friend_home_ui_content.replace('|.*大树成长记录', '')
-  storageConfig.put('friend_home_ui_content', config.friend_home_ui_content)
-}
-// 首次更新 直接关闭控件分析，开启图像分析
-if (config.updated_temp_flag_1326) {
-  config.auto_set_img_or_widget = false
-  config.base_on_image = true
-  config.direct_use_img_collect_and_help = true
-  storageConfig.put('updated_temp_flag_1326', false)
-  storageConfig.put('auto_set_img_or_widget', false)
-  storageConfig.put('base_on_image', true)
-  storageConfig.put('direct_use_img_collect_and_help', true)
-}
+resetConfigsIfNeeded()
 if (!isRunningMode) {
   if (!currentEngine.endsWith('/config.js')) {
     config.recalculateRegion()
@@ -546,6 +535,7 @@ if (!isRunningMode) {
     ui.fileSizeContainer.setVisibility(config.save_log_file ? View.VISIBLE : View.GONE)
     ui.showEngineIdChkBox.setChecked(config.show_engine_id)
     ui.developModeChkBox.setChecked(config.develop_mode)
+    ui.developSavingModeChkBox.setChecked(config.develop_saving_mode)
     ui.cutAndSaveCountdownChkBox.setChecked(config.cutAndSaveCountdown)
     ui.cutAndSaveTreeCollectChkBox.setChecked(config.cutAndSaveTreeCollect)
     ui.developModeContainer.setVisibility(config.develop_mode ? View.VISIBLE : View.GONE)
@@ -854,9 +844,10 @@ if (!isRunningMode) {
                   </horizontal>
                   <checkbox id="developModeChkBox" text="是否启用开发模式" />
                   <vertical id="developModeContainer" gravity="center">
-                    <text text="脚本执行时保存图片，未启用开发模式时依旧有效:" margin="5 0" textSize="14sp" />
+                    <text text="脚本执行时保存图片等数据，未启用开发模式时依旧有效，请不要随意开启:" margin="5 0" textSize="14sp" />
                     <checkbox id="cutAndSaveCountdownChkBox" text="是否保存倒计时图片" />
                     <checkbox id="cutAndSaveTreeCollectChkBox" text="是否保存可收取能量球图片" />
+                    <checkbox id="developSavingModeChkBox" text="是否保存一些开发用的数据" />
                   </vertical>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   {/* 是否显示debug日志 */}
@@ -1828,6 +1819,10 @@ if (!isRunningMode) {
       ui.developModeContainer.setVisibility(config.develop_mode ? View.VISIBLE : View.GONE)
     })
 
+    ui.developSavingModeChkBox.on('click', () => {
+      config.develop_saving_mode = ui.developSavingModeChkBox.isChecked()
+    })
+
     ui.cutAndSaveCountdownChkBox.on('click', () => {
       config.cutAndSaveCountdown = ui.cutAndSaveCountdownChkBox.isChecked()
     })
@@ -2352,5 +2347,32 @@ if (!isRunningMode) {
   function sendConfigChangedBroadcast () {
     console.verbose(engines.myEngine().id + ' 发送广播 通知配置变更')
     events.broadcast.emit(CONFIG_STORAGE_NAME + 'config_changed', { config: config, id: engines.myEngine().id })
+  }
+}
+
+/**
+ * 脚本更新后自动恢复一些不太稳定的配置
+ */
+function resetConfigsIfNeeded() {
+  if (config.friend_home_ui_content.indexOf('|.*大树成长记录') > 0) {
+    config.friend_home_ui_content.replace('|.*大树成长记录', '')
+    storageConfig.put('friend_home_ui_content', config.friend_home_ui_content)
+  }
+  // 首次更新 直接关闭控件分析，开启图像分析
+  if (config.updated_temp_flag_1326) {
+    config.auto_set_img_or_widget = false
+    config.base_on_image = true
+    config.direct_use_img_collect_and_help = true
+    storageConfig.put('updated_temp_flag_1326', false)
+    storageConfig.put('auto_set_img_or_widget', false)
+    storageConfig.put('base_on_image', true)
+    storageConfig.put('direct_use_img_collect_and_help', true)
+  }
+  if (config.updated_temp_flag_1327) {
+    if (config.friend_home_ui_content === 'TA的好友.*|今天') {
+      config.friend_home_ui_content = default_config.friend_home_ui_content
+      storageConfig.put('friend_home_ui_content', default_config.friend_home_ui_content)
+    }
+    storageConfig.put('updated_temp_flag_1327', false)
   }
 }

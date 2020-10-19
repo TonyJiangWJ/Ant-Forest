@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-04-29 14:44:49
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-24 19:58:33
+ * @Last Modified time: 2020-10-19 17:52:05
  * @Description: 
  */
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
@@ -91,11 +91,16 @@ if (uiObjectInfoList) {
     title: '布局分析结果',
     content: commonFunctions.formatString("总分析耗时：{}ms 总控件数：{}\n{}", timeCost, total, content),
     negative: '关闭',
+    positive: '复制内容',
     negativeColor: 'red',
     cancelable: false
   })
     .on('negative', () => {
       exit()
+    })
+    .on('positive', () => {
+      setClip(content)
+      toastLog('布局日志已复制到剪切板！')
     })
     .show()
 }

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-24 20:33:30
+ * @Last Modified time: 2020-10-09 17:53:44
  * @Description: 逛一逛收集器
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -132,7 +132,10 @@ const StrollScanner = function () {
       obj.recheck = true
       return this.doCollectTargetFriend(obj)
     }
+  }
 
+  this.doIfProtected = function (obj) {
+    this.duplicateChecker.pushIntoDuplicated(obj)
   }
 }
 
@@ -180,13 +183,15 @@ StrollScanner.prototype.collectTargetFriend = function () {
     warnInfo(['{} 使用了保护罩 不收取他', obj.name])
     skip = true
   }
-  if (!skip && !obj.recheck && this.protectInfoDetect(obj.name)) {
-    warnInfo(['{} 好友已使用能量保护罩，跳过收取', obj.name])
-    skip = true
-  }
   if (skip) {
     this.duplicateChecker.pushIntoDuplicated(obj)
     return true
+  }
+  if (!obj.recheck) {
+    this.protectInfoDetect(obj.name)
+  } else {
+    this.isProtected = false
+    this.isProtectDetectDone = true
   }
   return this.doCollectTargetFriend(obj)
 }
