@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-30 10:16:57
+ * @Last Modified time: 2020-10-09 15:15:03
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
@@ -47,10 +47,6 @@ commonFunctions.registerOnEngineRemoved(function () {
   // 移除运行中任务
   runningQueueDispatcher.removeRunningTask(true, true,
     () => {
-      // 重置自动亮度
-      if (config.auto_set_brightness) {
-        device.setBrightnessMode(1)
-      }
       // 保存是否需要重新锁屏
       unlocker.saveNeedRelock()
       events.removeAllListeners()

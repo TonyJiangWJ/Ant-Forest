@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-30 22:06:00
+ * @Last Modified time: 2020-10-13 18:00:45
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -731,6 +731,9 @@ function Ant_forest () {
             unlocker && unlocker.saveNeedRelock(true)
             _runningQueueDispatcher.removeRunningTask()
             engines.myEngine().forceStop()
+            if (_config.auto_set_brightness) {
+              device.setBrightnessMode(1)
+            }
           }
         })
       })

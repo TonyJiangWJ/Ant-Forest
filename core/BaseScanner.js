@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-30 21:05:36
+ * @Last Modified time: 2020-10-09 22:45:02
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -18,7 +18,7 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let customMultiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/MultiTouchCollect.js') ? require('../extends/MultiTouchCollect.js') : null
-let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev } = singletonRequire('LogUtils')
+let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev, developSaving } = singletonRequire('LogUtils')
 let ENGINE_ID = engines.myEngine().id
 let _package_name = 'com.eg.android.AlipayGphone'
 
@@ -36,6 +36,7 @@ const BaseScanner = function () {
     multiCheckPoints.push([x, 0, '#ffffff'])
   }
   this.temp_img = null
+  this.found_balls = []
   this.increased_energy = 0
   this.current_time = 0
   this.collect_any = false
@@ -43,6 +44,10 @@ const BaseScanner = function () {
   this.lost_reason = ''
   this.lost_someone = false
   this.threadPool = null
+  this.isProtected = false
+  this.isProtectDetectDone = false
+  this.protectDetectingLock = threads.lock()
+  this.protectDetectingCondition = this.protectDetectingLock.newCondition()
 
   this.createNewThreadPool = function () {
     this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 4, 60,
@@ -57,7 +62,7 @@ const BaseScanner = function () {
     )
     let self = this
     // 注册生命周期结束后关闭线程池，防止脚本意外中断时未调用destroy导致线程池一直运行
-    _commonFunctions.registerOnEngineRemoved(function() {
+    _commonFunctions.registerOnEngineRemoved(function () {
       self.baseDestory()
     }, 'shutdown scanner thread pool')
   }
@@ -149,6 +154,9 @@ const BaseScanner = function () {
           )
         }
       }
+      if (!this.awaitForCollectable()) {
+        return
+      }
       let that = this
       ballCheckContainer.target
         .forEach(function (energy_ball) {
@@ -158,12 +166,32 @@ const BaseScanner = function () {
       debugInfo('控件判断无能量球可收取')
       // 尝试全局点击
       if (_config.try_collect_by_multi_touch) {
+        if (!this.awaitForCollectable()) {
+          return
+        }
         this.multiTouchToCollect()
       } else {
         // 尝试通过图像识别收取
         this.checkAndCollectByImg()
       }
     }
+  }
+
+  /**
+   * 等待保护罩校验完成 并返回是否使用了保护罩
+   */
+  this.awaitForCollectable = function () {
+    if (!this.isProtectDetectDone) {
+      try {
+        this.protectDetectingLock.lock()
+        this.protectDetectingCondition.await(600, TimeUnit.MILLISECONDS)
+      } catch (e) {
+        warnInfo('等待保护罩校验完毕异常' + e)
+      } finally {
+        this.protectDetectingLock.unlock()
+      }
+    }
+    return !this.isProtected
   }
 
   this.defaultMultiTouch = function () {
@@ -225,6 +253,11 @@ const BaseScanner = function () {
         // 将色彩空间恢复成 RGBA，否则images.pixel会报错
         intervalImg = com.stardust.autojs.core.image.ImageWrapper.ofBitmap(intervalImg.getBitmap())
         debugInfo(['找到的球:{}', JSON.stringify(findBalls)])
+        this.found_balls = findBalls
+        if (this.isProtected) {
+          // 已判定为使用了保护罩
+          return
+        }
         if (findBalls && findBalls.length > 0) {
           findBallsCallback(findBalls)
           let clickPoints = []
@@ -269,6 +302,9 @@ const BaseScanner = function () {
           debugInfo(['countdownLatch waiting count: {}', countdownLatch.getCount()])
           countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)
           debugInfo(['判断可收集或帮助能量球信息总耗时：{}ms', new Date().getTime() - start])
+          if (!this.awaitForCollectable()) {
+            return
+          }
           if (clickPoints && clickPoints.length > 0) {
             debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
             clickPoints.forEach(point => {
@@ -278,6 +314,7 @@ const BaseScanner = function () {
                 return
               }
               findPointCallback(point)
+              developSaving(['{} ball, match position: [{},{}] color: {} ', point.isHelp ? 'help' : 'collect', point.ball.x, point.ball.y, point.color], 'matching_colors')
               if (isOwn || _config.help_friend && point.isHelp || !point.isHelp) {
                 automator.click(b.x, b.y)
                 sleep(100)
@@ -308,6 +345,10 @@ const BaseScanner = function () {
     isOwn = isOwn || false
     let start = new Date().getTime()
     let allPoints = this.checkByImg('#c8c8c8', '#cacaca', '可收取')
+    if (this.isProtected) {
+      // 已判定为使用了保护罩
+      return
+    }
     if (!isOwn) {
       // 不需要帮助好友时，过滤帮助收取的点
       if (!_config.help_friend && allPoints.length > 0) {
@@ -348,6 +389,9 @@ const BaseScanner = function () {
     let lastPx = -200
     let lastPy = -200
     if (allPoints.length > 0) {
+      if (!this.awaitForCollectable()) {
+        return
+      }
       allPoints.forEach(p => {
         if (this.getDistance(p, lastPx, lastPy) >= 100 * SCALE_RATE) {
           clickPoints.push(p)
@@ -469,6 +513,9 @@ const BaseScanner = function () {
         return
       }
     }
+    if (this.isProtected) {
+      return
+    }
     if (_config.try_collect_by_multi_touch) {
       // 多点点击方式直接就帮助了 不再执行后续操作 后续判断是否有帮助来确定是否需要重进
       return
@@ -567,7 +614,7 @@ const BaseScanner = function () {
     if (titleContainer && regex.test(titleContainer.content)) {
       return regex.exec(titleContainer.content)[1]
     } else {
-      errorInfo(['获取好友名称失败，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
+      errorInfo(['获取好友名称失败，请检查好友首页文本"{}"是否存在', _config.friend_name_getting_regex || '(.*)的蚂蚁森林'])
       return null
     }
   }
@@ -586,7 +633,35 @@ const BaseScanner = function () {
     })
   }
 
+  this.doIfProtected = function () {
+    // do nothing
+  }
+
+  /**
+   * 异步校验是否有保护罩使用信息
+   * @param {string} name
+   */
   this.protectInfoDetect = function (name) {
+    let self = this
+    this.threadPool.execute(function () {
+      try {
+        self.protectDetectingLock.lock()
+        self.isProtected = self._protectInfoDetect(name)
+        self.isProtectDetectDone = true
+        self.protectDetectingCondition.signal()
+        if (self.isProtected) {
+          warnInfo(['{} 好友已使用能量保护罩，跳过收取', name])
+          self.doIfProtected({ name: name })
+        }
+      } catch (e) {
+        warnInfo('保护罩校验异常' + e)
+      } finally {
+        self.protectDetectingLock.unlock()
+      }
+    })
+  }
+
+  this._protectInfoDetect = function (name) {
     let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 500, true, true)
     if (usingInfo !== null) {
       let target = usingInfo.target
@@ -656,6 +731,17 @@ const BaseScanner = function () {
         errorInfo('保存未识别能量球图片异常' + e)
       }
     }
+    if (_config.develop_saving_mode && this.temp_img && this.found_balls && this.found_balls.length > 0) {
+      try {
+        this.found_balls.forEach(ball => {
+          ball.x = parseInt(ball.x)
+          ball.y = parseInt(ball.y)
+          developSaving(['cannot match, point: [{},{}] color: {}', ball.x, ball.y, colors.toString(this.temp_img.getBitmap().getPixel(ball.x, ball.y))], 'cannot_match')
+        })
+      } catch (e) {
+        debugInfo('保存不可识别球数据异常 ' + e)
+      }
+    }
   }
 
   this.returnToListAndCheck = function () {
@@ -693,6 +779,10 @@ const BaseScanner = function () {
       rentery = this.collectAndHelp(obj.isHelp)
     } else {
       this.collectEnergy()
+    }
+    if (this.isProtected) {
+      debugInfo(['异步判定已使用了保护罩，跳过后续操作 name: {}', obj.name])
+      return this.backToListIfNeeded(false, obj)
     }
     try {
       // 等待控件数据刷新
