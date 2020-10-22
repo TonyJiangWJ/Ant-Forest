@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 19:33:56
+ * @Last Modified time: 2020-10-22 18:27:26
  * @Description: 
  */
 
@@ -12,7 +12,7 @@ let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
-let _BaseScanner = require('../core/BaseScanner.js')
+let OpenCvUtil = require('../lib/OpenCvUtil.js')
 commonFunction.autoSetUpBangOffset()
 let offset = config.bang_offset
 
@@ -40,7 +40,8 @@ let lock = threads.lock()
 let condition = lock.newCondition()
 let inCapture = false
 let detectRegion = [config.tree_collect_left, config.tree_collect_top - cvt(80), config.tree_collect_width, config.tree_collect_height + cvt(80)]
-let scanner = new _BaseScanner()
+let dailyOrNightMedian = null
+
 let detectThread = threads.start(function () {
   automator.click = () => { }
   while (true) {
@@ -50,10 +51,51 @@ let detectThread = threads.start(function () {
       clickPoints = []
       findBalls = []
       try {
-        let _start = new Date().getTime()
-        scanner.isProtectDetectDone = true
-        scanner.checkAndCollectByHough(flag === 1, balls => findBalls = balls, point => clickPoints.push(point))
-        logInfo(['识别总耗时：{}ms', new Date().getTime() - _start])
+        let screen = captureScreen()
+        if (screen) {
+          let rgbImg = images.copy(screen, true)
+          let dayOrNightImg = images.clip(rgbImg, config.tree_collect_left, config.tree_collect_top, 40, 40)
+          dailyOrNightMedian = OpenCvUtil.getMedian(dayOrNightImg)
+          screen = images.medianBlur(screen, 5)
+          let grayImgInfo = images.grayscale(screen)
+          let findBalls = images.findCircles(
+            grayImgInfo,
+            {
+              param1: 100,
+              param2: 30,
+              minRadius: cvt(65),
+              maxRadius: cvt(75),
+              minDst: cvt(100),
+              // region: detectRegion
+            }
+          )
+          if (findBalls && findBalls.length > 0) {
+            findBalls.forEach(b => {
+              let region = [b.x - cvt(40), b.y + cvt(70), cvt(60), cvt(30)]
+              let recheckRegion = [b.x - cvt(40), b.y - cvt(40), cvt(80), cvt(80)]
+              commonFunction.ensureRegionInScreen(region)
+              commonFunction.ensureRegionInScreen(recheckRegion)
+              try {
+                if (rgbImg.getMat().dims() >= 2) {
+                  let clipImg = images.clip(rgbImg, b.x - cvt(30), b.y, cvt(60), cvt(30))
+                  let avgHsv = OpenCvUtil.getHistAverage(clipImg)
+                  clipImg = images.clip(rgbImg, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
+                  let median = OpenCvUtil.getMedian(clipImg)
+                  clipImg = images.clip(rgbImg, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
+                  let medianBottom = OpenCvUtil.getMedian(clipImg)
+                  let avgBottom = OpenCvUtil.getHistAverage(clipImg)
+                  clickPoints.push({ ball: b, median: median, avg: avgHsv, avgBottom: avgBottom, medianBottom: medianBottom })
+                } else {
+                  debugInfo(['mat dims is smaller then two, rgb: {}', rgbImg.getMat().dims()])
+                }
+              } catch (e) {
+                errorInfo('线程执行异常：' + e)
+                commonFunction.printExceptionStack(e)
+              }
+            })
+          }
+          rgbImg.recycle()
+        }
       } catch (e) {
 
       }
@@ -82,9 +124,6 @@ function exitAndClean () {
 
 commonFunction.registerOnEngineRemoved(function () {
   resourceMonitor.releaseAll()
-  if (scanner !== null) {
-    scanner.destory()
-  }
 })
 
 window.canvas.on("draw", function (canvas) {
@@ -116,6 +155,7 @@ window.canvas.on("draw", function (canvas) {
   let countdown = (targetEndTime - new Date().getTime()) / 1000
   drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 200 }, canvas, paint)
   drawText('收集自身能量：' + (flag === 1 ? '是' : '否'), { x: 100, y: 400 }, canvas, paint)
+  drawText('白天或黑夜校验色：' + dailyOrNightMedian, { x: 100, y: 500 }, canvas, paint)
   drawRectAndText('能量球有效区域', detectRegion, '#808080', canvas, paint)
   if (!inCapture && findBalls && findBalls.length > 0) {
     // canvas.drawImage(grayImgInfo, 0, 0, paint)
@@ -135,10 +175,13 @@ window.canvas.on("draw", function (canvas) {
     let startX = 0
     let startY = 0
     clickPoints.forEach((s) => {
-      let p = s.ball
-      drawRectAndText('', [p.x + startX - 5, p.y + startY - 5, 10, 10], '#808080', canvas, paint)
-      drawRectAndText((s.isHelp ? 'help' : 'collect'), [p.x + startX - 25 - 2, p.y + startY - 2, 4, 4], '#000000', canvas, paint)
-      drawRectAndText('', [p.x + startX + 25 - 2, p.y + startY - 2, 4, 4], '#808080', canvas, paint)
+      let b = s.ball
+      // drawRectAndText('', [b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20)], '#808080', canvas, paint)
+      drawRectAndText('', [b.x - cvt(30), b.y, cvt(60), cvt(30)], '#999999', canvas, paint)
+      drawRectAndText('', [b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20)], '#808080', canvas, paint)
+      drawRectAndText(s.avg.toFixed(2), [b.x + startX - 25 - 2, b.y + startY - 2, 4, 4], '#000000', canvas, paint)
+      drawRectAndText(s.median, [b.x - cvt(30), b.y + cvt(35), 4, 4], '#000000', canvas, paint)
+      drawRectAndText(s.medianBottom + ';' + s.avgBottom.toFixed(2), [b.x - cvt(40), b.y + cvt(80), 4, 4], '#000000', canvas, paint)
     })
   }
   passwindow = new Date().getTime() - startTime

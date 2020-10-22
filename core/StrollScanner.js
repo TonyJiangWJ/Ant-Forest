@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-09 17:53:44
+ * @Last Modified time: 2020-10-22 19:34:05
  * @Description: 逛一逛收集器
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -96,7 +96,7 @@ const StrollScanner = function () {
         continue
       }
       grayScreen = images.grayscale(_commonFunctions.checkCaptureScreenPermission(5))
-      let point = images.findColor(grayScreen, '#909090', { region: region })
+      let point = images.findColor(grayScreen, '#a1a1a1', { region: region })
       if (point) {
         debugInfo(['逛下一个, click position: [{}, {}]', point.x, point.y])
         doSuccess = true

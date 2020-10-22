@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-09 15:29:45
+ * @Last Modified time: 2020-10-22 19:31:50
  * @Description: 
  */
 'ui';
@@ -141,6 +141,8 @@ let default_config = {
   rank_check_top: 250,
   rank_check_width: 550,
   rank_check_height: 130,
+  // 能量球所在范围
+  auto_detect_tree_collect_region: true,
   tree_collect_left: 150,
   tree_collect_top: 550,
   tree_collect_width: 800,
@@ -327,6 +329,8 @@ if (!isRunningMode) {
   let setImageBasedUiVal = function () {
     ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
     ui.checkBottomBaseImgChkBox.setChecked(config.checkBottomBaseImg)
+    ui.autoDetectTreeCollectRegionChkBox.setChecked(config.auto_detect_tree_collect_region)
+    ui.treeCollectRegionText.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
     ui.baseOnImageContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
     ui.checkFingerByPixelsAmountChkBox.setChecked(config.check_finger_by_pixels_amount)
@@ -1001,6 +1005,11 @@ if (!isRunningMode) {
                       </horizontal>
                     </vertical>
                     <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
+                    <checkbox id="autoDetectTreeCollectRegionChkBox" text="下次运行时自动判断能量球所在区域" />
+                    <horizontal padding="10 10" gravity="center">
+                      <text text="当前自动设置的能量球所在区域为：" textSize="12sp" layout_weight="60" />
+                      <text id="treeCollectRegionText" textSize="12sp" layout_weight="40" />
+                    </horizontal>
                     <checkbox id="checkBottomBaseImgChkBox" text="基于图像判断列表底部" />
                     <vertical id="bottomCheckContainer">
                       <horizontal gravity="center">
@@ -2086,6 +2095,10 @@ if (!isRunningMode) {
 
     ui.limitRunnableTimeRangeChkBox.on('click', () => {
       config.limit_runnable_time_range = ui.limitRunnableTimeRangeChkBox.isChecked()
+    })
+
+    ui.autoDetectTreeCollectRegionChkBox.on('click', () => {
+      config.auto_detect_tree_collect_region = ui.autoDetectTreeCollectRegionChkBox.isChecked()
     })
 
     ui.checkBottomBaseImgChkBox.on('click', () => {
