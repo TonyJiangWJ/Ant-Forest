@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 19:34:05
+ * @Last Modified time: 2020-10-22 22:33:23
  * @Description: 逛一逛收集器
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -76,14 +76,13 @@ const StrollScanner = function () {
   this.collecting = function () {
     let hasNext = true
     let doSuccess = false
-    let grayScreen = null
     let jTreeWarp = _widgetUtils.widgetGetById('J_tree_dialog_wrap')
     let region = null
     if (jTreeWarp) {
       let warpBounds = jTreeWarp.bounds()
       region = [
-        Math.floor(warpBounds.right - 0.18 * warpBounds.width()), Math.floor(warpBounds.bottom - 0.12 * warpBounds.height()),
-        Math.floor(0.18 * warpBounds.width()), Math.floor(0.12 * warpBounds.height())
+        Math.floor(warpBounds.right - 0.3 * warpBounds.width()), Math.floor(warpBounds.bottom - 0.098 * warpBounds.height()),
+        Math.floor(0.3 * warpBounds.width()), Math.floor(0.095 * warpBounds.height())
       ]
       _commonFunctions.ensureRegionInScreen(region)
     } else {
@@ -95,28 +94,18 @@ const StrollScanner = function () {
         hasNext = false
         continue
       }
-      grayScreen = images.grayscale(_commonFunctions.checkCaptureScreenPermission(5))
-      let point = images.findColor(grayScreen, '#a1a1a1', { region: region })
-      if (point) {
-        debugInfo(['逛下一个, click position: [{}, {}]', point.x, point.y])
-        doSuccess = true
-        automator.click(point.x, point.y)
-        sleep(500)
-        if (_widgetUtils.idCheck(_config.energy_id || 'J_userEnergy', 1500) && !_widgetUtils.widgetCheck('startapp\\?.*', 500)) {
-          //sleep(200)
-          hasNext = this.collectTargetFriend()
-        } else {
-          hasNext = false
-        }
+      debugInfo(['逛下一个, click random region: [{}]', JSON.stringify(region)])
+      automator.clickRandomRegion({ left: region[0], top: region[1], width: region[2], height: region[3] })
+      sleep(500)
+      if (_widgetUtils.idCheck(_config.energy_id || 'J_userEnergy', 1500) && !_widgetUtils.widgetCheck('startapp\\?.*', 500)) {
+        //sleep(200)
+        hasNext = this.collectTargetFriend()
       } else {
-        debugInfo('没有可以逛一逛的了')
         hasNext = false
       }
     }
     sleep(100)
-    let result = {
-      doSuccess: doSuccess
-    }
+    let result = {}
     Object.assign(result, this.getCollectResult())
     return result
   }
