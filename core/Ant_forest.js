@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 19:24:45
+ * @Last Modified time: 2020-10-22 22:41:15
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -271,12 +271,25 @@ function Ant_forest () {
       // 无法获取到控件 通过图像分别判断白天和晚上的倒计时球颜色数据
       let ballPoints = []
       _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, 1)
-      debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
       if (ballPoints && ballPoints.length > 0) {
+        ballPoints.sort((a, b) => {
+          if (a.x > b.x) {
+            return 1
+          } else if (a.x === b.x) {
+            return 0
+          } else {
+            return -1
+          }
+        })
+        debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
         toasts = getToastAsync(_package_name, ballPoints.length >= 2 ? 2 : ballPoints.length,
           () => {
             let count = 0
             ballPoints.forEach(point => {
+              if (point.y < _config.tree_collect_top || point.y > _config.tree_collect_top + _config.tree_collect_height) {
+                // 可能是左上角的活动图标 或者 识别到了其他范围的球
+                return
+              }
               automator.click(point.x, point.y)
               sleep(500)
               count++
@@ -285,6 +298,8 @@ function Ant_forest () {
             return count
           }
         )
+      } else {
+        debugInfo('未找到能量球')
       }
     }
     toasts.forEach(function (toast) {
@@ -443,6 +458,8 @@ function Ant_forest () {
       debugInfo('非仅收自己，返回主页面')
       automator.back()
       _widgetUtils.homePageWaiting()
+      // 二次收集自身能量
+      recheckOwn()
     }
     // 等待能量值稳定
     sleep(500)
@@ -545,7 +562,7 @@ function Ant_forest () {
 
   const findAndCollect = function () {
     let scanner = _config.base_on_image ? checkAndNewImageBasedScanner() : new FriendListScanner()
-    scanner.init({ currentTime: _current_time, increaseEnergy: _post_energy - _pre_energy })
+    scanner.init({ currentTime: _current_time, increasedEnergy: _post_energy - _pre_energy })
     let executeResult = scanner.start()
     // 执行失败 返回 true
     if (executeResult === true) {
@@ -564,10 +581,10 @@ function Ant_forest () {
   const tryCollectByStroll = function () {
     debugInfo('尝试逛一逛收集能量')
     let scanner = new StrollScanner()
-    scanner.init({ currentTime: _current_time, increaseEnergy: _post_energy - _pre_energy })
+    scanner.init({ currentTime: _current_time, increasedEnergy: _post_energy - _pre_energy })
     let runResult = scanner.start()
     scanner.destory()
-    if (runResult && runResult.doSuccess) {
+    if (runResult) {
       automator.back()
       _widgetUtils.homePageWaiting()
       _post_energy = getCurrentEnergy(true)
@@ -643,6 +660,9 @@ function Ant_forest () {
 
   // 收取自己的能量
   const collectOwn = function () {
+    if (_config.not_collect_self) {
+      return
+    }
     _commonFunctions.addOpenPlacehold('开始收集自己能量')
     debugInfo('准备收集自己能量')
     let energyBeforeCollect = getCurrentEnergy(true)
@@ -660,6 +680,24 @@ function Ant_forest () {
     }
     _commonFunctions.addClosePlacehold("收集自己的能量完毕")
     _fisrt_running = false
+  }
+
+  // 二次校验自己的能量值
+  const recheckOwn = function () {
+    if (_config.not_collect_self) {
+      return
+    }
+    _commonFunctions.addOpenPlacehold('开始二次收集自己能量')
+    debugInfo('准备收集自己能量')
+    let energyBeforeCollect = getCurrentEnergy(true)
+    collectEnergy(true)
+    let energyAfterCollect = getCurrentEnergy(true)
+    let collectedEnergy = energyAfterCollect - energyBeforeCollect
+    if (collectedEnergy) {
+      logInfo(['收集自己能量：{}g', collectedEnergy])
+      _base_scanner.showCollectSummaryFloaty(collectedEnergy)
+    }
+    _commonFunctions.addClosePlacehold("二次收集自己的能量完毕")
   }
 
   // 收取好友的能量
@@ -815,9 +853,7 @@ function Ant_forest () {
         showCollectSummaryFloaty()
         try {
           openAndWaitForPersonalHome()
-          if (!_config.not_collect_self) {
-            collectOwn()
-          }
+          collectOwn()
           let runSuccess = true
           if (!_config.collect_self_only) {
             if (collectFriend() === false) {
@@ -860,9 +896,7 @@ function Ant_forest () {
     this.doInLoop = function () {
       _min_countdown = null
       openAndWaitForPersonalHome()
-      if (!_config.not_collect_self) {
-        collectOwn()
-      }
+      collectOwn()
       let runSuccess = true
       let executeNext = false
       if (!_config.collect_self_only) {
@@ -879,6 +913,8 @@ function Ant_forest () {
           executeNext = runSuccess && _collect_any && _config.recheck_rank_list
           if (executeNext) {
             automator.back()
+            _widgetUtils.homePageWaiting()
+            _post_energy = getCurrentEnergy(true)
           }
         } while (executeNext)
       }

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 19:23:03
+ * @Last Modified time: 2020-10-22 22:55:59
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -288,13 +288,16 @@ const BaseScanner = function () {
                   let medianBottom = OpenCvUtil.getMedian(clipImg)
                   let collectableBall = { ball: b, isHelp: false, medianBottom: medianBottom, avg: avgHsv, median: median }
                   let medianBottomMin = isNight ? 100 : 180
-                  if (medianBottom > medianBottomMin) {
+                  if (!isOwn && medianBottom > medianBottomMin) {
                     // 判定为帮收
-                    recheck = true
                     collectableBall.isHelp = true
                   } else if (Math.abs(212 - median) <= 1) {
                     // 判定为可收取
                     // collectableBall = collectableBall
+                  } else if (isOwn && Math.abs(253 - median) <= 2 && avgHsv > 210) {
+                    // 浇水能量球
+                    collectableBall.isWatering = true
+                    recheck = true
                   } else {
                     // 非帮助或可收取
                     collectableBall = null
@@ -332,7 +335,7 @@ const BaseScanner = function () {
                 return
               }
               findPointCallback(point)
-              if (isOwn || _config.help_friend && point.isHelp || !point.isHelp) {
+              if (isOwn && point.isWatering || _config.help_friend && point.isHelp || !point.isHelp) {
                 automator.click(b.x, b.y)
                 sleep(100)
               }
@@ -342,6 +345,13 @@ const BaseScanner = function () {
             if (_config.develop_mode && !isOwn) {
               debugForDev(['图片数据：[data:image/png;base64,{}]', images.toBase64(rgbImg)], false, true)
             }
+          }
+          if (isOwn && _config.cutAndSaveTreeCollect && recheck && rgbImg) {
+            let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+              + 'collect_own_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
+            files.ensureDir(savePath)
+            images.save(rgbImg, savePath)
+            debugForDev(['保存自身能量球图片：「{}」', savePath])
           }
         }
         rgbImg.recycle()
@@ -541,8 +551,8 @@ const BaseScanner = function () {
     }
     this.checkAndHelpByWidget()
   }
-  
-  this.checkAndHelpByWidget = function() {
+
+  this.checkAndHelpByWidget = function () {
     let screen = _commonFunctions.checkCaptureScreenPermission()
     if (!screen) {
       warnInfo('获取截图失败，无法帮助收取能量')
