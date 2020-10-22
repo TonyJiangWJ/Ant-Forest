@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-09 15:15:03
+ * @Last Modified time: 2020-10-22 19:32:55
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
@@ -106,6 +106,10 @@ if (config.auto_set_img_or_widget || !config.base_on_image) {
 if (config.base_on_image) {
   if (!config.direct_use_img_collect_and_help) {
     warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友')
+  } else {
+    if (!config.detect_balls_by_hough) {
+      warnInfo('请勾选 是否通过findCircles识别能量球 否则可能识别不稳定')
+    }
   }
   if (!config.useCustomScrollDown) {
     warnInfo('排行榜中控件不存在时无法使用自带的scrollDown，请开启模拟滑动并自行调试设置滑动速度和底部高度')

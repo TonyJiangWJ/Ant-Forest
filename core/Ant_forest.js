@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-13 18:00:45
+ * @Last Modified time: 2020-10-22 19:24:45
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -269,22 +269,22 @@ function Ant_forest () {
       })
     } else {
       // 无法获取到控件 通过图像分别判断白天和晚上的倒计时球颜色数据
-      let nightBall = _base_scanner.checkByImg('#a0a0a0', '#a3a3a3', '夜间倒计时')
-      let daytimeBall = _base_scanner.checkByImg('#dadada', '#dedede', '白天倒计时')
-      let ballPoints = nightBall.concat(daytimeBall)
+      let ballPoints = []
+      _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, 1)
       debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
       if (ballPoints && ballPoints.length > 0) {
-        toasts = getToastAsync(_package_name, ballPoints.length >= 2 ? 2 : ballPoints.length, function () {
-          let count = 0
-          for (let i = 0; i < ballPoints.length; i++) {
-            let point = ballPoints[i]
-            automator.click(point.x + _config.tree_collect_left, point.y + _config.tree_collect_top)
-            sleep(500)
-            count++
+        toasts = getToastAsync(_package_name, ballPoints.length >= 2 ? 2 : ballPoints.length,
+          () => {
+            let count = 0
+            ballPoints.forEach(point => {
+              automator.click(point.x, point.y)
+              sleep(500)
+              count++
+            })
+            // 返回实际倒计时个数, 用于终止toast等待
+            return count
           }
-          // 返回实际倒计时个数, 用于终止toast等待
-          return count
-        })
+        )
       }
     }
     toasts.forEach(function (toast) {
@@ -403,7 +403,7 @@ function Ant_forest () {
    * 获取当前能量值
    * 
    * @param {boolean} noStore 是否不记录当前能量值到缓存
-   */ 
+   */
   const getCurrentEnergy = function (noStore) {
     let currentEnergyWidget = _widgetUtils.widgetGetById(_config.energy_id || 'J_userEnergy')
     let currentEnergy = undefined
@@ -576,28 +576,28 @@ function Ant_forest () {
   }
 
   const autoDetectTreeCollectRegion = function () {
-    let balls = _widgetUtils.widgetGetAll(/合种|看林区/)
-    if (balls && balls.length >= 2) {
-      balls = balls.sort((b1, b2) => b1.bounds().bottom > b2.bounds().bottom ? -1 : 1)
-      let bounds1 = balls[1].bounds()
-      let bounds2 = balls[0].bounds()
-      _config.tree_collect_left = bounds1.width()
-      _config.tree_collect_top = bounds1.top
-      _config.tree_collect_width = parseInt(_config.device_width - 2 * bounds1.width())
-      _config.tree_collect_height = bounds2.top - bounds1.top
-      detectRegion = [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height]
-      infoLog('自动识别能量球区域：' + JSON.stringify(detectRegion))
-      let configStorage = storages.create(_storage_name)
-      configStorage.put('tree_collect_left', _config.tree_collect_left)
-      configStorage.put('tree_collect_top', _config.tree_collect_top)
-      configStorage.put('tree_collect_width', _config.tree_collect_width)
-      configStorage.put('tree_collect_height', _config.tree_collect_height)
-    } else {
-      warnInfo('自动识别能量球识别区域失败，未识别到对象：' + (balls ? JSON.stringify(
-        balls.map(b => {
-          return { 'content': b.desc() || b.text(), 'bounds': b.bounds() }
-        })
-      ) : ''))
+    if (_config.auto_detect_tree_collect_region) {
+      let treeDialog = _widgetUtils.widgetGetById('J_tree_dialog_wrap', 1000)
+      let plantTree = _widgetUtils.widgetGetOne(/^\s*种树\s*$/, 1000)
+      if (treeDialog && plantTree) {
+        let anchorTop = plantTree.bounds().bottom
+        let anchorBottom = treeDialog.bounds().top
+        let marginBorder = plantTree.bounds().width()
+        _config.tree_collect_left = marginBorder
+        _config.tree_collect_top = parseInt(0.6 * (anchorBottom - anchorTop) + anchorTop)
+        _config.tree_collect_width = parseInt(_config.device_width - 2 * marginBorder)
+        _config.tree_collect_height = parseInt((anchorBottom - anchorTop) * 1.25)
+        detectRegion = [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height]
+        infoLog('自动识别能量球区域：' + JSON.stringify(detectRegion))
+        let configStorage = storages.create(_storage_name)
+        configStorage.put('tree_collect_left', _config.tree_collect_left)
+        configStorage.put('tree_collect_top', _config.tree_collect_top)
+        configStorage.put('tree_collect_width', _config.tree_collect_width)
+        configStorage.put('tree_collect_height', _config.tree_collect_height)
+        configStorage.put('auto_detect_tree_collect_region', false)
+      } else {
+        warnInfo('自动识别能量球识别区域失败，未识别到对象：' + (treeDialog ? '' : '种树 ') + (plantTree ? '' : 'J_tree_dialog_wrap'))
+      }
     }
   }
   /***********************
