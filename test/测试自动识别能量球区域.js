@@ -2,12 +2,12 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-08-17 22:14:39
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-08-17 22:45:32
+ * @Last Modified time: 2020-10-22 23:21:08
  * @Description: 
  */
 
 let { config } = require('../config.js')(runtime, this)
-
+let offset = config.bang_offset
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let { debugInfo, errorInfo, warnInfo, logInfo, infoLog } = singletonRequire('LogUtils')
 let WidgetUtil = singletonRequire('WidgetUtils')
@@ -23,7 +23,7 @@ window.setTouchable(false)
 function convertArrayToRect (a) {
   // origin array left top width height
   // left top right bottom
-  return new android.graphics.Rect(a[0], a[1], (a[0] + a[2]), (a[1] + a[3]))
+  return new android.graphics.Rect(a[0], a[1] + offset, (a[0] + a[2]), (a[1] + offset + a[3]))
 }
 
 function getPositionDesc (position) {
@@ -49,7 +49,7 @@ function drawRectAndText (desc, position, colorStr, canvas, paint) {
   paint.setStrokeWidth(1)
   paint.setTextSize(20)
   paint.setStyle(Paint.Style.FILL)
-  canvas.drawText(desc, position[0], position[1], paint)
+  canvas.drawText(desc, position[0], position[1] + offset, paint)
   paint.setTextSize(10)
   paint.setStrokeWidth(1)
   paint.setARGB(255, 0, 0, 0)
@@ -61,7 +61,7 @@ function drawText (text, position, canvas, paint) {
   paint.setARGB(255, 0, 0, 255)
   paint.setStrokeWidth(1)
   paint.setStyle(Paint.Style.FILL)
-  canvas.drawText(text, position.x, position.y, paint)
+  canvas.drawText(text, position.x, position.y + offset, paint)
 }
 
 function drawCoordinateAxis (canvas, paint) {
@@ -73,20 +73,21 @@ function drawCoordinateAxis (canvas, paint) {
   paint.setARGB(255, colorVal >> 16 & 0xFF, colorVal >> 8 & 0xFF, colorVal & 0xFF)
   for (let x = 50; x < width; x += 50) {
     paint.setStrokeWidth(0)
-    canvas.drawText(x, x, 10, paint)
+    canvas.drawText(x, x, 10 + offset, paint)
     paint.setStrokeWidth(0.5)
-    canvas.drawLine(x, 0, x, height, paint)
+    canvas.drawLine(x, 0, x + offset, height, paint)
   }
 
   for (let y = 50; y < height; y += 50) {
     paint.setStrokeWidth(0)
-    canvas.drawText(y, 0, y, paint)
+    canvas.drawText(y, 0, y + offset, paint)
     paint.setStrokeWidth(0.5)
-    canvas.drawLine(0, y, width, y, paint)
+    canvas.drawLine(0, y + offset, width, y + offset, paint)
   }
 }
 
 function exitAndClean () {
+  running = false
   if (window !== null) {
     window.canvas.removeAllListeners()
     toastLog('close in 1 seconds')
@@ -97,24 +98,27 @@ function exitAndClean () {
 }
 
 let detectRegion = null
-let gap = null
+let running = true
 
 let scaleRate = config.device_width / 1080
 threads.start(function () {
-  let balls = WidgetUtil.widgetGetAll(/合种|看林区/)
-  if (balls && balls.length >= 2) {
-    balls = balls.sort((b1, b2) => b1.bounds().bottom > b2.bounds().bottom ? -1 : 1)
-    let bounds1 = balls[1].bounds()
-    let bounds2 = balls[0].bounds()
-    detectRegion = [bounds1.width(), bounds1.top, config.device_width - 2 * bounds1.width(), bounds2.top - bounds1.top]
-    gap = parseInt(detectRegion[2] / 6)
-    log('自动识别区域：' + JSON.stringify(detectRegion))
-  } else {
-    toastLog('未识别到对象：' + (balls ? JSON.stringify(
-      balls.map(b => {
-        return { 'content': b.desc() || b.text(), 'bounds': b.bounds() }
-      })
-    ) : ''))
+  while (running) {
+    let treeDialog = WidgetUtil.widgetGetById('J_tree_dialog_wrap', 1000)
+    let plantTree = WidgetUtil.widgetGetOne(/^\s*种树\s*$/, 1000)
+    if (treeDialog && plantTree) {
+      let anchorTop = plantTree.bounds().bottom
+      let anchorBottom = treeDialog.bounds().top
+      let marginBorder = plantTree.bounds().width()
+      config.tree_collect_left = marginBorder
+      config.tree_collect_top = parseInt(0.6 * (anchorBottom - anchorTop) + anchorTop)
+      config.tree_collect_width = parseInt(config.device_width - 2 * marginBorder)
+      config.tree_collect_height = parseInt((anchorBottom - anchorTop) * 1.25)
+      detectRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
+      log('自动识别能量球区域：' + JSON.stringify(detectRegion))
+    } else {
+      log('自动识别能量球识别区域失败，未识别到对象：' + (treeDialog ? '' : '种树 ') + (plantTree ? '' : 'J_tree_dialog_wrap'))
+    }
+    sleep(2000)
   }
 })
 
@@ -151,7 +155,7 @@ window.canvas.on("draw", function (canvas) {
 
     paint.setTextSize(30)
     let countdown = (targetEndTime - new Date().getTime()) / 1000
-    drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 100 }, canvas, paint)
+    drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 300 }, canvas, paint)
 
     passwindow = new Date().getTime() - startTime
 
@@ -167,14 +171,6 @@ window.canvas.on("draw", function (canvas) {
       let step = parseInt(75 * scaleRate)
       let o = step * 3
       drawRectAndText('能量球判断区域', detectRegion, '#FF00FF', canvas, paint)
-      // 能量球判断区域
-      for (let x = 0; x <= detectRegion[2] - gap; x += gap) {
-        let offset = x == 3 * gap ? o : Math.abs(o -= step)
-        if (offset == step) {
-          offset = parseInt(90 * scaleRate)
-        }
-        drawRectAndText('' + offset, [detectRegion[0] + x, detectRegion[1] + offset, gap, detectRegion[3] - offset], '#00ff00', canvas, paint)
-      }
     }
     if (showAxis) {
       drawCoordinateAxis(canvas, paint)

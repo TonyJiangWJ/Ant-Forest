@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 22:41:15
+ * @Last Modified time: 2020-10-23 09:57:17
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -430,6 +430,7 @@ function Ant_forest () {
       // 存储能量值数据
       _commonFunctions.storeEnergy(currentEnergy)
     }
+    debugInfo(['getCurrentEnergy 获取能量值: {}', currentEnergy])
     return currentEnergy
   }
 
@@ -672,8 +673,8 @@ function Ant_forest () {
       debugInfo('准备计算最短时间')
       getMinCountdownOwn()
     }
-    let energyAfterCollect = getCurrentEnergy(true)
-    let collectedEnergy = energyAfterCollect - energyBeforeCollect
+    _post_energy = getCurrentEnergy(true)
+    let collectedEnergy = _post_energy - energyBeforeCollect
     if (collectedEnergy) {
       logInfo(['收集自己能量：{}g', collectedEnergy])
       _base_scanner.showCollectSummaryFloaty(collectedEnergy)

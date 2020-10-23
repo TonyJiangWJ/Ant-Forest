@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 22:55:59
+ * @Last Modified time: 2020-10-23 09:15:10
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -287,11 +287,11 @@ const BaseScanner = function () {
                   clipImg = images.clip(rgbImg, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
                   let medianBottom = OpenCvUtil.getMedian(clipImg)
                   let collectableBall = { ball: b, isHelp: false, medianBottom: medianBottom, avg: avgHsv, median: median }
-                  let medianBottomMin = isNight ? 100 : 180
+                  let medianBottomMin = isNight ? 80 : 180
                   if (!isOwn && medianBottom > medianBottomMin) {
                     // 判定为帮收
                     collectableBall.isHelp = true
-                  } else if (Math.abs(212 - median) <= 1) {
+                  } else if (Math.abs(213 - median) <= 2) {
                     // 判定为可收取
                     // collectableBall = collectableBall
                   } else if (isOwn && Math.abs(253 - median) <= 2 && avgHsv > 210) {
