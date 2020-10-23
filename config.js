@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 19:31:50
+ * @Last Modified time: 2020-10-23 18:49:29
  * @Description: 
  */
 'ui';
@@ -160,8 +160,8 @@ let default_config = {
   try_collect_by_multi_touch: false,
   // 直接使用图像分析方式收取和帮助好友
   direct_use_img_collect_and_help: true,
-  // 通过霍夫变换识别能量球
-  detect_balls_by_hough: true,
+  // 使用双击卡
+  use_double_click_card: false,
   // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
   is_pro: is_pro,
   // 尝试先逛一逛进行能量收取
@@ -338,15 +338,13 @@ if (!isRunningMode) {
     ui.fingerImgPixelsInpt.text(config.finger_img_pixels + '')
     ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     ui.directUseImgCollectChkBox.setChecked(config.direct_use_img_collect_and_help)
-    ui.directBallsByHoughChkBox.setChecked(config.detect_balls_by_hough)
+    ui.useDoubleClickCardChkBox.setChecked(config.use_double_click_card)
 
     if (config.direct_use_img_collect_and_help) {
       ui.multiTouchContainer.setVisibility(View.GONE)
-      ui.directBallsByHoughChkBox.setVisibility(View.VISIBLE)
       config.try_collect_by_multi_touch = false
     } else {
       ui.multiTouchContainer.setVisibility(View.VISIBLE)
-      ui.directBallsByHoughChkBox.setVisibility(View.GONE)
       ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     }
 
@@ -942,6 +940,7 @@ if (!isRunningMode) {
                   <checkbox id="notCollectSelfChkBox" text="不收自己的能量" />
                   <checkbox id="recheckRankListChkBox" text="是否在收集或帮助后重新检查排行榜" />
                   <checkbox id="tryCollectByStrollChkBox" text="是否通过逛一逛收集能量" />
+                  <checkbox id="useDoubleClickCardChkBox" text="是否使用能量双击卡" />
                   <checkbox id="limitRunnableTimeRangeChkBox" text="是否限制0:30-6:50不可运行" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <button id="showRealTimeImgConfig" >实时查看可视化配置信息</button>
@@ -961,7 +960,6 @@ if (!isRunningMode) {
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <checkbox id="directUseImgCollectChkBox" text="是否直接基于图像分析收取和帮助好友" />
-                  <checkbox id="directBallsByHoughChkBox" text="是否通过findCircles识别能量球" />
                   <vertical id="multiTouchContainer">
                     <text text="当可收取能量球控件无法获取时开启区域点击, 不同设备请扩展点击代码，当前建议开启 直接基于图像分析收取和帮助好友" textSize="9sp" />
                     <checkbox id="tryCollectByMultiTouchChkBox" text="是否尝试区域点击来收取能量" />
@@ -2062,18 +2060,16 @@ if (!isRunningMode) {
     ui.tryCollectByMultiTouchChkBox.on('click', () => {
       config.try_collect_by_multi_touch = ui.tryCollectByMultiTouchChkBox.isChecked()
     })
-    ui.directBallsByHoughChkBox.on('click', () => {
-      config.detect_balls_by_hough = ui.directBallsByHoughChkBox.isChecked()
+    ui.useDoubleClickCardChkBox.on('click', () => {
+      config.use_double_click_card = ui.useDoubleClickCardChkBox.isChecked()
     })
     ui.directUseImgCollectChkBox.on('click', () => {
       config.direct_use_img_collect_and_help = ui.directUseImgCollectChkBox.isChecked()
       if (config.direct_use_img_collect_and_help) {
         ui.multiTouchContainer.setVisibility(View.GONE)
-        ui.directBallsByHoughChkBox.setVisibility(View.VISIBLE)
         config.try_collect_by_multi_touch = false
       } else {
         ui.multiTouchContainer.setVisibility(View.VISIBLE)
-        ui.directBallsByHoughChkBox.setVisibility(View.GONE)
         ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
       }
     })
