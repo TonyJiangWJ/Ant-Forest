@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 22:33:23
+ * @Last Modified time: 2020-10-23 18:48:44
  * @Description: 逛一逛收集器
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -97,7 +97,7 @@ const StrollScanner = function () {
       debugInfo(['逛下一个, click random region: [{}]', JSON.stringify(region)])
       automator.clickRandomRegion({ left: region[0], top: region[1], width: region[2], height: region[3] })
       sleep(500)
-      if (_widgetUtils.idCheck(_config.energy_id || 'J_userEnergy', 1500) && !_widgetUtils.widgetCheck('startapp\\?.*', 500)) {
+      if (_widgetUtils.idCheck(_config.energy_id || 'J_userEnergy', 1500)) {
         //sleep(200)
         hasNext = this.collectTargetFriend()
       } else {

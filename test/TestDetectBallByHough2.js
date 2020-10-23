@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 18:27:26
+ * @Last Modified time: 2020-10-23 19:30:15
  * @Description: 
  */
 
@@ -72,14 +72,13 @@ let detectThread = threads.start(function () {
           if (findBalls && findBalls.length > 0) {
             findBalls.forEach(b => {
               let region = [b.x - cvt(40), b.y + cvt(70), cvt(60), cvt(30)]
-              let recheckRegion = [b.x - cvt(40), b.y - cvt(40), cvt(80), cvt(80)]
-              commonFunction.ensureRegionInScreen(region)
-              commonFunction.ensureRegionInScreen(recheckRegion)
               try {
+                commonFunction.ensureRegionInScreen(region)
                 if (rgbImg.getMat().dims() >= 2) {
-                  let clipImg = images.clip(rgbImg, b.x - cvt(30), b.y, cvt(60), cvt(30))
+                  // let clipImg = images.clip(rgbImg, b.x - cvt(30), b.y, cvt(60), cvt(30))
+                  let clipImg = images.clip(rgbImg, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
                   let avgHsv = OpenCvUtil.getHistAverage(clipImg)
-                  clipImg = images.clip(rgbImg, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
+                  // clipImg = images.clip(rgbImg, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
                   let median = OpenCvUtil.getMedian(clipImg)
                   clipImg = images.clip(rgbImg, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
                   let medianBottom = OpenCvUtil.getMedian(clipImg)
@@ -97,7 +96,7 @@ let detectThread = threads.start(function () {
           rgbImg.recycle()
         }
       } catch (e) {
-
+        commonFunction.printExceptionStack(e)
       }
       birthTime = new Date().getTime()
       inCapture = false
@@ -158,6 +157,7 @@ window.canvas.on("draw", function (canvas) {
   drawText('白天或黑夜校验色：' + dailyOrNightMedian, { x: 100, y: 500 }, canvas, paint)
   drawRectAndText('能量球有效区域', detectRegion, '#808080', canvas, paint)
   if (!inCapture && findBalls && findBalls.length > 0) {
+    drawText("找到的球数: " + findBalls.length, { x: 100, y: 380 }, canvas, paint, '#00ff00')
     // canvas.drawImage(grayImgInfo, 0, 0, paint)
     findBalls.forEach(b => {
       let region = [b.x - 40, b.y + 70, 60, 50]
@@ -170,18 +170,17 @@ window.canvas.on("draw", function (canvas) {
 
   //******* */
   if (!inCapture && clickPoints && clickPoints.length > 0) {
-    drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint)
+    drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint, '#00ff00')
 
     let startX = 0
     let startY = 0
     clickPoints.forEach((s) => {
       let b = s.ball
-      // drawRectAndText('', [b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20)], '#808080', canvas, paint)
-      drawRectAndText('', [b.x - cvt(30), b.y, cvt(60), cvt(30)], '#999999', canvas, paint)
+      drawRectAndText('', [b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20)], '#808080', canvas, paint)
+      // drawRectAndText('', [b.x - cvt(30), b.y, cvt(60), cvt(30)], '#999999', canvas, paint)
       drawRectAndText('', [b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20)], '#808080', canvas, paint)
-      drawRectAndText(s.avg.toFixed(2), [b.x + startX - 25 - 2, b.y + startY - 2, 4, 4], '#000000', canvas, paint)
-      drawRectAndText(s.median, [b.x - cvt(30), b.y + cvt(35), 4, 4], '#000000', canvas, paint)
-      drawRectAndText(s.medianBottom + ';' + s.avgBottom.toFixed(2), [b.x - cvt(40), b.y + cvt(80), 4, 4], '#000000', canvas, paint)
+      drawRectAndText(s.median + ';' + s.avg.toFixed(2), [b.x - cvt(30), b.y + cvt(35), 4, 4], s.median >= 209 && s.avg > 200 ? '#00ff00' :'#000000', canvas, paint)
+      drawRectAndText(s.medianBottom + ';' + s.avgBottom.toFixed(2), [b.x - cvt(40), b.y + cvt(80), 4, 4], s.medianBottom > (dailyOrNightMedian < 100 ? 80 : 180) ? '#ff0000' : '#000000', canvas, paint)
     })
   }
   passwindow = new Date().getTime() - startTime
@@ -264,8 +263,13 @@ function drawRectAndText (desc, position, colorStr, canvas, paint) {
   // canvas.drawText(getPositionDesc(position), center.x, center.y, paint)
 }
 
-function drawText (text, position, canvas, paint) {
-  paint.setARGB(255, 0, 0, 255)
+function drawText (text, position, canvas, paint, colorStr) {
+  if (colorStr) {
+    let color = colors.parseColor(colorStr)
+    paint.setARGB(255, color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff)
+  } else {
+    paint.setARGB(255, 0, 0, 255)
+  }
   paint.setStrokeWidth(1)
   paint.setStyle(Paint.Style.FILL)
   canvas.drawText(text, position.x, position.y + offset, paint)

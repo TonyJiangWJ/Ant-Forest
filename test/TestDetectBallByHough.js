@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-22 19:33:56
+ * @Last Modified time: 2020-10-23 19:36:46
  * @Description: 
  */
 
@@ -15,7 +15,7 @@ let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
 let _BaseScanner = require('../core/BaseScanner.js')
 commonFunction.autoSetUpBangOffset()
 let offset = config.bang_offset
-
+config.cutAndSaveTreeCollect = false
 config.show_debug_log = true
 requestScreenCapture(false)
 var window = floaty.rawWindow(
@@ -55,7 +55,7 @@ let detectThread = threads.start(function () {
         scanner.checkAndCollectByHough(flag === 1, balls => findBalls = balls, point => clickPoints.push(point))
         logInfo(['识别总耗时：{}ms', new Date().getTime() - _start])
       } catch (e) {
-
+        commonFunction.printExceptionStack(e)
       }
       birthTime = new Date().getTime()
       inCapture = false
