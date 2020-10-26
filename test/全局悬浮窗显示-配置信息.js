@@ -31,7 +31,7 @@ window.setTouchable(false)
 function convertArrayToRect (a) {
   // origin array left top width height
   // left top right bottom
-  return new android.graphics.Rect(a[0], a[1] + offset, (a[0] + a[2] + offset), (a[1] + a[3]))
+  return new android.graphics.Rect(a[0], a[1] + offset, (a[0] + a[2]), (a[1] + offset + a[3]))
 }
 
 function getPositionDesc (position) {
@@ -103,6 +103,7 @@ let passwindow = 0
 let showAxis = false
 
 let rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
+let strollButtonRegion = [config.stroll_button_left, config.stroll_button_top, config.stroll_button_width, config.stroll_button_height]
 let bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
 
 let scaleRate = config.device_width / 1080
@@ -111,6 +112,7 @@ let refreshThread = threads.start(function () {
   while (true) {
     // console.log('新获取的配置信息：' + JSON.stringify(config))
     rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
+    strollButtonRegion = [config.stroll_button_left, config.stroll_button_top, config.stroll_button_width, config.stroll_button_height]
     bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
     scaleRate = config.device_width / 1080
     sleep(100)
@@ -152,6 +154,9 @@ window.canvas.on("draw", function (canvas) {
     paint.setDither(true)
     // 打印排行榜判断区域
     drawRectAndText('排行榜判断区域', rankRegion, '#FF00FF', canvas, paint)
+    if (strollButtonRegion[0]) {
+      drawRectAndText('逛一逛按钮区域', strollButtonRegion, '#FF00FF', canvas, paint)
+    }
     drawRectAndText('底部判断区域', bottomRegion, '#FF00FF', canvas, paint)
     if (back_img) {
       let matrix = new android.graphics.Matrix()

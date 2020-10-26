@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-23 18:49:29
+ * @Last Modified time: 2020-10-26 17:14:49
  * @Description: 
  */
 'ui';
@@ -121,8 +121,8 @@ let default_config = {
   secretKey: '',
   my_id: '',
   home_ui_content: '查看更多动态.*',
-  friend_home_check_regex: '浇水',
-  friend_home_ui_content: 'TA收取你.*|今天|浇水',
+  friend_home_check_regex: '你收取TA|TA收取你',
+  friend_home_ui_content: '你收取TA|TA收取你',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
@@ -166,6 +166,7 @@ let default_config = {
   is_pro: is_pro,
   // 尝试先逛一逛进行能量收取
   try_collect_by_stroll: true,
+  stroll_button_regenerate: true,
   auto_set_bang_offset: true,
   bang_offset: 0,
   limit_runnable_time_range: true,
@@ -173,7 +174,15 @@ let default_config = {
   updated_temp_flag_1325: true,
   updated_temp_flag_1326: true,
   updated_temp_flag_1327: true,
+  updated_temp_flag_1328: true,
   thread_name_prefix: 'antforest_'
+}
+// 自动生成的配置数据 
+let auto_generate_config = {
+  stroll_button_left: null,
+  stroll_button_top: null,
+  stroll_button_width: null,
+  stroll_button_height: null,
 }
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
@@ -185,6 +194,12 @@ Object.keys(default_config).forEach(key => {
     config[key] = storedVal
   } else {
     config[key] = default_config[key]
+  }
+})
+Object.keys(auto_generate_config).forEach(key => {
+  let storedVal = storageConfig.get(key)
+  if (typeof storedVal !== 'undefined') {
+    config[key] = storedVal
   }
 })
 if (typeof config.collectable_energy_ball_content !== 'string') {
@@ -610,6 +625,16 @@ if (!isRunningMode) {
     setOcrUiVal()
     ui.rankCheckRegionContainer.setVisibility(View.GONE)
     ui.bottomCheckRegionContainer.setVisibility(View.GONE)
+    if (config.stroll_button_top && config.try_collect_by_stroll) {
+      ui.strollButtonRegionContainer.setVisibility(View.VISIBLE)
+      if (config.stroll_button_regenerate) {
+        ui.strollButtonRegionText.text('下次运行时重新检测')
+      } else {
+        ui.strollButtonRegionText.text(config.stroll_button_left + ',' + config.stroll_button_top + ',' + config.stroll_button_width + ',' + config.stroll_button_height)
+      }
+    } else {
+      ui.strollButtonRegionContainer.setVisibility(View.GONE)
+    }
   }
 
   let setWidgetUiValues = function () {
@@ -942,6 +967,12 @@ if (!isRunningMode) {
                   <checkbox id="tryCollectByStrollChkBox" text="是否通过逛一逛收集能量" />
                   <checkbox id="useDoubleClickCardChkBox" text="是否使用能量双击卡" />
                   <checkbox id="limitRunnableTimeRangeChkBox" text="是否限制0:30-6:50不可运行" />
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
+                  <vertical id="strollButtonRegionContainer">
+                    <text text="自动识别的逛一逛按钮区域：" textSize="14sp"/>
+                    <text id="strollButtonRegionText" textSize="14sp"/>
+                    <button id="resetStrollRegionBtn">下次运行时重新检测</button>
+                  </vertical>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <button id="showRealTimeImgConfig" >实时查看可视化配置信息</button>
                   <checkbox id="regionSeekChkBox" text="拖动输入区域" textColor="black" textSize="16sp" />
@@ -1586,6 +1617,11 @@ if (!isRunningMode) {
     ui.resetOffsetBtn.on('click', () => {
       config.auto_set_bang_offset = true
       ui.bangOffsetText.text('下次运行时重新检测')
+    })
+
+    ui.resetStrollRegionBtn.on('click', () => {
+      config.stroll_button_regenerate = true
+      ui.strollButtonRegionText.text('下次运行时重新检测')
     })
 
     ui.showThresholdConfig.on('click', () => {
@@ -2383,5 +2419,12 @@ function resetConfigsIfNeeded() {
       storageConfig.put('friend_home_ui_content', default_config.friend_home_ui_content)
     }
     storageConfig.put('updated_temp_flag_1327', false)
+  }
+  if (config.updated_temp_flag_1328) {
+    if (config.friend_home_check_regex === '浇水') {
+      config.friend_home_check_regex = default_config.friend_home_check_regex
+      storageConfig.put('friend_home_ui_content', default_config.friend_home_check_regex)
+    }
+    storageConfig.put('updated_temp_flag_1328', false)
   }
 }
