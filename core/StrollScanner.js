@@ -2,10 +2,10 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-23 18:48:44
+ * @Last Modified time: 2020-10-26 21:23:32
  * @Description: 逛一逛收集器
  */
-let { config: _config } = require('../config.js')(runtime, this)
+let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
@@ -75,19 +75,29 @@ const StrollScanner = function () {
    */
   this.collecting = function () {
     let hasNext = true
-    let doSuccess = false
-    let jTreeWarp = _widgetUtils.widgetGetById('J_tree_dialog_wrap')
     let region = null
-    if (jTreeWarp) {
-      let warpBounds = jTreeWarp.bounds()
-      region = [
-        Math.floor(warpBounds.right - 0.3 * warpBounds.width()), Math.floor(warpBounds.bottom - 0.098 * warpBounds.height()),
-        Math.floor(0.3 * warpBounds.width()), Math.floor(0.095 * warpBounds.height())
-      ]
-      _commonFunctions.ensureRegionInScreen(region)
+    if (_config.stroll_button_left && !_config.stroll_button_regenerate) {
+      region = [_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height]
     } else {
-      hasNext = false
+      let jTreeWarp = _widgetUtils.widgetGetById('J_tree_dialog_wrap')
+      if (jTreeWarp) {
+        let warpBounds = jTreeWarp.bounds()
+        region = [
+          Math.floor(warpBounds.right - 0.3 * warpBounds.width()), Math.floor(warpBounds.bottom - 0.098 * warpBounds.height()),
+          Math.floor(0.3 * warpBounds.width()), Math.floor(0.085 * warpBounds.height())
+        ]
+        _config.stroll_button_left = region[0]
+        _config.stroll_button_top = region[1]
+        _config.stroll_button_width = region[2]
+        _config.stroll_button_height = region[3]
+        _config.stroll_button_regenerate = true
+        debugInfo(['重新生成逛一逛按钮区域：{}', JSON.stringify(region)])
+        _commonFunctions.ensureRegionInScreen(region)
+      } else {
+        hasNext = false
+      }
     }
+    let firstTime = true
     while (hasNext) {
       if (this.duplicateChecker.checkIsAllDuplicated()) {
         debugInfo('全部都在白名单，没有可以逛一逛的了')
@@ -116,8 +126,8 @@ const StrollScanner = function () {
       sleep(500)
       return true
     } else {
-      debugInfo('二次校验好友信息，等待500ms')
-      sleep(500)
+      debugInfo('二次校验好友信息，等待250ms')
+      sleep(250)
       obj.recheck = true
       return this.doCollectTargetFriend(obj)
     }
@@ -137,8 +147,11 @@ StrollScanner.prototype.collectTargetFriend = function () {
   let restartLoop = false
   let count = 1
   ///sleep(1000)
-  while (!_widgetUtils.friendHomeWaiting()) {
-    if (_widgetUtils.widgetCheck('startapp\\?.*', 500)) {
+  let alternativeFriendOrDone = 0
+  // 未找到好友首页控件 循环等待三次
+  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_ui_content, 'startapp\\?.*')) !== 1) {
+    // 找到了结束标志信息 停止逛一逛
+    if (alternativeFriendOrDone === 2) {
       debugInfo('逛一逛啥也没有，不再瞎逛')
       return false
     }
@@ -182,7 +195,19 @@ StrollScanner.prototype.collectTargetFriend = function () {
     this.isProtected = false
     this.isProtectDetectDone = true
   }
+  this.saveButtonRegionIfNeeded()
   return this.doCollectTargetFriend(obj)
 }
 
+StrollScanner.prototype.saveButtonRegionIfNeeded = function () {
+  if (_config.stroll_button_regenerate) {
+    let configStorage = storages.create(_storage_name)
+    configStorage.put('stroll_button_left', _config.stroll_button_left)
+    configStorage.put('stroll_button_top', _config.stroll_button_top)
+    configStorage.put('stroll_button_width', _config.stroll_button_width)
+    configStorage.put('stroll_button_height', _config.stroll_button_height)
+    configStorage.put('stroll_button_regenerate', false)
+    debugInfo(['保存重新生成的逛一逛按钮区域：{}', JSON.stringify([_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height])])
+  }
+}
 module.exports = StrollScanner

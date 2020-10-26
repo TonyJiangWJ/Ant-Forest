@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-23 19:32:55
+ * @Last Modified time: 2020-10-26 22:01:58
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -303,16 +303,16 @@ const BaseScanner = function () {
                   let medianBottom = OpenCvUtil.getMedian(clipImg)
                   let collectableBall = { ball: b, isHelp: false, medianBottom: medianBottom, avg: avgHsv, median: median }
                   let medianBottomMin = isNight ? 80 : 180
-                  if (!isOwn && medianBottom > medianBottomMin) {
+                  if (Math.abs(253 - median) <= 3 && avgHsv > 250) {
+                    // 浇水能量球
+                    collectableBall.isWatering = true
+                    recheck = isOwn
+                  } else if (!isOwn && medianBottom > medianBottomMin) {
                     // 判定为帮收
                     collectableBall.isHelp = true
                   } else if (Math.abs(212 - median) <= 3 && avgHsv > 200) {
                     // 判定为可收取
                     // collectableBall = collectableBall
-                  } else if (isOwn && Math.abs(253 - median) <= 3 && avgHsv > 250) {
-                    // 浇水能量球
-                    collectableBall.isWatering = true
-                    recheck = true
                   } else {
                     // 非帮助或可收取
                     collectableBall.invalid = true
@@ -344,7 +344,7 @@ const BaseScanner = function () {
           }
           if (clickPoints && clickPoints.length > 0) {
             debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
-            clickPoints.forEach(point => {
+            clickPoints.forEach((point,idx) => {
               let b = point.ball
               if (b.y < _config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > _config.tree_collect_top + _config.tree_collect_height) {
                 // 可能是左上角的活动图标 或者 识别到了其他范围的球
@@ -355,7 +355,9 @@ const BaseScanner = function () {
               if (isOwn && point.isWatering || _config.help_friend && point.isHelp || !point.isHelp) {
                 self.collect_operated = true
                 automator.click(b.x, b.y)
-                sleep(100)
+                if (idx < clickPoints.length - 1) {
+                  sleep(100)
+                }
               }
             })
           } else {
@@ -381,6 +383,7 @@ const BaseScanner = function () {
       // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次
       repeat = recheck && isOwn && --recheckLimit > 0 || !haveValidBalls && haveBalls && --recheckLimit >= 2 || _config.use_dubble_click_card && haveValidBalls
       if (repeat) {
+        debugInfo('需要二次校验，等待200ms')
         sleep(200)
       }
     } while (repeat)
@@ -576,7 +579,7 @@ const BaseScanner = function () {
       if (!isToday) {
         // 获取前天的日期
         let dateBeforeYesterday = formatDate(new Date(new Date().getTime() - 3600 * 24 * 1000 * 2), 'MM-dd')
-        let dayBeforeYesterday = _widgetUtils.widgetGetOne(dateBeforeYesterday, 50, true, true)
+        let dayBeforeYesterday = _widgetUtils.widgetGetOne(dateBeforeYesterday, 200, true, true)
         if (dayBeforeYesterday !== null) {
           let dayBeforeYesterdayRow = dayBeforeYesterday.target.row()
           if (dayBeforeYesterdayRow < targetRow) {
@@ -733,7 +736,7 @@ const BaseScanner = function () {
         "收取好友:{} 能量 {}g {}",
         obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (_config.targetWateringAmount || 0) + 'g' : '')
       ])
-      this.showCollectSummaryFloaty(collectEnergy)
+      this.showCollectSummaryFloaty(gotEnergyAfterWater)
       if (_config.cutAndSaveTreeCollect && screen) {
         let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
           + 'unknow_collected_' + gotEnergyAfterWater + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'

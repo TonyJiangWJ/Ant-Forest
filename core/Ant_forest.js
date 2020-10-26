@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-23 09:57:17
+ * @Last Modified time: 2020-10-26 18:47:11
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -490,53 +490,36 @@ function Ant_forest () {
    * 收集目标能量球能量
    * 
    * @param {*} energy_ball 能量球对象
-   * @param {boolean} isOwn 是否收集自身能量
    * @param {boolean} isDesc 是否是desc类型
    */
-  const collectBallEnergy = function (energy_ball, isOwn, isDesc) {
-    if (_config.skip_five && !isOwn) {
-      let regexCheck = /(\d+)克/
-      let execResult
-      if (isDesc) {
-        debugInfo('获取能量球desc数据')
-        execResult = regexCheck.exec(energy_ball.desc())
-      } else {
-        debugInfo('获取能量球text数据')
-        execResult = regexCheck.exec(energy_ball.text())
-      }
-      if (execResult.length > 1 && parseInt(execResult[1]) <= 5) {
-        debugInfo(
-          '能量小于等于五克跳过收取 ' + isDesc ? energy_ball.desc() : energy_ball.text()
-        )
-        return
-      }
-    }
+  const collectBallEnergy = function (energy_ball, isDesc) {
     debugInfo(isDesc ? energy_ball.desc() : energy_ball.text())
     automator.clickCenter(energy_ball)
-    if (!isOwn) {
-      _collect_any = true
-    }
     sleep(300)
   }
 
   // 收取能量
-  const collectEnergy = function (own) {
-    let isOwn = own || false
-    let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, 1000, true)
-    if (ballCheckContainer !== null) {
-      debugInfo('能量球存在')
-      ballCheckContainer.target
-        .forEach(function (energy_ball) {
-          collectBallEnergy(energy_ball, isOwn, ballCheckContainer.isDesc)
-        })
+  const collectEnergy = function () {
+    if (_config.direct_use_img_collect_and_help) {
+      debugInfo('直接通过图像分析收取能量')
+      _base_scanner.checkAndCollectByHough(true)
     } else {
-      debugInfo('无能量球可收取')
-      if (_config.direct_use_img_collect_and_help) {
-        debugInfo('尝试通过图像分析收取能量')
-        _base_scanner.checkAndCollectByHough(true)
-      } else if (_config.try_collect_by_multi_touch) {
-        debugInfo('尝试通过直接点击区域收集能量')
-        _base_scanner.multiTouchToCollect()
+      let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, 1000, true)
+      if (ballCheckContainer !== null) {
+        debugInfo('能量球存在')
+        ballCheckContainer.target
+          .forEach(function (energy_ball) {
+            collectBallEnergy(energy_ball, ballCheckContainer.isDesc)
+          })
+      } else {
+        debugInfo('无能量球可收取')
+        if (_config.direct_use_img_collect_and_help) {
+          debugInfo('尝试通过图像分析收取能量')
+          _base_scanner.checkAndCollectByHough(true)
+        } else if (_config.try_collect_by_multi_touch) {
+          debugInfo('尝试通过直接点击区域收集能量')
+          _base_scanner.multiTouchToCollect()
+        }
       }
     }
   }
@@ -667,7 +650,7 @@ function Ant_forest () {
     _commonFunctions.addOpenPlacehold('开始收集自己能量')
     debugInfo('准备收集自己能量')
     let energyBeforeCollect = getCurrentEnergy(true)
-    collectEnergy(true)
+    collectEnergy()
     // 计时模式和只收自己时都去点击倒计时能量球 避免只收自己时控件刷新不及时导致漏收
     if (!_config.is_cycle || _config.collect_self_only) {
       debugInfo('准备计算最短时间')
@@ -691,7 +674,7 @@ function Ant_forest () {
     _commonFunctions.addOpenPlacehold('开始二次收集自己能量')
     debugInfo('准备收集自己能量')
     let energyBeforeCollect = getCurrentEnergy(true)
-    collectEnergy(true)
+    collectEnergy()
     let energyAfterCollect = getCurrentEnergy(true)
     let collectedEnergy = energyAfterCollect - energyBeforeCollect
     if (collectedEnergy) {
@@ -718,8 +701,6 @@ function Ant_forest () {
     let loadedStatus = _widgetUtils.ensureRankListLoaded(3)
     if (!loadedStatus) {
       warnInfo('排行榜加载中')
-      // recordLost('排行榜加载中')
-      // return false
     }
     debugInfo('进入好友排行榜成功')
     if (true === findAndCollect()) {
