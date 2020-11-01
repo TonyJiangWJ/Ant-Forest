@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-26 17:14:49
+ * @Last Modified time: 2020-10-27 19:24:16
  * @Description: 
  */
 'ui';
@@ -1209,14 +1209,6 @@ if (!isRunningMode) {
                     <input inputType="text" id="enterFriendListUiContentInpt" layout_weight="80" />
                   </horizontal>
                   <horizontal gravity="center">
-                    <text text="浇水:" layout_weight="20" />
-                    <input inputType="text" id="wateringWidgetContentInpt" layout_weight="80" />
-                  </horizontal>
-                  <horizontal gravity="center">
-                    <text text="确认浇水按钮:" layout_weight="20" />
-                    <input inputType="text" id="doWateringWidgetContentInpt" layout_weight="80" />
-                  </horizontal>
-                  <horizontal gravity="center">
                     <text text="保护罩:" layout_weight="20" />
                     <input inputType="text" id="usingProtectContentInpt" layout_weight="80" />
                   </horizontal>
@@ -1245,6 +1237,16 @@ if (!isRunningMode) {
                   <horizontal gravity="center">
                     <text text="列表中可帮助的颜色:" layout_weight="20" />
                     <input inputType="text" id="canHelpColorInpt" layout_weight="80" />
+                  </horizontal>
+                  <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
+                  <text text="以下配置已不可用，后期会直接去除" textSize="14sp"/>
+                  <horizontal gravity="center">
+                    <text text="浇水:" layout_weight="20" />
+                    <input inputType="text" id="wateringWidgetContentInpt" layout_weight="80" />
+                  </horizontal>
+                  <horizontal gravity="center">
+                    <text text="确认浇水按钮:" layout_weight="20" />
+                    <input inputType="text" id="doWateringWidgetContentInpt" layout_weight="80" />
                   </horizontal>
                   <vertical w="*" gravity="left" layout_gravity="left" margin="10">
                     <text text="帮收取能量球颜色" textColor="#666666" textSize="14sp" />
