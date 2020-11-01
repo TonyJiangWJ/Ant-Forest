@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-26 21:23:32
+ * @Last Modified time: 2020-10-28 21:40:10
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -106,15 +106,9 @@ const StrollScanner = function () {
       }
       debugInfo(['逛下一个, click random region: [{}]', JSON.stringify(region)])
       automator.clickRandomRegion({ left: region[0], top: region[1], width: region[2], height: region[3] })
-      sleep(500)
-      if (_widgetUtils.idCheck(_config.energy_id || 'J_userEnergy', 1500)) {
-        //sleep(200)
-        hasNext = this.collectTargetFriend()
-      } else {
-        hasNext = false
-      }
+      sleep(300)
+      hasNext = this.collectTargetFriend()
     }
-    sleep(100)
     let result = {}
     Object.assign(result, this.getCollectResult())
     return result
@@ -135,6 +129,24 @@ const StrollScanner = function () {
 
   this.doIfProtected = function (obj) {
     this.duplicateChecker.pushIntoDuplicated(obj)
+  }
+
+  /**
+   * 逛一逛模式进行特殊处理
+   */
+  this.getFriendName = function () {
+    let friendNameGettingRegex = _config.friend_name_getting_regex || '(.*)的蚂蚁森林'
+    let titleContainer = _widgetUtils.alternativeWidget(friendNameGettingRegex, 'startapp\\?.*', null, true)
+    if (titleContainer.value === 1) {
+      let regex = new RegExp(friendNameGettingRegex)
+      if (titleContainer && regex.test(titleContainer.content)) {
+        return regex.exec(titleContainer.content)[1]
+      } else {
+        errorInfo(['获取好友名称失败，请检查好友首页文本"{}"是否存在', friendNameGettingRegex])
+      }
+    }
+    debugInfo(['未找到{} {}', friendNameGettingRegex, titleContainer.value === 2 ? '找到了逛一逛结束标志' : ''])
+    return false
   }
 }
 
@@ -174,7 +186,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
     obj.name = name
     debugInfo(['进入好友[{}]首页成功', obj.name])
   } else {
-    errorInfo(['获取好友名称失败，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
+    return false
   }
   let skip = false
   if (!skip && _config.white_list && _config.white_list.indexOf(obj.name) >= 0) {

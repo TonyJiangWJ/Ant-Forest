@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-26 22:01:58
+ * @Last Modified time: 2020-10-28 21:12:59
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -50,6 +50,7 @@ const BaseScanner = function () {
   this.isProtectDetectDone = false
   this.protectDetectingLock = threads.lock()
   this.protectDetectingCondition = this.protectDetectingLock.newCondition()
+  this.lifecycleCallbackId = null
 
   this.createNewThreadPool = function () {
     this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 4, 60,
@@ -64,7 +65,7 @@ const BaseScanner = function () {
     )
     let self = this
     // 注册生命周期结束后关闭线程池，防止脚本意外中断时未调用destroy导致线程池一直运行
-    _commonFunctions.registerOnEngineRemoved(function () {
+    this.lifecycleCallbackId = _commonFunctions.registerOnEngineRemoved(function () {
       self.baseDestory()
     }, 'shutdown scanner thread pool')
   }
@@ -82,6 +83,10 @@ const BaseScanner = function () {
     if (this.threadPool !== null) {
       this.threadPool.shutdown()
       debugInfo(['等待scanner线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
+      if (this.lifecycleCallbackId) {
+        _commonFunctions.unregisterLifecycleCallback(this.lifecycleCallbackId)
+        this.lifecycleCallbackId = null
+      }
       this.threadPool = null
     }
   }
@@ -303,7 +308,7 @@ const BaseScanner = function () {
                   let medianBottom = OpenCvUtil.getMedian(clipImg)
                   let collectableBall = { ball: b, isHelp: false, medianBottom: medianBottom, avg: avgHsv, median: median }
                   let medianBottomMin = isNight ? 80 : 180
-                  if (Math.abs(253 - median) <= 3 && avgHsv > 250) {
+                  if (median >= 235 && avgHsv >= 235) {
                     // 浇水能量球
                     collectableBall.isWatering = true
                     recheck = isOwn
@@ -343,8 +348,9 @@ const BaseScanner = function () {
             return
           }
           if (clickPoints && clickPoints.length > 0) {
+            let clickStart = new Date().getTime()
             debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
-            clickPoints.forEach((point,idx) => {
+            clickPoints.forEach((point, idx) => {
               let b = point.ball
               if (b.y < _config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > _config.tree_collect_top + _config.tree_collect_height) {
                 // 可能是左上角的活动图标 或者 识别到了其他范围的球
@@ -360,6 +366,7 @@ const BaseScanner = function () {
                 }
               }
             })
+            debugInfo(['点击能量球耗时：{}ms', new Date().getTime() - clickStart])
           } else {
             debugInfo('未找到匹配的可收取或帮助的点')
             if (_config.develop_mode && !isOwn) {
@@ -657,6 +664,49 @@ const BaseScanner = function () {
     }
   }
 
+  /**
+   * 等待能量值控件数据刷新 超时时间1秒
+   * 
+   * @param {number} oldCollected 
+   * @param {number} oldFriendEnergy 
+   */
+  this.waitEnergyChangedIfCollected = function (oldCollected, oldFriendEnergy) {
+    let postCollected = oldCollected, postEnergy = oldFriendEnergy
+    if (this.collect_operated) {
+      debugInfo(['等待能量值数据刷新，原始值collect:{} energy:{}', oldCollected, oldFriendEnergy])
+      // 最多等一秒
+      let timeout = new Date().getTime() + 1000
+      let timeoutFlag = false
+      while (postCollected === oldCollected && postEnergy === oldFriendEnergy) {
+        if (new Date().getTime() > timeout) {
+          debugInfo('等待能量数据更新超时')
+          timeoutFlag = true
+          break
+        }
+        sleep(50)
+        postCollected = _widgetUtils.getYouCollectEnergy() || 0
+        postEnergy = _widgetUtils.getFriendEnergy()
+      }
+      if (!timeoutFlag) {
+        debugInfo([
+          '能量值数据刷新，新值collect:{} energy:{} 总耗时：{}ms',
+          this.checkAndDisplayIncreased(postCollected, oldCollected),
+          this.checkAndDisplayIncreased(postEnergy, oldFriendEnergy),
+          new Date().getTime() - timeout + 1000
+        ])
+      }
+    }
+    return { postCollected: postCollected, postEnergy: postEnergy }
+  }
+
+  this.checkAndDisplayIncreased = function (newVal, oldVal) {
+    if (newVal === oldVal) {
+      return newVal
+    }
+    let compare = newVal - oldVal
+    return newVal + '(' + (compare > 0 ? '+' + compare : compare) + ')'
+  }
+
   this.doCollectTargetFriend = function (obj, temp) {
     debugInfo(['准备开始收取好友：「{}」', obj.name])
     let preGot, postGet, preE, postE, rentery = false
@@ -683,23 +733,19 @@ const BaseScanner = function () {
     }
     try {
       // 等待控件数据刷新
-      sleep(150)
-      postGet = _widgetUtils.getYouCollectEnergy() || 0
-      postE = _widgetUtils.getFriendEnergy()
+      let { postEnergy, postCollected } = this.waitEnergyChangedIfCollected(preGot, preE)
+      postGet = postCollected
+      postE = postEnergy
     } catch (e) {
       errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
       _commonFunctions.printExceptionStack(e)
     }
     let friendGrowEnergy = postE - preE
     let collectEnergy = postGet - preGot
-    if (!obj.isHelp) {
-      debugInfo("开始收集前:" + preGot + " 收集后:" + postGet)
-    } else {
-      debugInfo("开始帮助前:" + preE + " 帮助后:" + postE)
-    }
+    debugInfo(['执行前，收集数据：{} 好友能量：{}; 执行后，收集数据：{} 好友能量：{}', preGot, preE, postGet, postE])
     if (this.collect_operated && friendGrowEnergy === 0 && collectEnergy === 0 && !obj.isHelp && !obj.recheck) {
       // 没有收集到能量，可能有保护罩，等待1.5秒
-      warnInfo(['非帮助收集，未收集到能量，可能当前好友使用了保护罩，等待1.5秒'], true)
+      warnInfo(['非帮助收集，未收集到能量，可能当前能量值未刷新或者好友使用了保护罩，等待1.5秒'], true)
       sleep(1500)
       try {
         // 1.5秒后重新获取能量值
