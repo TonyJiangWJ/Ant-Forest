@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-28 21:12:59
+ * @Last Modified time: 2020-11-13 00:16:07
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -239,10 +239,12 @@ const BaseScanner = function () {
    * @param isOwn 是否收集自己，收自己时不判断帮收能量球
    * @param {function} findBallsCallback 测试用 回调找到的球列表
    * @param {function} findPointCallback 测试用 回调可点击的点
+   * @param {function} findInvalidCallback 测试用 回调非可点击的点
    */
-  this.checkAndCollectByHough = function (isOwn, findBallsCallback, findPointCallback, recheckLimit) {
+  this.checkAndCollectByHough = function (isOwn, findBallsCallback, findPointCallback, findInvalidCallback, recheckLimit) {
     findBallsCallback = findBallsCallback || function () { }
     findPointCallback = findPointCallback || function () { }
+    findInvalidCallback = findInvalidCallback || function () { }
     recheckLimit = recheckLimit || 3
     isOwn = isOwn || false
     if (isOwn) {
@@ -294,20 +296,20 @@ const BaseScanner = function () {
           let invalidPoints = []
           let countdownLatch = new CountDownLatch(findBalls.length)
           findBalls.forEach(b => {
-            let region = [b.x - cvt(40), b.y + cvt(70), cvt(60), cvt(30)]
             this.threadPool.execute(function () {
               try {
-                _commonFunctions.ensureRegionInScreen(region)
                 if (rgbImg.getMat().dims() >= 2) {
-                  // let clipImg = images.clip(rgbImg, b.x - cvt(30), b.y, cvt(60), cvt(30))
+                  let startForColorValue = new Date().getTime()
                   let clipImg = images.clip(rgbImg, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
                   let avgHsv = OpenCvUtil.getHistAverage(clipImg)
-                  // clipImg = images.clip(rgbImg, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
                   let median = OpenCvUtil.getMedian(clipImg)
                   clipImg = images.clip(rgbImg, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
+                  let clipGrayImg = images.clip(grayImgInfo, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
                   let medianBottom = OpenCvUtil.getMedian(clipImg)
-                  let collectableBall = { ball: b, isHelp: false, medianBottom: medianBottom, avg: avgHsv, median: median }
+                  let stdDeviation = OpenCvUtil.getStandardDeviation(clipGrayImg)
+                  let collectableBall = { ball: b, isHelp: false, medianBottom: medianBottom, avg: avgHsv, median: median, std: stdDeviation, isNight: isNight }
                   let medianBottomMin = isNight ? 80 : 180
+                  debugForDev(['取色耗时：{}ms', new Date().getTime() - startForColorValue])
                   if (median >= 235 && avgHsv >= 235) {
                     // 浇水能量球
                     collectableBall.isWatering = true
@@ -315,7 +317,7 @@ const BaseScanner = function () {
                   } else if (!isOwn && medianBottom > medianBottomMin) {
                     // 判定为帮收
                     collectableBall.isHelp = true
-                  } else if (Math.abs(212 - median) <= 3 && avgHsv > 200) {
+                  } else if (!isOwn && stdDeviation <= 30 || isOwn && Math.abs(212 - median) <= 3 && avgHsv > 200) {
                     // 判定为可收取
                     // collectableBall = collectableBall
                   } else {
@@ -327,6 +329,7 @@ const BaseScanner = function () {
                     clickPoints.push(collectableBall)
                   } else {
                     invalidPoints.push(collectableBall)
+                    findInvalidCallback(collectableBall)
                   }
                   lock.unlock()
                 } else {
@@ -358,7 +361,7 @@ const BaseScanner = function () {
               }
               haveValidBalls = true
               findPointCallback(point)
-              if (isOwn && point.isWatering || _config.help_friend && point.isHelp || !point.isHelp) {
+              if (isOwn && point.isWatering && !_config.skip_own_watering || _config.help_friend && point.isHelp || !point.isHelp) {
                 self.collect_operated = true
                 automator.click(b.x, b.y)
                 if (idx < clickPoints.length - 1) {
@@ -388,10 +391,10 @@ const BaseScanner = function () {
         rgbImg.recycle()
       }
       // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次
-      repeat = recheck && isOwn && --recheckLimit > 0 || !haveValidBalls && haveBalls && --recheckLimit >= 2 || _config.use_dubble_click_card && haveValidBalls
+      repeat = recheck && isOwn && --recheckLimit > 0 || !haveValidBalls && haveBalls && --recheckLimit >= 2 || _config.use_double_click_card && haveValidBalls
       if (repeat) {
-        debugInfo('需要二次校验，等待200ms')
-        sleep(200)
+        debugInfo(['需要二次校验，等待{}ms', isOwn ? 200 : 500])
+        sleep(isOwn ? 200 : 500)
       }
     } while (repeat)
     debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
@@ -712,7 +715,7 @@ const BaseScanner = function () {
     let preGot, postGet, preE, postE, rentery = false
     let screen = null
     if (_config.cutAndSaveTreeCollect) {
-      screen = images.copy(_commonFunctions.checkCaptureScreenPermission())
+      screen = images.copy(_commonFunctions.checkCaptureScreenPermission(), true)
     }
     try {
       preGot = _widgetUtils.getYouCollectEnergy() || 0
@@ -817,6 +820,7 @@ const BaseScanner = function () {
         debugForDev(['保存可帮助能量球图片：「{}」', savePath])
       }
     }
+    screen && screen.recycle()
     temp.interrupt()
     return this.backToListIfNeeded(rentery, obj)
   }

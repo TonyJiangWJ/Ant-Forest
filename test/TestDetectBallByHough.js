@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-23 19:36:46
+ * @Last Modified time: 2020-11-12 20:20:58
  * @Description: 
  */
 
@@ -17,6 +17,7 @@ commonFunction.autoSetUpBangOffset()
 let offset = config.bang_offset
 config.cutAndSaveTreeCollect = false
 config.show_debug_log = true
+config.async_save_log_file = false
 requestScreenCapture(false)
 var window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
@@ -29,12 +30,14 @@ let SCALE_RATE = config.device_width / 1080
 let cvt = (v) => parseInt(v * SCALE_RATE)
 let converted = false
 let startTime = new Date().getTime()
+let countDownLimit = 1200000
 // 两分钟后自动关闭
-let targetEndTime = startTime + 120000
+let targetEndTime = startTime + countDownLimit
 let passwindow = 0
 let birthTime = new Date().getTime()
 let flag = 1
 let clickPoints = []
+let invalidPoints = []
 let findBalls = []
 let lock = threads.lock()
 let condition = lock.newCondition()
@@ -48,11 +51,15 @@ let detectThread = threads.start(function () {
       inCapture = true
       sleep(200)
       clickPoints = []
+      invalidPoints = []
       findBalls = []
       try {
         let _start = new Date().getTime()
         scanner.isProtectDetectDone = true
-        scanner.checkAndCollectByHough(flag === 1, balls => findBalls = balls, point => clickPoints.push(point))
+        scanner.checkAndCollectByHough(flag === 1, balls => findBalls = balls, point => clickPoints.push(point), ball => {
+          invalidPoints.push(ball)
+          console.verbose('添加无效球：' + JSON.stringify(ball))
+        })
         logInfo(['识别总耗时：{}ms', new Date().getTime() - _start])
       } catch (e) {
         commonFunction.printExceptionStack(e)
@@ -131,14 +138,25 @@ window.canvas.on("draw", function (canvas) {
   //******* */
   if (!inCapture && clickPoints && clickPoints.length > 0) {
     drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint)
-
-    let startX = 0
-    let startY = 0
+    drawText("不可点击数: " + (invalidPoints && invalidPoints.length > 0 ? invalidPoints.length : 0), { x: 100, y: 500 }, canvas, paint)
     clickPoints.forEach((s) => {
       let p = s.ball
-      drawRectAndText('', [p.x + startX - 5, p.y + startY - 5, 10, 10], '#808080', canvas, paint)
-      drawRectAndText((s.isHelp ? 'help' : 'collect'), [p.x + startX - 25 - 2, p.y + startY - 2, 4, 4], '#000000', canvas, paint)
-      drawRectAndText('', [p.x + startX + 25 - 2, p.y + startY - 2, 4, 4], '#808080', canvas, paint)
+      drawRectAndText('', [p.x - 5, p.y - 5, 10, 10], '#808080', canvas, paint)
+      drawRectAndText((s.isHelp ? 'help' : 'collect'), [p.x - 25 - 2, p.y - 2, 4, 4], s.isHelp ? '#FF9800' : '#00FF00', canvas, paint)
+      drawRectAndText(s.medianBottom + ';' + s.std.toFixed(2), [p.x - 25 - 2, p.y + 60, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
+      drawRectAndText('', [p.x + 25 - 2, p.y - 2, 4, 4], '#808080', canvas, paint)
+    })
+  }
+  if (invalidPoints && invalidPoints.length > 0) {
+    invalidPoints.forEach(s => {
+      let p = s.ball
+      drawRectAndText('', [p.x - 5, p.y - 5, 10, 10], '#808080', canvas, paint)
+      if (flag == 1) {
+        drawRectAndText(s.median + ';' + s.avg.toFixed(2), [p.x - 25 - 2, p.y + 30, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
+        drawRectAndText('', [p.x - 30, p.y + 35, 60, 20], '#808080', canvas, paint)
+      }
+      drawRectAndText(s.medianBottom + ';' + s.std.toFixed(2), [p.x - 25 - 2, p.y + 60, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
+      drawRectAndText('', [p.x + 25 - 2, p.y - 2, 4, 4], '#808080', canvas, paint)
     })
   }
   passwindow = new Date().getTime() - startTime
@@ -179,7 +197,7 @@ threads.start(function () {
   })
 })
 
-setTimeout(function () { exitAndClean() }, 120000)
+setTimeout(function () { exitAndClean() }, countDownLimit)
 
 
 

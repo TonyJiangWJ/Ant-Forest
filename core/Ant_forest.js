@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-26 18:47:11
+ * @Last Modified time: 2020-11-12 19:28:23
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -270,7 +270,7 @@ function Ant_forest () {
     } else {
       // 无法获取到控件 通过图像分别判断白天和晚上的倒计时球颜色数据
       let ballPoints = []
-      _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, 1)
+      _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, null, 1)
       if (ballPoints && ballPoints.length > 0) {
         ballPoints.sort((a, b) => {
           if (a.x > b.x) {

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-23 19:30:15
+ * @Last Modified time: 2020-11-12 18:57:19
  * @Description: 
  */
 
@@ -77,13 +77,22 @@ let detectThread = threads.start(function () {
                 if (rgbImg.getMat().dims() >= 2) {
                   // let clipImg = images.clip(rgbImg, b.x - cvt(30), b.y, cvt(60), cvt(30))
                   let clipImg = images.clip(rgbImg, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
+                  let clipGrayImg = images.clip(grayImgInfo, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
                   let avgHsv = OpenCvUtil.getHistAverage(clipImg)
                   // clipImg = images.clip(rgbImg, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
                   let median = OpenCvUtil.getMedian(clipImg)
+                  let standardDevication = OpenCvUtil.getStandardDeviation(clipGrayImg)
                   clipImg = images.clip(rgbImg, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
+                  clipGrayImg = images.clip(grayImgInfo, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
                   let medianBottom = OpenCvUtil.getMedian(clipImg)
                   let avgBottom = OpenCvUtil.getHistAverage(clipImg)
-                  clickPoints.push({ ball: b, median: median, avg: avgHsv, avgBottom: avgBottom, medianBottom: medianBottom })
+                  let standardDevicationBottom = OpenCvUtil.getStandardDeviation(clipGrayImg)
+                  clickPoints.push({
+                    ball: b, median: median, avg: avgHsv,
+                    avgBottom: avgBottom,
+                    medianBottom: medianBottom,
+                    std: standardDevication, stdBottom: standardDevicationBottom
+                  })
                 } else {
                   debugInfo(['mat dims is smaller then two, rgb: {}', rgbImg.getMat().dims()])
                 }
@@ -92,6 +101,15 @@ let detectThread = threads.start(function () {
                 commonFunction.printExceptionStack(e)
               }
             })
+            let sortedResult = clickPoints.map(v => {
+              let { std, stdBottom, ball, medianBottom } = v
+              return { x: ball.x, y: ball.y, std: std.toFixed(2), stdBottom: stdBottom.toFixed(2), medianBottom: medianBottom.toFixed(2) }
+            }).sort((a, b) => a.x > b.x ? 1 : -1)
+            log('clickPoints: ' + JSON.stringify(sortedResult))
+            log('std infos: ' + JSON.stringify(sortedResult.map(v => {
+              let { std, stdBottom, medianBottom } = v
+              return [std, stdBottom, medianBottom]
+            })))
           }
           rgbImg.recycle()
         }
@@ -172,15 +190,13 @@ window.canvas.on("draw", function (canvas) {
   if (!inCapture && clickPoints && clickPoints.length > 0) {
     drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint, '#00ff00')
 
-    let startX = 0
-    let startY = 0
     clickPoints.forEach((s) => {
       let b = s.ball
       drawRectAndText('', [b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20)], '#808080', canvas, paint)
       // drawRectAndText('', [b.x - cvt(30), b.y, cvt(60), cvt(30)], '#999999', canvas, paint)
       drawRectAndText('', [b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20)], '#808080', canvas, paint)
-      drawRectAndText(s.median + ';' + s.avg.toFixed(2), [b.x - cvt(30), b.y + cvt(35), 4, 4], s.median >= 209 && s.avg > 200 ? '#00ff00' :'#000000', canvas, paint)
-      drawRectAndText(s.medianBottom + ';' + s.avgBottom.toFixed(2), [b.x - cvt(40), b.y + cvt(80), 4, 4], s.medianBottom > (dailyOrNightMedian < 100 ? 80 : 180) ? '#ff0000' : '#000000', canvas, paint)
+      drawRectAndText(s.median +/*  ';' + s.avg.toFixed(2) +  */';' + s.std.toFixed(2), [b.x - cvt(30), b.y + cvt(35), 4, 4], s.stdBottom <= 30 ? '#00ff00' : '#000000', canvas, paint)
+      drawRectAndText(s.medianBottom +/*  ';' + s.avgBottom.toFixed(2) +  */';' + s.stdBottom.toFixed(2), [b.x - cvt(40), b.y + cvt(80), 4, 4], s.stdBottom <= 30 || s.medianBottom > (dailyOrNightMedian < 100 ? 80 : 180) ? '#ff9800' : '#000000', canvas, paint)
     })
   }
   passwindow = new Date().getTime() - startTime
