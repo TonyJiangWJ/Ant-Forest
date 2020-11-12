@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-27 19:24:16
+ * @Last Modified time: 2020-11-10 21:06:08
  * @Description: 
  */
 'ui';
@@ -1070,7 +1070,7 @@ if (!isRunningMode) {
                     </vertical>
                     {/* 排行榜中下拉次数 当关闭基于图像判断底部时生效 */}
                     <vertical id="friendListScrollTimeContainer">
-                      <text text="排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像拍短无效只能如此" textSize="10sp" />
+                      <text text="排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像判断无效只能如此" textSize="10sp" />
                       <horizontal gravity="center" >
                         <text text="排行榜下拉次数:" />
                         <input layout_weight="70" inputType="number" id="friendListScrollTimeInpt" layout_weight="70" />
