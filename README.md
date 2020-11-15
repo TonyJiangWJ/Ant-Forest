@@ -5,7 +5,7 @@
 
 基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha2 版本开发。解锁模块参考自：[https://github.com/e1399579/autojs](https://github.com/e1399579/autojs)
 
-- 脚本执行依赖于：[AutoJs 4.1.1 alpha2](http://47.110.40.234/autojs/autojs-4.1.1-alpha2.apk) or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.20200908.apk) 若无法访问请百度搜索一下
+- 脚本执行依赖于：[AutoJs 4.1.1 alpha2](http://47.110.40.234/autojs/autojs-4.1.1-alpha2.apk) or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 若无法访问请百度搜索一下
 - 设备系统要求
 
   - 具有 ROOT 权限的安卓 5.0 及以上版本
