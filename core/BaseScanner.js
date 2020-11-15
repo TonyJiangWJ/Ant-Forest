@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-13 00:16:07
+ * @Last Modified time: 2020-11-15 00:22:19
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -201,8 +201,8 @@ const BaseScanner = function () {
    */
   this.awaitForCollectable = function () {
     if (!this.isProtectDetectDone) {
+      this.protectDetectingLock.lock()
       try {
-        this.protectDetectingLock.lock()
         debugInfo(['等待能量保护罩检测结束：{}', this.protectDetectingCondition.await(600, TimeUnit.MILLISECONDS)])
       } catch (e) {
         warnInfo('等待保护罩校验完毕异常' + e)
@@ -390,7 +390,7 @@ const BaseScanner = function () {
         }
         rgbImg.recycle()
       }
-      // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次
+      // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次 || 使用了双击卡，且点击过球
       repeat = recheck && isOwn && --recheckLimit > 0 || !haveValidBalls && haveBalls && --recheckLimit >= 2 || _config.use_double_click_card && haveValidBalls
       if (repeat) {
         debugInfo(['需要二次校验，等待{}ms', isOwn ? 200 : 500])

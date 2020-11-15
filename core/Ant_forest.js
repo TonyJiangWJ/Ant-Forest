@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-12 19:28:23
+ * @Last Modified time: 2020-11-15 09:31:36
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -166,8 +166,8 @@ function Ant_forest () {
 
     // 在新线程中开启监听
     let thread = threads.start(function () {
+      lock.lock()
       try {
-        lock.lock()
         let temp = []
         let counter = 0
         let toastDone = false
@@ -598,6 +598,7 @@ function Ant_forest () {
         configStorage.put('auto_detect_tree_collect_region', false)
       } else {
         warnInfo('自动识别能量球识别区域失败，未识别到对象：' + (treeDialog ? '' : '种树 ') + (plantTree ? '' : 'J_tree_dialog_wrap'))
+        warnInfo('请运行config.js并手动修改能量球所在区域的配置', true)
       }
     }
   }
