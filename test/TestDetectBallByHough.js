@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-12 20:20:58
+ * @Last Modified time: 2020-11-15 00:31:30
  * @Description: 
  */
 
@@ -14,6 +14,7 @@ let commonFunction = sRequire('CommonFunction')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
 let _BaseScanner = require('../core/BaseScanner.js')
 commonFunction.autoSetUpBangOffset()
+commonFunction.checkCaptureScreenPermission = checkCaptureScreenPermission
 let offset = config.bang_offset
 config.cutAndSaveTreeCollect = false
 config.show_debug_log = true
@@ -35,14 +36,14 @@ let countDownLimit = 1200000
 let targetEndTime = startTime + countDownLimit
 let passwindow = 0
 let birthTime = new Date().getTime()
-let flag = 1
+let flag = 0
 let clickPoints = []
 let invalidPoints = []
 let findBalls = []
 let lock = threads.lock()
 let condition = lock.newCondition()
 let inCapture = false
-let detectRegion = [config.tree_collect_left, config.tree_collect_top - cvt(80), config.tree_collect_width, config.tree_collect_height + cvt(80)]
+let detectRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
 let scanner = new _BaseScanner()
 let detectThread = threads.start(function () {
   automator.click = () => { }
@@ -124,40 +125,47 @@ window.canvas.on("draw", function (canvas) {
   drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 200 }, canvas, paint)
   drawText('收集自身能量：' + (flag === 1 ? '是' : '否'), { x: 100, y: 400 }, canvas, paint)
   drawRectAndText('能量球有效区域', detectRegion, '#808080', canvas, paint)
-  if (!inCapture && findBalls && findBalls.length > 0) {
-    // canvas.drawImage(grayImgInfo, 0, 0, paint)
-    findBalls.forEach(b => {
-      let region = [b.x - 40, b.y + 70, 60, 50]
-      drawRectAndText('', region, '#808080', canvas, paint)
-      paint.setStrokeWidth(3)
-      paint.setStyle(Paint.Style.STROKE)
-      canvas.drawCircle(b.x, b.y + offset, b.radius, paint)
-    })
-  }
+  if (!inCapture) {
+    if (findBalls && findBalls.length > 0) {
+      // canvas.drawImage(grayImgInfo, 0, 0, paint)
+      findBalls.forEach(b => {
+        let region = [b.x - 40, b.y + 70, 60, 50]
+        drawRectAndText('', region, '#808080', canvas, paint)
+      })
+    }
 
-  //******* */
-  if (!inCapture && clickPoints && clickPoints.length > 0) {
-    drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint)
-    drawText("不可点击数: " + (invalidPoints && invalidPoints.length > 0 ? invalidPoints.length : 0), { x: 100, y: 500 }, canvas, paint)
-    clickPoints.forEach((s) => {
-      let p = s.ball
-      drawRectAndText('', [p.x - 5, p.y - 5, 10, 10], '#808080', canvas, paint)
-      drawRectAndText((s.isHelp ? 'help' : 'collect'), [p.x - 25 - 2, p.y - 2, 4, 4], s.isHelp ? '#FF9800' : '#00FF00', canvas, paint)
-      drawRectAndText(s.medianBottom + ';' + s.std.toFixed(2), [p.x - 25 - 2, p.y + 60, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
-      drawRectAndText('', [p.x + 25 - 2, p.y - 2, 4, 4], '#808080', canvas, paint)
-    })
-  }
-  if (invalidPoints && invalidPoints.length > 0) {
-    invalidPoints.forEach(s => {
-      let p = s.ball
-      drawRectAndText('', [p.x - 5, p.y - 5, 10, 10], '#808080', canvas, paint)
-      if (flag == 1) {
-        drawRectAndText(s.median + ';' + s.avg.toFixed(2), [p.x - 25 - 2, p.y + 30, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
-        drawRectAndText('', [p.x - 30, p.y + 35, 60, 20], '#808080', canvas, paint)
-      }
-      drawRectAndText(s.medianBottom + ';' + s.std.toFixed(2), [p.x - 25 - 2, p.y + 60, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
-      drawRectAndText('', [p.x + 25 - 2, p.y - 2, 4, 4], '#808080', canvas, paint)
-    })
+    //******* */
+    if (clickPoints && clickPoints.length > 0) {
+      drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint)
+      drawText("不可点击数: " + (invalidPoints && invalidPoints.length > 0 ? invalidPoints.length : 0), { x: 100, y: 500 }, canvas, paint)
+      clickPoints.forEach((s) => {
+        let p = s.ball
+        drawRectAndText('', [p.x - 5, p.y - 5, 10, 10], '#808080', canvas, paint)
+        drawRectAndText((s.isHelp ? 'help' : 'collect'), [p.x - 25 - 2, p.y - 2, 4, 4], s.isHelp ? '#FF9800' : '#00FF00', canvas, paint)
+        drawRectAndText(s.medianBottom + ';' + s.std.toFixed(2), [p.x - 25 - 2, p.y + 60, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
+        drawRectAndText('', [p.x + 25 - 2, p.y - 2, 4, 4], '#808080', canvas, paint)
+        let color = colors.parseColor(s.isHelp ? '#FF9800' : '#00FF00')
+        paint.setStrokeWidth(3)
+        paint.setStyle(Paint.Style.STROKE)
+        paint.setARGB(255, color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff)
+        canvas.drawCircle(p.x, p.y + offset, p.radius, paint)
+      })
+    }
+    if (invalidPoints && invalidPoints.length > 0) {
+      invalidPoints.forEach(s => {
+        let p = s.ball
+        drawRectAndText('', [p.x - 5, p.y - 5, 10, 10], '#808080', canvas, paint)
+        if (flag == 1) {
+          drawRectAndText(s.median + ';' + s.avg.toFixed(2), [p.x - 25 - 2, p.y + 30, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
+          drawRectAndText('', [p.x - 30, p.y + 35, 60, 20], '#808080', canvas, paint)
+        }
+        drawRectAndText(s.medianBottom + ';' + s.std.toFixed(2), [p.x - 25 - 2, p.y + 60, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
+        drawRectAndText('', [p.x + 25 - 2, p.y - 2, 4, 4], '#808080', canvas, paint)
+        paint.setStrokeWidth(3)
+        paint.setStyle(Paint.Style.STROKE)
+        canvas.drawCircle(p.x, p.y + offset, p.radius, paint)
+      })
+    }
   }
   passwindow = new Date().getTime() - startTime
 
@@ -287,8 +295,7 @@ function checkCaptureScreenPermission (errorLimit) {
     }
   } while (!screen && errorCount < errorLimit)
   if (!screen) {
-    errorInfo(['获取截图失败多次[{}], 可能已经没有了截图权限，重新执行脚本', errorCount], true)
-    requestScreenCapture()
+    errorInfo(['获取截图失败多次[{}], 可能已经没有了截图权限', errorCount], true)
   }
   debugInfo(['获取截图耗时：{}ms', new Date().getTime() - start])
   return screen
