@@ -105,6 +105,7 @@ let showAxis = false
 let rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
 let strollButtonRegion = [config.stroll_button_left, config.stroll_button_top, config.stroll_button_width, config.stroll_button_height]
 let bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
+let validBallRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
 
 let scaleRate = config.device_width / 1080
 
@@ -114,6 +115,7 @@ let refreshThread = threads.start(function () {
     rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
     strollButtonRegion = [config.stroll_button_left, config.stroll_button_top, config.stroll_button_width, config.stroll_button_height]
     bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
+    validBallRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
     scaleRate = config.device_width / 1080
     sleep(100)
   }
@@ -158,6 +160,7 @@ window.canvas.on("draw", function (canvas) {
       drawRectAndText('逛一逛按钮区域', strollButtonRegion, '#FF00FF', canvas, paint)
     }
     drawRectAndText('底部判断区域', bottomRegion, '#FF00FF', canvas, paint)
+    drawRectAndText('有效能量球所在区域', validBallRegion, '#FF00FF', canvas, paint)
     if (back_img) {
       let matrix = new android.graphics.Matrix()
       paint.setAlpha(50)
