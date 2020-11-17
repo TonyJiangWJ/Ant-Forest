@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-10 21:06:08
+ * @Last Modified time: 2020-11-17 22:42:47
  * @Description: 
  */
 'ui';
@@ -160,6 +160,11 @@ let default_config = {
   try_collect_by_multi_touch: false,
   // 直接使用图像分析方式收取和帮助好友
   direct_use_img_collect_and_help: true,
+  hough_param1: 30,
+  hough_param2: 30,
+  hough_min_radius: null,
+  hough_max_radius: null,
+  hough_min_dst: null,
   // 使用双击卡
   use_double_click_card: false,
   // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
@@ -345,7 +350,7 @@ if (!isRunningMode) {
     ui.friendListScrollTimeInpt.text(config.friendListScrollTime + '')
     ui.checkBottomBaseImgChkBox.setChecked(config.checkBottomBaseImg)
     ui.autoDetectTreeCollectRegionChkBox.setChecked(config.auto_detect_tree_collect_region)
-    ui.treeCollectRegionText.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+    ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
     ui.baseOnImageContainer.setVisibility(config.base_on_image ? View.VISIBLE : View.GONE)
     ui.rankCheckRegionInpt.text(config.rank_check_left + ',' + config.rank_check_top + ',' + config.rank_check_width + ',' + config.rank_check_height)
     ui.checkFingerByPixelsAmountChkBox.setChecked(config.check_finger_by_pixels_amount)
@@ -354,12 +359,20 @@ if (!isRunningMode) {
     ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     ui.directUseImgCollectChkBox.setChecked(config.direct_use_img_collect_and_help)
     ui.useDoubleClickCardChkBox.setChecked(config.use_double_click_card)
-
+    ui.houghParam1Inpt.text(config.hough_param1 + '')
+    ui.houghParam2Inpt.text(config.hough_param2 + '')
+    ui.houghMinRadiusInpt.text(config.hough_min_radius ?  config.hough_min_radius + '' : '')
+    ui.houghMaxRadiusInpt.text(config.hough_max_radius ?  config.hough_max_radius + '' : '')
+    ui.houghMinDstInpt.text(config.hough_min_dst ?  config.hough_min_dst + '' : '')
     if (config.direct_use_img_collect_and_help) {
       ui.multiTouchContainer.setVisibility(View.GONE)
+      ui.enableHoughAdvanceConfigChkBox.setVisibility(View.VISIBLE)
+      ui.houghAdvanceConfigContainer.setVisibility(View.GONE)
       config.try_collect_by_multi_touch = false
     } else {
       ui.multiTouchContainer.setVisibility(View.VISIBLE)
+      ui.enableHoughAdvanceConfigChkBox.setVisibility(View.GONE)
+      ui.houghAdvanceConfigContainer.setVisibility(View.GONE)
       ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     }
 
@@ -627,11 +640,7 @@ if (!isRunningMode) {
     ui.bottomCheckRegionContainer.setVisibility(View.GONE)
     if (config.stroll_button_top && config.try_collect_by_stroll) {
       ui.strollButtonRegionContainer.setVisibility(View.VISIBLE)
-      if (config.stroll_button_regenerate) {
-        ui.strollButtonRegionText.text('下次运行时重新检测')
-      } else {
-        ui.strollButtonRegionText.text(config.stroll_button_left + ',' + config.stroll_button_top + ',' + config.stroll_button_width + ',' + config.stroll_button_height)
-      }
+      ui.strollButtonRegionInpt.text(config.stroll_button_left + ',' + config.stroll_button_top + ',' + config.stroll_button_width + ',' + config.stroll_button_height)
     } else {
       ui.strollButtonRegionContainer.setVisibility(View.GONE)
     }
@@ -858,7 +867,7 @@ if (!isRunningMode) {
                     </horizontal>
                   </vertical>
                   <vertical id="countdownContainer">
-                    <text text="倒计时等待的最大时间，默认是60分钟内有可收取的就会设置倒计时，你如果只需要收集一次，可以将它设置为0即可。" textSize="10sp"/>
+                    <text text="倒计时等待的最大时间，默认是60分钟内有可收取的就会设置倒计时，你如果只需要收集一次，可以将它设置为0即可。" textSize="10sp" />
                     <horizontal gravity="center" >
                       <text text="计时最大等待时间:" />
                       <input id="maxCollectWaitTimeInpt" inputType="number" layout_weight="60" />
@@ -969,9 +978,11 @@ if (!isRunningMode) {
                   <checkbox id="limitRunnableTimeRangeChkBox" text="是否限制0:30-6:50不可运行" />
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <vertical id="strollButtonRegionContainer">
-                    <text text="自动识别的逛一逛按钮区域：" textSize="14sp"/>
-                    <text id="strollButtonRegionText" textSize="14sp"/>
-                    <button id="resetStrollRegionBtn">下次运行时重新检测</button>
+                    <checkbox id="resetStrollRegionChkBox" text="下次运行时重新检测" />
+                    <horizontal padding="10 10" gravity="center">
+                      <text text="自动识别的逛一逛按钮区域：" textSize="14sp" />
+                      <input inputType="text" id="strollButtonRegionInpt" />
+                    </horizontal>
                   </vertical>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <button id="showRealTimeImgConfig" >实时查看可视化配置信息</button>
@@ -991,6 +1002,30 @@ if (!isRunningMode) {
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <checkbox id="directUseImgCollectChkBox" text="是否直接基于图像分析收取和帮助好友" />
+                  <checkbox id="enableHoughAdvanceConfigChkBox" text="霍夫变换进阶配置" />
+                  <vertical id="houghAdvanceConfigContainer">
+                    <text text="如非必要，请不要自行修改，留空则使用默认配置" textSize="9sp" />
+                    <horizontal gravity="center">
+                      <text text="param1" />
+                      <input layout_weight="70" inputType="number" id="houghParam1Inpt" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="param2" />
+                      <input layout_weight="70" inputType="number" id="houghParam2Inpt" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="最小球半径" />
+                      <input layout_weight="70" inputType="number" id="houghMinRadiusInpt" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="最大球半径" />
+                      <input layout_weight="70" inputType="number" id="houghMaxRadiusInpt" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="球心最小距离" />
+                      <input layout_weight="70" inputType="number" id="houghMinDstInpt" />
+                    </horizontal>
+                  </vertical>
                   <vertical id="multiTouchContainer">
                     <text text="当可收取能量球控件无法获取时开启区域点击, 不同设备请扩展点击代码，当前建议开启 直接基于图像分析收取和帮助好友" textSize="9sp" />
                     <checkbox id="tryCollectByMultiTouchChkBox" text="是否尝试区域点击来收取能量" />
@@ -1037,7 +1072,7 @@ if (!isRunningMode) {
                     <checkbox id="autoDetectTreeCollectRegionChkBox" text="下次运行时自动判断能量球所在区域" />
                     <horizontal padding="10 10" gravity="center">
                       <text text="当前自动设置的能量球所在区域为：" textSize="12sp" layout_weight="60" />
-                      <text id="treeCollectRegionText" textSize="12sp" layout_weight="40" />
+                      <input inputType="text" id="treeCollectRegionInpt" layout_weight="40" />
                     </horizontal>
                     <checkbox id="checkBottomBaseImgChkBox" text="基于图像判断列表底部" />
                     <vertical id="bottomCheckContainer">
@@ -1239,7 +1274,7 @@ if (!isRunningMode) {
                     <input inputType="text" id="canHelpColorInpt" layout_weight="80" />
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
-                  <text text="以下配置已不可用，后期会直接去除" textSize="14sp"/>
+                  <text text="以下配置已不可用，后期会直接去除" textSize="14sp" />
                   <horizontal gravity="center">
                     <text text="浇水:" layout_weight="20" />
                     <input inputType="text" id="wateringWidgetContentInpt" layout_weight="80" />
@@ -1621,11 +1656,6 @@ if (!isRunningMode) {
       ui.bangOffsetText.text('下次运行时重新检测')
     })
 
-    ui.resetStrollRegionBtn.on('click', () => {
-      config.stroll_button_regenerate = true
-      ui.strollButtonRegionText.text('下次运行时重新检测')
-    })
-
     ui.showThresholdConfig.on('click', () => {
       threadPool.execute(function () {
         dialogs.rawInput("请输入颜色相似度（0-255）", config.color_offset + '', val => {
@@ -1646,13 +1676,13 @@ if (!isRunningMode) {
     })
 
     let setFloatyStatusIfExist = function () {
+      floatyLock.lock()
       try {
-        floatyLock.lock()
         if (floatyWindow !== null) {
           count = 10
           threadPool.execute(function () {
+            floatyLock.lock()
             try {
-              floatyLock.lock()
               if (floatyWindow !== null) {
                 floatyWindow.content.setTextColor(colors.parseColor(config.min_floaty_color))
                 floatyWindow.setPosition(config.min_floaty_x, config.min_floaty_y + config.bang_offset)
@@ -1674,8 +1704,8 @@ if (!isRunningMode) {
                 }
                 sleep(1000)
               }
+              floatyLock.lock()
               try {
-                floatyLock.lock()
                 if (floatyWindow !== null) {
                   floatyWindow.close()
                   floatyWindow = null
@@ -1775,6 +1805,9 @@ if (!isRunningMode) {
     })
 
 
+    // textChangeCall = () => {
+    //   ui.treeCollectRegionInpt.text(config.tree_collect_left + ',' + config.tree_collect_top + ',' + config.tree_collect_width + ',' + config.tree_collect_height)
+    // }
     ui.showFloatyPointConfig.on('click', () => {
       Promise.resolve().then(() => {
         return dialogs.rawInput('请输入X坐标：', config.min_floaty_x + '')
@@ -1810,8 +1843,8 @@ if (!isRunningMode) {
 
     ui.testFloatyPosition.on('click', () => {
       threadPool.execute(function () {
+        floatyLock.lock()
         try {
-          floatyLock.lock()
           if (floatyWindow === null) {
             sleep(300)
             toastLog('准备初始化悬浮窗')
@@ -2111,6 +2144,13 @@ if (!isRunningMode) {
         ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
       }
     })
+    ui.enableHoughAdvanceConfigChkBox.on('click', () => {
+      if (ui.enableHoughAdvanceConfigChkBox.isChecked()) {
+        ui.houghAdvanceConfigContainer.setVisibility(View.VISIBLE)
+      } else {
+        ui.houghAdvanceConfigContainer.setVisibility(View.GONE)
+      }
+    })
 
     ui.baseOnImageChkBox.on('click', () => {
       config.base_on_image = ui.baseOnImageChkBox.isChecked()
@@ -2135,6 +2175,10 @@ if (!isRunningMode) {
       config.auto_detect_tree_collect_region = ui.autoDetectTreeCollectRegionChkBox.isChecked()
     })
 
+    ui.resetStrollRegionChkBox.on('click', () => {
+      config.stroll_button_regenerate = ui.resetStrollRegionChkBox.isChecked()
+    })
+
     ui.checkBottomBaseImgChkBox.on('click', () => {
       config.checkBottomBaseImg = ui.checkBottomBaseImgChkBox.isChecked()
       ui.friendListScrollTimeContainer.setVisibility(config.checkBottomBaseImg ? View.GONE : View.VISIBLE)
@@ -2154,6 +2198,21 @@ if (!isRunningMode) {
 
     ui.bottomHeightInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.bottomHeight = parseInt(text) })
+    )
+    ui.houghParam1Inpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_param1 = parseInt(text) })
+    )
+    ui.houghParam2Inpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_param2 = parseInt(text) })
+    )
+    ui.houghMinRadiusInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_min_radius = parseInt(text) })
+    )
+    ui.houghMaxRadiusInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_max_radius = parseInt(text) })
+    )
+    ui.houghMinDstInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_min_dst = parseInt(text) })
     )
 
     ui.threadPoolSizeInpt.addTextChangedListener(
@@ -2316,6 +2375,46 @@ if (!isRunningMode) {
       })
     )
 
+    ui.treeCollectRegionInpt.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        if (new Date().getTime() > stopEmitUntil) {
+          let newVal = text + ''
+          let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
+          if (regex.test(newVal)) {
+            let match = regex.exec(newVal)
+            config.tree_collect_left = parseInt(match[1])
+            config.tree_collect_top = parseInt(match[2])
+            config.tree_collect_width = parseInt(match[3])
+            config.tree_collect_height = parseInt(match[4])
+            // setRegionSeekBars()
+            sendConfigChangedBroadcast()
+          } else {
+            toast('输入值无效')
+          }
+        }
+      })
+    )
+
+    ui.strollButtonRegionInpt.addTextChangedListener(
+      TextWatcherBuilder(text => {
+        if (new Date().getTime() > stopEmitUntil) {
+          let newVal = text + ''
+          let regex = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/
+          if (regex.test(newVal)) {
+            let match = regex.exec(newVal)
+            config.stroll_button_left = parseInt(match[1])
+            config.stroll_button_top = parseInt(match[2])
+            config.stroll_button_width = parseInt(match[3])
+            config.stroll_button_height = parseInt(match[4])
+            // setRegionSeekBars()
+            sendConfigChangedBroadcast()
+          } else {
+            toast('输入值无效')
+          }
+        }
+      })
+    )
+
     ui.bottomCheckGrayColorInpt.addTextChangedListener(
       TextWatcherBuilder(text => {
         let val = text + ''
@@ -2380,7 +2479,7 @@ if (!isRunningMode) {
     if (config.useOcr && (isBlank(config.apiKey) || isBlank(config.secretKey))) {
       config.useOcr = false
     }
-    Object.keys(default_config).forEach(key => {
+    Object.keys(default_config).concat(Object.keys(auto_generate_config)).forEach(key => {
       let newVal = config[key]
       if (typeof newVal !== 'undefined') {
         storageConfig.put(key, newVal)
@@ -2400,7 +2499,7 @@ if (!isRunningMode) {
 /**
  * 脚本更新后自动恢复一些不太稳定的配置
  */
-function resetConfigsIfNeeded() {
+function resetConfigsIfNeeded () {
   if (config.friend_home_ui_content.indexOf('|.*大树成长记录') > 0) {
     config.friend_home_ui_content.replace('|.*大树成长记录', '')
     storageConfig.put('friend_home_ui_content', config.friend_home_ui_content)

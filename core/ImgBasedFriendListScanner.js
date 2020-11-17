@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-09 16:31:22
+ * @Last Modified time: 2020-11-14 23:36:39
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -270,8 +270,8 @@ const ImgBasedFriendListScanner = function () {
                 calculator.setScriptLogger(SCRIPT_LOGGER)
                 let point = calculator.getCenterPoint()
                 debugInfo('可帮助收取位置：' + JSON.stringify(point))
+                listWriteLock.lock()
                 try {
-                  listWriteLock.lock()
                   collectOrHelpList.push({
                     point: point,
                     isHelp: true
@@ -308,8 +308,8 @@ const ImgBasedFriendListScanner = function () {
                     let configStorage = storages.create(_storage_name)
                     configStorage.put('ocrThreshold', _config.ocrThreshold)
                   }
+                  listWriteLock.lock()
                   try {
-                    listWriteLock.lock()
                     collectOrHelpList.push({ point: point, isHelp: false })
                     countdownLatch.countDown()
                     executeSuccess = true
@@ -328,8 +328,8 @@ const ImgBasedFriendListScanner = function () {
                     let offset = parseInt((width > height ? height - height / Math.sqrt(2) : width - width / Math.sqrt(2)) * 0.9)
                     let down_off = parseInt(offset / 4)
                     let base64String = null
+                    imgResolveLock.lock()
                     try {
-                      imgResolveLock.lock()
                       let countdownImg = images.clip(forOcrScreen, point.left + offset + down_off, point.top + down_off, point.right - point.left - offset - down_off, point.bottom - point.top - offset)
                       let scale = 30 / countdownImg.width
                       if (_config.develop_mode) {
@@ -362,8 +362,8 @@ const ImgBasedFriendListScanner = function () {
                         // Ocr识图API获取文本
                         let countdown = OcrUtil.getImageNumber(base64String)
                         if (isFinite(countdown) && countdown > 0) {
+                          countdownLock.lock()
                           try {
-                            countdownLock.lock()
                             debugInfo('获取倒计时数据为：' + countdown)
                             if (countdown < that.min_countdown) {
                               debugInfo('设置最小倒计时：' + countdown)

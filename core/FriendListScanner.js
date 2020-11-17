@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-09 16:36:37
+ * @Last Modified time: 2020-11-14 23:35:16
  * @Description: 基于控件识别可收取信息
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -66,8 +66,8 @@ const FriendListScanner = function () {
           if (_widgetUtils.foundNoMoreWidget()) {
             debugInfo(threadName + '发现没有更多按钮，获取好友列表')
             debugInfo(threadName + '正获取好友list中')
+            that.lock.lock()
             try {
-              that.lock.lock()
               debugInfo(threadName + "获取锁")
               that.friends_list_parent = _widgetUtils.getFriendListParent()
               that.valid_child_list = that.getValidChildList(that.friends_list_parent)
@@ -112,10 +112,9 @@ const FriendListScanner = function () {
       debugInfo('预获取线程启动')
       while (that.all_loaded === false) {
         debugInfo('预获取线程进入循环体')
+        debugInfo('预获取线程等待锁')
+        that.lock.lock()
         try {
-
-          debugInfo('预获取线程等待锁')
-          that.lock.lock()
           debugInfo('预获取线程获取锁')
           while (!that.emptyList && !that.usedList) {
             debugInfo(['预获取线程等待信号 empty:{} used:{}', that.emptyList, that.usedList])
@@ -193,6 +192,9 @@ const FriendListScanner = function () {
     let stock_count = 0
     let screen = null
     do {
+      debugInfo('主流程等待锁')
+      this.lock.lock()
+      debugInfo('主流程获取锁')
       try {
         iterEnd = -1
         iterStart = lastCheckedFriend
@@ -200,9 +202,6 @@ const FriendListScanner = function () {
 
         let findStart = new Date().getTime()
 
-        debugInfo('主流程等待锁')
-        this.lock.lock()
-        debugInfo('主流程获取锁')
         while (this.emptyList === true) {
           debugInfo('主流程等待信号')
           this.condition.await()
