@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-12 18:57:19
+ * @Last Modified time: 2020-11-17 22:18:25
  * @Description: 
  */
 
@@ -41,7 +41,9 @@ let condition = lock.newCondition()
 let inCapture = false
 let detectRegion = [config.tree_collect_left, config.tree_collect_top - cvt(80), config.tree_collect_width, config.tree_collect_height + cvt(80)]
 let dailyOrNightMedian = null
-
+let param1 = 30
+let param2 = 30
+let cost = 0
 let detectThread = threads.start(function () {
   automator.click = () => { }
   while (true) {
@@ -50,6 +52,7 @@ let detectThread = threads.start(function () {
       sleep(200)
       clickPoints = []
       findBalls = []
+      log('set find balls to empty')
       try {
         let screen = captureScreen()
         if (screen) {
@@ -58,17 +61,19 @@ let detectThread = threads.start(function () {
           dailyOrNightMedian = OpenCvUtil.getMedian(dayOrNightImg)
           screen = images.medianBlur(screen, 5)
           let grayImgInfo = images.grayscale(screen)
-          let findBalls = images.findCircles(
+          let start = new Date().getTime()
+          findBalls = images.findCircles(
             grayImgInfo,
             {
-              param1: 100,
-              param2: 30,
+              param1: param1,
+              param2: param2,
               minRadius: cvt(65),
               maxRadius: cvt(75),
               minDst: cvt(100),
               // region: detectRegion
             }
           )
+          cost = new Date().getTime() - start
           if (findBalls && findBalls.length > 0) {
             findBalls.forEach(b => {
               let region = [b.x - cvt(40), b.y + cvt(70), cvt(60), cvt(30)]
@@ -105,6 +110,7 @@ let detectThread = threads.start(function () {
               let { std, stdBottom, ball, medianBottom } = v
               return { x: ball.x, y: ball.y, std: std.toFixed(2), stdBottom: stdBottom.toFixed(2), medianBottom: medianBottom.toFixed(2) }
             }).sort((a, b) => a.x > b.x ? 1 : -1)
+            log('findBalls: ', JSON.stringify(findBalls))
             log('clickPoints: ' + JSON.stringify(sortedResult))
             log('std infos: ' + JSON.stringify(sortedResult.map(v => {
               let { std, stdBottom, medianBottom } = v
@@ -173,31 +179,39 @@ window.canvas.on("draw", function (canvas) {
   drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 200 }, canvas, paint)
   drawText('收集自身能量：' + (flag === 1 ? '是' : '否'), { x: 100, y: 400 }, canvas, paint)
   drawText('白天或黑夜校验色：' + dailyOrNightMedian, { x: 100, y: 500 }, canvas, paint)
-  drawRectAndText('能量球有效区域', detectRegion, '#808080', canvas, paint)
-  if (!inCapture && findBalls && findBalls.length > 0) {
-    drawText("找到的球数: " + findBalls.length, { x: 100, y: 380 }, canvas, paint, '#00ff00')
-    // canvas.drawImage(grayImgInfo, 0, 0, paint)
-    findBalls.forEach(b => {
-      let region = [b.x - 40, b.y + 70, 60, 50]
-      drawRectAndText('', region, '#808080', canvas, paint)
-      paint.setStrokeWidth(3)
-      paint.setStyle(Paint.Style.STROKE)
-      canvas.drawCircle(b.x, b.y + offset, b.radius, paint)
-    })
-  }
+  if (!inCapture) {
+    drawRectAndText('能量球有效区域', detectRegion, '#808080', canvas, paint)
+    if (findBalls && findBalls.length > 0) {
+      drawText("找到的球数: " + findBalls.length, { x: 100, y: 380 }, canvas, paint, '#00ff00')
 
-  //******* */
-  if (!inCapture && clickPoints && clickPoints.length > 0) {
-    drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint, '#00ff00')
+      paint.setTextSize(20)
+      drawText("params: " + param1 + ', ' + param2 + ' cost:' + cost, { x: 100, y: 420 }, canvas, paint, '#00ff00')
+      // canvas.drawImage(grayImgInfo, 0, 0, paint)
+      findBalls.forEach(b => {
+        let region = [b.x - 40, b.y + 70, 60, 50]
+        drawRectAndText('', region, '#808080', canvas, paint)
+        drawText(b.radius.toFixed(2), { x: b.x, y: b.y }, canvas, paint)
+        paint.setStrokeWidth(3)
+        paint.setStyle(Paint.Style.STROKE)
+        canvas.drawCircle(b.x, b.y + offset, b.radius, paint)
+      })
+    } else {
+      drawText("未找到球: " + findBalls.length, { x: 100, y: 380 }, canvas, paint, '#00ff00')
+    }
 
-    clickPoints.forEach((s) => {
-      let b = s.ball
-      drawRectAndText('', [b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20)], '#808080', canvas, paint)
-      // drawRectAndText('', [b.x - cvt(30), b.y, cvt(60), cvt(30)], '#999999', canvas, paint)
-      drawRectAndText('', [b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20)], '#808080', canvas, paint)
-      drawRectAndText(s.median +/*  ';' + s.avg.toFixed(2) +  */';' + s.std.toFixed(2), [b.x - cvt(30), b.y + cvt(35), 4, 4], s.stdBottom <= 30 ? '#00ff00' : '#000000', canvas, paint)
-      drawRectAndText(s.medianBottom +/*  ';' + s.avgBottom.toFixed(2) +  */';' + s.stdBottom.toFixed(2), [b.x - cvt(40), b.y + cvt(80), 4, 4], s.stdBottom <= 30 || s.medianBottom > (dailyOrNightMedian < 100 ? 80 : 180) ? '#ff9800' : '#000000', canvas, paint)
-    })
+    //******* */
+    if (clickPoints && clickPoints.length > 0) {
+      drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint, '#00ff00')
+      log('找到的球？' + JSON.stringify(findBalls))
+      clickPoints.forEach((s) => {
+        let b = s.ball
+        drawRectAndText('', [b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20)], '#808080', canvas, paint)
+        // drawRectAndText('', [b.x - cvt(30), b.y, cvt(60), cvt(30)], '#999999', canvas, paint)
+        drawRectAndText('', [b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20)], '#808080', canvas, paint)
+        drawRectAndText(s.median +/*  ';' + s.avg.toFixed(2) +  */';' + s.std.toFixed(2), [b.x - cvt(30), b.y + cvt(35), 4, 4], s.stdBottom <= 30 ? '#00ff00' : '#000000', canvas, paint)
+        drawRectAndText(s.medianBottom +/*  ';' + s.avgBottom.toFixed(2) +  */';' + s.stdBottom.toFixed(2), [b.x - cvt(40), b.y + cvt(80), 4, 4], s.stdBottom <= 30 || s.medianBottom > (dailyOrNightMedian < 100 ? 80 : 180) ? '#ff9800' : '#000000', canvas, paint)
+      })
+    }
   }
   passwindow = new Date().getTime() - startTime
 

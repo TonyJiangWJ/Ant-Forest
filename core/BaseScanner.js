@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-15 00:22:19
+ * @Last Modified time: 2020-11-17 22:23:46
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -273,11 +273,11 @@ const BaseScanner = function () {
         let findBalls = images.findCircles(
           grayImgInfo,
           {
-            param1: 100,
-            param2: 30,
-            minRadius: cvt(65),
-            maxRadius: cvt(75),
-            minDst: cvt(100),
+            param1: _config.hough_param1 || 30,
+            param2: _config.hough_param2 || 30,
+            minRadius: _config.hough_min_radius || cvt(65),
+            maxRadius: _config.hough_max_radius || cvt(75),
+            minDst: _config.hough_min_dst || cvt(100),
             // region: detectRegion
           }
         )

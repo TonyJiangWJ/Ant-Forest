@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-15 09:45:01
+ * @Last Modified time: 2020-11-17 22:42:47
  * @Description: 
  */
 'ui';
@@ -160,6 +160,11 @@ let default_config = {
   try_collect_by_multi_touch: false,
   // 直接使用图像分析方式收取和帮助好友
   direct_use_img_collect_and_help: true,
+  hough_param1: 30,
+  hough_param2: 30,
+  hough_min_radius: null,
+  hough_max_radius: null,
+  hough_min_dst: null,
   // 使用双击卡
   use_double_click_card: false,
   // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
@@ -354,12 +359,20 @@ if (!isRunningMode) {
     ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     ui.directUseImgCollectChkBox.setChecked(config.direct_use_img_collect_and_help)
     ui.useDoubleClickCardChkBox.setChecked(config.use_double_click_card)
-
+    ui.houghParam1Inpt.text(config.hough_param1 + '')
+    ui.houghParam2Inpt.text(config.hough_param2 + '')
+    ui.houghMinRadiusInpt.text(config.hough_min_radius ?  config.hough_min_radius + '' : '')
+    ui.houghMaxRadiusInpt.text(config.hough_max_radius ?  config.hough_max_radius + '' : '')
+    ui.houghMinDstInpt.text(config.hough_min_dst ?  config.hough_min_dst + '' : '')
     if (config.direct_use_img_collect_and_help) {
       ui.multiTouchContainer.setVisibility(View.GONE)
+      ui.enableHoughAdvanceConfigChkBox.setVisibility(View.VISIBLE)
+      ui.houghAdvanceConfigContainer.setVisibility(View.GONE)
       config.try_collect_by_multi_touch = false
     } else {
       ui.multiTouchContainer.setVisibility(View.VISIBLE)
+      ui.enableHoughAdvanceConfigChkBox.setVisibility(View.GONE)
+      ui.houghAdvanceConfigContainer.setVisibility(View.GONE)
       ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
     }
 
@@ -989,6 +1002,30 @@ if (!isRunningMode) {
                   </horizontal>
                   <horizontal w="*" h="1sp" bg="#cccccc" margin="5 0"></horizontal>
                   <checkbox id="directUseImgCollectChkBox" text="是否直接基于图像分析收取和帮助好友" />
+                  <checkbox id="enableHoughAdvanceConfigChkBox" text="霍夫变换进阶配置" />
+                  <vertical id="houghAdvanceConfigContainer">
+                    <text text="如非必要，请不要自行修改，留空则使用默认配置" textSize="9sp" />
+                    <horizontal gravity="center">
+                      <text text="param1" />
+                      <input layout_weight="70" inputType="number" id="houghParam1Inpt" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="param2" />
+                      <input layout_weight="70" inputType="number" id="houghParam2Inpt" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="最小球半径" />
+                      <input layout_weight="70" inputType="number" id="houghMinRadiusInpt" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="最大球半径" />
+                      <input layout_weight="70" inputType="number" id="houghMaxRadiusInpt" />
+                    </horizontal>
+                    <horizontal gravity="center">
+                      <text text="球心最小距离" />
+                      <input layout_weight="70" inputType="number" id="houghMinDstInpt" />
+                    </horizontal>
+                  </vertical>
                   <vertical id="multiTouchContainer">
                     <text text="当可收取能量球控件无法获取时开启区域点击, 不同设备请扩展点击代码，当前建议开启 直接基于图像分析收取和帮助好友" textSize="9sp" />
                     <checkbox id="tryCollectByMultiTouchChkBox" text="是否尝试区域点击来收取能量" />
@@ -2107,6 +2144,13 @@ if (!isRunningMode) {
         ui.tryCollectByMultiTouchChkBox.setChecked(config.try_collect_by_multi_touch)
       }
     })
+    ui.enableHoughAdvanceConfigChkBox.on('click', () => {
+      if (ui.enableHoughAdvanceConfigChkBox.isChecked()) {
+        ui.houghAdvanceConfigContainer.setVisibility(View.VISIBLE)
+      } else {
+        ui.houghAdvanceConfigContainer.setVisibility(View.GONE)
+      }
+    })
 
     ui.baseOnImageChkBox.on('click', () => {
       config.base_on_image = ui.baseOnImageChkBox.isChecked()
@@ -2154,6 +2198,21 @@ if (!isRunningMode) {
 
     ui.bottomHeightInpt.addTextChangedListener(
       TextWatcherBuilder(text => { config.bottomHeight = parseInt(text) })
+    )
+    ui.houghParam1Inpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_param1 = parseInt(text) })
+    )
+    ui.houghParam2Inpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_param2 = parseInt(text) })
+    )
+    ui.houghMinRadiusInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_min_radius = parseInt(text) })
+    )
+    ui.houghMaxRadiusInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_max_radius = parseInt(text) })
+    )
+    ui.houghMinDstInpt.addTextChangedListener(
+      TextWatcherBuilder(text => { config.hough_min_dst = parseInt(text) })
     )
 
     ui.threadPoolSizeInpt.addTextChangedListener(

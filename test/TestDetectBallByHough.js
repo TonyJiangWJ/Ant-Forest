@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-15 00:31:30
+ * @Last Modified time: 2020-11-17 22:19:11
  * @Description: 
  */
 
@@ -124,8 +124,8 @@ window.canvas.on("draw", function (canvas) {
   let countdown = (targetEndTime - new Date().getTime()) / 1000
   drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 200 }, canvas, paint)
   drawText('收集自身能量：' + (flag === 1 ? '是' : '否'), { x: 100, y: 400 }, canvas, paint)
-  drawRectAndText('能量球有效区域', detectRegion, '#808080', canvas, paint)
   if (!inCapture) {
+    drawRectAndText('能量球有效区域', detectRegion, '#808080', canvas, paint)
     if (findBalls && findBalls.length > 0) {
       // canvas.drawImage(grayImgInfo, 0, 0, paint)
       findBalls.forEach(b => {
