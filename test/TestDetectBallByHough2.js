@@ -93,7 +93,9 @@ let detectThread = threads.start(function () {
                   let avgBottom = OpenCvUtil.getHistAverage(clipImg)
                   let standardDevicationBottom = OpenCvUtil.getStandardDeviation(clipGrayImg)
                   clickPoints.push({
-                    ball: b, median: median, avg: avgHsv,
+                    ball: b, 
+                    median: median, 
+                    avg: avgHsv,
                     avgBottom: avgBottom,
                     medianBottom: medianBottom,
                     std: standardDevication, stdBottom: standardDevicationBottom

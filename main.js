@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-23 18:49:38
+ * @Last Modified time: 2020-11-29 11:04:08
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
@@ -33,7 +33,6 @@ if (config.base_on_image) {
 
 let FloatyInstance = singletonRequire('FloatyUtil')
 let FileUtils = singletonRequire('FileUtils')
-let tryRequestScreenCapture = singletonRequire('TryRequestScreenCapture')
 let callStateListener = config.enable_call_state_control ? singletonRequire('CallStateListener') : { exitIfNotIdle: () => { } }
 let resourceMonitor = require('./lib/ResourceMonitor.js')(runtime, this)
 
@@ -125,25 +124,7 @@ try {
   exit()
 }
 logInfo('解锁成功')
-
-// 请求截图权限
-let screenPermission = false
-let actionSuccess = commonFunctions.waitFor(function () {
-  if (config.request_capture_permission) {
-    screenPermission = tryRequestScreenCapture()
-  } else {
-    screenPermission = requestScreenCapture(false)
-  }
-}, 15000)
-if (!actionSuccess || !screenPermission) {
-  errorInfo('请求截图失败, 设置6秒后重启')
-  runningQueueDispatcher.removeRunningTask()
-  sleep(6000)
-  runningQueueDispatcher.executeTargetScript(FileUtils.getRealMainScriptPath())
-  exit()
-} else {
-  logInfo('请求截屏权限成功')
-}
+commonFunctions.requestScreenCaptureOrRestart()
 // 根据截图重新获取设备分辨率
 let screen = commonFunctions.checkCaptureScreenPermission(3)
 if (screen) {

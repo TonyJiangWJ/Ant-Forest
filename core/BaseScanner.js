@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-17 22:23:46
+ * @Last Modified time: 2020-11-23 10:25:47
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -11,7 +11,7 @@ importClass(java.util.concurrent.TimeUnit)
 importClass(java.util.concurrent.CountDownLatch)
 importClass(java.util.concurrent.ThreadFactory)
 importClass(java.util.concurrent.Executors)
-let { config: _config } = require('../config.js')(runtime, this)
+let { config: _config, storage_name } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
@@ -22,6 +22,7 @@ let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev, developSavi
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let ENGINE_ID = engines.myEngine().id
 let _package_name = 'com.eg.android.AlipayGphone'
+let _HoughHelper = require('../utils/HoughHelper.js')
 
 const BaseScanner = function () {
 
@@ -37,7 +38,6 @@ const BaseScanner = function () {
     multiCheckPoints.push([x, 0, '#ffffff'])
   }
   this.temp_img = null
-  this.found_balls = []
   this.collect_operated = false
   this.increased_energy = 0
   this.current_time = 0
@@ -51,7 +51,7 @@ const BaseScanner = function () {
   this.protectDetectingLock = threads.lock()
   this.protectDetectingCondition = this.protectDetectingLock.newCondition()
   this.lifecycleCallbackId = null
-
+  this.houghHelper = null
   this.createNewThreadPool = function () {
     this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 4, 60,
       TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256),
@@ -88,6 +88,16 @@ const BaseScanner = function () {
         this.lifecycleCallbackId = null
       }
       this.threadPool = null
+    }
+    if (this.houghHelper !== null) {
+      this.houghHelper.persistence()
+      this.houghHelper = null
+    }
+  }
+
+  this.initHoughHelperIfNeeded = function () {
+    if (_config.develop_saving_mode && this.houghHelper === null) {
+      this.houghHelper = new _HoughHelper()
     }
   }
 
@@ -259,6 +269,7 @@ const BaseScanner = function () {
     this.collect_operated = false
     this.ensureThreadPoolCreated()
     let repeat = false
+    this.initHoughHelperIfNeeded()
     do {
       haveValidBalls = false
       haveBalls = false
@@ -282,7 +293,6 @@ const BaseScanner = function () {
           }
         )
         debugInfo(['找到的球:{}', JSON.stringify(findBalls)])
-        this.found_balls = findBalls
         if (this.isProtected) {
           // 已判定为使用了保护罩
           return
@@ -307,7 +317,7 @@ const BaseScanner = function () {
                   let clipGrayImg = images.clip(grayImgInfo, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
                   let medianBottom = OpenCvUtil.getMedian(clipImg)
                   let stdDeviation = OpenCvUtil.getStandardDeviation(clipGrayImg)
-                  let collectableBall = { ball: b, isHelp: false, medianBottom: medianBottom, avg: avgHsv, median: median, std: stdDeviation, isNight: isNight }
+                  let collectableBall = { ball: b, isHelp: false, medianBottom: medianBottom, avg: avgHsv, median: median, std: stdDeviation, isNight: isNight, isOwn: isOwn }
                   let medianBottomMin = isNight ? 80 : 180
                   debugForDev(['取色耗时：{}ms', new Date().getTime() - startForColorValue])
                   if (median >= 235 && avgHsv >= 235) {
@@ -327,9 +337,19 @@ const BaseScanner = function () {
                   lock.lock()
                   if (!collectableBall.invalid) {
                     clickPoints.push(collectableBall)
+                    if (_config.develop_saving_mode) {
+                      if (collectableBall.isHelp) {
+                        self.houghHelper.addHelpBall(collectableBall, isNight)
+                      } else if (collectableBall.isWatering) {
+                        self.houghHelper.addWaterBall(collectableBall, isNight)
+                      } else {
+                        self.houghHelper.addCollectBall(collectableBall, isNight)
+                      }
+                    }
                   } else {
                     invalidPoints.push(collectableBall)
                     findInvalidCallback(collectableBall)
+                    _config.develop_saving_mode && self.houghHelper.addInvalidBall(collectableBall, isNight)
                   }
                   lock.unlock()
                 } else {
@@ -632,17 +652,6 @@ const BaseScanner = function () {
         debugForDev(['保存未识别能量球图片：「{}」', savePath])
       } catch (e) {
         errorInfo('保存未识别能量球图片异常' + e)
-      }
-    }
-    if (_config.develop_saving_mode && this.temp_img && this.found_balls && this.found_balls.length > 0) {
-      try {
-        this.found_balls.forEach(ball => {
-          ball.x = parseInt(ball.x)
-          ball.y = parseInt(ball.y)
-          developSaving(['cannot match, point: [{},{}] color: {}', ball.x, ball.y, colors.toString(this.temp_img.getBitmap().getPixel(ball.x, ball.y))], 'cannot_match')
-        })
-      } catch (e) {
-        debugInfo('保存不可识别球数据异常 ' + e)
       }
     }
     if (this.temp_img) {
