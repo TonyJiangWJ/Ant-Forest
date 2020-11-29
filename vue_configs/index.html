@@ -1,0 +1,66 @@
+<!--
+ * @Author: TonyJiangWJ
+ * @Date: 2020-11-29 13:17:06
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2020-11-29 17:17:56
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang=en>
+
+<head>
+  <meta charset=utf-8>
+  <meta http-equiv=X-UA-Compatible content="IE=edge">
+  <meta name=viewport content="width=device-width,initial-scale=1">
+  <title>配置工具</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@2.10/lib/index.css" />
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vant@2.10/lib/vant.min.js"></script>
+</head>
+
+<body>
+  <noscript><strong>We're sorry but this doesn't work properly without JavaScript enabled. Please enable
+      it to continue.</strong></noscript>
+  <div id=app>
+    <van-tabs v-model="activeTab" sticky>
+      <van-tab title="基础设置">
+        <sample-configs />
+      </van-tab>
+      <van-tab title="进阶设置">
+        <advance-configs />
+      </van-tab>
+      <van-tab title="控件文本设置">
+        <widget-configs />
+      </van-tab>
+    </van-tabs>
+  </div>
+</body>
+<script type="text/javascript">
+  function appendScripts(filePath) {
+    let element = document.createElement('script')
+    // element.src = 'file://' + filePath + '/vue_configs/js/vue.min.js'
+    // document.head.appendChild(element)
+    let scripts = ['/vue_configs/js/webview_bridge.js', '/vue_configs/js/components.js', '/vue_configs/js/app.js']
+    let index = 0
+    scripts.forEach(script => {
+      setTimeout(function () {
+        element = document.createElement('script')
+        element.src = filePath + script
+        document.head.appendChild(element)
+      }, 100 + (index++) * 10)
+    })
+    console.log('append scripts done')
+
+  }
+  function nativeInvoke(message) {
+    //document.getElementById('content').innerText = message
+  }
+
+  // 挂载本地js脚本
+  window.onload = () => {
+    let location = window.location.href
+    appendScripts(location.substring(0, location.indexOf('/vue_configs/index.html')))
+  }
+</script>
+
+</html>

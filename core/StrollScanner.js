@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-10-28 21:40:10
+ * @Last Modified time: 2020-11-20 11:26:46
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -116,8 +116,8 @@ const StrollScanner = function () {
 
   this.backToListIfNeeded = function (rentery, obj) {
     if (!rentery) {
-      debugInfo('准备逛下一个，等待500ms')
-      sleep(500)
+      debugInfo('准备逛下一个，等待200ms')
+      sleep(200)
       return true
     } else {
       debugInfo('二次校验好友信息，等待250ms')

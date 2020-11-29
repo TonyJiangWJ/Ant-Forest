@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-17 22:42:47
+ * @Last Modified time: 2020-11-30 00:07:46
  * @Description: 
  */
 'ui';
@@ -40,7 +40,7 @@ let default_config = {
   develop_saving_mode: false,
   check_device_posture: false,
   check_distance: false,
-  posture_threshod_z: 6,
+  posture_threshold_z: 6,
   // 开发用开关，截图并保存一些图片
   // 保存倒计时图片
   cutAndSaveCountdown: false,
@@ -280,7 +280,7 @@ if (!isRunningMode) {
   let threadPool = new ThreadPoolExecutor(4, 4, 60, TimeUnit.SECONDS, new LinkedBlockingQueue(16), new ThreadFactory({
     newThread: function (runnable) {
       let thread = Executors.defaultThreadFactory().newThread(runnable)
-      thread.setName(config.thread_name_prefix + ENGINE_ID + '-configing-' + thread.getName())
+      thread.setName(config.thread_name_prefix + currentEngine.id + '-configing-' + thread.getName())
       return thread
     }
   }))
@@ -586,7 +586,7 @@ if (!isRunningMode) {
       registerSensors()
     }
     ui.checkDistanceChkBox.setVisibility(config.check_device_posture ? View.VISIBLE : View.GONE)
-    ui.postureThresholdZInpt.setText((config.posture_threshod_z || 6) + '')
+    ui.postureThresholdZInpt.setText((config.posture_threshold_z || 6) + '')
     ui.senrsorInfoContainer.setVisibility(config.check_device_posture ? View.VISIBLE : View.GONE)
     ui.checkDistanceChkBox.setChecked(config.check_distance)
     ui.dismissDialogIfLockedChkBox.setChecked(config.dismiss_dialog_if_locked)
@@ -2082,7 +2082,7 @@ if (!isRunningMode) {
       TextWatcherBuilder(text => {
         let value = parseInt(text)
         if (value > 0 && value < 9) {
-          config.posture_threshod_z = value
+          config.posture_threshold_z = value
         } else {
           toast('请输入一个介于0-9的数字，推荐在4-7之间')
         }
