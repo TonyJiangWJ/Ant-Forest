@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:17:06
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-29 17:17:56
+ * @Last Modified time: 2020-11-30 23:28:45
  * @Description: 
 -->
 <!DOCTYPE html>
@@ -15,6 +15,7 @@
   <title>配置工具</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@2.10/lib/index.css" />
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
   <script src="https://cdn.jsdelivr.net/npm/vant@2.10/lib/vant.min.js"></script>
 </head>
 
@@ -22,7 +23,7 @@
   <noscript><strong>We're sorry but this doesn't work properly without JavaScript enabled. Please enable
       it to continue.</strong></noscript>
   <div id=app>
-    <van-tabs v-model="activeTab" sticky>
+    <van-tabs v-model="activeTab" sticky swipeable>
       <van-tab title="基础设置">
         <sample-configs />
       </van-tab>
@@ -36,6 +37,9 @@
   </div>
 </body>
 <script type="text/javascript">
+  /** 
+   * 加载本地js文件
+   */ 
   function appendScripts(filePath) {
     let element = document.createElement('script')
     // element.src = 'file://' + filePath + '/vue_configs/js/vue.min.js'
@@ -50,7 +54,14 @@
       }, 100 + (index++) * 10)
     })
     console.log('append scripts done')
-
+    let csses = ['/vue_configs/css/style.css']
+    csses.forEach(css => {
+      element = document.createElement('link')
+      element.href = filePath + css
+      element.rel = "stylesheet"
+      document.head.appendChild(element)
+    })
+    console.log('append css done')
   }
   function nativeInvoke(message) {
     //document.getElementById('content').innerText = message

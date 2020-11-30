@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-30 00:02:24
+ * @Last Modified time: 2020-11-30 23:41:02
  * @Description: 
  */
 "ui";
@@ -29,8 +29,10 @@ activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LI
 
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 let FileUtils = singletonRequire('FileUtils')
-let { config, storage_name } = require('./config.js')(runtime, this)
+let { config, default_config, storage_name } = require('./config.js')(runtime, this)
 let commonFunctions = singletonRequire('CommonFunction')
+config.hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
+
 ui.layout(
   <vertical>
     <webview id="webview" margin="0 10" />
@@ -59,6 +61,31 @@ let bridgeHandler = {
       if (typeof newVal !== 'undefined') {
         storageConfig.put(key, newVal)
       }
+    })
+    sendConfigChangedBroadcast(data)
+  },
+  showRealtimeVisualConfig: () => {
+    // 不在ui线程启动的话会丢失线程上下文，导致执行异常
+    ui.run(function () {
+      let source = FileUtils.getCurrentWorkPath() + '/test/全局悬浮窗显示-配置信息.js'
+      engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')) })
+    })
+  },
+  resetConfigs: (data, callbackId) => {
+    ui.run(function () {
+      confirm('确定要将所有配置重置为默认值吗？').then(ok => {
+        if (ok) {
+          Object.keys(default_config).forEach(key => {
+            let defaultValue = default_config[key]
+            config[key] = defaultValue
+            storageConfig.put(key, defaultValue)
+          })
+          toastLog('重置默认值')
+          postMessageToWebView({ functionName: 'reloadBasicConfigs' })
+          postMessageToWebView({ functionName: 'reloadAdvanceConfigs' })
+          postMessageToWebView({ functionName: 'reloadWidgetConfigs' })
+        }
+      })
     })
   },
   // 测试回调
@@ -106,7 +133,7 @@ ui.webview.setWebViewClient(
 ui.webview.setWebChromeClient(
   new JavaAdapter(WebChromeClient, {
     onConsoleMessage: function (message) {
-      message.message && log(message.message())
+      message.message && log('h5:' + message.message())
     }
   })
 )
@@ -181,4 +208,10 @@ function registerSensors () {
       postMessageToWebView({ functionName: 'distanceSensorChange', data: { distance: d } })
     })
   }
+}
+
+function sendConfigChangedBroadcast (newConfig) {
+  newConfig = newConfig || config
+  console.verbose(engines.myEngine().id + ' 发送广播 通知配置变更')
+  events.broadcast.emit(storage_name + 'config_changed', { config: newConfig, id: engines.myEngine().id })
 }
