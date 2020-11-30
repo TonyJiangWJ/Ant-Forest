@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 15:53:42
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-30 00:01:43
+ * @Last Modified time: 2020-11-30 23:38:21
  * @Description: 
  */
 (function () {
@@ -21,7 +21,7 @@
       typeof nativeWebviewBridge !== 'undefined' && nativeWebviewBridge.postMessage(JSON.stringify(params))
     },
     receiveMessage: function (params) {
-      console.log('得到回调参数：' + JSON.stringify(params))
+      // console.log('得到回调参数：' + JSON.stringify(params))
       // params = JSON.parse(params)
       let callbackId = params.callbackId
       let data = params.data || {}
@@ -30,6 +30,7 @@
         callback(data)
         delete callbacks[callbackId]
       } else {
+        // console.log('native调用方法：' + params.functionName)
         let func = functions[params.functionName]
         if (func) {
           func(data)

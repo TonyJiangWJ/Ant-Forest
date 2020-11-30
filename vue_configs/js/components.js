@@ -2,23 +2,29 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-30 00:21:25
- * @Description: 
+ * @Last Modified time: 2020-11-30 23:24:54
+ * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 let mixin_common = {
   data: function () {
     return {
       switchSize: '1.24rem',
-      tipTextSize: '0.7rem'
+      tipTextSize: '0.7rem',
+      device: {
+        width: 1080,
+        height: 2340
+      }
     }
   },
   methods: {
     loadConfigs: function () {
       $app.invoke('loadConfigs', {}, config => {
         Object.keys(this.configs).forEach(key => {
-          console.log('load config key:[' + key + '] value: [' + config[key] + ']')
+          // console.log('load config key:[' + key + '] value: [' + config[key] + ']')
           this.$set(this.configs, key, config[key])
         })
+        this.device.width = config.device_width
+        this.device.height = config.device_height
       })
     },
     isNotEmpty: function (v) {
@@ -40,30 +46,6 @@ let mixin_common = {
         })
       }
       $app.invoke('saveConfigs', newConfigs)
-    },
-    formatterSeconds: function (v) {
-      if (v) {
-        return v + '秒'
-      }
-      return ''
-    },
-    formatterMills: function (v) {
-      if (v) {
-        return v + '毫秒'
-      }
-      return ''
-    },
-    formatterFileSize: function (v) {
-      if (v) {
-        return v + 'KB'
-      }
-      return ''
-    },
-    formatterTextSize: function (v) {
-      if (v) {
-        return v + 'sp'
-      }
-      return ''
     }
   },
   computed: {
@@ -131,6 +113,7 @@ Vue.component('sample-configs', function (resolve, reject) {
           check_distance: false,
           posture_threshold_z: 6,
           auto_lock: false,
+          hasRootPermission: false,
           lock_x: 150,
           lock_y: 970,
           timeout_unlock: 1000,
@@ -250,6 +233,7 @@ Vue.component('sample-configs', function (resolve, reject) {
       $app.registerFunction('saveBasicConfigs', this.saveConfigs)
       $app.registerFunction('gravitySensorChange', this.gravitySensorChange)
       $app.registerFunction('distanceSensorChange', this.distanceSensorChange)
+      $app.registerFunction('reloadBasicConfigs', this.loadConfigs)
     },
     template: '<div>\
       <van-divider content-position="left">锁屏相关</van-divider>\
@@ -290,7 +274,7 @@ Vue.component('sample-configs', function (resolve, reject) {
         <van-cell center title="自动锁屏" label="脚本执行完毕后自动锁定屏幕">\
           <van-switch v-model="configs.auto_lock" :size="switchSize" />\
         </van-cell>\
-        <template v-if="configs.auto_lock">\
+        <template v-if="configs.auto_lock && !configs.hasRootPermission">\
           <van-row>\
             <van-col :span="22" :offset="1">\
               <span :style="\'color: gray;font-size: \' + tipTextSize">自动锁屏功能默认仅支持MIUI12，其他系统需要自行扩展实现：extends/LockScreen.js</span>\
@@ -372,7 +356,7 @@ Vue.component('sample-configs', function (resolve, reject) {
         <van-field v-if="configs.async_waiting_capture" v-model="configs.capture_waiting_time" label="获取截图超时时间" label-width="8em" type="number" placeholder="请输入超时时间" input-align="right" >\
           <span slot="right-icon">毫秒</span>\
         </van-field>\
-        <van-cell center title="是否通话时暂停脚本" title-style="width: 10em;" label="需要授权AutoJS获取通话状态，Pro版暂时无法使用" title-style="flex:2;" >\
+        <van-cell center title="是否通话时暂停脚本" title-style="width: 10em;flex:2;" label="需要授权AutoJS获取通话状态，Pro版暂时无法使用" >\
           <van-switch v-model="configs.enable_call_state_control" :size="switchSize" />\
         </van-cell>\
         <van-field v-model="configs.timeout_findOne" label="查找控件超时时间" label-width="8em" type="number" placeholder="请输入超时时间" input-align="right">\
@@ -429,12 +413,137 @@ Vue.component('sample-configs', function (resolve, reject) {
   })
 })
 
+Vue.component('region-slider', function (resolve, reject) {
+  resolve({
+    props: ['device_height', 'device_width', 'max_height', 'max_width', 'value'],
+    model: {
+      prop: 'value',
+      event: 'region-change'
+    },
+    data: function () {
+      return {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      }
+    },
+    methods: {
+      stopTouchmove: function (e) {
+        e.stopPropagation()
+      },
+      resolveDetailInfo: function () {
+        if (/^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.test(this.value)) {
+          let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.value)
+          this.x = parseInt(match[1])
+          this.y = parseInt(match[2])
+          this.width = parseInt(match[3])
+          this.height = parseInt(match[4])
+        }
+      }
+    },
+    computed: {
+      regionText: function () {
+        return this.x + ',' + this.y + ',' + this.width + ',' + this.height
+      }
+    },
+    watch: {
+      regionText: function (v) {
+        this.$emit('region-change', v)
+      },
+      value: function (v) {
+        console.log('region text value changed: ' + v)
+        this.resolveDetailInfo()
+      }
+    },
+    mounted() {
+      this.resolveDetailInfo()
+    },
+    template: '<div style="padding: 1rem 2rem;" @touchmove="stopTouchmove">\
+      <van-row style="margin: 0.5rem 0">\
+        <van-col><span class="simple-span">区域数据: {{x}},{{y}},{{width}},{{height}}</span></van-col>\
+      </van-row>\
+      <van-row style="margin: 1.5rem 0 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="x" :min="0" :max="device_width" >\
+            <template #button>\
+              <div class="custom-slide-button">x:{{ x }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+      <van-row style="margin: 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="y" :min="0" :max="device_height" >\
+            <template #button>\
+              <div class="custom-slide-button">y:{{ y }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+      <van-row style="margin: 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="width" :min="0" :max="max_width||device_width" >\
+            <template #button>\
+              <div class="custom-slide-button">w:{{ width }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+      <van-row style="margin: 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="height" :min="0" :max="max_height||device_height" >\
+            <template #button>\
+              <div class="custom-slide-button">h:{{ height }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+    </div>'
+  })
+})
+
+Vue.component('region-input-field', function (resolve, reject) {
+  resolve({
+    props: ['value', 'label', 'labelWidth', "deviceWidth", "deviceHeight", "errorMessage", ],
+    model: {
+      prop: 'value',
+      event: 'change'
+    },
+    data: function () {
+      return {
+        innerValue: this.value,
+        showRegionSlider: false,
+      }
+    },
+    watch: {
+      innerValue: function (v) {
+        this.$emit('change', v)
+      },
+      value: function (v) {
+        this.innerValue = v
+      }
+    },
+    template: '<div>\
+      <van-swipe-cell stop-propagation>\
+        <van-field :error-message="errorMessage" error-message-align="right" v-model="innerValue" :label="label" :label-width="labelWidth" type="text" placeholder="请输入校验区域" input-align="right" />\
+        <template #right>\
+          <van-button square type="primary" text="滑动输入" @click="showRegionSlider=true" />\
+        </template>\
+      </van-swipe-cell>\
+      <van-popup v-model="showRegionSlider" position="bottom" :style="{ height: \'30%\' }">\
+        <region-slider :device_width="deviceWidth" :device_height="deviceHeight" v-model="innerValue"/>\
+      </van-popup>\
+    </div>'
+  })
+})
 
 Vue.component('advance-configs', function (resolve, reject) {
   resolve({
     mixins: [mixin_common],
     data: function () {
       return {
+        mounted: false,
         hough_config: false,
         ocr_invoke_count: '',
         showTargetWateringAmount: false,
@@ -445,27 +554,27 @@ Vue.component('advance-configs', function (resolve, reject) {
         newBlack: '',
         configs: {
           // 排行榜校验区域
-          rank_check_left: 250,
-          rank_check_top: 250,
-          rank_check_width: 550,
-          rank_check_height: 130,
+          rank_check_left: null,
+          rank_check_top: null,
+          rank_check_width: null,
+          rank_check_height: null,
           // 能量球所在范围
           auto_detect_tree_collect_region: true,
-          tree_collect_left: 150,
-          tree_collect_top: 550,
-          tree_collect_width: 800,
-          tree_collect_height: 350,
+          tree_collect_left: null,
+          tree_collect_top: null,
+          tree_collect_width: null,
+          tree_collect_height: null,
           // 底部校验区域
-          bottom_check_left: 600,
-          bottom_check_top: 2045,
-          bottom_check_width: 30,
+          bottom_check_left: 200,
+          bottom_check_top: 200,
+          bottom_check_width: 20,
           bottom_check_height: 20,
           bottom_check_gray_color: '#999999',
           // 逛一逛按钮区域
-          stroll_button_left: 0,
-          stroll_button_top: 0,
-          stroll_button_width: 0,
-          stroll_button_height: 0,
+          stroll_button_left: null,
+          stroll_button_top: null,
+          stroll_button_width: null,
+          stroll_button_height: null,
           single_script: false,
           collect_self_only: false,
           not_collect_self: false,
@@ -475,33 +584,38 @@ Vue.component('advance-configs', function (resolve, reject) {
           limit_runnable_time_range: true,
           use_double_click_card: false,
           useCustomScrollDown: true,
-          scrollDownSpeed: 200,
-          bottomHeight: 200,
+          scrollDownSpeed: null,
+          bottomHeight: null,
           wateringBack: true,
-          wateringThreshold: 40,
-          targetWateringAmount: 10,
+          wateringThreshold: null,
+          targetWateringAmount: null,
           wateringBlackList: [],
           useOcr: false,
           useTesseracOcr: true,
-          ocrThreshold: 2600,
+          ocrThreshold: null,
           autoSetThreshold: true,
           saveBase64ImgInfo: false,
           apiKey: '',
           secretKey: '',
           try_collect_by_multi_touch: false,
           direct_use_img_collect_and_help: true,
-          hough_param1: 30,
-          hough_param2: 30,
+          hough_param1: null,
+          hough_param2: null,
           hough_min_radius: null,
           hough_max_radius: null,
           hough_min_dst: null,
           stroll_button_region: '',
           rank_check_region: '',
           bottom_check_region: '',
+          tree_collect_region: '',
           base_on_image: true,
           checkBottomBaseImg: true,
-          friendListScrollTime: 0,
-          white_list: ['1','2','3']
+          friendListScrollTime: null,
+          white_list: ['1', '2', '3'],
+          thread_pool_size: '',
+          thread_pool_max_size: '',
+          thread_pool_queue_size: '',
+          thread_pool_waiting_time: '',
         },
         validations: {
           stroll_button_region: {
@@ -516,6 +630,10 @@ Vue.component('advance-configs', function (resolve, reject) {
             validate: v => /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.test(v),
             message: () => '区域格式不正确'
           },
+          tree_collect_region: {
+            validate: v => /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.test(v),
+            message: () => '区域格式不正确'
+          },
           bottom_check_gray_color: {
             validate: (v) => /^#[\dabcdef]{6}$/i.test(v),
             message: () => '颜色值格式不正确'
@@ -524,11 +642,30 @@ Vue.component('advance-configs', function (resolve, reject) {
       }
     },
     methods: {
+      loadConfigs: function () {
+        // 浏览器测试时使用
+        this.configs.stroll_button_region = this.configs.stroll_button_left + ',' + this.configs.stroll_button_top + ',' + this.configs.stroll_button_width + ',' + this.configs.stroll_button_height
+        this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
+        this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
+        this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
+        
+        $app.invoke('loadConfigs', {}, config => {
+          Object.keys(this.configs).forEach(key => {
+            console.log('child load config key:[' + key + '] value: [' + config[key] + ']')
+            this.$set(this.configs, key, config[key])
+          })
+          this.configs.stroll_button_region = this.configs.stroll_button_left + ',' + this.configs.stroll_button_top + ',' + this.configs.stroll_button_width + ',' + this.configs.stroll_button_height
+          this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
+          this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
+          this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
+          this.mounted = true
+        })
+      },
       isNotEmpty: function (v) {
         return !(typeof v === 'undefined' || v === null || v === '')
       },
       saveConfigs: function () {
-        this.doSaveConfigs(['stroll_button_region', 'rank_check_region', 'bottom_check_region'])
+        this.doSaveConfigs(['stroll_button_region', 'rank_check_region', 'bottom_check_region', 'tree_collect_region'])
       },
       updateOcrInvokeCount: function (data) {
         this.ocr_invoke_count = data
@@ -574,6 +711,9 @@ Vue.component('advance-configs', function (resolve, reject) {
           this.configs.wateringBlackList.push(this.newBlack)
         }
       },
+      showRealVisual: function () {
+        $app.invoke('showRealtimeVisualConfig', {})
+      }
     },
     computed: {
       strollButtonRegion: function () {
@@ -584,12 +724,39 @@ Vue.component('advance-configs', function (resolve, reject) {
       },
       bottomCheckRegion: function () {
         return this.configs.bottom_check_region
+      },
+      treeCollectRegion: function () {
+        return this.configs.tree_collect_region
+      },
+      visualConfigs: function () {
+        return {
+          // 排行榜校验区域
+          rank_check_left: this.configs.rank_check_left,
+          rank_check_top: this.configs.rank_check_top,
+          rank_check_width: this.configs.rank_check_width,
+          rank_check_height: this.configs.rank_check_height,
+          // 能量球所在范围
+          tree_collect_left: this.configs.tree_collect_left,
+          tree_collect_top: this.configs.tree_collect_top,
+          tree_collect_width: this.configs.tree_collect_width,
+          tree_collect_height: this.configs.tree_collect_height,
+          // 底部校验区域
+          bottom_check_left: this.configs.bottom_check_left,
+          bottom_check_top: this.configs.bottom_check_top,
+          bottom_check_width: this.configs.bottom_check_width,
+          bottom_check_height: this.configs.bottom_check_height,
+          // 逛一逛按钮区域
+          stroll_button_left: this.configs.stroll_button_left,
+          stroll_button_top: this.configs.stroll_button_top,
+          stroll_button_width: this.configs.stroll_button_width,
+          stroll_button_height: this.configs.stroll_button_height,
+        }
       }
     },
     watch: {
       strollButtonRegion: function () {
-        if (this.validations.stroll_button_region.validate(this.strollButtonRegion)) {
-          let match = /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.exec(this.strollButtonRegion)
+        if (this.mounted && this.validations.stroll_button_region.validate(this.strollButtonRegion)) {
+          let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.strollButtonRegion)
           this.configs.stroll_button_left = parseInt(match[1])
           this.configs.stroll_button_top = parseInt(match[2])
           this.configs.stroll_button_width = parseInt(match[3])
@@ -597,8 +764,8 @@ Vue.component('advance-configs', function (resolve, reject) {
         }
       },
       rankCheckRegion: function () {
-        if (this.validations.rank_button_region.validate(this.rankCheckRegion)) {
-          let match = /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.exec(this.rankCheckRegion)
+        if (this.mounted && this.validations.rank_check_region.validate(this.rankCheckRegion)) {
+          let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.rankCheckRegion)
           this.configs.rank_check_left = parseInt(match[1])
           this.configs.rank_check_top = parseInt(match[2])
           this.configs.rank_check_width = parseInt(match[3])
@@ -606,28 +773,38 @@ Vue.component('advance-configs', function (resolve, reject) {
         }
       },
       bottomCheckRegion: function () {
-        if (this.validations.bottom_button_region.validate(this.bottomCheckRegion)) {
-          let match = /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.exec(this.bottomCheckRegion)
+        if (this.mounted && this.validations.bottom_check_region.validate(this.bottomCheckRegion)) {
+          let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.bottomCheckRegion)
           this.configs.bottom_check_left = parseInt(match[1])
           this.configs.bottom_check_top = parseInt(match[2])
           this.configs.bottom_check_width = parseInt(match[3])
           this.configs.bottom_check_height = parseInt(match[4])
         }
-      }
-    },
-    watch: {
-      configs: {
+      },
+      treeCollectRegion: function () {
+        if (this.mounted && this.validations.tree_collect_region.validate(this.treeCollectRegion)) {
+          let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.treeCollectRegion)
+          this.configs.tree_collect_left = parseInt(match[1])
+          this.configs.tree_collect_top = parseInt(match[2])
+          this.configs.tree_collect_width = parseInt(match[3])
+          this.configs.tree_collect_height = parseInt(match[4])
+        }
+      },
+      // 变更区域信息，用于实时展示
+      visualConfigs: {
         handler: function (v) {
-          this.configs.stroll_button_region = this.configs.stroll_button_left + ',' + this.configs.stroll_button_top + ',' + this.configs.stroll_button_width + ',' + this.configs.stroll_button_height
-          this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
-          this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
+          console.log('区域信息变更 触发消息')
+          $app.invoke('saveConfigs', v)
         },
         deep: true
       }
     },
     mounted () {
       $app.registerFunction('saveAdvanceConfigs', this.saveConfigs)
-      $app.registerFunction('ocr_invoke_count', this.updateOcrInvokeCount)},
+      $app.registerFunction('ocr_invoke_count', this.updateOcrInvokeCount)
+      $app.registerFunction('reloadAdvanceConfigs', this.loadConfigs)
+      // this.loadConfigs()
+    },
     template: '<div>\
       <van-cell-group>\
         <van-row>\
@@ -657,8 +834,11 @@ Vue.component('advance-configs', function (resolve, reject) {
           <van-switch v-model="configs.try_collect_by_stroll" :size="switchSize" />\
         </van-cell>\
         <template v-if="configs.try_collect_by_stroll">\
-          <van-field v-if="!configs.stroll_button_regenerate" :error-message="validationError.stroll_button_region" error-message-align="right" v-model="configs.stroll_button_region" label="逛一逛按钮区域" label-width="10em" type="text" placeholder="请输入校验区域" input-align="right" />\
-          <van-field readonly="true" v-else value="下次运行时重新识别" label="逛一逛按钮区域" label-width="10em" type="text" input-align="right" />\
+          <region-input-field v-if="!configs.stroll_button_regenerate"\
+            :device-height="device.height" :device-width="device.width"\
+            :error-message="validationError.stroll_button_region"\
+            v-model="configs.stroll_button_region" label="逛一逛按钮区域" label-width="10em" />\
+          <van-field :readonly="true" v-else value="下次运行时重新识别" label="逛一逛按钮区域" label-width="10em" type="text" input-align="right" />\
           <van-cell center title="下次运行时重新识别">\
             <van-switch v-model="configs.stroll_button_regenerate" :size="switchSize" />\
           </van-cell>\
@@ -671,11 +851,24 @@ Vue.component('advance-configs', function (resolve, reject) {
           <van-field v-model="configs.bottomHeight" label="模拟底部起始高度" label-width="8em" type="number" input-align="right" />\
         </template>\
       </van-cell-group>\
-      <van-divider content-position="left">图像分析相关</van-divider>\
+      <van-divider content-position="left">\
+        图像分析相关\
+        <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="showRealVisual">实时查看区域配置</van-button>\
+      </van-divider>\
       <van-cell-group>\
         <van-cell center title="是否通过图像分析收取">\
           <van-switch v-model="configs.direct_use_img_collect_and_help" :size="switchSize" />\
         </van-cell>\
+        <template v-if="configs.direct_use_img_collect_and_help">\
+          <region-input-field v-if="!configs.auto_detect_tree_collect_region"\
+            :device-height="device.height" :device-width="device.width"\
+            :error-message="validationError.tree_collect_region"\
+            v-model="configs.tree_collect_region" label="能量球所在区域" label-width="10em" />\
+          <van-field :readonly="true" v-else value="下次运行时重新识别" label="能量球所在区域" label-width="10em" type="text" input-align="right" />\
+          <van-cell center title="下次运行时重新识别">\
+            <van-switch v-model="configs.auto_detect_tree_collect_region" :size="switchSize" />\
+          </van-cell>\
+        </template>\
         <template v-if="configs.direct_use_img_collect_and_help">\
           <van-cell center title="霍夫变换进阶配置" label="如非必要请不要随意修改">\
             <van-switch v-model="hough_config" :size="switchSize" />\
@@ -687,17 +880,23 @@ Vue.component('advance-configs', function (resolve, reject) {
             <van-field v-model="configs.hough_max_radius" label="最大球半径" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
             <van-field v-model="configs.hough_min_dst" label="球心最小距离" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
           </template>\
-        </tempalte>\
+        </template>\
         <van-cell center title="基于图像分析列表">\
           <van-switch v-model="configs.base_on_image" :size="switchSize" />\
         </van-cell>\
         <template v-if="configs.base_on_image">\
-          <van-field :error-message="validationError.rank_check_region" error-message-align="right" v-model="configs.rank_check_region" label="排行榜校验区域" label-width="10em" type="text" placeholder="请输入校验区域" input-align="right" />\
+          <region-input-field\
+              :device-height="device.height" :device-width="device.width"\
+              :error-message="validationError.rank_check_region"\
+              v-model="configs.rank_check_region" label="排行榜校验区域" label-width="10em" />\
           <van-cell center title="基于图像判断列表底部">\
             <van-switch v-model="configs.checkBottomBaseImg" :size="switchSize" />\
           </van-cell>\
           <template v-if="configs.checkBottomBaseImg">\
-            <van-field :error-message="validationError.bottom_check_region" error-message-align="right" v-model="configs.bottom_check_region" label="底部校验区域" label-width="10em" type="text" placeholder="请输入校验区域" input-align="right" />\
+            <region-input-field\
+              :device-height="device.height" :device-width="device.width"\
+              :error-message="validationError.bottom_check_region"\
+              v-model="configs.bottom_check_region" label="底部校验区域" label-width="10em" />\
             <van-field label="底部判断的灰度颜色值" label-width="10em" input-align="right" :error-message="validationError.bottom_check_gray_color" error-message-align="right">\
               <input slot="input" v-model="configs.bottom_check_gray_color" type="text" placeholder="可收取颜色值 #FFFFFF"  class="van-field__control van-field__control--right" :style="configs.bottom_check_gray_color | styleTextColor" />\
             </van-field>\
@@ -717,7 +916,7 @@ Vue.component('advance-configs', function (resolve, reject) {
           </van-row>\
           <van-field v-model="configs.thread_pool_size" label="线程池大小" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
           <van-field v-model="configs.thread_pool_max_size" label="线程池最大大小" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
-          <van-field v-model="configs.thread_pool_queue_size" label="线程池等待队列大小" label-width="8em" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
+          <van-field v-model="configs.thread_pool_queue_size" label="线程池等待队列大小" label-width="10em" placeholder="留空使用默认配置" type="number" input-align="right" />\
           <van-field v-model="configs.thread_pool_waiting_time" label="线程池等待时间" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" >\
             <span slot="right-icon">秒</span>\
           </van-field>\
@@ -732,7 +931,7 @@ Vue.component('advance-configs', function (resolve, reject) {
               <span :style="\'color: gray;font-size: \' + tipTextSize">{{ocr_invoke_count}}</span>\
             </van-col>\
           </van-row>\
-          <van-cell center title="是否启用自建OCR服务器识别倒计时" label="服务器到期时间2020-12-12" title-style="flex:2;">\
+          <van-cell center title="是否启用自建OCR服务器识别倒计时" label="服务器到期时间2021-12-09" title-style="flex:2;">\
             <van-switch v-model="configs.useTesseracOcr" :size="switchSize" />\
           </van-cell>\
           <van-cell v-if="!configs.useTesseracOcr" center title="是否启用百度OCR倒计时">\
@@ -755,7 +954,7 @@ Vue.component('advance-configs', function (resolve, reject) {
       </van-divider>\
       <van-cell-group>\
         <div style="max-height:10rem;overflow:scroll;padding:1rem;background:#f1f1f1;">\
-        <van-swipe-cell v-for="(white,idx) in configs.white_list">\
+        <van-swipe-cell v-for="(white,idx) in configs.white_list" :key="white" stop-propagation>\
           <van-cell :title="white" />\
           <template #right>\
             <van-button square type="danger" text="删除" @click="deleteWhite(idx)" />\
@@ -780,7 +979,7 @@ Vue.component('advance-configs', function (resolve, reject) {
           </van-divider>\
           <van-cell-group>\
             <div style="max-height:10rem;overflow:scroll;padding:1rem;background:#f1f1f1;">\
-            <van-swipe-cell v-for="(black,idx) in configs.wateringBlackList">\
+            <van-swipe-cell v-for="(black,idx) in configs.wateringBlackList" :key="black" stop-propagation>\
               <van-cell :title="black" />\
               <template #right>\
                 <van-button square type="danger" text="删除" @click="deleteWaterBlack(idx)" />\
@@ -835,7 +1034,7 @@ Vue.component('widget-configs', function (resolve, reject) {
       loadConfigs: function () {
         $app.invoke('loadConfigs', {}, config => {
           Object.keys(this.configs).forEach(key => {
-            console.log('load config key:[' + key + '] value: [' + config[key] + ']')
+            // console.log('load config key:[' + key + '] value: [' + config[key] + ']')
             this.$set(this.configs, key, config[key])
           })
         })
@@ -845,6 +1044,9 @@ Vue.component('widget-configs', function (resolve, reject) {
       },
       saveConfigs: function () {
         this.doSaveConfigs()
+      },
+      resetDefaultConfigs: function () {
+        $app.invoke('resetConfigs')
       }
     },
     computed: {
@@ -854,6 +1056,7 @@ Vue.component('widget-configs', function (resolve, reject) {
     },
     mounted () {
       $app.registerFunction('saveWidgetConfigs', this.saveConfigs)
+      $app.registerFunction('reloadWidgetConfigs', this.loadConfigs)
     },
     template: '<div>\
       <van-row>\
@@ -880,6 +1083,9 @@ Vue.component('widget-configs', function (resolve, reject) {
       <van-field label="列表中可帮助的颜色" label-width="10em" input-align="right" :error-message="validationError.can_help_color" error-message-align="right">\
         <input slot="input" v-model="configs.can_help_color" type="text" placeholder="可收取颜色值 #FFFFFF"  class="van-field__control van-field__control--right" :style="configs.can_help_color | styleTextColor" />\
       </van-field>\
+      <van-row type="flex" justify="center" style="margin: 2rem;">\
+        <van-col ><van-button @click="resetDefaultConfigs">重置所有配置为默认值</van-button></van-col>\
+      </van-row>\
     </div>'
   })
 })

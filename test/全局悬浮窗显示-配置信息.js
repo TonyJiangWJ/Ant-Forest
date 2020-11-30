@@ -18,7 +18,7 @@ let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire
 let { config } = require('../config.js')(runtime, this)
 let fileUtils = sRequire('FileUtils')
 let commonFunction = sRequire('CommonFunction')
-commonFunction.autoSetUpBangOffset()
+commonFunction.autoSetUpBangOffset(true)
 let offset = config.bang_offset
 
 var window = floaty.rawWindow(
