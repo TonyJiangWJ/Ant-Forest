@@ -2,10 +2,31 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-30 23:24:54
+ * @Last Modified time: 2020-12-02 23:49:47
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
+
+let mixin_methods = {
+  data: function () {
+    return {
+      container: '.root-container'
+    }
+  },
+  methods: {
+    stopTouchmove: function (e) {
+      e.stopPropagation()
+    },
+    isNotEmpty: function (v) {
+      return !(typeof v === 'undefined' || v === null || v === '')
+    },
+    getContainer: function () {
+      return document.querySelector(this.container)
+    }
+  }
+}
+
 let mixin_common = {
+  mixins: [mixin_methods],
   data: function () {
     return {
       switchSize: '1.24rem',
@@ -26,9 +47,6 @@ let mixin_common = {
         this.device.width = config.device_width
         this.device.height = config.device_height
       })
-    },
-    isNotEmpty: function (v) {
-      return !(typeof v === 'undefined' || v === null || v === '')
     },
     doSaveConfigs: function (deleteFields) {
       console.log('执行保存配置')
@@ -179,7 +197,7 @@ Vue.component('sample-configs', function (resolve, reject) {
     },
     methods: {
       saveConfigs: function () {
-        console.log('执行保存配置')
+        console.log('save basic configs')
         if (this.configs.min_floaty_color && this.computedFloatyTextColor === '') {
           this.configs.min_floaty_color = ''
         }
@@ -415,6 +433,7 @@ Vue.component('sample-configs', function (resolve, reject) {
 
 Vue.component('region-slider', function (resolve, reject) {
   resolve({
+    mixins: [mixin_methods],
     props: ['device_height', 'device_width', 'max_height', 'max_width', 'value'],
     model: {
       prop: 'value',
@@ -429,9 +448,6 @@ Vue.component('region-slider', function (resolve, reject) {
       }
     },
     methods: {
-      stopTouchmove: function (e) {
-        e.stopPropagation()
-      },
       resolveDetailInfo: function () {
         if (/^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.test(this.value)) {
           let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.value)
@@ -456,10 +472,10 @@ Vue.component('region-slider', function (resolve, reject) {
         this.resolveDetailInfo()
       }
     },
-    mounted() {
+    mounted () {
       this.resolveDetailInfo()
     },
-    template: '<div style="padding: 1rem 2rem;" @touchmove="stopTouchmove">\
+    template: '<div style="padding: 1rem 2rem;">\
       <van-row style="margin: 0.5rem 0">\
         <van-col><span class="simple-span">区域数据: {{x}},{{y}},{{width}},{{height}}</span></van-col>\
       </van-row>\
@@ -505,7 +521,8 @@ Vue.component('region-slider', function (resolve, reject) {
 
 Vue.component('region-input-field', function (resolve, reject) {
   resolve({
-    props: ['value', 'label', 'labelWidth', "deviceWidth", "deviceHeight", "errorMessage", ],
+    mixins: [mixin_methods],
+    props: ['value', 'label', 'labelWidth', "deviceWidth", "deviceHeight", "errorMessage",],
     model: {
       prop: 'value',
       event: 'change'
@@ -531,8 +548,98 @@ Vue.component('region-input-field', function (resolve, reject) {
           <van-button square type="primary" text="滑动输入" @click="showRegionSlider=true" />\
         </template>\
       </van-swipe-cell>\
-      <van-popup v-model="showRegionSlider" position="bottom" :style="{ height: \'30%\' }">\
+      <van-popup v-model="showRegionSlider" position="bottom" :style="{ height: \'30%\' }" :get-container="getContainer">\
         <region-slider :device_width="deviceWidth" :device_height="deviceHeight" v-model="innerValue"/>\
+      </van-popup>\
+    </div>'
+  })
+})
+
+Vue.component('installed-package-selector', function (resolve, reject) {
+  resolve({
+    mixins: [mixin_methods],
+    props: {
+      addedPackageNames: {
+        type: Array,
+        default: () => []
+      }
+    },
+    data () {
+      return {
+        installedPackages: [{ packageName: 'com.tony.test', appName: 'testApp' }],
+        showPackageSelect: false,
+        onLoading: true,
+        canReadPackage: false,
+        readPackages: null
+      }
+    },
+    methods: {
+      doLoadInstalledPackages: function () {
+        if (this.canReadPackage && this.readPackages !== null) {
+          console.log('added pacakges: ' + JSON.stringify(this.addedPackageNames))
+          console.log('all pacakges: ' + JSON.stringify(this.readPackages))
+          this.installedPackages = this.readPackages.filter(v => this.addedPackageNames.indexOf(v.packageName) < 0)
+        } else {
+          this.installedPackages = []
+        }
+        this.onLoading = false
+      },
+      loadInstalledPackages: function () {
+        this.showPackageSelect = true
+        this.onLoading = true
+        let self = this
+        if (self.readPackages === null) {
+          // 延迟加载 避免卡顿
+          setTimeout(function () {
+            $app.invoke('loadInstalledPackages', {}, data => {
+              if (data && data.length > 0) {
+                self.readPackages = data.sort((a, b) => {
+                  if (String.prototype.localeCompare) {
+                    return a.appName.localeCompare(b.appName)
+                  } else {
+                    if (a.appName > b.appName) {
+                      return 1
+                    } else if (a.appName === b.appName) {
+                      return 0
+                    } else {
+                      return -1
+                    }
+                  }
+                })
+                self.canReadPackage = true
+              } else {
+                self.canReadPackage = false
+              }
+              self.doLoadInstalledPackages()
+            })
+          }, 350)
+        } else {
+          setTimeout(function () {
+            self.doLoadInstalledPackages()
+          }, 350)
+        }
+      },
+      selectPackage: function (package) {
+        this.$emit('value-change', package)
+        this.showPackageSelect = false
+      }
+    },
+    template: '<div>\
+      <van-row type="flex" justify="center">\
+        <van-col>\
+          新增应用白名单\
+          <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadInstalledPackages">从已安装的列表中选择</van-button>\
+        </van-col>\
+      </van-row>\
+      <van-popup v-model="showPackageSelect" position="bottom" :style="{ height: \'60%\' }" :get-container="getContainer">\
+        <van-row v-if="onLoading || !installedPackages || installedPackages.length === 0" type="flex" justify="center" style="margin-top: 12rem;">\
+          <van-col v-if="onLoading"><van-loading size="3rem" /></van-col>\
+          <template v-if="!installedPackages || installedPackages.length === 0">\
+            <van-col :span="22" v-if="!canReadPackage">无法读取应用列表，请确认是否给与了AutoJS读取应用列表的权限</van-col>\
+            <van-col :span="22" v-else>已安装应用已经全部加入到白名单中了，你可真行</van-col>\
+          </template>\
+        </van-row>\
+        <van-cell v-if="!onLoading" v-for="package in installedPackages" :key="package.packageName" :title="package.appName" :label="package.packageName" @click="selectPackage(package)"></van-cell>\
       </van-popup>\
     </div>'
   })
@@ -550,8 +657,11 @@ Vue.component('advance-configs', function (resolve, reject) {
         wateringAmountColumns: [10, 18, 33, 66],
         showAddWhiteDialog: false,
         showAddWateringBlackDialog: false,
+        showAddSkipRunningDialog: false,
         newWhite: '',
         newBlack: '',
+        newSkipRunningPackage: '',
+        newSkipRunningAppName: '',
         configs: {
           // 排行榜校验区域
           rank_check_left: null,
@@ -616,6 +726,7 @@ Vue.component('advance-configs', function (resolve, reject) {
           thread_pool_max_size: '',
           thread_pool_queue_size: '',
           thread_pool_waiting_time: '',
+          skip_running_packages: [{ packageName: 'com.tony.test', appName: 'test' }, { packageName: 'com.tony.test2', appName: 'test2' }]
         },
         validations: {
           stroll_button_region: {
@@ -648,7 +759,7 @@ Vue.component('advance-configs', function (resolve, reject) {
         this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
         this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
         this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
-        
+
         $app.invoke('loadConfigs', {}, config => {
           Object.keys(this.configs).forEach(key => {
             console.log('child load config key:[' + key + '] value: [' + config[key] + ']')
@@ -658,6 +769,11 @@ Vue.component('advance-configs', function (resolve, reject) {
           this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
           this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
           this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
+          if (this.configs.skip_running_packages && this.configs.skip_running_packages.length > 0) {
+            if (!this.configs.skip_running_packages[0].packageName) {
+              this.configs.skip_running_packages = []
+            }
+          }
           this.mounted = true
         })
       },
@@ -665,24 +781,11 @@ Vue.component('advance-configs', function (resolve, reject) {
         return !(typeof v === 'undefined' || v === null || v === '')
       },
       saveConfigs: function () {
+        console.log('save advnace configs')
         this.doSaveConfigs(['stroll_button_region', 'rank_check_region', 'bottom_check_region', 'tree_collect_region'])
       },
       updateOcrInvokeCount: function (data) {
         this.ocr_invoke_count = data
-      },
-      deleteWhite: function (idx) {
-        this.$dialog.confirm({
-          message: '确认要删除' + this.configs.white_list[idx] + '吗？'
-        }).then(() => {
-          this.configs.white_list.splice(idx, 1)
-        }).catch(() => { })
-      },
-      deleteWaterBlack: function (idx) {
-        this.$dialog.confirm({
-          message: '确认要删除' + this.configs.wateringBlackList[idx] + '吗？'
-        }).then(() => {
-          this.configs.wateringBlackList.splice(idx, 1)
-        }).catch(() => { })
       },
       selectedTargetAmount: function (val) {
         console.log(val)
@@ -702,6 +805,13 @@ Vue.component('advance-configs', function (resolve, reject) {
           this.configs.white_list.push(this.newWhite)
         }
       },
+      deleteWhite: function (idx) {
+        this.$dialog.confirm({
+          message: '确认要删除' + this.configs.white_list[idx] + '吗？'
+        }).then(() => {
+          this.configs.white_list.splice(idx, 1)
+        }).catch(() => { })
+      },
       addBlack: function () {
         this.newBlack = ''
         this.showAddWateringBlackDialog = true
@@ -711,8 +821,44 @@ Vue.component('advance-configs', function (resolve, reject) {
           this.configs.wateringBlackList.push(this.newBlack)
         }
       },
+      deleteWaterBlack: function (idx) {
+        this.$dialog.confirm({
+          message: '确认要删除' + this.configs.wateringBlackList[idx] + '吗？'
+        }).then(() => {
+          this.configs.wateringBlackList.splice(idx, 1)
+        }).catch(() => { })
+      },
+      addSkipPackage: function () {
+        this.newSkipRunningPackage = ''
+        this.newSkipRunningAppName = ''
+        this.showAddSkipRunningDialog = true
+      },
+      doAddSkipPackage: function () {
+        if (!this.isNotEmpty(this.newSkipRunningAppName)) {
+          vant.Toast('请输入应用名称')
+          return
+        }
+        if (!this.isNotEmpty(this.newSkipRunningPackage)) {
+          vant.Toast('请输入应用包名')
+          return
+        }
+        if (this.addedSkipPackageNames.indexOf(this.newSkipRunningPackage) < 0) {
+          this.configs.skip_running_packages.push({ packageName: this.newSkipRunningPackage, appName: this.newSkipRunningAppName })
+        }
+      },
+      deleteSkipPackage: function (idx) {
+        this.$dialog.confirm({
+          message: '确认要删除' + this.configs.skip_running_packages[idx].packageName + '吗？'
+        }).then(() => {
+          this.configs.skip_running_packages.splice(idx, 1)
+        }).catch(() => { })
+      },
       showRealVisual: function () {
         $app.invoke('showRealtimeVisualConfig', {})
+      },
+      handlePackageChange: function (payload) {
+        this.newSkipRunningAppName = payload.appName
+        this.newSkipRunningPackage = payload.packageName
       }
     },
     computed: {
@@ -751,6 +897,9 @@ Vue.component('advance-configs', function (resolve, reject) {
           stroll_button_width: this.configs.stroll_button_width,
           stroll_button_height: this.configs.stroll_button_height,
         }
+      },
+      addedSkipPackageNames: function () {
+        return this.configs.skip_running_packages.map(v => v.packageName)
       }
     },
     watch: {
@@ -989,11 +1138,32 @@ Vue.component('advance-configs', function (resolve, reject) {
           </van-cell-group>\
         </template>\
       </van-cell-group>\
-      <van-dialog v-model="showAddWhiteDialog" title="增加白名单" show-cancel-button @confirm="doAddWhite">\
+      <van-divider content-position="left">\
+        前台应用白名单设置\
+        <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addSkipPackage">增加</van-button>\
+      </van-divider>\
+      <van-cell-group>\
+        <div style="max-height:10rem;overflow:scroll;padding:1rem;background:#f1f1f1;">\
+        <van-swipe-cell v-for="(skip,idx) in configs.skip_running_packages" :key="skip.packageName" stop-propagation>\
+          <van-cell :title="skip.appName" :label="skip.packageName" />\
+          <template #right>\
+            <van-button square type="danger" text="删除" @click="deleteSkipPackage(idx)" style="height: 100%"/>\
+          </template>\
+        </van-swipe-cell>\
+        </div>\
+      </van-cell-group>\
+      <van-dialog v-model="showAddWhiteDialog" title="增加白名单" show-cancel-button @confirm="doAddWhite" :get-container="getContainer">\
         <van-field v-model="newWhite" placeholder="请输入好友昵称" label="好友昵称" />\
       </van-dialog>\
-      <van-dialog v-model="showAddWateringBlackDialog" title="增加浇水黑名单" show-cancel-button @confirm="doAddBlack">\
+      <van-dialog v-model="showAddWateringBlackDialog" title="增加浇水黑名单" show-cancel-button @confirm="doAddBlack" :get-container="getContainer">\
         <van-field v-model="newBlack" placeholder="请输入好友昵称" label="好友昵称" />\
+      </van-dialog>\
+      <van-dialog v-model="showAddSkipRunningDialog" show-cancel-button @confirm="doAddSkipPackage" :get-container="getContainer">\
+        <template #title>\
+          <installed-package-selector @value-change="handlePackageChange" :added-package-names="addedSkipPackageNames"/>\
+        </template>\
+        <van-field v-model="newSkipRunningAppName" placeholder="请输入应用名称" label="应用名称" />\
+        <van-field v-model="newSkipRunningPackage" placeholder="请输入应用包名" label="应用包名" />\
       </van-dialog>\
     </div>'
   })
@@ -1039,20 +1209,10 @@ Vue.component('widget-configs', function (resolve, reject) {
           })
         })
       },
-      isNotEmpty: function (v) {
-        return !(typeof v === 'undefined' || v === null || v === '')
-      },
       saveConfigs: function () {
+        console.log('save widget configs')
         this.doSaveConfigs()
-      },
-      resetDefaultConfigs: function () {
-        $app.invoke('resetConfigs')
       }
-    },
-    computed: {
-    },
-    filters: {
-
     },
     mounted () {
       $app.registerFunction('saveWidgetConfigs', this.saveConfigs)
@@ -1083,9 +1243,6 @@ Vue.component('widget-configs', function (resolve, reject) {
       <van-field label="列表中可帮助的颜色" label-width="10em" input-align="right" :error-message="validationError.can_help_color" error-message-align="right">\
         <input slot="input" v-model="configs.can_help_color" type="text" placeholder="可收取颜色值 #FFFFFF"  class="van-field__control van-field__control--right" :style="configs.can_help_color | styleTextColor" />\
       </van-field>\
-      <van-row type="flex" justify="center" style="margin: 2rem;">\
-        <van-col ><van-button @click="resetDefaultConfigs">重置所有配置为默认值</van-button></van-col>\
-      </van-row>\
     </div>'
   })
 })

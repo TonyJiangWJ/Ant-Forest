@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-30 23:43:09
+ * @Last Modified time: 2020-12-03 00:04:51
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -173,6 +173,8 @@ let default_config = {
   auto_set_bang_offset: true,
   bang_offset: 0,
   limit_runnable_time_range: true,
+  // 当以下包正在前台运行时，延迟执行
+  skip_running_packages: [],
   // 更新后需要强制执行的标记v1.3.2.5
   updated_temp_flag_1325: true,
   updated_temp_flag_1326: true,
@@ -263,6 +265,11 @@ if (!isRunningMode) {
     }
     return scope.config_instance
   }
+} else {
+  toastLog('可视化配置工具已经迁移，下次请直接运行`可视化配置.js`, 三秒后将自动启动')
+  setTimeout(function () {
+    engines.execScriptFile(files.cwd() + "/可视化配置.js", { path: files.cwd() })
+  }, 3000)
 }
 
 /**
