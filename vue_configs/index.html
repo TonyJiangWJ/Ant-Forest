@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:17:06
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-30 23:28:45
+ * @Last Modified time: 2020-12-03 00:00:18
  * @Description: 
 -->
 <!DOCTYPE html>
@@ -14,15 +14,15 @@
   <meta name=viewport content="width=device-width,initial-scale=1">
   <title>配置工具</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@2.10/lib/index.css" />
-  <script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script>
-  <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vant@2.10/lib/vant.min.js"></script>
 </head>
 
 <body>
   <noscript><strong>We're sorry but this doesn't work properly without JavaScript enabled. Please enable
       it to continue.</strong></noscript>
-  <div id=app>
+  <div id=app class="root-container" v-cloak :style="'min-height:' + clientHeight + 'px'">
     <van-tabs v-model="activeTab" sticky swipeable>
       <van-tab title="基础设置">
         <sample-configs />
@@ -30,16 +30,46 @@
       <van-tab title="进阶设置">
         <advance-configs />
       </van-tab>
-      <van-tab title="控件文本设置">
+      <van-tab>
+        <template #title>
+          控件文本设置
+          <van-icon name="more-o" @click="clickedMenu" class="menu-reference" />
+        </template>
         <widget-configs />
       </van-tab>
     </van-tabs>
+    <van-dialog v-model="showMenuDialog" v-cloak title="菜单" :show-confirm-button="false" :close-on-click-overlay="true" :get-container="getDialogContainer">
+      <van-divider :style="{ margin: '0' }"></van-divider>
+      <van-row type="flex" justify="center" class="van-cell">
+        <van-col @click="resetDefaultConfigs">重置所有配置为默认值
+        </van-col>
+      </van-row>
+      <van-divider :style="{ margin: '0' }"></van-divider>
+      <van-row type="flex" justify="center" class="van-cell">
+        <van-col @click="exportConfigs">导出配置到备份文件
+        </van-col>
+      </van-row>
+      <van-divider :style="{ margin: '0' }"></van-divider>
+      <van-row type="flex" justify="center" class="van-cell">
+        <van-col @click="restoreConfigs">从备份文件中导入配置</van-col>
+      </van-row>
+      <van-divider :style="{ margin: '0' }"></van-divider>
+      <van-row type="flex" justify="center" class="van-cell">
+        <van-col @click="exportRuntimeStorage">导出运行时数据
+        </van-col>
+      </van-row>
+      <van-divider :style="{ margin: '0' }"></van-divider>
+      <van-row type="flex" justify="center" class="van-cell" style="margin-bottom: 2rem;">
+        <van-col @click="restoreRuntimeStorage">从备份文件中导入运行时数据
+        </van-col>
+      </van-row>
+    </van-dialog>
   </div>
 </body>
 <script type="text/javascript">
   /** 
    * 加载本地js文件
-   */ 
+   */
   function appendScripts(filePath) {
     let element = document.createElement('script')
     // element.src = 'file://' + filePath + '/vue_configs/js/vue.min.js'

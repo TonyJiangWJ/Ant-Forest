@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-01 12:28:02
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-05-09 14:39:03
+ * @Last Modified time: 2020-12-02 19:36:08
  * @Description: 更新后需要移除的文件
  */
 module.exports = [
@@ -19,4 +19,5 @@ module.exports = [
   'extends/MuiltiTouchCollect-demo.js',
   'lib/autojs-tools.dex',
   'resources/for_update/autojs-tools.dex',
+  'config_with_webview.js',
 ]

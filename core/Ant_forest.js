@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-29 11:00:58
+ * @Last Modified time: 2020-12-02 21:52:13
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -766,10 +766,6 @@ function Ant_forest () {
       _runningQueueDispatcher.addRunningTask()
       // 取消定时任务
       _commonFunctions.cancelAllTimedTasks()
-      unlocker.exec()
-      _commonFunctions.showDialogAndWait(true)
-      this.listenStopCollect()
-      _commonFunctions.showEnergyInfo()
       if (!(images.hasOwnProperty('isDelegated') && images.isDelegated())) {
         warnInfo('图片资源代理丢失，重新启动')
         _commonFunctions.getAndUpdateDismissReason('_lost_image_delegate')
@@ -778,6 +774,10 @@ function Ant_forest () {
       } else {
         debugInfo('图片资源代理正常')
       }
+      unlocker.exec()
+      _commonFunctions.showDialogAndWait(true)
+      this.listenStopCollect()
+      _commonFunctions.showEnergyInfo()
     }
 
     this.endLoop = function () {
