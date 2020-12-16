@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-03 00:04:51
+ * @Last Modified time: 2020-12-16 22:50:58
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -62,7 +62,6 @@ let default_config = {
   not_collect_self: false,
   // 当有收集或者帮助后 重新检查排行榜
   recheck_rank_list: true,
-  base_on_image: true,
   // 自动判断基于图像还是基于控件识别
   auto_set_img_or_widget: false,
   // 是否基于图像分析是否到达底部
@@ -91,7 +90,7 @@ let default_config = {
   // 排行榜列表下滑速度 200毫秒 不要太低否则滑动不生效 仅仅针对useCustomScrollDown=true的情况
   scrollDownSpeed: 200,
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
-  can_collect_color: '#1da06a',
+  can_collect_color_gray: '#828282',
   can_help_color: '#f99236',
   helpBallColors: ['#f99236', '#f7af70'],
   // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
@@ -175,11 +174,13 @@ let default_config = {
   limit_runnable_time_range: true,
   // 当以下包正在前台运行时，延迟执行
   skip_running_packages: [],
+  enable_visual_helper: false,
   // 更新后需要强制执行的标记v1.3.2.5
   updated_temp_flag_1325: true,
   updated_temp_flag_1326: true,
   updated_temp_flag_1327: true,
   updated_temp_flag_1328: true,
+  updated_temp_flag_1343: true,
   thread_name_prefix: 'antforest_'
 }
 // 自动生成的配置数据 
@@ -283,11 +284,9 @@ function resetConfigsIfNeeded () {
   // 首次更新 直接关闭控件分析，开启图像分析
   if (config.updated_temp_flag_1326) {
     config.auto_set_img_or_widget = false
-    config.base_on_image = true
     config.direct_use_img_collect_and_help = true
     storageConfig.put('updated_temp_flag_1326', false)
     storageConfig.put('auto_set_img_or_widget', false)
-    storageConfig.put('base_on_image', true)
     storageConfig.put('direct_use_img_collect_and_help', true)
   }
   if (config.updated_temp_flag_1327) {
