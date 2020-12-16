@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-20 13:09:28
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-09 18:45:16
+ * @Last Modified time: 2020-12-17 00:10:27
  * @Description: 
  */
 let { config: _config, storage_name } = require('../config.js')(runtime, this)
@@ -10,11 +10,12 @@ let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let fileUtils = singletonRequire('FileUtils')
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev, developSaving } = singletonRequire('LogUtils')
 
-runtime.loadDex(fileUtils.getCurrentWorkPath() + '/lib/download.dex')
-importClass(com.tony.resolver.DefaultGSONResolver)
-let gsonResolver = _config.is_pro ? null : new DefaultGSONResolver()
 
 const HoughHelper = function () {
+  runtime.loadDex(fileUtils.getCurrentWorkPath() + '/lib/download.dex')
+  importClass(com.tony.resolver.DefaultGSONResolver)
+  let gsonResolver = _config.is_pro ? null : new DefaultGSONResolver()
+
   this.toFixed = function (val, fixed) {
     return val && !isNaN(val) ? val.toFixed(fixed || 2) : val
   }
