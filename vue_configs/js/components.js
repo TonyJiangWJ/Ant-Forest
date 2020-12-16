@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-02 23:49:47
+ * @Last Modified time: 2020-12-16 22:51:24
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 
@@ -21,6 +21,15 @@ let mixin_methods = {
     },
     getContainer: function () {
       return document.querySelector(this.container)
+    }
+  },
+  filters: {
+    styleTextColor: function (v) {
+      if (/^#[\dabcdef]{6}$/i.test(v)) {
+        return { color: v }
+      } else {
+        return null
+      }
     }
   }
 }
@@ -81,20 +90,415 @@ let mixin_common = {
       return errors
     },
   },
-  filters: {
-    styleTextColor: function (v) {
-      if (/^#[\dabcdef]{6}$/i.test(v)) {
-        return 'color: ' + v + ';'
-      } else {
-        return ''
-      }
-    }
-  },
   mounted () {
     this.loadConfigs()
   }
 }
 
+/**
+ * ColorInputField
+ * 颜色值输入组件，用对应颜色显示文字
+ */
+Vue.component('color-input-field', (resolve, reject) => {
+  resolve({
+    props: ['value', 'label', 'errorMessage', 'placeholder', 'labelWidth'],
+    model: {
+      prop: 'value',
+      event: 'change'
+    },
+    mixins: [mixin_methods],
+    data () {
+      return {
+        innerValue: this.value
+      }
+    },
+    watch: {
+      innerValue: function (v) {
+        this.$emit('change', v)
+      },
+      value: function (v) {
+        this.innerValue = v
+      }
+    },
+    template: '<van-field \
+      :label="label" input-align="right" :error-message="errorMessage" error-message-align="right" :label-width="labelWidth">\
+      <input slot="input" v-model="innerValue" type="text" :placeholder="placeholder" class="van-field__control van-field__control--right" \
+      :style="innerValue | styleTextColor" />\
+    </van-field>'
+  })
+})
+
+/**
+ * ColorSlider
+ * 颜色值滑动输入组件，分别调整RGB
+ */
+Vue.component('color-slider', function (resolve, reject) {
+  resolve({
+    mixins: [mixin_methods],
+    props: ['value'],
+    model: {
+      prop: 'value',
+      event: 'color-change'
+    },
+    data: function () {
+      return {
+        R: 0,
+        G: 0,
+        B: 0
+      }
+    },
+    methods: {
+      resolveDetailInfo: function () {
+        if (/^#[\dabcdef]{6}$/i.test(this.value)) {
+          let fullColorVal = parseInt(this.value.substring(1), 16)
+          this.R = (fullColorVal >> 16) & 0xFF
+          this.G = (fullColorVal >> 8) & 0xFF
+          this.B = fullColorVal & 0xFF
+        }
+      }
+    },
+    computed: {
+      colorText: function () {
+        let colorStr = (this.R << 16 | this.G << 8 | this.B).toString(16)
+        return '#' + new Array(7 - colorStr.length).join(0) + colorStr
+      }
+    },
+    watch: {
+      colorText: function (v) {
+        this.$emit('color-change', v)
+      },
+      value: function (v) {
+        this.resolveDetailInfo()
+      }
+    },
+    mounted () {
+      this.resolveDetailInfo()
+    },
+    template: '<div style="padding: 1rem 2rem;">\
+      <van-row style="margin: 0.5rem 0">\
+        <van-col><span class="simple-span" :style="colorText | styleTextColor">颜色值: {{colorText}}</span></van-col>\
+      </van-row>\
+      <van-row style="margin: 1.5rem 0 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="R" :min="0" :max="255" :active-color="\'#\' + R.toString(16) + \'0000\'">\
+            <template #button>\
+              <div class="custom-slide-button">R:{{ R }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+      <van-row style="margin: 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="G" :min="0" :max="255" :active-color="\'#00\' + G.toString(16) + \'00\'">\
+            <template #button>\
+              <div class="custom-slide-button">G:{{ G }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+      <van-row style="margin: 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="B" :min="0" :max="255" :active-color="\'#0000\' + B.toString(16)">\
+            <template #button>\
+              <div class="custom-slide-button">B:{{ B }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+    </div>'
+  })
+})
+
+/**
+ * SwipeColorInputField
+ * 组合滑动输入颜色的组件，可以输入文本也可以左滑调出滑动输入控件
+ */
+Vue.component('swipe-color-input-field', function (resolve, reject) {
+  resolve({
+    mixins: [mixin_methods],
+    props: ['value', 'label', 'errorMessage', 'placeholder', 'labelWidth'],
+    model: {
+      prop: 'value',
+      event: 'change'
+    },
+    mixins: [mixin_methods],
+    data () {
+      return {
+        innerValue: this.value,
+        showColorSlider: false
+      }
+    },
+    watch: {
+      innerValue: function (v) {
+        this.$emit('change', v)
+      },
+      value: function (v) {
+        this.innerValue = v
+      }
+    },
+    template: '<div>\
+    <van-swipe-cell stop-propagation>\
+      <color-input-field :error-message="errorMessage" v-model="innerValue" :label="label" :label-width="labelWidth" :placeholder="placeholder" />\
+      <template #right>\
+        <van-button square type="primary" text="滑动输入" @click="showColorSlider=true" />\
+      </template>\
+    </van-swipe-cell>\
+    <van-popup v-model="showColorSlider" position="bottom" :style="{ height: \'30%\' }" :get-container="getContainer">\
+      <color-slider v-model="innerValue"/>\
+    </van-popup>\
+    </div>'
+  })
+})
+
+/**
+ * RegionSlider
+ * 区域信息滑动输入组件，调整x,y,width,height
+ */
+Vue.component('region-slider', function (resolve, reject) {
+  resolve({
+    mixins: [mixin_methods],
+    props: ['device_height', 'device_width', 'max_height', 'max_width', 'value'],
+    model: {
+      prop: 'value',
+      event: 'region-change'
+    },
+    data: function () {
+      return {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      }
+    },
+    methods: {
+      resolveDetailInfo: function () {
+        if (/^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.test(this.value)) {
+          let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.value)
+          this.x = parseInt(match[1])
+          this.y = parseInt(match[2])
+          this.width = parseInt(match[3])
+          this.height = parseInt(match[4])
+        }
+      }
+    },
+    computed: {
+      regionText: function () {
+        return this.x + ',' + this.y + ',' + this.width + ',' + this.height
+      }
+    },
+    watch: {
+      regionText: function (v) {
+        this.$emit('region-change', v)
+      },
+      value: function (v) {
+        this.resolveDetailInfo()
+      }
+    },
+    mounted () {
+      this.resolveDetailInfo()
+    },
+    template: '<div style="padding: 1rem 2rem;">\
+      <van-row style="margin: 0.5rem 0">\
+        <van-col><span class="simple-span">区域数据: {{x}},{{y}},{{width}},{{height}}</span></van-col>\
+      </van-row>\
+      <van-row style="margin: 1.5rem 0 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="x" :min="0" :max="device_width" >\
+            <template #button>\
+              <div class="custom-slide-button">x:{{ x }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+      <van-row style="margin: 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="y" :min="0" :max="device_height" >\
+            <template #button>\
+              <div class="custom-slide-button">y:{{ y }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+      <van-row style="margin: 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="width" :min="0" :max="max_width||device_width" >\
+            <template #button>\
+              <div class="custom-slide-button">w:{{ width }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+      <van-row style="margin: 2rem 0">\
+        <van-col :span="24">\
+          <van-slider v-model="height" :min="0" :max="max_height||device_height" >\
+            <template #button>\
+              <div class="custom-slide-button">h:{{ height }}</div>\
+            </template>\
+          </van-slider>\
+        </van-col>\
+      </van-row>\
+    </div>'
+  })
+})
+
+/**
+ * RegionInputField
+ * 区域信息输入组件，可以直接文本输入也可以左滑调出滑动输入控件
+ */
+Vue.component('region-input-field', function (resolve, reject) {
+  resolve({
+    mixins: [mixin_methods],
+    props: ['value', 'label', 'labelWidth', "deviceWidth", "deviceHeight", "errorMessage",],
+    model: {
+      prop: 'value',
+      event: 'change'
+    },
+    data: function () {
+      return {
+        innerValue: this.value,
+        showRegionSlider: false,
+      }
+    },
+    watch: {
+      innerValue: function (v) {
+        this.$emit('change', v)
+      },
+      value: function (v) {
+        this.innerValue = v
+      }
+    },
+    template: '<div>\
+      <van-swipe-cell stop-propagation>\
+        <van-field :error-message="errorMessage" error-message-align="right" v-model="innerValue" :label="label" :label-width="labelWidth" type="text" placeholder="请输入校验区域" input-align="right" />\
+        <template #right>\
+          <van-button square type="primary" text="滑动输入" @click="showRegionSlider=true" />\
+        </template>\
+      </van-swipe-cell>\
+      <van-popup v-model="showRegionSlider" position="bottom" :style="{ height: \'30%\' }" :get-container="getContainer">\
+        <region-slider :device_width="deviceWidth" :device_height="deviceHeight" v-model="innerValue"/>\
+      </van-popup>\
+    </div>'
+  })
+})
+
+/**
+ * InstalledPackageSelector
+ * 已安装应用选择组件，用于选择已安装应用包名
+ */
+Vue.component('installed-package-selector', function (resolve, reject) {
+  resolve({
+    mixins: [mixin_methods],
+    props: {
+      addedPackageNames: {
+        type: Array,
+        default: () => []
+      }
+    },
+    data () {
+      return {
+        installedPackages: [{ packageName: 'com.tony.test', appName: 'testApp' }],
+        showPackageSelect: false,
+        onLoading: true,
+        canReadPackage: false,
+        readPackages: null,
+        searchString: ''
+      }
+    },
+    methods: {
+      doLoadInstalledPackages: function () {
+        if (this.canReadPackage && this.readPackages !== null) {
+          console.log('added pacakges: ' + JSON.stringify(this.addedPackageNames))
+          console.log('all pacakges: ' + JSON.stringify(this.readPackages))
+          this.installedPackages = this.readPackages.filter(v => this.addedPackageNames.indexOf(v.packageName) < 0)
+        } else {
+          this.installedPackages = []
+        }
+        this.onLoading = false
+      },
+      loadInstalledPackages: function () {
+        this.showPackageSelect = true
+        this.onLoading = true
+        
+        let self = this
+        if (self.readPackages === null) {
+          // 延迟加载 避免卡顿
+          setTimeout(function () {
+            $app.invoke('loadInstalledPackages', {}, data => {
+              if (data && data.length > 0) {
+                self.readPackages = data.sort((a, b) => {
+                  if (String.prototype.localeCompare) {
+                    return a.appName.localeCompare(b.appName)
+                  } else {
+                    if (a.appName > b.appName) {
+                      return 1
+                    } else if (a.appName === b.appName) {
+                      return 0
+                    } else {
+                      return -1
+                    }
+                  }
+                })
+                self.canReadPackage = true
+              } else {
+                self.canReadPackage = false
+              }
+              self.doLoadInstalledPackages()
+            })
+          }, 350)
+        } else {
+          setTimeout(function () {
+            self.doLoadInstalledPackages()
+          }, 350)
+        }
+      },
+      selectPackage: function (package) {
+        this.$emit('value-change', package)
+        this.showPackageSelect = false
+      },
+      doSearch: function (val) {
+        this.searchString = val
+      },
+      cancelSearch: function () {
+        this.searchString = ''
+      }
+    },
+    computed: {
+      filteredPackages: function () {
+        if (this.isNotEmpty(this.searchString)) {
+          return this.installedPackages.filter(package => package.appName.indexOf(this.searchString) > -1)
+        } else {
+          return this.installedPackages
+        }
+      }
+    },
+    template: '<div>\
+      <van-row type="flex" justify="center">\
+        <van-col>\
+          新增应用白名单\
+          <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadInstalledPackages">从已安装的列表中选择</van-button>\
+        </van-col>\
+      </van-row>\
+      <van-popup v-model="showPackageSelect" position="bottom" :style="{ height: \'75%\' }" :get-container="getContainer">\
+        <van-search v-model="searchString" show-action @search="doSearch" @cancel="cancelSearch" placeholder="请输入搜索关键词" />\
+        <van-row v-if="onLoading || !installedPackages || installedPackages.length === 0" type="flex" justify="center" style="margin-top: 8rem;">\
+          <van-col v-if="onLoading"><van-loading size="3rem" /></van-col>\
+          <template v-else-if="!installedPackages || installedPackages.length === 0">\
+            <van-col :style="{ margin: \'2rem\'}" class="van-cell" v-if="!canReadPackage">无法读取应用列表，请确认是否给与了AutoJS读取应用列表的权限</van-col>\
+            <van-col :style="{ margin: \'2rem\'}" class="van-cell" v-else>已安装应用已经全部加入到白名单中了，你可真行</van-col>\
+          </template>\
+        </van-row>\
+        <van-row v-else-if="filteredPackages.length === 0" type="flex" justify="center" style="margin-top: 8rem;">\
+          <van-col :style="{ margin: \'2rem\'}" class="van-cell">未找到匹配的应用</van-col>\
+        </van-row>\
+        <van-cell v-if="!onLoading" v-for="package in filteredPackages" :key="package.packageName" :title="package.appName" :label="package.packageName" @click="selectPackage(package)"></van-cell>\
+      </van-popup>\
+    </div>'
+  })
+})
+
+/**
+ * 基础配置
+ */
 Vue.component('sample-configs', function (resolve, reject) {
   resolve({
     mixins: [mixin_common],
@@ -143,7 +547,8 @@ Vue.component('sample-configs', function (resolve, reject) {
           develop_saving_mode: false,
           cutAndSaveCountdown: false,
           cutAndSaveTreeCollect: false,
-          saveBase64ImgInfo: false
+          saveBase64ImgInfo: false,
+          enable_visual_helper: false
         },
         device: {
           pos_x: 0,
@@ -304,9 +709,7 @@ Vue.component('sample-configs', function (resolve, reject) {
       </van-cell-group>\
       <van-divider content-position="left">悬浮窗配置</van-divider>\
       <van-cell-group>\
-        <van-field label="悬浮窗颜色" input-align="right" :error-message="validationError.min_floaty_color" error-message-align="right">\
-          <input slot="input" v-model="configs.min_floaty_color" type="text" placeholder="悬浮窗颜色值 #FFFFFF"  class="van-field__control van-field__control--right" :style="configs.min_floaty_color | styleTextColor" />\
-        </van-field>\
+        <swipe-color-input-field label="悬浮窗颜色" :error-message="validationError.min_floaty_color" v-model="configs.min_floaty_color" placeholder="悬浮窗颜色值 #FFFFFF"/>\
         <van-field v-model="configs.min_floaty_text_size" label-width="8em" label="悬浮窗字体大小" placeholder="请输入悬浮窗字体大小" type="number" input-align="right">\
           <span slot="right-icon">sp</span>\
         </van-field>\
@@ -351,11 +754,11 @@ Vue.component('sample-configs', function (resolve, reject) {
             </van-col>\
           </van-row>\
           <van-field v-model="configs.reactive_time" :error-message="validationError.reactive_time" error-message-align="right" label="重新激活时间" type="text" placeholder="请输入永不停止的循环间隔" input-align="right" >\
-            <span slot="right-icon">秒</span>\
+            <span slot="right-icon">分</span>\
           </van-field>\
         </template>\
         <van-field v-if="!configs.never_stop && !configs.is_cycle" v-model="configs.max_collect_wait_time" label="计时模式最大等待时间" label-width="10em" type="number" placeholder="请输入最大等待时间" input-align="right" >\
-          <span slot="right-icon">秒</span>\
+          <span slot="right-icon">分</span>\
         </van-field>\
         <van-field v-model="configs.delayStartTime" label="延迟启动时间" label-width="10em" type="number" placeholder="请输入延迟启动时间" input-align="right" >\
           <span slot="right-icon">秒</span>\
@@ -425,226 +828,18 @@ Vue.component('sample-configs', function (resolve, reject) {
           <van-cell center title="是否倒计时图片base64">\
             <van-switch v-model="configs.saveBase64ImgInfo" :size="switchSize" />\
           </van-cell>\
+          <van-cell center title="是否启用可视化辅助工具">\
+            <van-switch v-model="configs.enable_visual_helper" :size="switchSize" />\
+          </van-cell>\
         </template>\
       </van-cell-group>\
     </div>'
   })
 })
 
-Vue.component('region-slider', function (resolve, reject) {
-  resolve({
-    mixins: [mixin_methods],
-    props: ['device_height', 'device_width', 'max_height', 'max_width', 'value'],
-    model: {
-      prop: 'value',
-      event: 'region-change'
-    },
-    data: function () {
-      return {
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-      }
-    },
-    methods: {
-      resolveDetailInfo: function () {
-        if (/^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.test(this.value)) {
-          let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.value)
-          this.x = parseInt(match[1])
-          this.y = parseInt(match[2])
-          this.width = parseInt(match[3])
-          this.height = parseInt(match[4])
-        }
-      }
-    },
-    computed: {
-      regionText: function () {
-        return this.x + ',' + this.y + ',' + this.width + ',' + this.height
-      }
-    },
-    watch: {
-      regionText: function (v) {
-        this.$emit('region-change', v)
-      },
-      value: function (v) {
-        console.log('region text value changed: ' + v)
-        this.resolveDetailInfo()
-      }
-    },
-    mounted () {
-      this.resolveDetailInfo()
-    },
-    template: '<div style="padding: 1rem 2rem;">\
-      <van-row style="margin: 0.5rem 0">\
-        <van-col><span class="simple-span">区域数据: {{x}},{{y}},{{width}},{{height}}</span></van-col>\
-      </van-row>\
-      <van-row style="margin: 1.5rem 0 2rem 0">\
-        <van-col :span="24">\
-          <van-slider v-model="x" :min="0" :max="device_width" >\
-            <template #button>\
-              <div class="custom-slide-button">x:{{ x }}</div>\
-            </template>\
-          </van-slider>\
-        </van-col>\
-      </van-row>\
-      <van-row style="margin: 2rem 0">\
-        <van-col :span="24">\
-          <van-slider v-model="y" :min="0" :max="device_height" >\
-            <template #button>\
-              <div class="custom-slide-button">y:{{ y }}</div>\
-            </template>\
-          </van-slider>\
-        </van-col>\
-      </van-row>\
-      <van-row style="margin: 2rem 0">\
-        <van-col :span="24">\
-          <van-slider v-model="width" :min="0" :max="max_width||device_width" >\
-            <template #button>\
-              <div class="custom-slide-button">w:{{ width }}</div>\
-            </template>\
-          </van-slider>\
-        </van-col>\
-      </van-row>\
-      <van-row style="margin: 2rem 0">\
-        <van-col :span="24">\
-          <van-slider v-model="height" :min="0" :max="max_height||device_height" >\
-            <template #button>\
-              <div class="custom-slide-button">h:{{ height }}</div>\
-            </template>\
-          </van-slider>\
-        </van-col>\
-      </van-row>\
-    </div>'
-  })
-})
-
-Vue.component('region-input-field', function (resolve, reject) {
-  resolve({
-    mixins: [mixin_methods],
-    props: ['value', 'label', 'labelWidth', "deviceWidth", "deviceHeight", "errorMessage",],
-    model: {
-      prop: 'value',
-      event: 'change'
-    },
-    data: function () {
-      return {
-        innerValue: this.value,
-        showRegionSlider: false,
-      }
-    },
-    watch: {
-      innerValue: function (v) {
-        this.$emit('change', v)
-      },
-      value: function (v) {
-        this.innerValue = v
-      }
-    },
-    template: '<div>\
-      <van-swipe-cell stop-propagation>\
-        <van-field :error-message="errorMessage" error-message-align="right" v-model="innerValue" :label="label" :label-width="labelWidth" type="text" placeholder="请输入校验区域" input-align="right" />\
-        <template #right>\
-          <van-button square type="primary" text="滑动输入" @click="showRegionSlider=true" />\
-        </template>\
-      </van-swipe-cell>\
-      <van-popup v-model="showRegionSlider" position="bottom" :style="{ height: \'30%\' }" :get-container="getContainer">\
-        <region-slider :device_width="deviceWidth" :device_height="deviceHeight" v-model="innerValue"/>\
-      </van-popup>\
-    </div>'
-  })
-})
-
-Vue.component('installed-package-selector', function (resolve, reject) {
-  resolve({
-    mixins: [mixin_methods],
-    props: {
-      addedPackageNames: {
-        type: Array,
-        default: () => []
-      }
-    },
-    data () {
-      return {
-        installedPackages: [{ packageName: 'com.tony.test', appName: 'testApp' }],
-        showPackageSelect: false,
-        onLoading: true,
-        canReadPackage: false,
-        readPackages: null
-      }
-    },
-    methods: {
-      doLoadInstalledPackages: function () {
-        if (this.canReadPackage && this.readPackages !== null) {
-          console.log('added pacakges: ' + JSON.stringify(this.addedPackageNames))
-          console.log('all pacakges: ' + JSON.stringify(this.readPackages))
-          this.installedPackages = this.readPackages.filter(v => this.addedPackageNames.indexOf(v.packageName) < 0)
-        } else {
-          this.installedPackages = []
-        }
-        this.onLoading = false
-      },
-      loadInstalledPackages: function () {
-        this.showPackageSelect = true
-        this.onLoading = true
-        let self = this
-        if (self.readPackages === null) {
-          // 延迟加载 避免卡顿
-          setTimeout(function () {
-            $app.invoke('loadInstalledPackages', {}, data => {
-              if (data && data.length > 0) {
-                self.readPackages = data.sort((a, b) => {
-                  if (String.prototype.localeCompare) {
-                    return a.appName.localeCompare(b.appName)
-                  } else {
-                    if (a.appName > b.appName) {
-                      return 1
-                    } else if (a.appName === b.appName) {
-                      return 0
-                    } else {
-                      return -1
-                    }
-                  }
-                })
-                self.canReadPackage = true
-              } else {
-                self.canReadPackage = false
-              }
-              self.doLoadInstalledPackages()
-            })
-          }, 350)
-        } else {
-          setTimeout(function () {
-            self.doLoadInstalledPackages()
-          }, 350)
-        }
-      },
-      selectPackage: function (package) {
-        this.$emit('value-change', package)
-        this.showPackageSelect = false
-      }
-    },
-    template: '<div>\
-      <van-row type="flex" justify="center">\
-        <van-col>\
-          新增应用白名单\
-          <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadInstalledPackages">从已安装的列表中选择</van-button>\
-        </van-col>\
-      </van-row>\
-      <van-popup v-model="showPackageSelect" position="bottom" :style="{ height: \'60%\' }" :get-container="getContainer">\
-        <van-row v-if="onLoading || !installedPackages || installedPackages.length === 0" type="flex" justify="center" style="margin-top: 12rem;">\
-          <van-col v-if="onLoading"><van-loading size="3rem" /></van-col>\
-          <template v-if="!installedPackages || installedPackages.length === 0">\
-            <van-col :span="22" v-if="!canReadPackage">无法读取应用列表，请确认是否给与了AutoJS读取应用列表的权限</van-col>\
-            <van-col :span="22" v-else>已安装应用已经全部加入到白名单中了，你可真行</van-col>\
-          </template>\
-        </van-row>\
-        <van-cell v-if="!onLoading" v-for="package in installedPackages" :key="package.packageName" :title="package.appName" :label="package.packageName" @click="selectPackage(package)"></van-cell>\
-      </van-popup>\
-    </div>'
-  })
-})
-
+/**
+ * 进阶配置
+ */
 Vue.component('advance-configs', function (resolve, reject) {
   resolve({
     mixins: [mixin_common],
@@ -718,7 +913,6 @@ Vue.component('advance-configs', function (resolve, reject) {
           rank_check_region: '',
           bottom_check_region: '',
           tree_collect_region: '',
-          base_on_image: true,
           checkBottomBaseImg: true,
           friendListScrollTime: null,
           white_list: ['1', '2', '3'],
@@ -726,7 +920,9 @@ Vue.component('advance-configs', function (resolve, reject) {
           thread_pool_max_size: '',
           thread_pool_queue_size: '',
           thread_pool_waiting_time: '',
-          skip_running_packages: [{ packageName: 'com.tony.test', appName: 'test' }, { packageName: 'com.tony.test2', appName: 'test2' }]
+          skip_running_packages: [{ packageName: 'com.tony.test', appName: 'test' }, { packageName: 'com.tony.test2', appName: 'test2' }],
+          check_finger_by_pixels_amount: false,
+          finger_img_pixels: 1800
         },
         validations: {
           stroll_button_region: {
@@ -1030,71 +1226,74 @@ Vue.component('advance-configs', function (resolve, reject) {
             <van-field v-model="configs.hough_min_dst" label="球心最小距离" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
           </template>\
         </template>\
-        <van-cell center title="基于图像分析列表">\
-          <van-switch v-model="configs.base_on_image" :size="switchSize" />\
+        <region-input-field\
+            :device-height="device.height" :device-width="device.width"\
+            :error-message="validationError.rank_check_region"\
+            v-model="configs.rank_check_region" label="排行榜校验区域" label-width="10em" />\
+        <van-cell center title="基于图像判断列表底部">\
+          <van-switch v-model="configs.checkBottomBaseImg" :size="switchSize" />\
         </van-cell>\
-        <template v-if="configs.base_on_image">\
+        <template v-if="configs.checkBottomBaseImg">\
           <region-input-field\
-              :device-height="device.height" :device-width="device.width"\
-              :error-message="validationError.rank_check_region"\
-              v-model="configs.rank_check_region" label="排行榜校验区域" label-width="10em" />\
-          <van-cell center title="基于图像判断列表底部">\
-            <van-switch v-model="configs.checkBottomBaseImg" :size="switchSize" />\
-          </van-cell>\
-          <template v-if="configs.checkBottomBaseImg">\
-            <region-input-field\
-              :device-height="device.height" :device-width="device.width"\
-              :error-message="validationError.bottom_check_region"\
-              v-model="configs.bottom_check_region" label="底部校验区域" label-width="10em" />\
-            <van-field label="底部判断的灰度颜色值" label-width="10em" input-align="right" :error-message="validationError.bottom_check_gray_color" error-message-align="right">\
-              <input slot="input" v-model="configs.bottom_check_gray_color" type="text" placeholder="可收取颜色值 #FFFFFF"  class="van-field__control van-field__control--right" :style="configs.bottom_check_gray_color | styleTextColor" />\
-            </van-field>\
-          </template>\
-          <template v-else>\
-            <van-row>\
-              <van-col :span="22" :offset="1">\
-                <span :style="\'color: gray;font-size: \' + tipTextSize">排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像判断无效只能如此</span>\
-              </van-col>\
-            </van-row>\
-            <van-field v-model="configs.friendListScrollTime" label="排行榜下拉次数" label-width="10em" type="text" placeholder="请输入排行榜下拉次数" input-align="right" />\
-          </template>\
+            :device-height="device.height" :device-width="device.width"\
+            :error-message="validationError.bottom_check_region"\
+            v-model="configs.bottom_check_region" label="底部校验区域" label-width="10em" />\
+          <color-input-field label="底部判断的灰度颜色值" label-width="10em" \
+            placeholder="可收取颜色值 #FFFFFF" :error-message="validationError.bottom_check_gray_color" v-model="configs.bottom_check_gray_color"/>\
+        </template>\
+        <template v-else>\
           <van-row>\
             <van-col :span="22" :offset="1">\
-              <span :style="\'color: gray;font-size: \' + tipTextSize">图像识别的线程池配置，如果过于卡顿，请调低线程池大小，同时增加线程池等待时间。</span>\
+              <span :style="\'color: gray;font-size: \' + tipTextSize">排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像判断无效只能如此</span>\
             </van-col>\
           </van-row>\
-          <van-field v-model="configs.thread_pool_size" label="线程池大小" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
-          <van-field v-model="configs.thread_pool_max_size" label="线程池最大大小" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
-          <van-field v-model="configs.thread_pool_queue_size" label="线程池等待队列大小" label-width="10em" placeholder="留空使用默认配置" type="number" input-align="right" />\
-          <van-field v-model="configs.thread_pool_waiting_time" label="线程池等待时间" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" >\
-            <span slot="right-icon">秒</span>\
-          </van-field>\
-          <van-divider/>\
+          <van-field v-model="configs.friendListScrollTime" label="排行榜下拉次数" label-width="10em" type="text" placeholder="请输入排行榜下拉次数" input-align="right" />\
+        </template>\
+        <van-row>\
+          <van-col :span="22" :offset="1">\
+            <span :style="\'color: gray;font-size: \' + tipTextSize">默认使用多点找色方式识别列表中的小手，失效后请打开基于像素点个数判断是否可收取，这是一个阈值当像素点个数小于给定的值之后就判定为可收取</span>\
+          </van-col>\
+        </van-row>\
+        <van-cell center title="基于像素点个数判断是否可收取" title-style="flex:2;">\
+          <van-switch v-model="configs.check_finger_by_pixels_amount" :size="switchSize" />\
+        </van-cell>\
+        <van-field v-if="configs.check_finger_by_pixels_amount" v-model="configs.finger_img_pixels" label="小手像素点个数" placeholder="小手像素点个数" label-width="8em" type="number" input-align="right" />\
+        <van-row>\
+          <van-col :span="22" :offset="1">\
+            <span :style="\'color: gray;font-size: \' + tipTextSize">图像识别的线程池配置，如果过于卡顿，请调低线程池大小，同时增加线程池等待时间。</span>\
+          </van-col>\
+        </van-row>\
+        <van-field v-model="configs.thread_pool_size" label="线程池大小" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
+        <van-field v-model="configs.thread_pool_max_size" label="线程池最大大小" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" />\
+        <van-field v-model="configs.thread_pool_queue_size" label="线程池等待队列大小" label-width="10em" placeholder="留空使用默认配置" type="number" input-align="right" />\
+        <van-field v-model="configs.thread_pool_waiting_time" label="线程池等待时间" placeholder="留空使用默认配置" label-width="8em" type="number" input-align="right" >\
+          <span slot="right-icon">秒</span>\
+        </van-field>\
+        <van-divider/>\
+        <van-row>\
+          <van-col :span="22" :offset="1">\
+            <span :style="\'color: gray;font-size: \' + tipTextSize">当不启用以下任意一种OCR的时候会使用多点找色方式模拟识别倒计时，如果模拟识别不准确时可以看情况选择其中一种OCR方式</span>\
+          </van-col>\
+        </van-row>\
+        <van-row v-if="configs.useTesseracOcr || configs.useOcr">\
+          <van-col :span="22" :offset="1">\
+            <span :style="\'color: gray;font-size: \' + tipTextSize">{{ocr_invoke_count}}</span>\
+          </van-col>\
+        </van-row>\
+        <van-cell center title="是否启用自建OCR服务器识别倒计时" label="服务器到期时间2021-12-09" title-style="flex:2;">\
+          <van-switch v-model="configs.useTesseracOcr" :size="switchSize" />\
+        </van-cell>\
+        <van-cell v-if="!configs.useTesseracOcr" center title="是否启用百度OCR倒计时">\
+          <van-switch v-model="configs.useOcr" :size="switchSize" />\
+        </van-cell>\
+        <template v-if="!configs.useTesseracOcr && configs.useOcr">\
           <van-row>\
             <van-col :span="22" :offset="1">\
-              <span :style="\'color: gray;font-size: \' + tipTextSize">当不启用以下任意一种OCR的时候会使用多点找色方式模拟识别倒计时，如果模拟识别不准确时可以看情况选择其中一种OCR方式</span>\
+              <span :style="\'color: gray;font-size: \' + tipTextSize">请填写百度AI平台申请的API_KEY和SECRET_KEY</span>\
             </van-col>\
           </van-row>\
-          <van-row v-if="configs.useTesseracOcr || configs.useOcr">\
-            <van-col :span="22" :offset="1">\
-              <span :style="\'color: gray;font-size: \' + tipTextSize">{{ocr_invoke_count}}</span>\
-            </van-col>\
-          </van-row>\
-          <van-cell center title="是否启用自建OCR服务器识别倒计时" label="服务器到期时间2021-12-09" title-style="flex:2;">\
-            <van-switch v-model="configs.useTesseracOcr" :size="switchSize" />\
-          </van-cell>\
-          <van-cell v-if="!configs.useTesseracOcr" center title="是否启用百度OCR倒计时">\
-            <van-switch v-model="configs.useOcr" :size="switchSize" />\
-          </van-cell>\
-          <template v-if="!configs.useTesseracOcr && configs.useOcr">\
-            <van-row>\
-              <van-col :span="22" :offset="1">\
-                <span :style="\'color: gray;font-size: \' + tipTextSize">请填写百度AI平台申请的API_KEY和SECRET_KEY</span>\
-              </van-col>\
-            </van-row>\
-            <van-field v-model="configs.apiKey" label="" placeholder="apiKey" label-width="8em" type="text" input-align="right" />\
-            <van-field v-model="configs.secretKey" label="" placeholder="secretKey" label-width="8em" type="password" input-align="right" />\
-          </template>\
+          <van-field v-model="configs.apiKey" label="" placeholder="apiKey" label-width="8em" type="text" input-align="right" />\
+          <van-field v-model="configs.secretKey" label="" placeholder="secretKey" label-width="8em" type="password" input-align="right" />\
         </template>\
       </van-cell-group>\
       <van-divider content-position="left">\
@@ -1168,6 +1367,10 @@ Vue.component('advance-configs', function (resolve, reject) {
     </div>'
   })
 })
+
+/**
+ * 控件配置
+ */
 Vue.component('widget-configs', function (resolve, reject) {
   resolve({
     mixins: [mixin_common],
@@ -1185,11 +1388,11 @@ Vue.component('widget-configs', function (resolve, reject) {
           do_watering_button_content: '送给\\s*TA|浇水送祝福',
           using_protect_content: '使用了保护罩',
           collectable_energy_ball_content: '收集能量\\d+克',
-          can_collect_color: '#1da06a',
+          can_collect_color_gray: '#828282',
           can_help_color: '#f99236',
         },
         validations: {
-          can_collect_color: {
+          can_collect_color_gray: {
             validate: (v) => /^#[\dabcdef]{6}$/i.test(v),
             message: () => '颜色值格式不正确'
           },
@@ -1237,12 +1440,10 @@ Vue.component('widget-configs', function (resolve, reject) {
       <van-field v-model="configs.enter_friend_list_ui_content" label="查看更多好友按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.using_protect_content" label="保护罩使用记录" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.do_watering_button_content" label="确认浇水按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
-      <van-field label="列表中可收取的颜色" label-width="10em" input-align="right" :error-message="validationError.can_collect_color" error-message-align="right">\
-        <input slot="input" v-model="configs.can_collect_color" type="text" placeholder="可收取颜色值 #FFFFFF"  class="van-field__control van-field__control--right" :style="configs.can_collect_color | styleTextColor" />\
-      </van-field>\
-      <van-field label="列表中可帮助的颜色" label-width="10em" input-align="right" :error-message="validationError.can_help_color" error-message-align="right">\
-        <input slot="input" v-model="configs.can_help_color" type="text" placeholder="可收取颜色值 #FFFFFF"  class="van-field__control van-field__control--right" :style="configs.can_help_color | styleTextColor" />\
-      </van-field>\
+      <color-input-field label="列表中可收取的颜色灰度值" label-width="10em" \
+              placeholder="可收取颜色值 #FFFFFF" :error-message="validationError.can_collect_color_gray" v-model="configs.can_collect_color_gray"/>\
+      <color-input-field label="列表中可帮助的颜色" label-width="10em" \
+              placeholder="可帮助颜色值 #FFFFFF" :error-message="validationError.can_help_color" v-model="configs.can_help_color"/>\
     </div>'
   })
 })

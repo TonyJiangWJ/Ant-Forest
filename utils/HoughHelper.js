@@ -2,12 +2,18 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-20 13:09:28
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-23 10:32:13
+ * @Last Modified time: 2020-12-09 18:45:16
  * @Description: 
  */
 let { config: _config, storage_name } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let fileUtils = singletonRequire('FileUtils')
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev, developSaving } = singletonRequire('LogUtils')
+
+runtime.loadDex(fileUtils.getCurrentWorkPath() + '/lib/download.dex')
+importClass(com.tony.resolver.DefaultGSONResolver)
+let gsonResolver = _config.is_pro ? null : new DefaultGSONResolver()
+
 const HoughHelper = function () {
   this.toFixed = function (val, fixed) {
     return val && !isNaN(val) ? val.toFixed(fixed || 2) : val
@@ -25,13 +31,16 @@ const HoughHelper = function () {
     collectBalls: [],
     waterBalls: []
   }
-  let storedBallInfoStr = storages.create(storage_name + '_hough_data').get('hough_balls')
-  if (storedBallInfoStr) {
-    let { dailyBalls, nightlyBalls } = JSON.parse(storedBallInfoStr)
-    this.dailyBalls = dailyBalls || this.dailyBalls
-    this.nightlyBalls = nightlyBalls || this.nightlyBalls
-  }
 
+  this.persistenceFilePath = fileUtils.getCurrentWorkPath() + '/logs/hough_help.json'
+  if (files.exists(this.persistenceFilePath)) {
+    let storedBallInfoStr = files.read(this.persistenceFilePath)
+    if (storedBallInfoStr) {
+      let { dailyBalls, nightlyBalls } = JSON.parse(storedBallInfoStr)
+      this.dailyBalls = dailyBalls || this.dailyBalls
+      this.nightlyBalls = nightlyBalls || this.nightlyBalls
+    }
+  }
   // functions
   this.addInvalidBall = function (ballInfo, isNight) {
     !isNight ? this.dailyBalls.invalidBalls.push(ballInfo) : this.nightlyBalls.invalidBalls.push(ballInfo)
@@ -103,10 +112,19 @@ const HoughHelper = function () {
 
   this.persistence = function () {
     this.summary()
-    storages.create(storage_name + '_hough_data').put('hough_balls', JSON.stringify({
+    if (_config.is_pro) {
+      // pro版做不支持
+      return
+    }
+    let start = new Date().getTime()
+    let storeString = gsonResolver.toJSONString({
       dailyBalls: this.dailyBalls,
       nightlyBalls: this.nightlyBalls
-    }))
+    })
+    debugInfo(['stringify cost: {} ms', (new Date().getTime() - start)])
+    debugInfo(['store string length: {}', storeString.length])
+    files.write(this.persistenceFilePath, storeString)
+    debugInfo(['persistence done, cost: {} ms', (new Date().getTime() - start)])
   }
 }
 

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-14 23:36:39
+ * @Last Modified time: 2020-12-16 21:57:08
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -22,7 +22,6 @@ if (!_config.useTesseracOcr || !_config.useOcr) {
   OcrUtil = require('../lib/MockNumberOcrUtil.js')
   useMockOcr = true
 }
-
 let BaseScanner = require('./BaseScanner.js')
 
 let SCRIPT_LOGGER = new ScriptLogger({
@@ -41,14 +40,19 @@ const SCALE_RATE = _config.device_width / 1080
 const checkPoints = []
 for (let i = 0; i < 30 * SCALE_RATE; i++) {
   for (let j = 0; j < 30 * SCALE_RATE; j++) {
-    if (i == j)
-      checkPoints.push([i, j, "#ffffff"])
+    if (i === j) {
+      if (i <= 5) {
+        checkPoints.push([i, j, "#ffffff"])
+      } else {
+        checkPoints.push([i, j, "#000000"])
+      }
+    }
   }
 }
 for (let i = 20; i < 30 * SCALE_RATE; i++) {
   for (let j = 30; j > 20 * SCALE_RATE; j--) {
     if (i - 20 === (30 - j)) {
-      checkPoints.push([i, j, "#ffffff"])
+      checkPoints.push([i, j, "#000000"])
     }
   }
 }
@@ -60,6 +64,7 @@ const ImgBasedFriendListScanner = function () {
   this.last_check_point = null
   this.last_check_color = null
 
+  let self = this
   this.init = function (option) {
     this.current_time = option.currentTime || 0
     this.increased_energy = option.increasedEnergy || 0
@@ -182,12 +187,12 @@ const ImgBasedFriendListScanner = function () {
       let height = point.bottom - point.top
       let width = point.right - point.left
       debugForDev(['checkPoints: {}', JSON.stringify(checkPoints)])
-      let p = images.findMultiColors(img, "#ffffff", checkPoints, {
+      let p = images.findMultiColors(com.stardust.autojs.core.image.ImageWrapper.ofBitmap(img.getBitmap()), "#ffffff", checkPoints, {
         region: [
           point.left + width - width / Math.sqrt(2),
           point.top,
-          width / Math.sqrt(2),
-          height / Math.sqrt(2)
+          width / Math.sqrt(2) / 2,
+          height / Math.sqrt(2) / 2
         ],
         threshold: 0
       })
@@ -218,7 +223,7 @@ const ImgBasedFriendListScanner = function () {
       // 重新复制一份
       grayScreen = images.copy(images.grayscale(images.copy(screen)), true)
       let originScreen = images.copy(screen)
-      intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, '#828282', 1), 5)
+      intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, _config.can_collect_color_gray || '#828282', _config.color_offset), 5)
       intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
       let countdown = new Countdown()
       let waitForCheckPoints = []
@@ -276,6 +281,7 @@ const ImgBasedFriendListScanner = function () {
                     point: point,
                     isHelp: true
                   })
+                  self.visualHelper.addRectangle('可帮助点', [point.left, point.top, point.right - point.left, point.bottom - point.top])
                 } finally {
                   executeSuccess = true
                   countdownLatch.countDown()
@@ -283,7 +289,7 @@ const ImgBasedFriendListScanner = function () {
                   calculator = null
                 }
               } catch (e) {
-                errorInfo(['线程执行异常: {}', e])
+                errorInfo(['区域检测线程执行异常: {}', e])
                 _commonFunctions.printExceptionStack(e)
               } finally {
                 if (!executeSuccess) {
@@ -300,7 +306,7 @@ const ImgBasedFriendListScanner = function () {
                 )
                 calculator.setScriptLogger(SCRIPT_LOGGER)
                 let point = calculator.getCenterPoint()
-                if (that.checkIsCanCollect(images.copy(originScreen), point)) {
+                if (that.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), point)) {
                   debugInfo('可收取位置：' + JSON.stringify(point))
                   if (_config.autoSetThreshold && _config.ocrThreshold > point.regionSame * 1.44) {
                     _config.ocrThreshold = parseInt(point.regionSame * 1.44)
@@ -313,6 +319,7 @@ const ImgBasedFriendListScanner = function () {
                     collectOrHelpList.push({ point: point, isHelp: false })
                     countdownLatch.countDown()
                     executeSuccess = true
+                    self.visualHelper.addRectangle('可收取点', [point.left, point.top, point.right - point.left, point.bottom - point.top])
                   } finally {
                     listWriteLock.unlock()
                   }
@@ -330,6 +337,7 @@ const ImgBasedFriendListScanner = function () {
                     let base64String = null
                     imgResolveLock.lock()
                     try {
+                      self.visualHelper.addRectangle('倒计时中', [point.left, point.top, width, height])
                       let countdownImg = images.clip(forOcrScreen, point.left + offset + down_off, point.top + down_off, point.right - point.left - offset - down_off, point.bottom - point.top - offset)
                       let scale = 30 / countdownImg.width
                       if (_config.develop_mode) {
@@ -341,7 +349,7 @@ const ImgBasedFriendListScanner = function () {
                       }
                       if (scale !== 1) {
                         countdownImg = images.resize(countdownImg, [parseInt(countdownImg.width * scale), parseInt(countdownImg.height * scale)])
-                      }                      
+                      }
                       countdownImg = images.interval(countdownImg, '#FFFFFF', 40)
 
                       try {
@@ -364,6 +372,7 @@ const ImgBasedFriendListScanner = function () {
                         if (isFinite(countdown) && countdown > 0) {
                           countdownLock.lock()
                           try {
+                            // self.visualHelper.addText(countdown, { x: point.left, y: point.top - 10 })
                             debugInfo('获取倒计时数据为：' + countdown)
                             if (countdown < that.min_countdown) {
                               debugInfo('设置最小倒计时：' + countdown)
@@ -387,7 +396,7 @@ const ImgBasedFriendListScanner = function () {
                 }
                 calculator = null
               } catch (e) {
-                errorInfo('线程执行异常' + e)
+                errorInfo('是否可收取及倒计时识别线程执行异常' + e)
                 _commonFunctions.printExceptionStack(e)
               } finally {
                 if (!executeSuccess) {
@@ -433,6 +442,7 @@ const ImgBasedFriendListScanner = function () {
           debugInfo('无可收取或帮助的内容')
         }
       }
+      self.visualHelper.displayAndClearAll()
       automator.scrollDown()
       sleep(300)
       count++

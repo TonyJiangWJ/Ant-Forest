@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-29 11:04:08
+ * @Last Modified time: 2020-12-14 21:27:09
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
@@ -24,12 +24,12 @@ runningQueueDispatcher.addRunningTask()
 commonFunctions.killDuplicateScript()
 logInfo('======加入任务队列成功=======')
 
-if (config.base_on_image) {
-  logInfo('======基于图像分析模式：加载dex=======')
-  resolver()
-  runtime.loadDex('./lib/color-region-center.dex')
-  logInfo('=======加载dex完成=======')
-}
+
+logInfo('======基于图像分析模式：加载dex=======')
+resolver()
+runtime.loadDex('./lib/color-region-center.dex')
+logInfo('=======加载dex完成=======')
+
 
 let FloatyInstance = singletonRequire('FloatyUtil')
 let FileUtils = singletonRequire('FileUtils')
@@ -91,37 +91,33 @@ logInfo(['运行模式：{}{} {} {} 排行榜可收取判定方式：{} {}',
   config.develop_mode ? '开发模式 ' : '',
   config.single_script ? '单脚本运行无视运行队列' : '多脚本调度运行',
   config.is_cycle ? '循环' + config.cycle_times + '次' : (config.never_stop ? '永不停止，重新激活时间：' + config.reactive_time : '计时模式，超时时间：' + config.max_collect_wait_time),
-  config.auto_set_img_or_widget ? '自动分析基于图像还是控件分析' : (
-    config.base_on_image ? '基于图像分析' + (config.useOcr || config.useTesseracOcr ? '-使用OCR识别倒计时 ' : '') : '基于控件分析'
-  ),
+  '基于图像分析' + (config.useOcr || config.useTesseracOcr ? '-使用OCR识别倒计时 ' : ''),
   config.check_finger_by_pixels_amount ? '基于像素点个数判断是否可收取，阈值<=' + config.finger_img_pixels : '自动判断是否可收取',
   config.useCustomScrollDown ? '使用模拟滑动, 速度：' + config.scrollDownSpeed + 'ms 底部高度：' + config.bottomHeight : ''
 ])
 logInfo(['设备分辨率：[{}, {}]', config.device_width, config.device_height])
 // -------- WARING --------
-if (config.auto_set_img_or_widget || !config.base_on_image) {
-  warnInfo('支付宝基本去除了排行榜的控件，还请尽量直接使用图像分析模式，后续控件分析模式不再花精力维护')
+if (!config.direct_use_img_collect_and_help) {
+  warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友')
 }
-if (config.base_on_image) {
-  if (!config.direct_use_img_collect_and_help) {
-    warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友')
-  }
-  if (!config.useCustomScrollDown) {
-    warnInfo('排行榜中控件不存在时无法使用自带的scrollDown，请开启模拟滑动并自行调试设置滑动速度和底部高度')
-  }
-  warnInfo('脚本会自动识别排行榜顶部和底部区域，首次运行时自动识别需要一定时间，请不要手动关闭脚本')
-  warnInfo('以上配置的详细内容请见README.md')
+if (!config.useCustomScrollDown) {
+  warnInfo('排行榜中控件不存在时无法使用自带的scrollDown，请开启模拟滑动并自行调试设置滑动速度和底部高度')
 }
+warnInfo('脚本会自动识别排行榜顶部和底部区域，首次运行时自动识别需要一定时间，请不要手动关闭脚本')
+warnInfo('以上配置的详细内容请见README.md')
+
 // ------ WARING END ------
 logInfo('======解锁并校验截图权限======')
 try {
   unlocker.exec()
 } catch (e) {
-  errorInfo('解锁发生异常, 三分钟后重新开始' + e)
-  commonFunctions.printExceptionStack(e)
-  commonFunctions.setUpAutoStart(3)
-  runningQueueDispatcher.removeRunningTask()
-  exit()
+  if (!config.forceStop) {
+    errorInfo('解锁发生异常, 三分钟后重新开始' + e)
+    commonFunctions.printExceptionStack(e)
+    commonFunctions.setUpAutoStart(3)
+    runningQueueDispatcher.removeRunningTask()
+    exit()
+  }
 }
 logInfo('解锁成功')
 commonFunctions.requestScreenCaptureOrRestart()
