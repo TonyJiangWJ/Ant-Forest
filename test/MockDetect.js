@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-27 14:11:21
+ * @Last Modified time: 2020-12-16 21:44:15
  * @Description: 
  */
 let resolver = require('../lib/AutoJSRemoveDexResolver.js')
@@ -24,11 +24,15 @@ let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
-require('../lib/ResourceMonitor.js')(runtime, this)
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
 let numberUtil = require('../lib/MockNumberOcrUtil.js')
 _config.show_debug_log = true
 _config.develop_mode = true
 requestScreenCapture(false)
+
+_commonFunctions.autoSetUpBangOffset(true)
+let offset = _config.bang_offset
+let save_img = false
 
 let SCRIPT_LOGGER = new ScriptLogger({
   log: function (message) {
@@ -41,7 +45,6 @@ let SCRIPT_LOGGER = new ScriptLogger({
     errorInfo(message)
   }
 })
-
 
 function Countdown () {
   this.start = new Date().getTime()
@@ -59,6 +62,27 @@ function Countdown () {
 
 }
 
+const SCALE_RATE = _config.device_width / 1080
+const checkPoints = []
+for (let i = 0; i < 30 * SCALE_RATE; i++) {
+  for (let j = 0; j < 30 * SCALE_RATE; j++) {
+    if (i === j) {
+      if (i <= 5) {
+        checkPoints.push([i, j, "#ffffff"])
+      } else {
+        checkPoints.push([i, j, "#000000"])
+      }
+    }
+  }
+}
+for (let i = 20; i < 30 * SCALE_RATE; i++) {
+  for (let j = 30; j > 20 * SCALE_RATE; j--) {
+    if (i - 20 === (30 - j)) {
+      checkPoints.push([i, j, "#000000"])
+    }
+  }
+}
+
 function CollectDetect () {
 
   this.threadPool = null
@@ -66,21 +90,6 @@ function CollectDetect () {
   this.resolved_pixels = {}
   this.last_check_point = null
   this.last_check_color = null
-  const SCALE_RATE = _config.device_width / 1080
-  const checkPoints = []
-  for (let i = 0; i < 30 * SCALE_RATE; i++) {
-    for (let j = 0; j < 30 * SCALE_RATE; j++) {
-      if (i == j)
-        checkPoints.push([i, j, "#ffffff"])
-    }
-  }
-  for (let i = 20; i < 30 * SCALE_RATE; i++) {
-    for (let j = 30; j > 20 * SCALE_RATE; j--) {
-      if (i - 20 === (30 - j)) {
-        checkPoints.push([i, j, "#ffffff"])
-      }
-    }
-  }
 
   this.init = function () {
     this.createNewThreadPool()
@@ -93,7 +102,7 @@ function CollectDetect () {
       new ThreadFactory({
         newThread: function (runnable) {
           let thread = Executors.defaultThreadFactory().newThread(runnable)
-          thread.setName(_config.thread_name_prefix + ENGINE_ID + '-mock-detect-' + thread.getName())
+          thread.setName(_config.thread_name_prefix + engines.myEngine().id + '-mock-detect-' + thread.getName())
           return thread
         }
       })
@@ -160,24 +169,33 @@ function CollectDetect () {
 
   this.checkIsCanCollect = function (img, point) {
 
-    let height = point.bottom - point.top
-    let width = point.right - point.left
-    debugInfo(['checkPoints: {}', JSON.stringify(checkPoints)])
-    let p = images.findMultiColors(img, "#ffffff", checkPoints, {
-      region: [
-        point.left + width - width / Math.sqrt(2),
-        point.top,
-        width / Math.sqrt(2),
-        height / Math.sqrt(2)
-      ],
-      threshold: 0
-    })
+    if (_config.check_finger_by_pixels_amount) {
+      debugInfo(['使用像素点个数判断是否是可收集，当前点像素点个数为：{} 判断阈值为<={}', point.regionSame, _config.finger_img_pixels])
+      return point.regionSame <= _config.finger_img_pixels
+    } else {
+      let countdown = new Countdown()
+      let height = point.bottom - point.top
+      let width = point.right - point.left
+      debugInfo(['checkPoints: {}', JSON.stringify(checkPoints)])
+      let p = images.findMultiColors(com.stardust.autojs.core.image.ImageWrapper.ofBitmap(img.getBitmap()), "#ffffff", checkPoints, {
+        region: [
+          point.left + width - width / Math.sqrt(2),
+          point.top,
+          width / Math.sqrt(2) / 2,
+          height / Math.sqrt(2) / 2
+        ],
+        threshold: 0
+      })
 
-    let flag = p !== null
-    debugInfo(['point: {} 判定结果：{} {}', JSON.stringify(point), flag, JSON.stringify(p)])
-    return flag
+      let flag = p !== null
+      debugInfo(['point: {} 判定结果：{} {}', JSON.stringify(point), flag, JSON.stringify(p)])
+      countdown.summary('判断是否可收取的点')
+      return {
+        match: flag,
+        matchPoint: p
+      }
+    }
   }
-
   this.collecting = function () {
     let screen = null
     let grayScreen = null
@@ -187,7 +205,12 @@ function CollectDetect () {
     // 重新复制一份
     grayScreen = images.grayscale(images.copy(screen))
     let originScreen = images.copy(screen, true)
-    intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, '#828282', 1), 5)
+    intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, _config.can_collect_color_gray || '#828282', _config.color_offset), 5)
+    if (save_img) {
+      images.save(intervalScreenForDetectCollect, files.cwd() + "/interval_" + (Math.random() * 10000).toFixed(0) + ".png")
+      save_img = false
+      toastLog('保存成功')
+    }
     intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
     let countdown = new Countdown()
     let waitForCheckPoints = []
@@ -254,10 +277,11 @@ function CollectDetect () {
             calculator.setScriptLogger(SCRIPT_LOGGER)
             let point = calculator.getCenterPoint()
             try {
-              if (that.checkIsCanCollect(images.copy(originScreen), point)) {
+              let matches = that.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), point)
+              if (matches === true || matches && matches.match) {
                 debugInfo('判定可收取位置：' + JSON.stringify(point))
                 listWriteLock.lock()
-                collectOrHelpList.push({ point: point, isHelp: false })
+                collectOrHelpList.push({ point: point, isHelp: false, matchPoint: matches !== true ? matches.matchPoint : null })
                 countdownLatch.countDown()
                 listWriteLock.unlock()
               } else {
@@ -297,6 +321,7 @@ function CollectDetect () {
         }
       }
       originScreen.recycle()
+      resourceMonitor.releaseAll()
       countdown.summary('分析所有可帮助和可收取的点')
       return collectOrHelpList.concat(countdownList)
     }
@@ -366,7 +391,12 @@ window.setTouchable(false)
 //   return new android.graphics.Rect(a[0], a[1], (a[0] + a[2]), (a[1] + a[3]))
 // }
 function convertArrayToRect (a) {
-  return new android.graphics.Rect(a[0], a[1], a[2], a[3])
+  // origin array left top right bottom
+  return new android.graphics.Rect(a[0], a[1] + offset, a[2], a[3] + offset)
+}
+
+function convertRectShapeArray (a) {
+  return [a[0], a[1], a[0] + a[2], a[1] + a[3]]
 }
 
 function getPositionDesc (position) {
@@ -392,7 +422,7 @@ function drawRectAndText (desc, position, colorStr, canvas, paint) {
   paint.setStrokeWidth(1)
   paint.setTextSize(20)
   paint.setStyle(Paint.Style.FILL)
-  canvas.drawText(desc, position[0], position[1], paint)
+  canvas.drawText(desc, position[0], position[1] + offset, paint)
   paint.setTextSize(10)
   paint.setStrokeWidth(1)
   paint.setARGB(255, 0, 0, 0)
@@ -404,7 +434,7 @@ function drawText (text, position, canvas, paint) {
   paint.setARGB(255, 0, 0, 255)
   paint.setStrokeWidth(1)
   paint.setStyle(Paint.Style.FILL)
-  canvas.drawText(text, position.x, position.y, paint)
+  canvas.drawText(text, position.x, position.y + offset, paint)
 }
 
 function drawCoordinateAxis (canvas, paint) {
@@ -416,17 +446,24 @@ function drawCoordinateAxis (canvas, paint) {
   paint.setARGB(255, colorVal >> 16 & 0xFF, colorVal >> 8 & 0xFF, colorVal & 0xFF)
   for (let x = 50; x < width; x += 50) {
     paint.setStrokeWidth(0)
-    canvas.drawText(x, x, 10, paint)
+    canvas.drawText(x, x + offset, 10, paint)
     paint.setStrokeWidth(0.5)
-    canvas.drawLine(x, 0, x, height, paint)
+    canvas.drawLine(x, 0 + offset, x, height + offset, paint)
   }
 
   for (let y = 50; y < height; y += 50) {
     paint.setStrokeWidth(0)
-    canvas.drawText(y, 0, y, paint)
+    canvas.drawText(y, 0 + offset, y, paint)
     paint.setStrokeWidth(0.5)
-    canvas.drawLine(0, y, width, y, paint)
+    canvas.drawLine(0, y + offset, width, y + offset, paint)
   }
+}
+
+function drawPoints (x, y, points, canvas, paint) {
+  points.forEach(p => {
+    let px = p[0] + x, py = p[1] + y + offset
+    canvas.drawPoint(px, py, paint)
+  })
 }
 
 function exitAndClean () {
@@ -452,7 +489,6 @@ let startTime = new Date().getTime()
 let targetEndTime = startTime + 120000
 let passwindow = 0
 let threshold = 0
-let flag = 1
 
 window.canvas.on("draw", function (canvas) {
   // try {
@@ -480,10 +516,25 @@ window.canvas.on("draw", function (canvas) {
   if (points && points.length > 0) {
     points.forEach(pointData => {
       let point = pointData.point
+      let height = point.bottom - point.top
+      let width = point.right - point.left
+      drawRectAndText('',
+        convertRectShapeArray([
+          point.left + width - width / Math.sqrt(2),
+          point.top,
+          width / Math.sqrt(2) / 2,
+          height / Math.sqrt(2) / 2
+        ]),
+        '#ff0000', canvas, paint)
       if (pointData.isCountdown) {
         drawRectAndText('倒计时:' + pointData.num, [point.left - 10, point.top - 10, point.right + 10, point.bottom + 10], '#ff0000', canvas, paint)
+        drawPoints(point.left + width - width / Math.sqrt(2), point.top + 5, checkPoints, canvas, paint)
       } else {
         drawRectAndText(pointData.isHelp ? '帮收' : '可收', [point.left - 10, point.top - 10, point.right + 10, point.bottom + 10], '#ff0000', canvas, paint)
+        if (!pointData.isHelp && pointData.matchPoint) {
+          let matchPoint = pointData.matchPoint
+          drawPoints(matchPoint.x, matchPoint.y, checkPoints, canvas, paint)
+        }
       }
       drawText(point.same, { x: point.left, y: point.top - 30 }, canvas, paint)
     })
@@ -515,7 +566,8 @@ threads.start(function () {
     } else if (keyCode === 25) {
       // 设置最低间隔200毫秒，避免修改太快
       if (new Date().getTime() - lastChangedTime > 200) {
-        flag = (flag + 1) % 2
+        save_img = true
+        toastLog('准备保存图片')
       }
     }
 
