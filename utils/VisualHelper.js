@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-20 16:55:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-16 22:48:56
+ * @Last Modified time: 2020-12-16 23:16:17
  * @Description: 
  */
 
@@ -45,7 +45,7 @@ function VisualHelper () {
       paint.setDither(true)
       paint.setTextSize(30)
 
-      drawText('可视化辅助工具运行中', { x: 100, y: 300 + offset }, canvas, paint, 30)
+      drawText('可视化辅助工具运行中', { x: 100, y: 300 + offset }, canvas, paint, null, 30)
       if (self.toDrawList && self.toDrawList.length > 0) {
         self.toDrawList.forEach(drawInfo => {
           switch (drawInfo.type) {

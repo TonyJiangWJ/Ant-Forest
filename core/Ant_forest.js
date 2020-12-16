@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-14 21:21:56
+ * @Last Modified time: 2020-12-16 23:13:22
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -774,6 +774,9 @@ function Ant_forest () {
       _commonFunctions.showDialogAndWait(true)
       this.listenStopCollect()
       _commonFunctions.showEnergyInfo()
+      if (_base_scanner === null) {
+        _base_scanner = new BaseScanner()
+      }
     }
 
     this.endLoop = function () {
@@ -792,6 +795,10 @@ function Ant_forest () {
       }
       flushAllLogs()
       _runningQueueDispatcher.removeRunningTask()
+      if (_base_scanner !== null) {
+        _base_scanner.destory()
+        _base_scanner = null
+      }
     }
 
     this.interruptStopListenThread = function () {
