@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-23 10:25:47
+ * @Last Modified time: 2020-12-16 22:50:07
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -23,6 +23,7 @@ let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let ENGINE_ID = engines.myEngine().id
 let _package_name = 'com.eg.android.AlipayGphone'
 let _HoughHelper = require('../utils/HoughHelper.js')
+let _VisualHelper = require('../utils/VisualHelper.js')
 
 const BaseScanner = function () {
 
@@ -52,6 +53,8 @@ const BaseScanner = function () {
   this.protectDetectingCondition = this.protectDetectingLock.newCondition()
   this.lifecycleCallbackId = null
   this.houghHelper = null
+  this.visualHelper = new _VisualHelper()
+  this.visualHelper.init()
   this.createNewThreadPool = function () {
     this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 4, 60,
       TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256),
@@ -92,6 +95,10 @@ const BaseScanner = function () {
     if (this.houghHelper !== null) {
       this.houghHelper.persistence()
       this.houghHelper = null
+    }
+    if (this.visualHelper !== null) {
+      this.visualHelper.closeDialog()
+      this.visualHelper = null
     }
   }
 
@@ -337,6 +344,7 @@ const BaseScanner = function () {
                   lock.lock()
                   if (!collectableBall.invalid) {
                     clickPoints.push(collectableBall)
+                    self.visualHelper.addCircle(collectableBall.isHelp ? '帮助能量球' : collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball)
                     if (_config.develop_saving_mode) {
                       if (collectableBall.isHelp) {
                         self.houghHelper.addHelpBall(collectableBall, isNight)
@@ -347,6 +355,7 @@ const BaseScanner = function () {
                       }
                     }
                   } else {
+                    self.visualHelper.addCircle('非有效能量球', collectableBall.ball)
                     invalidPoints.push(collectableBall)
                     findInvalidCallback(collectableBall)
                     _config.develop_saving_mode && self.houghHelper.addInvalidBall(collectableBall, isNight)
@@ -356,7 +365,7 @@ const BaseScanner = function () {
                   debugInfo(['mat dims is smaller then two, rgb: {}', rgbImg.getMat().dims()])
                 }
               } catch (e) {
-                errorInfo('线程执行异常：' + e)
+                errorInfo('baseScanner线程执行异常：' + e)
                 _commonFunctions.printExceptionStack(e)
               } finally {
                 countdownLatch.countDown()
@@ -367,6 +376,7 @@ const BaseScanner = function () {
           debugInfo(['countdownLatch waiting count: {}', countdownLatch.getCount()])
           countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)
           debugInfo(['判断可收集或帮助能量球信息总耗时：{}ms', new Date().getTime() - _start])
+          self.visualHelper.displayAndClearAll()
           if (!this.awaitForCollectable()) {
             return
           }

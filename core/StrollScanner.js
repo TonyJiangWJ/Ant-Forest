@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-20 11:26:46
+ * @Last Modified time: 2020-12-16 22:50:36
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -94,6 +94,7 @@ const StrollScanner = function () {
         debugInfo(['重新生成逛一逛按钮区域：{}', JSON.stringify(region)])
         _commonFunctions.ensureRegionInScreen(region)
       } else {
+        warnInfo('自动识别逛一逛按钮失败', true)
         hasNext = false
       }
     }
