@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-02 21:52:13
+ * @Last Modified time: 2020-12-14 21:21:56
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -14,12 +14,8 @@ let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
 let callStateListener = _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
-let FriendListScanner = require('./FriendListScanner.js')
 let StrollScanner = require('./StrollScanner.js')
-let ImgBasedFriendListScanner = null
-if (_config.base_on_image) {
-  ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
-}
+let ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
 let BaseScanner = require('./BaseScanner.js')
 
 function Ant_forest () {
@@ -545,7 +541,7 @@ function Ant_forest () {
   }
 
   const findAndCollect = function () {
-    let scanner = _config.base_on_image ? checkAndNewImageBasedScanner() : new FriendListScanner()
+    let scanner = checkAndNewImageBasedScanner()
     scanner.init({ currentTime: _current_time, increasedEnergy: _post_energy - _pre_energy })
     let executeResult = scanner.start()
     // 执行失败 返回 true
