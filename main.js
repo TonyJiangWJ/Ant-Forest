@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-14 21:27:09
+ * @Last Modified time: 2020-12-24 19:38:15
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
@@ -33,7 +33,7 @@ logInfo('=======加载dex完成=======')
 
 let FloatyInstance = singletonRequire('FloatyUtil')
 let FileUtils = singletonRequire('FileUtils')
-let callStateListener = config.enable_call_state_control ? singletonRequire('CallStateListener') : { exitIfNotIdle: () => { } }
+let callStateListener = !config.is_pro && config.enable_call_state_control ? singletonRequire('CallStateListener') : { exitIfNotIdle: () => { } }
 let resourceMonitor = require('./lib/ResourceMonitor.js')(runtime, this)
 
 let unlocker = require('./lib/Unlock.js')
@@ -48,6 +48,7 @@ commonFunctions.registerOnEngineRemoved(function () {
     () => {
       // 保存是否需要重新锁屏
       unlocker.saveNeedRelock()
+      unlocker.unlocker.relock && _config.resetBrightness && _config.resetBrightness()
       events.removeAllListeners()
       events.recycle()
       debugInfo('校验并移除已加载的dex')
@@ -121,26 +122,7 @@ try {
 }
 logInfo('解锁成功')
 commonFunctions.requestScreenCaptureOrRestart()
-// 根据截图重新获取设备分辨率
-let screen = commonFunctions.checkCaptureScreenPermission(3)
-if (screen) {
-  let width = screen.width
-  let height = screen.height
-  if (width > height) {
-    errorInfo(['检测到截图的宽度大于高度，可能截图方法出现了问题，请尝试强制重启AutoJS，否则脚本无法正常运行! w:{} h:{}', width, height], true)
-    runningQueueDispatcher.removeRunningTask()
-    exit()
-  }
-  if (width !== config.device_width || height !== config.device_height) {
-    config.device_height = height
-    config.device_width = width
-    warnInfo(['设备分辨率设置不正确，宽高已修正为：[{}, {}]', width, height])
-    let configStorage = storages.create(storage_name)
-    configStorage.put('device_height', height)
-    configStorage.put('device_width', width)
-    config.recalculateRegion()
-  }
-}
+commonFunctions.ensureDeviceSizeValid()
 // 初始化悬浮窗
 if (!FloatyInstance.init()) {
   runningQueueDispatcher.removeRunningTask()

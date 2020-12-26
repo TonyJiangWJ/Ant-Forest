@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-02 23:53:22
+ * @Last Modified time: 2020-12-25 21:37:26
  * @Description: 
  */
 "ui";
@@ -33,7 +33,13 @@ let AesUtil = require('./lib/AesUtil.js')
 let { config, default_config, storage_name } = require('./config.js')(runtime, this)
 let commonFunctions = singletonRequire('CommonFunction')
 config.hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
-
+if (config.device_width < 10 || config.device_height < 10) {
+  if (commonFunctions.requestScreenCaptureOrRestart(true)) {
+    commonFunctions.ensureDeviceSizeValid()
+  } else {
+    toastLog('获取截图权限失败，且设备分辨率信息不正确，可能无法正常运行脚本')
+  }
+}
 let local_config_path = files.cwd() + '/local_config.cfg'
 let runtime_store_path = files.cwd() + '/runtime_store.cfg'
 let aesKey = device.getAndroidId()
@@ -43,6 +49,10 @@ ui.layout(
   </vertical>
 )
 ui.webview.getSettings().setJavaScriptEnabled(true)
+// 禁用缩放
+ui.webview.getSettings().setTextZoom(100)
+// 防止出现黑色背景
+ui.webview.setBackgroundColor(android.graphics.Color.TRANSPARENT)
 let mainScriptPath = FileUtils.getRealMainScriptPath(true)
 let indexFilePath = "file://" + mainScriptPath + "/vue_configs/index.html"
 
@@ -210,7 +220,7 @@ let bridgeHandler = {
             let encrypt_content = files.read(runtime_store_path)
             let resetRuntimeStore = function (runtimeStorageStr) {
               if (commonFunctions.importRuntimeStorage(runtimeStorageStr)) {
-              toastLog('导入运行配置成功')
+                toastLog('导入运行配置成功')
                 return true
               }
               toastLog('导入运行配置失败，无法读取正确信息')
@@ -261,7 +271,11 @@ let webViewBridge = new WebViewBridge(new BridgeHandler({
       let { bridgeName, callbackId, data } = params
       let handlerFunc = bridgeHandler[bridgeName]
       if (handlerFunc) {
-        handlerFunc(data, callbackId)
+        try {
+          handlerFunc(data, callbackId)
+        } catch (e) {
+          printExceptionStack(e)
+        }
       } else {
         toastLog('no match bridge for name: ' + bridgeName)
       }

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:17:06
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-03 09:20:17
+ * @Last Modified time: 2020-12-25 21:04:31
  * @Description: 
 -->
 <!DOCTYPE html>
@@ -22,7 +22,7 @@
 <body>
   <noscript><strong>We're sorry but this doesn't work properly without JavaScript enabled. Please enable
       it to continue.</strong></noscript>
-  <div id=app class="root-container" v-cloak :style="'min-height:' + clientHeight + 'px'">
+  <div id=app class="root-container" v-cloak style="min-height:755px;background: #ffffff;">
     <van-tabs v-model="activeTab" sticky swipeable>
       <van-tab title="基础设置">
         <sample-configs />
@@ -74,7 +74,7 @@
     let element = document.createElement('script')
     // element.src = 'file://' + filePath + '/vue_configs/js/vue.min.js'
     // document.head.appendChild(element)
-    let scripts = ['/vue_configs/js/webview_bridge.js', '/vue_configs/js/components.js', '/vue_configs/js/app.js']
+    let scripts = ['/vue_configs/js/webview_bridge.js', '/vue_configs/js/components/common.js', '/vue_configs/js/components/configuration.js', '/vue_configs/js/app.js']
     let index = 0
     scripts.forEach(script => {
       setTimeout(function () {
@@ -102,6 +102,12 @@
     let location = window.location.href
     appendScripts(location.substring(0, location.indexOf('/vue_configs/index.html')))
   }
+  /**
+   * 禁用长按菜单，复制等 
+   **/
+  window.addEventListener('contextmenu', function (e) {
+    e.preventDefault()
+  })
 </script>
 
 </html>

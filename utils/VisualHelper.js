@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-20 16:55:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-16 23:16:17
+ * @Last Modified time: 2020-12-18 21:50:23
  * @Description: 
  */
 
@@ -50,16 +50,16 @@ function VisualHelper () {
         self.toDrawList.forEach(drawInfo => {
           switch (drawInfo.type) {
             case 'rect':
-              drawRectAndText(drawInfo.text, drawInfo.rect, '#00ff00', canvas, paint)
+              drawRectAndText(drawInfo.text, drawInfo.rect, drawInfo.color || '#00ff00', canvas, paint)
               break
             case 'circle':
-              drawCircleAndText(drawInfo.text, drawInfo.circle, '#00ff00', canvas, paint)
+              drawCircleAndText(drawInfo.text, drawInfo.circle, drawInfo.color || '#00ff00', canvas, paint)
               break
             case 'text':
-              drawText(drawInfo.text, drawInfo.position, canvas, paint, '#00ff00')
+              drawText(drawInfo.text, drawInfo.position, canvas, paint, drawInfo.color || '#00ff00')
               break
             default:
-              debugInfo(['no match draw event for {}', drawInfo.type])
+              debugInfo(['no match draw event for {}', drawInfo.type], true)
           }
         })
       }
@@ -73,8 +73,6 @@ function VisualHelper () {
     debugInfo('关闭悬浮窗')
     if (this.window !== null) {
       this.window.canvas.removeAllListeners()
-      toastLog('close in 1 seconds')
-      sleep(1000)
       this.window.close()
       this.window = null
     }
