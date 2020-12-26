@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 15:53:42
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-30 23:38:21
+ * @Last Modified time: 2020-12-25 21:33:32
  * @Description: 
  */
 (function () {
@@ -43,6 +43,14 @@
         return false
       }
       functions[functionName] = func
+    }
+  }
+
+  window.$nativeApi = {
+    request: function (bridgeName, data) {
+      return new Promise(resolve => {
+        $app.invoke(bridgeName, data, resp => resolve(resp))
+      })
     }
   }
 })()
