@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-11-17 22:19:11
+ * @Last Modified time: 2020-12-26 08:23:49
  * @Description: 
  */
 
@@ -141,8 +141,7 @@ window.canvas.on("draw", function (canvas) {
       clickPoints.forEach((s) => {
         let p = s.ball
         drawRectAndText('', [p.x - 5, p.y - 5, 10, 10], '#808080', canvas, paint)
-        drawRectAndText((s.isHelp ? 'help' : 'collect'), [p.x - 25 - 2, p.y - 2, 4, 4], s.isHelp ? '#FF9800' : '#00FF00', canvas, paint)
-        drawRectAndText(s.medianBottom + ';' + s.std.toFixed(2), [p.x - 25 - 2, p.y + 60, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
+        drawRectAndText((s.isHelp ? 'help' : s.isWatering ? 'watering' : 'collect' + s.avg), [p.x - 25 - 2, p.y - 2, 4, 4], s.isHelp ? '#FF9800' : s.isWatering ? '#FF0000' : '#00FF00', canvas, paint)
         drawRectAndText('', [p.x + 25 - 2, p.y - 2, 4, 4], '#808080', canvas, paint)
         let color = colors.parseColor(s.isHelp ? '#FF9800' : '#00FF00')
         paint.setStrokeWidth(3)
@@ -156,10 +155,8 @@ window.canvas.on("draw", function (canvas) {
         let p = s.ball
         drawRectAndText('', [p.x - 5, p.y - 5, 10, 10], '#808080', canvas, paint)
         if (flag == 1) {
-          drawRectAndText(s.median + ';' + s.avg.toFixed(2), [p.x - 25 - 2, p.y + 30, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
           drawRectAndText('', [p.x - 30, p.y + 35, 60, 20], '#808080', canvas, paint)
         }
-        drawRectAndText(s.medianBottom + ';' + s.std.toFixed(2), [p.x - 25 - 2, p.y + 60, 4, 4], s.isNight ? '#0000FF' : '#000000', canvas, paint)
         drawRectAndText('', [p.x + 25 - 2, p.y - 2, 4, 4], '#808080', canvas, paint)
         paint.setStrokeWidth(3)
         paint.setStyle(Paint.Style.STROKE)

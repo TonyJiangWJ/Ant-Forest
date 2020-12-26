@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-20 13:09:28
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-17 00:10:27
+ * @Last Modified time: 2020-12-25 21:51:08
  * @Description: 
  */
 let { config: _config, storage_name } = require('../config.js')(runtime, this)
@@ -34,6 +34,7 @@ const HoughHelper = function () {
   }
 
   this.persistenceFilePath = fileUtils.getCurrentWorkPath() + '/logs/hough_help.json'
+  this.persistenceImageDataPath = fileUtils.getCurrentWorkPath() + '/logs/ball_image.data'
   if (files.exists(this.persistenceFilePath)) {
     let storedBallInfoStr = files.read(this.persistenceFilePath)
     if (storedBallInfoStr) {
@@ -41,6 +42,9 @@ const HoughHelper = function () {
       this.dailyBalls = dailyBalls || this.dailyBalls
       this.nightlyBalls = nightlyBalls || this.nightlyBalls
     }
+  }
+  if (!files.exists(this.persistenceImageDataPath)) {
+    files.write(this.persistenceImageDataPath, 'image base64 infos\n')
   }
   // functions
   this.addInvalidBall = function (ballInfo, isNight) {
@@ -126,6 +130,40 @@ const HoughHelper = function () {
     debugInfo(['store string length: {}', storeString.length])
     files.write(this.persistenceFilePath, storeString)
     debugInfo(['persistence done, cost: {} ms', (new Date().getTime() - start)])
+  }
+
+  this.saveImage = function (img, ballInfo) {
+    try {
+      let base64 = images.toBase64(img)
+      if (base64) {
+        files.append(this.persistenceImageDataPath, formatString('ballInfo:{} data:image/png;base64,{}\n', JSON.stringify(ballInfo), base64))
+      }
+    } catch (e) {
+      console.error('saving failed: ' + e)
+    }
+  }
+}
+
+function formatString () {
+  let originContent = []
+  for (let arg in arguments) {
+    originContent.push(arguments[arg])
+  }
+  if (originContent.length === 1) {
+    return originContent[0]
+  }
+  let marker = originContent[0]
+  let args = originContent.slice(1)
+  let regex = /(\{\})/g
+  let matchResult = marker.match(regex)
+  if (matchResult && args && matchResult.length > 0 && matchResult.length === args.length) {
+    args.forEach((item, idx) => {
+      marker = marker.replace('{}', item)
+    })
+    return marker
+  } else {
+    console.error('参数数量不匹配' + arguments)
+    return arguments
   }
 }
 

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-16 22:50:07
+ * @Last Modified time: 2020-12-26 08:25:42
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -93,7 +93,6 @@ const BaseScanner = function () {
       this.threadPool = null
     }
     if (this.houghHelper !== null) {
-      this.houghHelper.persistence()
       this.houghHelper = null
     }
     if (this.visualHelper !== null) {
@@ -316,49 +315,48 @@ const BaseScanner = function () {
             this.threadPool.execute(function () {
               try {
                 if (rgbImg.getMat().dims() >= 2) {
+                  /**
+                   * 能量球多维度采样，通过不同的数值来判断是否可收取、帮助、浇水球
+                   */
                   let startForColorValue = new Date().getTime()
-                  let clipImg = images.clip(rgbImg, b.x - cvt(30), b.y + cvt(35), cvt(60), cvt(20))
-                  let avgHsv = OpenCvUtil.getHistAverage(clipImg)
-                  let median = OpenCvUtil.getMedian(clipImg)
-                  clipImg = images.clip(rgbImg, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
-                  let clipGrayImg = images.clip(grayImgInfo, b.x - cvt(40), b.y + cvt(80), cvt(80), cvt(20))
-                  let medianBottom = OpenCvUtil.getMedian(clipImg)
-                  let stdDeviation = OpenCvUtil.getStandardDeviation(clipGrayImg)
-                  let collectableBall = { ball: b, isHelp: false, medianBottom: medianBottom, avg: avgHsv, median: median, std: stdDeviation, isNight: isNight, isOwn: isOwn }
-                  let medianBottomMin = isNight ? 80 : 180
+                  let ballImage = images.clip(rgbImg, b.x - cvt(70), b.y - cvt(70), cvt(140), cvt(180))
+                  let grayBallImage = images.grayscale(ballImage)
+                  // 用于判定是否可收取
+                  let intervalBallImage = images.inRange(grayBallImage, '#a1a1a1', '#b1b1b1')
+                  let stdDeviation = OpenCvUtil.getStandardDeviation(intervalBallImage)
+                  // 用于判定是否帮助收取
+                  let intervalForHelpCheck = images.inRange(ballImage, '#ad8500', '#f4ddff')
+                  let stdBottom = OpenCvUtil.getStandardDeviation(images.clip(intervalForHelpCheck, 0, cvt(160), intervalForHelpCheck.width, intervalForHelpCheck.height - cvt(160)))
+                  // 判定是否为浇水球
+                  let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
+                  // 判定是不是真实的能量球，包括倒计时中的，因为帮收和倒计时中的颜色特征有几率一模一样
+                  let intervalForCollatableRecheck = images.inRange(ballImage, '#77cc00', '#ffff91')
+                  let collectableRecheckStd = OpenCvUtil.getStandardDeviation(intervalForCollatableRecheck)
+                  let collectableBall = { ball: b, isHelp: false, isNight: isNight, isOwn: isOwn, avg: avgHsv, intervalStd: stdDeviation, stdBottom: stdBottom }
+                  
                   debugForDev(['取色耗时：{}ms', new Date().getTime() - startForColorValue])
-                  if (median >= 235 && avgHsv >= 235) {
+                  if (avgHsv >= 25) {
                     // 浇水能量球
                     collectableBall.isWatering = true
                     recheck = isOwn
-                  } else if (!isOwn && medianBottom > medianBottomMin) {
+                  } else if (!isOwn && stdBottom < 160) {
                     // 判定为帮收
                     collectableBall.isHelp = true
-                  } else if (!isOwn && stdDeviation <= 30 || isOwn && Math.abs(212 - median) <= 3 && avgHsv > 200) {
-                    // 判定为可收取
-                    // collectableBall = collectableBall
-                  } else {
-                    // 非帮助或可收取
+                  } else if (stdDeviation > 1400 || collectableRecheckStd > 1200 && !(isOwn && collectableBall.isWatering)) {
+                    // 非帮助或可收取, 小于1400的则是 可收取的
                     collectableBall.invalid = true
                   }
                   lock.lock()
+                  if (_config.develop_saving_mode) {
+                    self.houghHelper.saveImage(ballImage, collectableBall)
+                  }
                   if (!collectableBall.invalid) {
                     clickPoints.push(collectableBall)
                     self.visualHelper.addCircle(collectableBall.isHelp ? '帮助能量球' : collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball)
-                    if (_config.develop_saving_mode) {
-                      if (collectableBall.isHelp) {
-                        self.houghHelper.addHelpBall(collectableBall, isNight)
-                      } else if (collectableBall.isWatering) {
-                        self.houghHelper.addWaterBall(collectableBall, isNight)
-                      } else {
-                        self.houghHelper.addCollectBall(collectableBall, isNight)
-                      }
-                    }
                   } else {
                     self.visualHelper.addCircle('非有效能量球', collectableBall.ball)
                     invalidPoints.push(collectableBall)
                     findInvalidCallback(collectableBall)
-                    _config.develop_saving_mode && self.houghHelper.addInvalidBall(collectableBall, isNight)
                   }
                   lock.unlock()
                 } else {
@@ -391,7 +389,13 @@ const BaseScanner = function () {
               }
               haveValidBalls = true
               findPointCallback(point)
-              if (isOwn && point.isWatering && !_config.skip_own_watering || _config.help_friend && point.isHelp || !point.isHelp) {
+              if (
+                // 收取自身的好友浇水球
+                isOwn && point.isWatering && !_config.skip_own_watering_ball
+                // 帮助收取
+                || point.isHelp && _config.help_friend
+                // 非帮收球且非浇水直接收取
+                || !point.isHelp && !point.isWatering) {
                 self.collect_operated = true
                 automator.click(b.x, b.y)
                 if (idx < clickPoints.length - 1) {
@@ -421,7 +425,9 @@ const BaseScanner = function () {
         rgbImg.recycle()
       }
       // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次 || 使用了双击卡，且点击过球
-      repeat = recheck && isOwn && --recheckLimit > 0 || !haveValidBalls && haveBalls && --recheckLimit >= 2 || _config.use_double_click_card && haveValidBalls
+      repeat = recheck && isOwn && --recheckLimit > 0
+        || !haveValidBalls && haveBalls && --recheckLimit >= 2
+        || _config.use_double_click_card && haveValidBalls && --recheckLimit > 0
       if (repeat) {
         debugInfo(['需要二次校验，等待{}ms', isOwn ? 200 : 500])
         sleep(isOwn ? 200 : 500)

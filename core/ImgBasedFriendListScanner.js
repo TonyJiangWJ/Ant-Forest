@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-16 21:57:08
+ * @Last Modified time: 2020-12-25 21:18:19
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -150,7 +150,7 @@ const ImgBasedFriendListScanner = function () {
     if (this.last_check_point) {
       this.last_check_color = grayImg.getBitmap().getPixel(this.last_check_point.x, this.last_check_point.y)
     } else {
-      this.last_check_color
+      this.last_check_color = null
     }
 
 
@@ -167,8 +167,10 @@ const ImgBasedFriendListScanner = function () {
           colors.toString(this.last_check_color)
         )
       )
+      return true
     } else {
       countdown.summary('滑动校验 未找到校验点')
+      return false
     }
   }
 
@@ -218,6 +220,7 @@ const ImgBasedFriendListScanner = function () {
     let count = 0
     let hasNext = true
     let that = this
+    let strollUpCheckCount = 0
     do {
       screen = _commonFunctions.checkCaptureScreenPermission(5)
       // 重新复制一份
@@ -269,6 +272,9 @@ const ImgBasedFriendListScanner = function () {
             this.threadPool.execute(function () {
               let executeSuccess = false
               try {
+                if (_config.collect_by_stroll_only) {
+                  return
+                }
                 let calculator = new ColorCenterCalculatorWithInterval(
                   images.copy(intervalScreenForDetectHelp), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
                 )
@@ -307,6 +313,9 @@ const ImgBasedFriendListScanner = function () {
                 calculator.setScriptLogger(SCRIPT_LOGGER)
                 let point = calculator.getCenterPoint()
                 if (that.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), point)) {
+                  if (_config.collect_by_stroll_only) {
+                    return
+                  }
                   debugInfo('可收取位置：' + JSON.stringify(point))
                   if (_config.autoSetThreshold && _config.ocrThreshold > point.regionSame * 1.44) {
                     _config.ocrThreshold = parseInt(point.regionSame * 1.44)
@@ -419,27 +428,31 @@ const ImgBasedFriendListScanner = function () {
         }
         originScreen.recycle()
         countdown.summary('分析所有可帮助和可收取的点')
-        if (collectOrHelpList && collectOrHelpList.length > 0) {
-          debugInfo(['开始收集和帮助收取，总数：{}', collectOrHelpList.length])
-          if (_config.develop_mode) {
-            collectOrHelpList.forEach(target => {
-              debugInfo(JSON.stringify(target))
-            })
-          }
-          let noError = true
-          collectOrHelpList.forEach(point => {
-            if (noError) {
-              if (false === that.collectTargetFriend(point)) {
-                noError = false
-              }
+        if (!_config.collect_by_stroll_only) {
+          if (collectOrHelpList && collectOrHelpList.length > 0) {
+            debugInfo(['开始收集和帮助收取，总数：{}', collectOrHelpList.length])
+            if (_config.develop_mode) {
+              collectOrHelpList.forEach(target => {
+                debugInfo(JSON.stringify(target))
+              })
             }
-          })
-          if (!noError) {
-            // true is error
-            return true
+            let noError = true
+            collectOrHelpList.forEach(point => {
+              if (noError) {
+                if (false === that.collectTargetFriend(point)) {
+                  noError = false
+                }
+              }
+            })
+            if (!noError) {
+              // true is error
+              return true
+            }
+          } else {
+            debugInfo('无可收取或帮助的内容')
           }
         } else {
-          debugInfo('无可收取或帮助的内容')
+          debugInfo('只通过逛一逛收集，跳过排行榜中的收取，仅识别倒计时')
         }
       }
       self.visualHelper.displayAndClearAll()
@@ -475,7 +488,14 @@ const ImgBasedFriendListScanner = function () {
           screen = _commonFunctions.checkCaptureScreenPermission()
           grayScreen = images.grayscale(screen)
         }
-        this.scrollUpIfNeeded(images.copy(grayScreen))
+        if (!this.scrollUpIfNeeded(images.copy(grayScreen))) {
+          if (++strollUpCheckCount >= 5) {
+            warnInfo('滑动校验失败达到5次，重新执行')
+            return true
+          }
+        } else {
+          strollUpCheckCount = 0
+        }
       }
       grayScreen && grayScreen.recycle()
     } while (hasNext)

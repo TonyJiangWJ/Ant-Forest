@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-16 22:50:36
+ * @Last Modified time: 2020-12-17 19:51:57
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -92,6 +92,8 @@ const StrollScanner = function () {
         _config.stroll_button_height = region[3]
         _config.stroll_button_regenerate = true
         debugInfo(['重新生成逛一逛按钮区域：{}', JSON.stringify(region)])
+        this.visualHelper.addRectangle('自动识别逛一逛按钮', region)
+        this.visualHelper.displayAndClearAll()
         _commonFunctions.ensureRegionInScreen(region)
       } else {
         warnInfo('自动识别逛一逛按钮失败', true)
@@ -106,6 +108,8 @@ const StrollScanner = function () {
         continue
       }
       debugInfo(['逛下一个, click random region: [{}]', JSON.stringify(region)])
+      this.visualHelper.addRectangle('准备点击下一个', region)
+      this.visualHelper.displayAndClearAll()
       automator.clickRandomRegion({ left: region[0], top: region[1], width: region[2], height: region[3] })
       sleep(300)
       hasNext = this.collectTargetFriend()

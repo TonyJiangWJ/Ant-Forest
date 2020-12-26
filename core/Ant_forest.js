@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-16 23:13:22
+ * @Last Modified time: 2020-12-26 08:35:51
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -438,6 +438,8 @@ function Ant_forest () {
       _commonFunctions.persistHistoryEnergy(currentEnergy)
       logInfo('当前能量：' + currentEnergy)
     }
+    // 初始化，避免关闭收取自己时统计成负值
+    _post_energy = currentEnergy
     showCollectSummaryFloaty()
   }
 
@@ -748,9 +750,7 @@ function Ant_forest () {
             unlocker && unlocker.saveNeedRelock(true)
             _runningQueueDispatcher.removeRunningTask()
             engines.myEngine().forceStop()
-            if (_config.auto_set_brightness) {
-              device.setBrightnessMode(1)
-            }
+            _config.resetBrightness && _config.resetBrightness()
           }
         })
       })
@@ -790,9 +790,7 @@ function Ant_forest () {
         automator.lockScreen()
         unlocker.saveNeedRelock(true)
       }
-      if (_config.auto_set_brightness) {
-        device.setBrightnessMode(1)
-      }
+      _config.resetBrightness && _config.resetBrightness()
       flushAllLogs()
       _runningQueueDispatcher.removeRunningTask()
       if (_base_scanner !== null) {

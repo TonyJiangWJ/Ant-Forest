@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-16 22:50:58
+ * @Last Modified time: 2020-12-25 21:29:44
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -52,6 +52,7 @@ let default_config = {
   // 锁屏启动关闭提示框
   dismiss_dialog_if_locked: true,
   request_capture_permission: true,
+  capture_permission_button: 'START NOW|立即开始|允许',
   // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
   save_log_file: true,
   // 异步写入日志文件
@@ -157,6 +158,8 @@ let default_config = {
   try_collect_by_multi_touch: false,
   // 直接使用图像分析方式收取和帮助好友
   direct_use_img_collect_and_help: true,
+  // 跳过好友浇水能量球
+  skip_own_watering_ball: false,
   hough_param1: 30,
   hough_param2: 30,
   hough_min_radius: null,
@@ -168,6 +171,7 @@ let default_config = {
   is_pro: is_pro,
   // 尝试先逛一逛进行能量收取
   try_collect_by_stroll: true,
+  collect_by_stroll_only: false,
   stroll_button_regenerate: true,
   auto_set_bang_offset: true,
   bang_offset: 0,
@@ -175,6 +179,7 @@ let default_config = {
   // 当以下包正在前台运行时，延迟执行
   skip_running_packages: [],
   enable_visual_helper: false,
+  auto_restart_when_crashed: true,
   // 更新后需要强制执行的标记v1.3.2.5
   updated_temp_flag_1325: true,
   updated_temp_flag_1326: true,
