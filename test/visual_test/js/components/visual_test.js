@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-12-22 21:30:51
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-26 08:53:41
+ * @Last Modified time: 2020-12-28 09:23:45
  * @Description: 开发测试时使用的组件
  */
 let Index = {
@@ -37,7 +37,8 @@ let ImageViewer = {
           imageData: '',
           intervalImageData: '',
           grayImageData: '',
-          originImageData: ''
+          originImageData: '',
+          createTime: ''
         }
       }
     },
@@ -252,7 +253,9 @@ let BallImageDataVisualTest = {
       if (typeof offset !== 'undefined') {
         this.offset = offset
       }
-
+      if (this.offset < 0) {
+        this.offset = 0
+      }
       console.log('set loading true')
       this.loading = true
       let self = this
@@ -378,8 +381,13 @@ let BallImageDataVisualTest = {
         </van-col>\
         <van-col span="14">\
         avg:{{image.avg.toFixed(2)}} std:{{image.std.toFixed(2)}} median:{{image.median}}  bottom:{{image.medianBottom}}\
+        createTime:{{image.createTime}}\
         </van-col>\
       </van-row>\
+      <van-divider content-position="left">\
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas(offset - 100)">offset往前100</van-button>\
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas()">加载后20个</van-button>\
+      </van-divider>\
       <van-overlay :show="loading">\
         <van-loading type="spinner" class="wrapper" />\
       </van-overlay>\

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-26 09:11:47
+ * @Last Modified time: 2020-12-28 09:20:07
  * @Description: 
  */
 "ui";
@@ -261,9 +261,9 @@ function postMessageToWebView (callbackParams, callback) {
 function convertToJson (line, filterOption) {
   filterOption = filterOption || {}
   if (line.indexOf('ballInfo:') == 0) {
-    let data = line.split(/\t|\s/)
+    let data = line.split(/\}\s/)
     if (data.length > 1) {
-      let ballStr = data[0].replace('ballInfo:', '')
+      let ballStr = data[0].replace('ballInfo:', '') + '}'
       let imageData = data[1]
       let ballImageInfo = JSON.parse(ballStr)
       if (filterOption.invalidOnly && !ballImageInfo.invalid) {
