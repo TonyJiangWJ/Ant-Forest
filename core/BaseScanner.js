@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-26 08:25:42
+ * @Last Modified time: 2020-12-28 09:26:58
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -342,12 +342,20 @@ const BaseScanner = function () {
                   } else if (!isOwn && stdBottom < 160) {
                     // 判定为帮收
                     collectableBall.isHelp = true
-                  } else if (stdDeviation > 1400 || collectableRecheckStd > 1200 && !(isOwn && collectableBall.isWatering)) {
+                  } else if (stdDeviation > 1400) {
                     // 非帮助或可收取, 小于1400的则是 可收取的
                     collectableBall.invalid = true
                   }
+                  // 排除非可收取的和好友页面中的浇水球
+                  if (collectableRecheckStd > 1200 || !isOwn && collectableBall.isWatering) {
+                    collectableBall.invalid = true
+                    collectableBall.isHelp = false
+                  }
                   lock.lock()
                   if (_config.develop_saving_mode) {
+                    if (typeof formatDate === 'undefined')
+                      formatDate = require('../lib/DateUtil.js')
+                    collectableBall.createTime = formatDate(new Date())
                     self.houghHelper.saveImage(ballImage, collectableBall)
                   }
                   if (!collectableBall.invalid) {
