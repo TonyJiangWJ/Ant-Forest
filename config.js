@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-25 21:29:44
+ * @Last Modified time: 2020-12-29 22:53:48
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -171,6 +171,7 @@ let default_config = {
   is_pro: is_pro,
   // 尝试先逛一逛进行能量收取
   try_collect_by_stroll: true,
+  stroll_end_ui_content: '返回我的森林',
   collect_by_stroll_only: false,
   stroll_button_regenerate: true,
   auto_set_bang_offset: true,

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-17 19:51:57
+ * @Last Modified time: 2020-12-29 22:53:29
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -141,7 +141,7 @@ const StrollScanner = function () {
    */
   this.getFriendName = function () {
     let friendNameGettingRegex = _config.friend_name_getting_regex || '(.*)的蚂蚁森林'
-    let titleContainer = _widgetUtils.alternativeWidget(friendNameGettingRegex, 'startapp\\?.*', null, true)
+    let titleContainer = _widgetUtils.alternativeWidget(friendNameGettingRegex, _config.stroll_end_ui_content || '返回我的森林', null, true)
     if (titleContainer.value === 1) {
       let regex = new RegExp(friendNameGettingRegex)
       if (titleContainer && regex.test(titleContainer.content)) {
@@ -166,7 +166,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
   ///sleep(1000)
   let alternativeFriendOrDone = 0
   // 未找到好友首页控件 循环等待三次
-  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_ui_content, 'startapp\\?.*')) !== 1) {
+  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_ui_content, _config.stroll_end_ui_content || '返回我的森林')) !== 1) {
     // 找到了结束标志信息 停止逛一逛
     if (alternativeFriendOrDone === 2) {
       debugInfo('逛一逛啥也没有，不再瞎逛')

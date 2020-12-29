@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-25 21:31:53
+ * @Last Modified time: 2020-12-29 22:54:56
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 /**
@@ -765,6 +765,7 @@ Vue.component('widget-configs', function (resolve, reject) {
           friend_home_ui_content: '你收取TA|TA收取你',
           friend_name_getting_regex: '(.*)的蚂蚁森林',
           enter_friend_list_ui_content: '查看更多好友',
+          stroll_end_ui_content: '返回我的森林',
           no_more_ui_content: '没有更多了',
           load_more_ui_content: '查看更多',
           do_watering_button_content: '送给\\s*TA|浇水送祝福',
@@ -812,6 +813,7 @@ Vue.component('widget-configs', function (resolve, reject) {
       <van-field v-model="configs.friend_home_ui_content" label="好友首页" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.friend_name_getting_regex" label="好友名称正则表达式" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.enter_friend_list_ui_content" label="查看更多好友按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
+      <van-field v-model="configs.stroll_end_ui_content" label="逛一逛结束文本" label-width="10em" type="text" placeholder="逛一逛结束文本" input-align="right" />\
       <van-field v-model="configs.using_protect_content" label="保护罩使用记录" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.do_watering_button_content" label="确认浇水按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <color-input-field label="列表中可收取的颜色灰度值" label-width="10em" \
