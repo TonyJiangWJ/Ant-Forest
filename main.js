@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-24 19:38:15
+ * @Last Modified time: 2020-12-29 18:13:20
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
@@ -48,7 +48,7 @@ commonFunctions.registerOnEngineRemoved(function () {
     () => {
       // 保存是否需要重新锁屏
       unlocker.saveNeedRelock()
-      unlocker.unlocker.relock && _config.resetBrightness && _config.resetBrightness()
+      unlocker.unlocker.relock && config.resetBrightness && config.resetBrightness()
       events.removeAllListeners()
       events.recycle()
       debugInfo('校验并移除已加载的dex')

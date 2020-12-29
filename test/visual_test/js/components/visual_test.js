@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-12-22 21:30:51
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-28 09:23:45
+ * @Last Modified time: 2020-12-29 22:59:04
  * @Description: 开发测试时使用的组件
  */
 let Index = {
@@ -78,6 +78,107 @@ let ImageViewer = {
     }
   },
   template: '<img :src="displayImageData" :style="imageStyle" @click="toggleImage" />'
+}
+
+let CanvasViewer = {
+  mixins: [mixin_methods],
+  props: {
+    image: {
+      type: Object,
+      default: () => {
+        return {
+          imageData: '',
+          intervalImageData: '',
+          grayImageData: '',
+          originImageData: '',
+          createTime: ''
+        }
+      }
+    },
+    imageStyle: {
+      type: String,
+      default: 'height:3rem;'
+    },
+    drawPoint: {
+      type: Object,
+      default: (() => {
+        return { x: -1, y: -1 }
+      })()
+    },
+    defaultImage: String
+  },
+  data: function () {
+    return {
+      target: 0,
+      timeoutId: null
+    }
+  },
+  methods: {
+    displayImage: function () {
+      if (this.timeoutId != null) {
+        console.log('cancel timeout: ' + this.timeoutId)
+        clearTimeout(this.timeoutId)
+      }
+      let self = this
+      // this.timeoutId = setTimeout(function () {
+        try {
+          console.log('start render canvas')
+          let img = new Image()
+          img.src = self.displayImageData
+          img.onload = function () {
+            console.log('canvas image data: ' + self.displayImageData.substring(0, 40))
+            let canvas = self.$refs['canvas']
+            let ctx = canvas.getContext('2d')
+            canvas.width = img.width
+            canvas.height = img.height
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+            ctx.strokeStyle = "red";
+            ctx.rect(self.drawPoint.x - 2, self.drawPoint.y - 2, 4, 4)
+            ctx.stroke()
+            console.log('render canvas done, ' + canvas.width + ',' + canvas.height)
+          }
+        } catch (e) {
+          console.log('render canvas failed ' + e)
+        }
+      // }, 25)
+      console.log('setup timeout: ' + this.timeoutId)
+    },
+  },
+  computed: {
+    displayImageData: function () {
+      if (this.target === 0) {
+        return this.image.intervalImageData
+      } else if (this.target === 1) {
+        return this.image.grayImageData
+      } else {
+        return this.image.originImageData
+      }
+    }
+  },
+  watch: {
+    defaultImage: function (v) {
+      this.target = parseInt(v)
+    },
+    displayImageData: function (v) {
+      console.log("displayImageData: " + v.substring(0, 40))
+      if (v) {
+        this.displayImage()
+      }
+    },
+    drawPoint: {
+      deep: true,
+      handler: function (v) {
+        this.displayImage()
+        $nativeApi.request('getPointColor', v)
+        .then(resp => {
+          if (resp.success) {
+            this.$emit('get-point-color', { rgbColor: resp.rgbColor, grayColor: resp.grayColor })
+          }
+        })
+      }
+    }
+  },
+  template: '<canvas ref="canvas" :style="imageStyle" />'
 }
 
 let ColorRangeSlider = {
@@ -327,8 +428,8 @@ let BallImageDataVisualTest = {
         测试图片 offset: {{offset}} currentLength: {{this.imageList.length}} {{loading}}\
       </van-divider>\
       <van-divider content-position="left">\
-        <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas()">加载后20个</van-button>\
-        <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas(0)">重新开始加载</van-button>\
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas(0)">重新开始加载</van-button>\
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas()">加载后20个</van-button>\
       </van-divider>\
       <van-row type="flex" justify="left">\
         <van-col offset="1">\
@@ -397,7 +498,7 @@ let BallImageDataVisualTest = {
 let CommonImageTest = {
   mixins: [mixin_methods],
   components: {
-    ImageViewer, ColorRangeSlider
+    ColorRangeSlider, CanvasViewer
   },
   data: function () {
     return {
@@ -414,6 +515,13 @@ let CommonImageTest = {
         intervalImageData: '',
         grayImageData: '',
         originImageData: ''
+      },
+      colorPoint: {
+        x: 0, y: 0
+      },
+      pointColor: {
+        rgbColor: '',
+        grayColor: ''
       }
     }
   },
@@ -470,6 +578,10 @@ let CommonImageTest = {
         self.draging = false
         self.doLoadImage()
       }, 100)
+    },
+    handlePointColor: function (payload) {
+      this.pointColor.rgbColor = payload.rgbColor
+      this.pointColor.grayColor = payload.grayColor
     }
   },
   computed: {
@@ -489,7 +601,7 @@ let CommonImageTest = {
         console.log('filterOption changed')
         if (this.timeout != null || this.draging) {
           clearTimeout(this.timeout)
-        } 
+        }
         if (!this.draging) {
           let self = this
           this.timeout = setTimeout(function () {
@@ -518,12 +630,16 @@ let CommonImageTest = {
         </van-radio-group>\
       </van-col>\
     </van-row>\
+    <van-divider content-position="left">\
+      颜色值：{{pointColor.rgbColor}} 灰度值：{{pointColor.grayColor}}\
+    </van-divider>\
+    <position-input-field v-model="colorPoint" label="图片取色位置" />\
     <color-range-slider :lower-range="lowerRange" :higher-range="higherRange" \
         @drag-start="draging=true" @drag-end="handleDragingEnd" \
         @interval-by-gray="handleIntervalByGray"\
         @lower-range-change="handleLowerRange"\
         @higher-range-change="handleHigherRange"/>\
-    <ImageViewer :image="image" image-style="width:100%;" :default-image="targetDefaultImage" />\
+    <CanvasViewer :image="image" image-style="width:100%;" :default-image="targetDefaultImage" :draw-point="colorPoint" @get-point-color="handlePointColor" />\
     <van-overlay :show="loading">\
       <van-loading type="spinner" class="wrapper" />\
     </van-overlay>\

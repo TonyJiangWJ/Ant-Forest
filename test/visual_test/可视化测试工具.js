@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-28 09:20:07
+ * @Last Modified time: 2020-12-29 22:56:02
  * @Description: 
  */
 "ui";
@@ -37,11 +37,8 @@ let resourceMonitor = require('../../lib/ResourceMonitor.js')(runtime, this)
 let OpenCvUtil = require('../../lib/OpenCvUtil.js')
 config.hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
 if (config.device_width < 10 || config.device_height < 10) {
-  if (commonFunctions.requestScreenCaptureOrRestart(true)) {
-    commonFunctions.ensureDeviceSizeValid()
-  } else {
-    toastLog('获取截图权限失败，且设备分辨率信息不正确，可能无法正常运行脚本')
-  }
+  toastLog('设备分辨率信息不正确，可能无法正常运行脚本, 请先运行一遍main.js以便自动获取分辨率')
+  exit()
 }
 ui.layout(
   <vertical>
@@ -139,6 +136,25 @@ let bridgeHandler = {
       console.verbose(util.format('total valid balls: %d', ballInfos.length))
       fd.close()
       postMessageToWebView({ callbackId: callbackId, data: { ballInfos: ballInfos, offset: newOffset } })
+    })
+  },
+  getPointColor: function (data, callbackId) {
+    threads.start(function () {
+      if (files.exists(testImagePath)) {
+        let imageInfo = images.read(testImagePath)
+        let grayImageInfo = images.grayscale(imageInfo)
+        postMessageToWebView({
+          callbackId: callbackId,
+          data: {
+            success: true,
+            rgbColor: colors.toString(imageInfo.getBitmap().getPixel(data.x, data.y)),
+            grayColor: colors.toString(grayImageInfo.getBitmap().getPixel(data.x, data.y))
+          }
+        })
+      } else {
+        toastLog('图片数据不存在，无法执行')
+        postMessageToWebView({ callbackId: callbackId, data: { success: false } })
+      }
     })
   }
 }
