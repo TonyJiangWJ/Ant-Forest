@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-16 21:44:15
+ * @Last Modified time: 2020-12-30 20:33:39
  * @Description: 
  */
 let resolver = require('../lib/AutoJSRemoveDexResolver.js')
@@ -62,7 +62,7 @@ function Countdown () {
 
 }
 
-const SCALE_RATE = _config.device_width / 1080
+const SCALE_RATE = _config.scaleRate
 const checkPoints = []
 for (let i = 0; i < 30 * SCALE_RATE; i++) {
   for (let j = 0; j < 30 * SCALE_RATE; j++) {
@@ -117,8 +117,7 @@ function CollectDetect () {
    * 目前可能存在误判 帮收和可收 移除和帮收比较接近的可收点
    */
   this.sortAndReduce = function (points, gap) {
-    let scaleRate = _config.device_width / 1080
-    gap = gap || 100 * scaleRate
+    gap = gap || 100 * _config.scaleRate
     debugInfo(['reduce gap: {}', gap])
     let lastY = -gap - 1
     let lastIsHelp = false

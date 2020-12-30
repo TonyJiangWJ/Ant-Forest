@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:17:06
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-25 21:04:31
+ * @Last Modified time: 2020-12-29 23:44:48
  * @Description: 
 -->
 <!DOCTYPE html>
@@ -108,6 +108,9 @@
   window.addEventListener('contextmenu', function (e) {
     e.preventDefault()
   })
+  window.addEventListener('resize', function(e) {
+    console.log('页面高度:' + document.body.clientHeight)
+  }, false);
 </script>
 
 </html>

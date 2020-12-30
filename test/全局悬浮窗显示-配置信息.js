@@ -107,7 +107,7 @@ let strollButtonRegion = [config.stroll_button_left, config.stroll_button_top, c
 let bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
 let validBallRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
 
-let scaleRate = config.device_width / 1080
+let scaleRate = config.scaleRate
 
 let refreshThread = threads.start(function () {
   while (true) {
@@ -116,7 +116,7 @@ let refreshThread = threads.start(function () {
     strollButtonRegion = [config.stroll_button_left, config.stroll_button_top, config.stroll_button_width, config.stroll_button_height]
     bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
     validBallRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
-    scaleRate = config.device_width / 1080
+    scaleRate = config.scaleRate
     sleep(100)
   }
 })

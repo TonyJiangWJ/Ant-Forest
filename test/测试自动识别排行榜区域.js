@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-07-29 14:39:26
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-09-06 01:46:31
+ * @Last Modified time: 2020-12-30 20:59:47
  * @Description: 
  */
 let { config: _config } = require('../config.js')(runtime, this)
@@ -12,7 +12,7 @@ requestScreenCapture(false)
 toastLog('两秒后开始识别')
 sleep(2000)
 let screen = captureScreen()
-let scaleRate = _config.device_width / 1080
+let scaleRate = _config.scaleRate
 let checkColors = ['#1d9f4e', '#198A44']
 let found = false
 for (let colorIdx = 0; !found && colorIdx < checkColors.length; colorIdx++) {

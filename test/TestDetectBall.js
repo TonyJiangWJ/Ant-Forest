@@ -100,7 +100,7 @@ let gap = parseInt(detectRegion[2] / 6)
 
 let helpGrayImg = null
 
-let scaleRate = config.device_width / 1080
+let scaleRate = config.scaleRate
 
 let detectThread = threads.start(function () {
   while (true) {

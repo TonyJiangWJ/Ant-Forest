@@ -100,7 +100,7 @@ function exitAndClean () {
 let detectRegion = null
 let running = true
 
-let scaleRate = config.device_width / 1080
+let scaleRate = config.scaleRate
 threads.start(function () {
   while (running) {
     let treeDialog = WidgetUtil.widgetGetById('J_tree_dialog_wrap', 1000)

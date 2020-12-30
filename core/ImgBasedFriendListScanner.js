@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-25 21:18:19
+ * @Last Modified time: 2020-12-30 20:03:38
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -36,7 +36,7 @@ let SCRIPT_LOGGER = new ScriptLogger({
   }
 })
 
-const SCALE_RATE = _config.device_width / 1080
+const SCALE_RATE = _config.scaleRate
 const checkPoints = []
 for (let i = 0; i < 30 * SCALE_RATE; i++) {
   for (let j = 0; j < 30 * SCALE_RATE; j++) {
@@ -82,8 +82,7 @@ const ImgBasedFriendListScanner = function () {
    * 目前可能存在误判 帮收和可收 移除和帮收比较接近的可收点
    */
   this.sortAndReduce = function (points, gap) {
-    let scaleRate = _config.device_width / 1080
-    gap = gap || 100 * scaleRate
+    gap = gap || 100 * _config.scaleRate
     debugForDev(['reduce gap: {}', gap])
     let lastY = -gap - 1
     let lastIsHelp = false
@@ -354,7 +353,7 @@ const ImgBasedFriendListScanner = function () {
                       }
                       if (useMockOcr) {
                         // 将图片压缩或者放大到1080P下的分辨率
-                        scale = 1080 / _config.device_width
+                        scale = 1 / _config.scaleRate
                       }
                       if (scale !== 1) {
                         countdownImg = images.resize(countdownImg, [parseInt(countdownImg.width * scale), parseInt(countdownImg.height * scale)])

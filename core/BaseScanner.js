@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-28 09:26:58
+ * @Last Modified time: 2020-12-30 19:13:30
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -26,8 +26,8 @@ let _HoughHelper = require('../utils/HoughHelper.js')
 let _VisualHelper = require('../utils/VisualHelper.js')
 
 const BaseScanner = function () {
-
-  let SCALE_RATE = _config.device_width / 1080
+  // 针对奇葩分辨率，比如辣鸡瀑布屏
+  let SCALE_RATE = _config.scaleRate
   let cvt = (v) => parseInt(v * SCALE_RATE)
   let detectRegion = [
     _config.tree_collect_left, _config.tree_collect_top,
@@ -304,12 +304,13 @@ const BaseScanner = function () {
           return
         }
         if (findBalls && findBalls.length > 0) {
-          let dayOrNightImg = images.clip(rgbImg, config.tree_collect_left, config.tree_collect_top, 40, 40)
+          let dayOrNightImg = images.clip(rgbImg, _config.tree_collect_left, _config.tree_collect_top, 40, 40)
           let result = OpenCvUtil.getMedian(dayOrNightImg)
           let isNight = result < 100
           findBallsCallback(findBalls)
           let clickPoints = []
           let invalidPoints = []
+          let threshold = 25
           let countdownLatch = new CountDownLatch(findBalls.length)
           findBalls.forEach(b => {
             this.threadPool.execute(function () {
@@ -319,35 +320,37 @@ const BaseScanner = function () {
                    * 能量球多维度采样，通过不同的数值来判断是否可收取、帮助、浇水球
                    */
                   let startForColorValue = new Date().getTime()
-                  let ballImage = images.clip(rgbImg, b.x - cvt(70), b.y - cvt(70), cvt(140), cvt(180))
-                  let grayBallImage = images.grayscale(ballImage)
+                  let radius = parseInt(b.radius)
+                  let ballImage = images.clip(rgbImg, b.x - radius, b.y - radius, radius * 2, 2.57 * radius)
                   // 用于判定是否可收取
-                  let intervalBallImage = images.inRange(grayBallImage, '#a1a1a1', '#b1b1b1')
-                  let stdDeviation = OpenCvUtil.getStandardDeviation(intervalBallImage)
+                  let intervalForCollectCheck = images.inRange(ballImage, '#a5c600', '#ffff5d')
+                  let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
                   // 用于判定是否帮助收取
                   let intervalForHelpCheck = images.inRange(ballImage, '#ad8500', '#f4ddff')
-                  let stdBottom = OpenCvUtil.getStandardDeviation(images.clip(intervalForHelpCheck, 0, cvt(160), intervalForHelpCheck.width, intervalForHelpCheck.height - cvt(160)))
+                  // 识别底部是否有白色
+                  let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
+                  let avgBottom = OpenCvUtil.getHistAverage(bottomImg)
                   // 判定是否为浇水球
                   let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
                   // 判定是不是真实的能量球，包括倒计时中的，因为帮收和倒计时中的颜色特征有几率一模一样
                   let intervalForCollatableRecheck = images.inRange(ballImage, '#77cc00', '#ffff91')
-                  let collectableRecheckStd = OpenCvUtil.getStandardDeviation(intervalForCollatableRecheck)
-                  let collectableBall = { ball: b, isHelp: false, isNight: isNight, isOwn: isOwn, avg: avgHsv, intervalStd: stdDeviation, stdBottom: stdBottom }
+                  let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
+                  let collectableBall = { ball: b, isHelp: false, isNight: isNight, isOwn: isOwn, avg: avgHsv, mainAvg: avgForCollectable, recheckAvg: collectableRecheckAvg, avgBottom: avgBottom }
                   
                   debugForDev(['取色耗时：{}ms', new Date().getTime() - startForColorValue])
-                  if (avgHsv >= 25) {
+                  if (avgHsv >= threshold) {
                     // 浇水能量球
                     collectableBall.isWatering = true
                     recheck = isOwn
-                  } else if (!isOwn && stdBottom < 160) {
+                  } else if (!isOwn && avgBottom > threshold) {
                     // 判定为帮收
                     collectableBall.isHelp = true
-                  } else if (stdDeviation > 1400) {
-                    // 非帮助或可收取, 小于1400的则是 可收取的
+                  } else if (avgForCollectable < threshold) {
+                    // 非帮助或可收取, 大于25的则是可收取的，否则为无效球
                     collectableBall.invalid = true
                   }
                   // 排除非可收取的和好友页面中的浇水球
-                  if (collectableRecheckStd > 1200 || !isOwn && collectableBall.isWatering) {
+                  if (collectableRecheckAvg < threshold || !isOwn && collectableBall.isWatering) {
                     collectableBall.invalid = true
                     collectableBall.isHelp = false
                   }

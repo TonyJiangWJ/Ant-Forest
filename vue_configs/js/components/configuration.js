@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-29 22:54:56
+ * @Last Modified time: 2020-12-30 20:57:40
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 /**
@@ -48,6 +48,7 @@ Vue.component('sample-configs', function (resolve, reject) {
           hasRootPermission: false,
           lock_x: 150,
           lock_y: 970,
+          minimize_back_again: true,
           timeout_unlock: 1000,
           timeout_findOne: 1000,
           timeout_existing: 8000,
@@ -180,6 +181,7 @@ Vue.component('sample-configs', function (resolve, reject) {
         <switch-cell title="锁屏启动设置最低亮度" v-model="configs.auto_set_brightness" />\
         <switch-cell title="锁屏启动关闭弹窗提示" v-model="configs.dismiss_dialog_if_locked" />\
         <switch-cell title="锁屏启动时检测设备传感器" label="检测是否在裤兜内，防止误触" v-model="configs.check_device_posture" />\
+        <switch-cell title="最小化支付宝时多一次返回" label="有时候不会打开支付宝APP，直接返回就能关闭" v-model="configs.minimize_back_again" />\
         <template  v-if="configs.check_device_posture">\
           <switch-cell title="同时校验距离传感器" label="部分设备数值不准默认关闭" v-model="configs.check_distance" />\
           <tip-block>z轴重力加速度阈值（绝对值小于该值时判定为在兜里）</tip-block>\
@@ -259,7 +261,7 @@ Vue.component('sample-configs', function (resolve, reject) {
       <van-cell-group>\
         <switch-cell title="是否启用开发模式" v-model="configs.develop_mode" />\
         <template v-if="configs.develop_mode">\
-          <tip-block>脚本执行时保存图片等数据，未启用开发模式时依旧有效，请不要随意开启</tip-block>\
+          <tip-block>脚本执行时保存图片等数据，未启用开发模式时依旧有效，请不要随意开启。部分功能需要下载master分支才能使用，release分支代码开启后可能无法正常运行</tip-block>\
           <switch-cell title="是否保存倒计时图片" v-model="configs.cutAndSaveCountdown" />\
           <switch-cell title="是否保存可收取能量球图片" v-model="configs.cutAndSaveTreeCollect" />\
           <switch-cell title="是否保存一些开发用的数据" v-model="configs.develop_saving_mode" />\
