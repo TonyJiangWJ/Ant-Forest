@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-29 22:53:48
+ * @Last Modified time: 2020-12-30 20:56:16
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -47,6 +47,7 @@ let default_config = {
   auto_lock: false,
   lock_x: 150,
   lock_y: 970,
+  minimize_back_again: true,
   // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
   auto_set_brightness: false,
   // 锁屏启动关闭提示框
@@ -234,6 +235,17 @@ config.recalculateRegion = () => {
     }
   }
 }
+
+config.scaleRate = (() => {
+  let width = config.device_width
+  if (width >= 1440) {
+    return 1440 / 1080
+  } else if (width < 1000) {
+    return 720 / 1080
+  } else {
+    return 1
+  }
+})()
 
 resetConfigsIfNeeded()
 if (!isRunningMode) {

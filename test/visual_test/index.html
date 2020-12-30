@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:17:06
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-25 21:35:53
+ * @Last Modified time: 2020-12-30 09:21:06
  * @Description: 
 -->
 <!DOCTYPE html>
@@ -36,7 +36,14 @@
     let element = document.createElement('script')
     // element.src = 'file://' + filePath + '/vue_configs/js/vue.min.js'
     // document.head.appendChild(element)
-    let scripts = ['/vue_configs/js/webview_bridge.js', '/vue_configs/js/components/common.js', '/test/visual_test/js/components/visual_test.js', '/test/visual_test/js/index.js', '/test/visual_test/js/app.js']
+    let scripts = [
+      '/vue_configs/js/webview_bridge.js',
+      '/vue_configs/js/components/common.js',
+      '/test/visual_test/js/components/visual_test.js',
+      '/test/visual_test/js/components/index.js',
+      '/test/visual_test/js/index.js',
+      '/test/visual_test/js/app.js'
+    ]
     let index = 0
     scripts.forEach(script => {
       setTimeout(function () {

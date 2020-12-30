@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-29 22:56:02
+ * @Last Modified time: 2020-12-30 20:49:21
  * @Description: 
  */
 "ui";
@@ -56,7 +56,9 @@ let indexFilePath = "file://" + mainScriptPath + "/test/visual_test/index.html"
 // 图片数据
 let imageDataPath = FileUtils.getCurrentWorkPath() + '/logs/ball_image.data'
 let testImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/测试用图片.png'
-
+// let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/'
+let testBallImagePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+let BASE64_PREFIX = 'data:image/png;base64,'
 let bridgeHandler = {
   toast: data => {
     toast(data.message)
@@ -80,11 +82,11 @@ let bridgeHandler = {
         countdown.summary('图片灰度二值化处理等')
         countdown.restart()
         let image = {
-          intervalImageData: 'data:image/png;base64,' + images.toBase64(intervalImageInfo)
+          intervalImageData: BASE64_PREFIX + images.toBase64(intervalImageInfo)
         }
         if (!data.intervalBase64Only) {
-          image.originImageData = 'data:image/png;base64,' + images.toBase64(imageInfo)
-          image.grayImageData = 'data:image/png;base64,' + images.toBase64(grayImageInfo)
+          image.originImageData = BASE64_PREFIX + images.toBase64(imageInfo)
+          image.grayImageData = BASE64_PREFIX + images.toBase64(grayImageInfo)
         }
         countdown.summary('图片数据转Base64')
         postMessageToWebView({ callbackId: callbackId, data: { success: true, image: image } })
@@ -111,7 +113,7 @@ let bridgeHandler = {
             let imageInfo = images.fromBase64(ballInfo.imageData)
             ballInfo.originImageData = ballInfo.imageData
             let grayImg = images.grayscale(imageInfo)
-            ballInfo.grayImageData = 'data:image/png;base64,' + images.toBase64(grayImg)
+            ballInfo.grayImageData = BASE64_PREFIX + images.toBase64(grayImg)
             // let intervalImg = images.inRange(grayImg, data.lowerRange || '#a1a1a1', data.higherRange || '#b1b1b1')
             let intervalImg = null
             console.verbose('interval by gray: ' + data.filterOption.intervalByGray)
@@ -124,9 +126,9 @@ let bridgeHandler = {
             ballInfo.avg = OpenCvUtil.getHistAverage(intervalImg)
             ballInfo.oldStd = ballInfo.std
             ballInfo.std = OpenCvUtil.getStandardDeviation(intervalImg)
-            ballInfo.oldMedianBottom = ballInfo.medianBottom
-            ballInfo.medianBottom = OpenCvUtil.getStandardDeviation(images.clip(intervalImg, 0, 160, intervalImg.width, intervalImg.height - 160))
-            ballInfo.intervalImageData = 'data:image/png;base64,' + images.toBase64(intervalImg)
+            ballInfo.oldAvgBottom = ballInfo.avgBottom
+            ballInfo.avgBottom = OpenCvUtil.getHistAverage(images.clip(intervalImg, 0, 2 * parseInt(ballInfo.ball.radius), intervalImg.width, intervalImg.height - 2 * parseInt(ballInfo.ball.radius)))
+            ballInfo.intervalImageData = BASE64_PREFIX + images.toBase64(intervalImg)
             ballInfos.push(ballInfo)/**/
           }
         }
@@ -149,6 +151,123 @@ let bridgeHandler = {
             success: true,
             rgbColor: colors.toString(imageInfo.getBitmap().getPixel(data.x, data.y)),
             grayColor: colors.toString(grayImageInfo.getBitmap().getPixel(data.x, data.y))
+          }
+        })
+      } else {
+        toastLog('图片数据不存在，无法执行')
+        postMessageToWebView({ callbackId: callbackId, data: { success: false } })
+      }
+    })
+  },
+  doDetectBalls: (data, callbackId) => {
+    threads.start(function () {
+      if (files.exists(testBallImagePath)) {
+        let imageFiles = files.listDir(testBallImagePath, function (fileName) { return fileName.endsWith('.png') })
+        if (!imageFiles || imageFiles.length === 0) {
+          toastLog('图片数据不存在，无法执行')
+          postMessageToWebView({ callbackId: callbackId, data: { success: false } })
+          return
+        }
+        let index = data.fileIndex || 0
+        let targetFilePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/' + imageFiles[index % imageFiles.length]
+        let imageInfo = images.read(targetFilePath)
+        if (!imageInfo) {
+          toastLog('读取图片失败，path: ' + targetFilePath)
+          postMessageToWebView({ callbackId: callbackId, data: { success: false } })
+          return
+        }
+        // let SCALE_RATE = imageInfo.width / 1080
+        let SCALE_RATE = (() => {
+          let width = imageInfo.width
+          if (width >= 1440) {
+            return 1440 / 1080
+          } else if (width < 1000) {
+            return 720 / 1080
+          } else {
+            return 1
+          }
+        })()
+        let cvt = (v) => parseInt(v * SCALE_RATE)
+        let grayImageInfo = images.grayscale(images.medianBlur(imageInfo, 5))
+        let findBalls = images.findCircles(
+          grayImageInfo,
+          {
+            param1: config.hough_param1 || 30,
+            param2: config.hough_param2 || 30,
+            minRadius: config.hough_min_radius || cvt(65),
+            maxRadius: config.hough_max_radius || cvt(75),
+            minDst: config.hough_min_dst || cvt(100),
+            // region: detectRegion
+          }
+        )
+        console.verbose('找到的球: ' + JSON.stringify(findBalls))
+        let ballInfos = []
+        if (findBalls && findBalls.length > 0) {
+          let dayOrNightImg = images.clip(imageInfo, config.tree_collect_left, config.tree_collect_top, 40, 40)
+          let result = OpenCvUtil.getMedian(dayOrNightImg)
+          let isNight = result < 100
+          let isOwn = false
+          findBalls.forEach(b => {
+            /**
+             * 能量球多维度采样，通过不同的数值来判断是否可收取、帮助、浇水球
+             */
+            let startForColorValue = new Date().getTime()
+            let radius = parseInt(b.radius)
+            let ballRegion = [b.x - radius, b.y - radius, radius * 2, 2.57 * radius]
+            let ballImage = images.clip(imageInfo, ballRegion[0], ballRegion[1], ballRegion[2], ballRegion[3])
+            // 用于判定是否可收取
+            let intervalForCollectCheck = images.inRange(ballImage, '#a5c600', '#ffff5d')
+            let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
+            // 用于判定是否帮助收取
+            let intervalForHelpCheck = images.inRange(ballImage, '#ad8500', '#f4ddff')
+            // intervalForHelpCheck = com.stardust.autojs.core.image.ImageWrapper.ofBitmap(intervalForHelpCheck.getBitmap())
+            let bottomRegion = [b.x + 0 - radius, b.y + radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius]
+            let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
+            let avgBottom = OpenCvUtil.getHistAverage(bottomImg)
+            // 判定是否为浇水球
+            let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
+            // 判定是不是真实的能量球，包括倒计时中的，因为帮收和倒计时中的颜色特征有几率一模一样
+            let intervalForCollatableRecheck = images.inRange(ballImage, '#77cc00', '#ffff91')
+            let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
+            let collectableBall = { ball: b, isHelp: false, isNight: isNight, isOwn: isOwn, avg: avgHsv, avgBottom: avgBottom, recheckAvg: collectableRecheckAvg, mainAvg: avgForCollectable }
+            console.verbose('取色耗时：' + (new Date().getTime() - startForColorValue) + 'ms')
+            let threshold = 25
+            if (avgHsv >= threshold) {
+              // 浇水能量球
+              collectableBall.isWatering = true
+              recheck = isOwn
+            } else if (!isOwn && avgBottom > threshold) {
+              // 判定为帮收
+              collectableBall.isHelp = true
+            } else if (avgForCollectable < threshold) {
+              // 非帮助或可收取, 大于25的则是 可收取的
+              collectableBall.invalid = true
+            }
+            // 排除非可收取的和好友页面中的浇水球
+            if (collectableRecheckAvg < threshold || !isOwn && collectableBall.isWatering) {
+              collectableBall.invalid = true
+              collectableBall.isHelp = false
+            }
+            if (b.y < config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > config.tree_collect_top + config.tree_collect_height) {
+              collectableBall.outofRange = true
+            }
+            collectableBall.ballRegion = ballRegion
+            collectableBall.bottomRegion = bottomRegion
+            collectableBall.base64 = BASE64_PREFIX + images.toBase64(intervalForCollectCheck)
+            collectableBall.bottomBase64 = BASE64_PREFIX + images.toBase64(bottomImg)
+            ballInfos.push(collectableBall)
+          })
+        }
+        postMessageToWebView({
+          callbackId: callbackId,
+          data: {
+            success: true,
+            size: {
+              width: imageInfo.width,
+              height: imageInfo.height
+            },
+            ballInfos: ballInfos,
+            originImageData: BASE64_PREFIX + images.toBase64(imageInfo)
           }
         })
       } else {

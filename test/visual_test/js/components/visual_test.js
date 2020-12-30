@@ -2,24 +2,9 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-12-22 21:30:51
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-29 22:59:04
+ * @Last Modified time: 2020-12-30 20:54:45
  * @Description: 开发测试时使用的组件
  */
-let Index = {
-  mixins: [mixin_methods],
-  data: function () {
-    return {}
-  },
-  template: '<div>\
-    <tip-block>可视化辅助工具</tip-block>\
-    <van-row type="flex" justify="center" style="margin: 0.5rem 0;">\
-      <router-link to="/image_balls"><van-button plain hairline type="primary" size="mini">能量球校验</van-button></router-link>\
-    </van-row>\
-    <van-row type="flex" justify="center" style="margin: 0.5rem 0;">\
-      <router-link to="/common_image_test"><van-button plain hairline type="primary" size="mini">通用图片测试工具</van-button></router-link>\
-    </van-row>\
-  </div>'
-}
 
 let ImageViewer = {
   mixins: [mixin_methods],
@@ -46,11 +31,14 @@ let ImageViewer = {
       type: String,
       default: 'height:3rem;'
     },
-    defaultImage: String
+    defaultImage: {
+      type: String,
+      default: '0'
+    }
   },
   data: function () {
     return {
-      target: 0
+      target: parseInt(this.defaultImage)
     }
   },
   methods: {
@@ -120,28 +108,25 @@ let CanvasViewer = {
         clearTimeout(this.timeoutId)
       }
       let self = this
-      // this.timeoutId = setTimeout(function () {
-        try {
-          console.log('start render canvas')
-          let img = new Image()
-          img.src = self.displayImageData
-          img.onload = function () {
-            console.log('canvas image data: ' + self.displayImageData.substring(0, 40))
-            let canvas = self.$refs['canvas']
-            let ctx = canvas.getContext('2d')
-            canvas.width = img.width
-            canvas.height = img.height
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-            ctx.strokeStyle = "red";
-            ctx.rect(self.drawPoint.x - 2, self.drawPoint.y - 2, 4, 4)
-            ctx.stroke()
-            console.log('render canvas done, ' + canvas.width + ',' + canvas.height)
-          }
-        } catch (e) {
-          console.log('render canvas failed ' + e)
+      try {
+        console.log('start render canvas')
+        let img = new Image()
+        img.src = self.displayImageData
+        img.onload = function () {
+          console.log('canvas image data: ' + self.displayImageData.substring(0, 40))
+          let canvas = self.$refs['canvas']
+          let ctx = canvas.getContext('2d')
+          canvas.width = img.width
+          canvas.height = img.height
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+          ctx.strokeStyle = "red";
+          ctx.rect(self.drawPoint.x - 2, self.drawPoint.y - 2, 4, 4)
+          ctx.stroke()
+          console.log('render canvas done, ' + canvas.width + ',' + canvas.height)
         }
-      // }, 25)
-      console.log('setup timeout: ' + this.timeoutId)
+      } catch (e) {
+        console.log('render canvas failed ' + e)
+      }
     },
   },
   computed: {
@@ -170,15 +155,139 @@ let CanvasViewer = {
       handler: function (v) {
         this.displayImage()
         $nativeApi.request('getPointColor', v)
-        .then(resp => {
-          if (resp.success) {
-            this.$emit('get-point-color', { rgbColor: resp.rgbColor, grayColor: resp.grayColor })
-          }
-        })
+          .then(resp => {
+            if (resp.success) {
+              this.$emit('get-point-color', { rgbColor: resp.rgbColor, grayColor: resp.grayColor })
+            }
+          })
       }
     }
   },
   template: '<canvas ref="canvas" :style="imageStyle" />'
+}
+
+let BallDetectCanvasViewer = {
+  mixins: [mixin_methods],
+  props: {
+    image: {
+      type: Object,
+      default: () => {
+        return {
+          originImageData: '',
+          ballInfos: [],
+          width: 0,
+          height: 0
+        }
+      }
+    },
+    imageStyle: {
+      type: String,
+      default: 'height:3rem;'
+    }
+  },
+  data: function () {
+    return {
+      target: 0,
+      timeoutId: null,
+      showInterval: false
+    }
+  },
+  methods: {
+    displayImage: function () {
+      if (!this.displayImageData) {
+        console.log('imageData not valid')
+        return
+      }
+      try {
+        console.log('start render canvas')
+        let img = new Image()
+        img.src = this.displayImageData
+        let self = this
+        img.onload = function () {
+          console.log('canvas image data: ' + self.displayImageData.substring(0, 40))
+          let canvas = self.$refs['canvas']
+          let ctx = canvas.getContext('2d')
+          canvas.width = self.image.width
+          canvas.height = self.image.height
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+          if (self.image.ballInfos && self.image.ballInfos.length > 0) {
+            self.image.ballInfos.forEach(ballInfo => {
+              let ball = ballInfo.ball
+              let ballRegionImage = new Image()
+              ballRegionImage.src = ballInfo.base64
+              // ballRegionImage.src = ballInfo.bottomBase64
+              ballRegionImage.onload = function () {
+                // 全图
+                if (self.showInterval) {
+                  ctx.drawImage(ballRegionImage, ball.x - ball.radius, ball.y - ball.radius, ballRegionImage.width, ballRegionImage.height)
+                }
+                // 底部图
+                // ctx.drawImage(ballRegionImage, ball.x - ball.radius, ball.y + ball.radius, ballRegionImage.width, ballRegionImage.height)
+                ctx.font = "25px sans-serif"
+                ctx.strokeStyle = 'red'
+                ctx.lineWidth = 2
+                // 球半径
+                ctx.strokeText('r:' + parseInt(ball.radius), ball.x - ball.radius, ball.y - ball.radius)
+                if (ballInfo.outofRange) {
+                  ctx.strokeText('超出范围', ball.x - 50, ball.y)
+                  return
+                }
+                ctx.beginPath()
+                if (!ballInfo.invalid) {
+                  if (ballInfo.isHelp) {
+                    ctx.strokeStyle = '#FF9800'
+                    ctx.strokeText('可帮助', ball.x - ball.radius + 20, ball.y + ball.radius * 2 + 20)
+                  } else {
+                    ctx.strokeStyle = '#00ff00'
+                    ctx.strokeText('可收取', ball.x - ball.radius + 20, ball.y + ball.radius * 2 + 20)
+                  }
+                } else {
+                  ctx.strokeStyle = 'gray'
+                  ctx.strokeText('无效球', ball.x - ball.radius + 20, ball.y + ball.radius * 2 + 20)
+                }
+                ctx.lineWidth = 5
+                ctx.arc(ball.x, ball.y, parseInt(ball.radius), 0, 2 * Math.PI)
+                ctx.stroke()
+                ctx.strokeRect(ballInfo.ballRegion[0], ballInfo.ballRegion[1], ballInfo.ballRegion[2], ballInfo.ballRegion[3])
+                ctx.strokeRect(ballInfo.bottomRegion[0], ballInfo.bottomRegion[1], ballInfo.bottomRegion[2], ballInfo.bottomRegion[3])
+
+                ctx.strokeStyle = 'red'
+                ctx.lineWidth = 2
+                ctx.font = "20px sans-serif"
+                // 判断是否可收取
+                ctx.strokeText(parseInt(ballInfo.mainAvg), ball.x - 30, ball.y)
+                // 校验是否正常的能量球
+                ctx.strokeText(parseInt(ballInfo.recheckAvg), ball.x, ball.y)
+                ctx.strokeStyle = '#FF9800'
+                // 判断是否帮助收取
+                ctx.strokeText(parseInt(ballInfo.avgBottom), ball.x, ball.y + ball.radius + 20)
+              }
+
+            })
+          }
+          // ctx.strokeStyle = "red"
+          ctx.stroke()
+          console.log('render canvas done, ' + canvas.width + ',' + canvas.height)
+        }
+      } catch (e) {
+        console.log('render canvas failed ' + e)
+      }
+    },
+  },
+  computed: {
+    displayImageData: function () {
+      return this.image.originImageData
+    }
+  },
+  watch: {
+    displayImageData: function (v) {
+      if (v) {
+        console.log("displayImageData: " + v.substring(0, 40))
+        this.displayImage()
+      }
+    }
+  },
+  template: '<canvas ref="canvas" :style="imageStyle" @click="showInterval=!showInterval"/>'
 }
 
 let ColorRangeSlider = {
@@ -481,7 +590,7 @@ let BallImageDataVisualTest = {
           <ImageViewer :image="image" :default-image="targetDefaultImage" />\
         </van-col>\
         <van-col span="14">\
-        avg:{{image.avg.toFixed(2)}} std:{{image.std.toFixed(2)}} median:{{image.median}}  bottom:{{image.medianBottom}}\
+        avg:{{image.avg.toFixed(2)}} mainAvg:{{image.mainAvg.toFixed(2)}} avgBottom:{{image.avgBottom.toFixed(2)}} recheckAvg:{{image.recheckAvg.toFixed(2)}}\
         createTime:{{image.createTime}}\
         </van-col>\
       </van-row>\
@@ -493,6 +602,71 @@ let BallImageDataVisualTest = {
         <van-loading type="spinner" class="wrapper" />\
       </van-overlay>\
     </div>'
+}
+
+let BallDetectVisualTest = {
+  mixins: [mixin_methods],
+  components: {
+    BallDetectCanvasViewer
+  },
+  data: function () {
+    return {
+      loading: false,
+      image: {
+        originImageData: '',
+        width: 0,
+        height: 0,
+        ballInfos: []
+      },
+      fileIndex: 0
+    }
+  },
+  methods: {
+    loadLast: function () {
+      if (this.loading) {
+        return
+      }
+      this.fileIndex -= 2
+      this.doDetectBalls()
+    },
+    doDetectBalls: function () {
+      if (this.loading) {
+        return
+      }
+      this.loading = true
+      $nativeApi.request('doDetectBalls', { fileIndex: this.fileIndex++ })
+        .then(resp => {
+          if (resp.success) {
+            console.log('get result success, imageData: ' + resp.originImageData.substring(0, 40))
+            this.image.originImageData = resp.originImageData
+            this.image.width = resp.size.width
+            this.image.height = resp.size.height
+            this.image.ballInfos = resp.ballInfos
+            console.log('get balls:' + JSON.stringify(resp.ballInfos.map(ballInfo => {
+              return {
+                ball: ballInfo.ball, isHelp: ballInfo.isHelp,
+                isNight: ballInfo.isNight, isOwn: ballInfo.isOwn, avg: ballInfo.avgH,
+                avgBottom: ballInfo.avgBottom, recheckAvg: ballInfo.recheckAvg, mainAvg: ballInfo.mainAvg
+              }
+            })))
+          }
+          this.loading = false
+        })
+    },
+  },
+  mounted () {
+    this.doDetectBalls()
+  },
+  template: '<div>\
+    <tip-block>请保存需要调试的图片到 resources/tree_collect 路径下</tip-block>\
+    <van-divider content-position="left">\
+      测试图片&nbsp;&nbsp;&nbsp;<van-button v-if="fileIndex >= 2"size="mini" @click="loadLast">加载上一张</van-button><van-button size="mini" @click="doDetectBalls">加载下一张</van-button>\
+    </van-divider>\
+    <BallDetectCanvasViewer :image="image" image-style="width:100%;" />\
+    <van-overlay :show="loading">\
+      <van-loading type="spinner" class="wrapper" />\
+    </van-overlay>\
+  </div>'
 }
 
 let CommonImageTest = {

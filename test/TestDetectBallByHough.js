@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-26 08:23:49
+ * @Last Modified time: 2020-12-30 20:59:11
  * @Description: 
  */
 
@@ -27,7 +27,7 @@ var window = floaty.rawWindow(
 window.setSize(config.device_width, config.device_height)
 window.setTouchable(false)
 
-let SCALE_RATE = config.device_width / 1080
+let SCALE_RATE = config.scaleRate
 let cvt = (v) => parseInt(v * SCALE_RATE)
 let converted = false
 let startTime = new Date().getTime()
