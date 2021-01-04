@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-30 20:56:16
+ * @Last Modified time: 2021-01-04 20:52:39
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -20,7 +20,7 @@ let default_config = {
   min_floaty_y: 20,
   min_floaty_color: '#00ff00',
   min_floaty_text_size: 8,
-  help_friend: true,
+  help_friend: false,
   is_cycle: false,
   cycle_times: 10,
   never_stop: false,
@@ -47,7 +47,6 @@ let default_config = {
   auto_lock: false,
   lock_x: 150,
   lock_y: 970,
-  minimize_back_again: true,
   // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
   auto_set_brightness: false,
   // 锁屏启动关闭提示框
@@ -64,8 +63,6 @@ let default_config = {
   not_collect_self: false,
   // 当有收集或者帮助后 重新检查排行榜
   recheck_rank_list: true,
-  // 自动判断基于图像还是基于控件识别
-  auto_set_img_or_widget: false,
   // 是否基于图像分析是否到达底部
   checkBottomBaseImg: true,
   // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
@@ -121,7 +118,6 @@ let default_config = {
   my_id: '',
   home_ui_content: '查看更多动态.*',
   friend_home_check_regex: '你收取TA|TA收取你',
-  friend_home_ui_content: '你收取TA|TA收取你',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
@@ -135,6 +131,7 @@ let default_config = {
   do_watering_button_content: '送给\\s*TA|浇水送祝福',
   using_protect_content: '使用了保护罩',
   collectable_energy_ball_content: '收集能量\\d+克',
+  help_and_notify: '知道了.*去提醒',
   // 排行榜校验区域
   rank_check_left: 250,
   rank_check_top: 250,
@@ -157,8 +154,6 @@ let default_config = {
   device_height: device.height,
   // 尝试全局点击收集能量，能量球控件无法获取时使用 默认开启
   try_collect_by_multi_touch: false,
-  // 直接使用图像分析方式收取和帮助好友
-  direct_use_img_collect_and_help: true,
   // 跳过好友浇水能量球
   skip_own_watering_ball: false,
   hough_param1: 30,
@@ -182,12 +177,9 @@ let default_config = {
   skip_running_packages: [],
   enable_visual_helper: false,
   auto_restart_when_crashed: true,
-  // 更新后需要强制执行的标记v1.3.2.5
-  updated_temp_flag_1325: true,
-  updated_temp_flag_1326: true,
-  updated_temp_flag_1327: true,
+  // 更新后需要强制执行的标记
   updated_temp_flag_1328: true,
-  updated_temp_flag_1343: true,
+  updated_temp_flag_1346: true,
   thread_name_prefix: 'antforest_'
 }
 // 自动生成的配置数据 
@@ -295,30 +287,16 @@ if (!isRunningMode) {
  * 脚本更新后自动恢复一些不太稳定的配置
  */
 function resetConfigsIfNeeded () {
-  if (config.friend_home_ui_content.indexOf('|.*大树成长记录') > 0) {
-    config.friend_home_ui_content.replace('|.*大树成长记录', '')
-    storageConfig.put('friend_home_ui_content', config.friend_home_ui_content)
-  }
-  // 首次更新 直接关闭控件分析，开启图像分析
-  if (config.updated_temp_flag_1326) {
-    config.auto_set_img_or_widget = false
-    config.direct_use_img_collect_and_help = true
-    storageConfig.put('updated_temp_flag_1326', false)
-    storageConfig.put('auto_set_img_or_widget', false)
-    storageConfig.put('direct_use_img_collect_and_help', true)
-  }
-  if (config.updated_temp_flag_1327) {
-    if (config.friend_home_ui_content === 'TA的好友.*|今天') {
-      config.friend_home_ui_content = default_config.friend_home_ui_content
-      storageConfig.put('friend_home_ui_content', default_config.friend_home_ui_content)
-    }
-    storageConfig.put('updated_temp_flag_1327', false)
-  }
   if (config.updated_temp_flag_1328) {
     if (config.friend_home_check_regex === '浇水') {
       config.friend_home_check_regex = default_config.friend_home_check_regex
-      storageConfig.put('friend_home_ui_content', default_config.friend_home_check_regex)
+      storageConfig.put('friend_home_check_regex', default_config.friend_home_check_regex)
     }
     storageConfig.put('updated_temp_flag_1328', false)
+  }
+  if (config.updated_temp_flag_1346) {
+    // 默认关闭帮助收取，帮收还得发通知，容易影响到别人
+    config.help_friend = default_config.help_friend
+    storageConfig.put('updated_temp_flag_1346', false)
   }
 }

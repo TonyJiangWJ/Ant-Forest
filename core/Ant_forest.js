@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-26 08:35:51
+ * @Last Modified time: 2021-01-04 21:23:12
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -48,6 +48,7 @@ function Ant_forest () {
   // 进入蚂蚁森林主页
   const startApp = function () {
     _commonFunctions.launchPackage(_package_name)
+    sleep(500)
     if (_config.is_alipay_locked) {
       alipayUnlocker.unlockAlipay()
     }
@@ -480,46 +481,11 @@ function Ant_forest () {
     }
   }
 
-  /***********************
-   * 收取能量
-   ***********************/
-
-  /**
-   * 收集目标能量球能量
-   * 
-   * @param {*} energy_ball 能量球对象
-   * @param {boolean} isDesc 是否是desc类型
-   */
-  const collectBallEnergy = function (energy_ball, isDesc) {
-    debugInfo(isDesc ? energy_ball.desc() : energy_ball.text())
-    automator.clickCenter(energy_ball)
-    sleep(300)
-  }
 
   // 收取能量
   const collectEnergy = function () {
-    if (_config.direct_use_img_collect_and_help) {
-      debugInfo('直接通过图像分析收取能量')
-      _base_scanner.checkAndCollectByHough(true)
-    } else {
-      let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, 1000, true)
-      if (ballCheckContainer !== null) {
-        debugInfo('能量球存在')
-        ballCheckContainer.target
-          .forEach(function (energy_ball) {
-            collectBallEnergy(energy_ball, ballCheckContainer.isDesc)
-          })
-      } else {
-        debugInfo('无能量球可收取')
-        if (_config.direct_use_img_collect_and_help) {
-          debugInfo('尝试通过图像分析收取能量')
-          _base_scanner.checkAndCollectByHough(true)
-        } else if (_config.try_collect_by_multi_touch) {
-          debugInfo('尝试通过直接点击区域收集能量')
-          _base_scanner.multiTouchToCollect()
-        }
-      }
-    }
+    debugInfo('直接通过图像分析收取能量')
+    _base_scanner.checkAndCollectByHough(true)
   }
 
   const checkAndNewImageBasedScanner = function () {

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-30 20:57:40
+ * @Last Modified time: 2021-01-04 20:52:56
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 /**
@@ -48,10 +48,7 @@ Vue.component('sample-configs', function (resolve, reject) {
           hasRootPermission: false,
           lock_x: 150,
           lock_y: 970,
-          minimize_back_again: true,
           timeout_unlock: 1000,
-          timeout_findOne: 1000,
-          timeout_existing: 8000,
           async_waiting_capture: true,
           capture_waiting_time: 500,
           develop_mode: false,
@@ -170,49 +167,9 @@ Vue.component('sample-configs', function (resolve, reject) {
       $app.registerFunction('reloadBasicConfigs', this.loadConfigs)
     },
     template: '<div>\
-      <van-divider content-position="left">锁屏相关</van-divider>\
-      <van-cell-group>\
-        <van-field v-model="configs.password" label="锁屏密码" type="password" placeholder="请输入锁屏密码" input-align="right" />\
-        <number-field v-model="configs.timeout_unlock" label="解锁超时时间" placeholder="请输入解锁超时时间">\
-          <template #right-icon><span>毫秒</span></template>\
-        </number-field>\
-        <switch-cell title="支付宝是否锁定" v-model="configs.is_alipay_locked" />\
-        <van-field v-if="configs.is_alipay_locked" v-model="configs.alipay_lock_password" label="手势密码" placeholder="请输入手势密码对应的九宫格数字" type="password" input-align="right" />\
-        <switch-cell title="锁屏启动设置最低亮度" v-model="configs.auto_set_brightness" />\
-        <switch-cell title="锁屏启动关闭弹窗提示" v-model="configs.dismiss_dialog_if_locked" />\
-        <switch-cell title="锁屏启动时检测设备传感器" label="检测是否在裤兜内，防止误触" v-model="configs.check_device_posture" />\
-        <switch-cell title="最小化支付宝时多一次返回" label="有时候不会打开支付宝APP，直接返回就能关闭" v-model="configs.minimize_back_again" />\
-        <template  v-if="configs.check_device_posture">\
-          <switch-cell title="同时校验距离传感器" label="部分设备数值不准默认关闭" v-model="configs.check_distance" />\
-          <tip-block>z轴重力加速度阈值（绝对值小于该值时判定为在兜里）</tip-block>\
-          <tip-block>x: {{device.pos_x | toFixed3}} y: {{device.pos_y | toFixed3}} z: {{device.pos_z | toFixed3}} 距离传感器：{{device.distance}}</tip-block>\
-          <number-field v-if="configs.check_device_posture" v-model="configs.posture_threshold_z" error-message-align="right" :error-message="validationError.posture_threshold_z" label="加速度阈值" placeholder="请输入加速度阈值" />\
-        </template>\
-        <switch-cell title="自动锁屏" label="脚本执行完毕后自动锁定屏幕" v-model="configs.auto_lock" />\
-        <template v-if="configs.auto_lock && !configs.hasRootPermission">\
-          <tip-block>自动锁屏功能默认仅支持MIUI12，其他系统需要自行扩展实现：extends/LockScreen.js</tip-block>\
-          <number-field v-model="configs.lock_x" label="横坐标位置" placeholder="请输入横坐标位置" />\
-          <number-field v-model="configs.lock_y" label="纵坐标位置" placeholder="请输入纵坐标位置" />\
-        </template>\
-      </van-cell-group>\
-      <van-divider content-position="left">悬浮窗配置</van-divider>\
-      <van-cell-group>\
-        <swipe-color-input-field label="悬浮窗颜色" :error-message="validationError.min_floaty_color" v-model="configs.min_floaty_color" placeholder="悬浮窗颜色值 #FFFFFF"/>\
-        <number-field v-model="configs.min_floaty_text_size" label-width="8em" label="悬浮窗字体大小" placeholder="请输入悬浮窗字体大小" >\
-          <template #right-icon><span>sp</span></template>\
-        </number-field>\
-        <number-field v-model="configs.min_floaty_x" label="悬浮窗位置X" placeholder="请输入悬浮窗横坐标位置" />\
-        <number-field v-model="configs.min_floaty_y" label="悬浮窗位置Y" placeholder="请输入悬浮窗纵坐标位置" />\
-        <tip-block>刘海屏或者挖孔屏悬浮窗显示位置和实际目测位置不同，需要施加一个偏移量，一般是负值，脚本运行时会自动设置</tip-block>\
-        <switch-cell title="下次执行时重新识别" v-model="configs.auto_set_bang_offset" />\
-        <van-cell center title="当前偏移量">\
-          <span>{{configs.auto_set_bang_offset ? "下次执行时重新识别": configs.bang_offset}}</span>\
-        </van-cell>\
-        <switch-cell title="不驻留前台" label="是否在脚本执行完成后不驻留前台，关闭倒计时悬浮窗" title-style="flex:3;" v-model="configs.not_lingering_float_window" />\
-      </van-cell-group>\
       <van-divider content-position="left">收集配置</van-divider>\
       <van-cell-group>\
-        <switch-cell title="是否帮助收取" v-model="configs.help_friend" />\
+        <switch-cell title="是否帮助收取" label="帮助收取会发送好友消息，容易打扰别人，不建议开启" title-style="flex:3.5;" v-model="configs.help_friend" />\
         <switch-cell title="是否循环" v-model="configs.is_cycle" />\
         <number-field v-if="configs.is_cycle" v-model="configs.cycle_times" label="循环次数" placeholder="请输入单次运行循环次数" />\
         <switch-cell title="是否永不停止" v-model="configs.never_stop" />\
@@ -240,12 +197,45 @@ Vue.component('sample-configs', function (resolve, reject) {
           <template #right-icon><span>毫秒</span></template>\
         </number-field>\
         <switch-cell title="是否通话时暂停脚本" title-style="width: 10em;flex:2;" label="需要授权AutoJS获取通话状态，Pro版暂时无法使用" v-model="configs.enable_call_state_control" />\
-        <number-field v-model="configs.timeout_findOne" label="查找控件超时时间" label-width="8em" placeholder="请输入超时时间">\
+      </van-cell-group>\
+      <van-divider content-position="left">锁屏相关</van-divider>\
+      <van-cell-group>\
+        <van-field v-model="configs.password" label="锁屏密码" type="password" placeholder="请输入锁屏密码" input-align="right" />\
+        <number-field v-model="configs.timeout_unlock" label="解锁超时时间" placeholder="请输入解锁超时时间">\
           <template #right-icon><span>毫秒</span></template>\
         </number-field>\
-        <number-field v-model="configs.timeout_existing" label="校验控件是否存在超时时间" label-width="12em" placeholder="请输入超时时间" >\
-          <template #right-icon><span>毫秒</span></template>\
+        <switch-cell title="支付宝是否锁定" v-model="configs.is_alipay_locked" />\
+        <van-field v-if="configs.is_alipay_locked" v-model="configs.alipay_lock_password" label="手势密码" placeholder="请输入手势密码对应的九宫格数字" type="password" input-align="right" />\
+        <switch-cell title="锁屏启动设置最低亮度" v-model="configs.auto_set_brightness" />\
+        <switch-cell title="锁屏启动关闭弹窗提示" v-model="configs.dismiss_dialog_if_locked" />\
+        <switch-cell title="锁屏启动时检测设备传感器" label="检测是否在裤兜内，防止误触" v-model="configs.check_device_posture" />\
+        <template  v-if="configs.check_device_posture">\
+          <switch-cell title="同时校验距离传感器" label="部分设备数值不准默认关闭" v-model="configs.check_distance" />\
+          <tip-block>z轴重力加速度阈值（绝对值小于该值时判定为在兜里）</tip-block>\
+          <tip-block>x: {{device.pos_x | toFixed3}} y: {{device.pos_y | toFixed3}} z: {{device.pos_z | toFixed3}} 距离传感器：{{device.distance}}</tip-block>\
+          <number-field v-if="configs.check_device_posture" v-model="configs.posture_threshold_z" error-message-align="right" :error-message="validationError.posture_threshold_z" label="加速度阈值" placeholder="请输入加速度阈值" />\
+        </template>\
+        <switch-cell title="自动锁屏" label="脚本执行完毕后自动锁定屏幕" v-model="configs.auto_lock" />\
+        <template v-if="configs.auto_lock && !configs.hasRootPermission">\
+          <tip-block>自动锁屏功能默认仅支持MIUI12，其他系统需要自行扩展实现：extends/LockScreen.js</tip-block>\
+          <number-field v-model="configs.lock_x" label="横坐标位置" placeholder="请输入横坐标位置" />\
+          <number-field v-model="configs.lock_y" label="纵坐标位置" placeholder="请输入纵坐标位置" />\
+        </template>\
+      </van-cell-group>\
+      <van-divider content-position="left">悬浮窗配置</van-divider>\
+      <van-cell-group>\
+        <swipe-color-input-field label="悬浮窗颜色" :error-message="validationError.min_floaty_color" v-model="configs.min_floaty_color" placeholder="悬浮窗颜色值 #FFFFFF"/>\
+        <number-field v-model="configs.min_floaty_text_size" label-width="8em" label="悬浮窗字体大小" placeholder="请输入悬浮窗字体大小" >\
+          <template #right-icon><span>sp</span></template>\
         </number-field>\
+        <number-field v-model="configs.min_floaty_x" label="悬浮窗位置X" placeholder="请输入悬浮窗横坐标位置" />\
+        <number-field v-model="configs.min_floaty_y" label="悬浮窗位置Y" placeholder="请输入悬浮窗纵坐标位置" />\
+        <tip-block>刘海屏或者挖孔屏悬浮窗显示位置和实际目测位置不同，需要施加一个偏移量，一般是负值，脚本运行时会自动设置</tip-block>\
+        <switch-cell title="下次执行时重新识别" v-model="configs.auto_set_bang_offset" />\
+        <van-cell center title="当前偏移量">\
+          <span>{{configs.auto_set_bang_offset ? "下次执行时重新识别": configs.bang_offset}}</span>\
+        </van-cell>\
+        <switch-cell title="不驻留前台" label="是否在脚本执行完成后不驻留前台，关闭倒计时悬浮窗" title-style="flex:3;" v-model="configs.not_lingering_float_window" />\
       </van-cell-group>\
       <van-divider content-position="left">日志配置</van-divider>\
       <van-cell-group>\
@@ -341,7 +331,6 @@ Vue.component('advance-configs', function (resolve, reject) {
           apiKey: '',
           secretKey: '',
           try_collect_by_multi_touch: false,
-          direct_use_img_collect_and_help: true,
           skip_own_watering_ball: false,
           hough_param1: null,
           hough_param2: null,
@@ -624,25 +613,20 @@ Vue.component('advance-configs', function (resolve, reject) {
         <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="showRealVisual">实时查看区域配置</van-button>\
       </van-divider>\
       <van-cell-group>\
-        <switch-cell title="是否通过图像分析收取" v-model="configs.direct_use_img_collect_and_help" />\
-        <template v-if="configs.direct_use_img_collect_and_help">\
-          <switch-cell title="跳过好友浇水能量球" label="开启后自己手动收取" v-model="configs.skip_own_watering_ball" />\
-          <region-input-field v-if="!configs.auto_detect_tree_collect_region"\
-            :device-height="device.height" :device-width="device.width"\
-            :error-message="validationError.tree_collect_region"\
-            v-model="configs.tree_collect_region" label="能量球所在区域" label-width="10em" />\
-          <van-field :readonly="true" v-else value="下次运行时重新识别" label="能量球所在区域" label-width="10em" type="text" input-align="right" />\
-          <switch-cell title="下次运行时重新识别" v-model="configs.auto_detect_tree_collect_region" />\
-        </template>\
-        <template v-if="configs.direct_use_img_collect_and_help">\
-          <switch-cell title="霍夫变换进阶配置" label="如非必要请不要随意修改" v-model="hough_config" />\
-          <template v-if="hough_config">\
-            <number-field v-model="configs.hough_param1" label="param1" placeholder="留空使用默认配置" label-width="8em" />\
-            <number-field v-model="configs.hough_param2" label="param2" placeholder="留空使用默认配置" label-width="8em" />\
-            <number-field v-model="configs.hough_min_radius" label="最小球半径" placeholder="留空使用默认配置" label-width="8em" />\
-            <number-field v-model="configs.hough_max_radius" label="最大球半径" placeholder="留空使用默认配置" label-width="8em" />\
-            <number-field v-model="configs.hough_min_dst" label="球心最小距离" placeholder="留空使用默认配置" label-width="8em" />\
-          </template>\
+        <switch-cell title="跳过好友浇水能量球" label="开启后自己手动收取" v-model="configs.skip_own_watering_ball" />\
+        <region-input-field v-if="!configs.auto_detect_tree_collect_region"\
+          :device-height="device.height" :device-width="device.width"\
+          :error-message="validationError.tree_collect_region"\
+          v-model="configs.tree_collect_region" label="能量球所在区域" label-width="10em" />\
+        <van-field :readonly="true" v-else value="下次运行时重新识别" label="能量球所在区域" label-width="10em" type="text" input-align="right" />\
+        <switch-cell title="下次运行时重新识别" v-model="configs.auto_detect_tree_collect_region" />\
+        <switch-cell title="霍夫变换进阶配置" label="如非必要请不要随意修改" v-model="hough_config" />\
+        <template v-if="hough_config">\
+          <number-field v-model="configs.hough_param1" label="param1" placeholder="留空使用默认配置" label-width="8em" />\
+          <number-field v-model="configs.hough_param2" label="param2" placeholder="留空使用默认配置" label-width="8em" />\
+          <number-field v-model="configs.hough_min_radius" label="最小球半径" placeholder="留空使用默认配置" label-width="8em" />\
+          <number-field v-model="configs.hough_max_radius" label="最大球半径" placeholder="留空使用默认配置" label-width="8em" />\
+          <number-field v-model="configs.hough_min_dst" label="球心最小距离" placeholder="留空使用默认配置" label-width="8em" />\
         </template>\
         <region-input-field\
             :device-height="device.height" :device-width="device.width"\
@@ -764,7 +748,6 @@ Vue.component('widget-configs', function (resolve, reject) {
           my_id: '',
           home_ui_content: '查看更多动态.*',
           friend_home_check_regex: '你收取TA|TA收取你',
-          friend_home_ui_content: '你收取TA|TA收取你',
           friend_name_getting_regex: '(.*)的蚂蚁森林',
           enter_friend_list_ui_content: '查看更多好友',
           stroll_end_ui_content: '返回我的森林',
@@ -775,6 +758,9 @@ Vue.component('widget-configs', function (resolve, reject) {
           collectable_energy_ball_content: '收集能量\\d+克',
           can_collect_color_gray: '#828282',
           can_help_color: '#f99236',
+          help_and_notify: '知道了.*去提醒',
+          timeout_findOne: 1000,
+          timeout_existing: 8000,
         },
         validations: {
           can_collect_color_gray: {
@@ -812,16 +798,22 @@ Vue.component('widget-configs', function (resolve, reject) {
       <van-field v-model="configs.my_id" label="我的ID" type="text" placeholder="" input-align="right" />\
       <van-field v-model="configs.home_ui_content" label="个人首页" type="text" placeholder="请输入个人首页控件文本" input-align="right" />\
       <van-field v-model="configs.friend_home_check_regex" label="判断是否好友首页" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
-      <van-field v-model="configs.friend_home_ui_content" label="好友首页" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.friend_name_getting_regex" label="好友名称正则表达式" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.enter_friend_list_ui_content" label="查看更多好友按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.stroll_end_ui_content" label="逛一逛结束文本" label-width="10em" type="text" placeholder="逛一逛结束文本" input-align="right" />\
       <van-field v-model="configs.using_protect_content" label="保护罩使用记录" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
+      <van-field v-model="configs.help_and_notify" label="帮助收取，提醒按钮" label-width="10em" type="text" placeholder="请输入提醒按钮控件文本" input-align="right" />\
       <van-field v-model="configs.do_watering_button_content" label="确认浇水按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <color-input-field label="列表中可收取的颜色灰度值" label-width="10em" \
               placeholder="可收取颜色值 #FFFFFF" :error-message="validationError.can_collect_color_gray" v-model="configs.can_collect_color_gray"/>\
       <color-input-field label="列表中可帮助的颜色" label-width="10em" \
               placeholder="可帮助颜色值 #FFFFFF" :error-message="validationError.can_help_color" v-model="configs.can_help_color"/>\
+      <number-field v-model="configs.timeout_findOne" label="查找控件超时时间" label-width="8em" placeholder="请输入超时时间">\
+        <template #right-icon><span>毫秒</span></template>\
+      </number-field>\
+      <number-field v-model="configs.timeout_existing" label="校验控件是否存在超时时间" label-width="12em" placeholder="请输入超时时间" >\
+        <template #right-icon><span>毫秒</span></template>\
+      </number-field>\
     </div>'
   })
 })

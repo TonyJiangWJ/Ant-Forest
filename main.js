@@ -98,9 +98,6 @@ logInfo(['运行模式：{}{} {} {} 排行榜可收取判定方式：{} {}',
 ])
 logInfo(['设备分辨率：[{}, {}]', config.device_width, config.device_height])
 // -------- WARING --------
-if (!config.direct_use_img_collect_and_help) {
-  warnInfo('配置图像分析模式后尽量开启直接使用图像分析方式收取和帮助好友')
-}
 if (!config.useCustomScrollDown) {
   warnInfo('排行榜中控件不存在时无法使用自带的scrollDown，请开启模拟滑动并自行调试设置滑动速度和底部高度')
 }
