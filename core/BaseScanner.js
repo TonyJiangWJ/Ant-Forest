@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-30 19:13:30
+ * @Last Modified time: 2021-01-04 21:13:01
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -17,7 +17,6 @@ let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
-let customMultiTouch = files.exists(FileUtils.getCurrentWorkPath() + '/extends/MultiTouchCollect.js') ? require('../extends/MultiTouchCollect.js') : null
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev, developSaving } = singletonRequire('LogUtils')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let ENGINE_ID = engines.myEngine().id
@@ -158,58 +157,7 @@ const BaseScanner = function () {
 
   // 收取能量
   this.collectEnergy = function (isHelp) {
-    if (_config.direct_use_img_collect_and_help) {
-      this.checkAndCollectByHough()
-    } else {
-      this.checkAndCollectByWidget()
-    }
-  }
-
-  this.checkAndCollectByWidget = function (isSecond) {
-    let ballCheckContainer = _widgetUtils.widgetGetAll(_config.collectable_energy_ball_content, isHelp ? 200 : 500, true)
-    if (ballCheckContainer !== null) {
-      debugInfo(['可收取能量球个数：「{}」', ballCheckContainer.target.length])
-      if (_config.cutAndSaveTreeCollect) {
-        // 保存图像数据 方便后续开发
-        let screen = _commonFunctions.checkCaptureScreenPermission()
-        if (screen) {
-          let saveDir = FileUtils.getCurrentWorkPath() + "/resources/tree_collect/"
-          files.ensureDir(saveDir)
-          images.save(screen, _commonFunctions.formatString('{}can_collect_ball_{}_{}.png',
-            saveDir,
-            ballCheckContainer.target.length,
-            (100 + (1000 * Math.random()) % 899).toFixed(0))
-          )
-        }
-      }
-      if (!this.awaitForCollectable()) {
-        return
-      }
-      let that = this
-      let haveCollected = false
-      ballCheckContainer.target
-        .forEach(function (energy_ball) {
-          if (that.collectBallEnergy(energy_ball, ballCheckContainer.isDesc)) {
-            haveCollected = true
-          }
-        })
-      if (!isSecond && haveCollected && _config.use_dubble_click_card) {
-        sleep(200)
-        this.checkAndCollectByWidget(true)
-      }
-    } else {
-      debugInfo('控件判断无能量球可收取')
-      // 尝试全局点击
-      if (_config.try_collect_by_multi_touch) {
-        if (!this.awaitForCollectable()) {
-          return
-        }
-        this.multiTouchToCollect()
-      } else {
-        // 尝试通过图像识别收取
-        this.checkAndCollectByHough()
-      }
-    }
+    this.checkAndCollectByHough()
   }
 
   /**
@@ -227,27 +175,6 @@ const BaseScanner = function () {
       }
     }
     return !this.isProtected
-  }
-
-  this.defaultMultiTouch = function () {
-    let y = 700
-    // 模拟一个梯形点击区域
-    for (let x = 200; x <= 900; x += 100) {
-      let px = x
-      let py = x < 550 ? y - (0.5 * x - 150) : y - (-0.5 * x + 400)
-      automator.click(parseInt(px * SCALE_RATE), parseInt(py * SCALE_RATE))
-      sleep(15)
-    }
-  }
-
-  this.multiTouchToCollect = function () {
-    if (customMultiTouch) {
-      debugInfo('使用自定义扩展的区域点击')
-      customMultiTouch()
-    } else {
-      debugInfo('使用默认的区域点击')
-      this.defaultMultiTouch()
-    }
   }
 
   /**
@@ -326,7 +253,7 @@ const BaseScanner = function () {
                   let intervalForCollectCheck = images.inRange(ballImage, '#a5c600', '#ffff5d')
                   let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
                   // 用于判定是否帮助收取
-                  let intervalForHelpCheck = images.inRange(ballImage, '#ad8500', '#f4ddff')
+                  let intervalForHelpCheck = images.inRange(ballImage, '#6f0028', '#ffa8b2')
                   // 识别底部是否有白色
                   let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
                   let avgBottom = OpenCvUtil.getHistAverage(bottomImg)
@@ -336,7 +263,7 @@ const BaseScanner = function () {
                   let intervalForCollatableRecheck = images.inRange(ballImage, '#77cc00', '#ffff91')
                   let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
                   let collectableBall = { ball: b, isHelp: false, isNight: isNight, isOwn: isOwn, avg: avgHsv, mainAvg: avgForCollectable, recheckAvg: collectableRecheckAvg, avgBottom: avgBottom }
-                  
+
                   debugForDev(['取色耗时：{}ms', new Date().getTime() - startForColorValue])
                   if (avgHsv >= threshold) {
                     // 浇水能量球
@@ -403,14 +330,21 @@ const BaseScanner = function () {
               if (
                 // 收取自身的好友浇水球
                 isOwn && point.isWatering && !_config.skip_own_watering_ball
-                // 帮助收取
-                || point.isHelp && _config.help_friend
                 // 非帮收球且非浇水直接收取
                 || !point.isHelp && !point.isWatering) {
                 self.collect_operated = true
                 automator.click(b.x, b.y)
                 if (idx < clickPoints.length - 1) {
                   sleep(100)
+                }
+              } else if (point.isHelp && _config.help_friend) {
+                // 帮助收取
+                automator.click(b.x, b.y)
+                sleep(100)
+                let notifyButton = _widgetUtils.widgetGetOne(_config.help_and_notify || '知道了.*去提醒', 1000)
+                if (notifyButton) {
+                  automator.clickCenter(notifyButton)
+                  sleep(500)
                 }
               }
             })
@@ -451,92 +385,14 @@ const BaseScanner = function () {
   this.collectAndHelp = function (needHelp) {
     // 收取好友能量
     this.collectEnergy(needHelp)
-    if (_config.direct_use_img_collect_and_help) {
-      if (needHelp) {
-        // 因为无法判断剩余多少个能量球，当需要帮助之后返回true 重新进入，下次调用时传递needHelp为false即可
-        return true
-      } else {
-        return
-      }
-    }
-    if (this.isProtected) {
+    if (needHelp) {
+      // 因为无法判断剩余多少个能量球，当需要帮助之后返回true 重新进入，下次调用时传递needHelp为false即可
+      return true
+    } else {
       return
     }
-    if (_config.try_collect_by_multi_touch) {
-      // 多点点击方式直接就帮助了 不再执行后续操作 后续判断是否有帮助来确定是否需要重进
-      return
-    }
-    this.checkAndHelpByWidget()
   }
 
-  this.checkAndHelpByWidget = function () {
-    let screen = _commonFunctions.checkCaptureScreenPermission()
-    if (!screen) {
-      warnInfo('获取截图失败，无法帮助收取能量')
-      return
-    }
-    // 帮助好友收取能量
-    let energyBalls
-    if (
-      className('Button').descMatches(/\s/).exists()
-    ) {
-      energyBalls = className('Button').descMatches(/\s/).untilFind()
-    } else if (
-      className('Button').textMatches(/\s/).exists()
-    ) {
-      energyBalls = className('Button').textMatches(/\s/).untilFind()
-    }
-    if (energyBalls && energyBalls.length > 0) {
-      let length = energyBalls.length
-      let helped = false
-      let colors = _config.helpBallColors || ['#f99236', '#f7af70']
-      let that = this
-      energyBalls.forEach(function (energy_ball) {
-        let bounds = energy_ball.bounds()
-        let text = energy_ball.text() || ''
-        let desc = energy_ball.desc() || ''
-        if (!(/^\s*$/.test(text) && /^\s*$/.test(desc))) {
-          return
-        }
-        let o_x = bounds.left,
-          o_y = bounds.top,
-          o_w = bounds.width() + 5,
-          o_center_h = parseInt(bounds.height() * 1.5 / 2)
-        threshold = _config.color_offset
-
-        let ball = images.clip(screen, o_x + parseInt(o_w * 0.2), o_y + parseInt(o_center_h / 2), parseInt(o_w * 0.6), parseInt(o_center_h / 2))
-        let interval_ball = images.interval(ball, "#61a075", 50)
-        for (let color of colors) {
-          if (
-            // 下半部分颜色匹配
-            images.findColor(screen, color, {
-              region: [o_x, o_y + o_center_h, o_w, o_center_h],
-              threshold: threshold
-            })
-            // 二值化后图片中会有白色部分是可帮助收取的
-            && images.findColor(interval_ball, '#FFFFFF')
-          ) {
-            automator.clickCenter(energy_ball)
-            helped = true
-            that.collect_any = true
-            sleep(200)
-            debugInfo("找到帮收取能量球颜色匹配" + color)
-            break
-          }
-        }
-      })
-      if (!helped && needHelp) {
-        warnInfo(['未能找到帮收能量球需要增加匹配颜色组 当前{}', colors])
-      }
-      // 当数量大于等于6且帮助收取后，重新进入
-      if (helped && needHelp && length >= 6) {
-        debugInfo('帮助了 且有六个球 重新进入')
-        return true
-      } else {
-        debugInfo(['帮助了 但是只有{}个球 不重新进入', length])
-      }
-    }
-  }
 
   // 判断并记录保护罩
   this.recordProtected = function (toast, name) {
@@ -843,11 +699,10 @@ const BaseScanner = function () {
         preCollect: preGot,
         helpCollect: friendGrowEnergy
       })
-      if (_config.try_collect_by_multi_touch || _config.direct_use_img_collect_and_help) {
-        // 如果是可帮助 且 无法获取控件信息的，已帮助收取的重新进入判断一次
-        debugInfo('帮助收取后需要再次进入好友页面检测')
-        rentery = true
-      }
+      // 如果是可帮助 且 无法获取控件信息的，已帮助收取的重新进入判断一次
+      debugInfo('帮助收取后需要再次进入好友页面检测')
+      rentery = true
+
       if (_config.cutAndSaveTreeCollect && screen) {
         let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
           + 'unknow_helped_' + friendGrowEnergy + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'

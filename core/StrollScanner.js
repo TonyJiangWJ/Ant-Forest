@@ -166,7 +166,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
   ///sleep(1000)
   let alternativeFriendOrDone = 0
   // 未找到好友首页控件 循环等待三次
-  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_ui_content, _config.stroll_end_ui_content || '返回我的森林')) !== 1) {
+  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || '返回我的森林')) !== 1) {
     // 找到了结束标志信息 停止逛一逛
     if (alternativeFriendOrDone === 2) {
       debugInfo('逛一逛啥也没有，不再瞎逛')

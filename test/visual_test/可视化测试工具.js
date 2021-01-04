@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-30 20:49:21
+ * @Last Modified time: 2021-01-04 21:12:26
  * @Description: 
  */
 "ui";
@@ -56,8 +56,8 @@ let indexFilePath = "file://" + mainScriptPath + "/test/visual_test/index.html"
 // 图片数据
 let imageDataPath = FileUtils.getCurrentWorkPath() + '/logs/ball_image.data'
 let testImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/测试用图片.png'
-// let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/'
-let testBallImagePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/'
+// let testBallImagePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
 let BASE64_PREFIX = 'data:image/png;base64,'
 let bridgeHandler = {
   toast: data => {
@@ -169,7 +169,7 @@ let bridgeHandler = {
           return
         }
         let index = data.fileIndex || 0
-        let targetFilePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/' + imageFiles[index % imageFiles.length]
+        let targetFilePath = testBallImagePath + imageFiles[index % imageFiles.length]
         let imageInfo = images.read(targetFilePath)
         if (!imageInfo) {
           toastLog('读取图片失败，path: ' + targetFilePath)
@@ -219,7 +219,7 @@ let bridgeHandler = {
             let intervalForCollectCheck = images.inRange(ballImage, '#a5c600', '#ffff5d')
             let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
             // 用于判定是否帮助收取
-            let intervalForHelpCheck = images.inRange(ballImage, '#ad8500', '#f4ddff')
+            let intervalForHelpCheck = images.inRange(ballImage, '#6f0028', '#ffa8b2')
             // intervalForHelpCheck = com.stardust.autojs.core.image.ImageWrapper.ofBitmap(intervalForHelpCheck.getBitmap())
             let bottomRegion = [b.x + 0 - radius, b.y + radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius]
             let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
