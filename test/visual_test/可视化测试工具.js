@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-04 21:12:26
+ * @Last Modified time: 2021-01-05 23:34:34
  * @Description: 
  */
 "ui";
@@ -56,8 +56,8 @@ let indexFilePath = "file://" + mainScriptPath + "/test/visual_test/index.html"
 // 图片数据
 let imageDataPath = FileUtils.getCurrentWorkPath() + '/logs/ball_image.data'
 let testImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/测试用图片.png'
-let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/'
-// let testBallImagePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+// let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/'
+let testBallImagePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
 let BASE64_PREFIX = 'data:image/png;base64,'
 let bridgeHandler = {
   toast: data => {
@@ -213,6 +213,14 @@ let bridgeHandler = {
              */
             let startForColorValue = new Date().getTime()
             let radius = parseInt(b.radius)
+            if (
+              // 可能是左上角的活动图标 或者 识别到了其他范围的球
+              b.y < _config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > _config.tree_collect_top + _config.tree_collect_height
+              || b.x < _config.tree_collect_left || b.x > _config.tree_collect_left + _config.tree_collect_width
+              // 取值范围就不正确的无效球，避免后续报错，理论上不会进来，除非配置有误
+              || b.x - radius <= 0 || b.x + radius >= _config.device_width || b.y - radius <= 0 || b.y + 1.57 * radius >= _config.device_height) {
+              return
+            }
             let ballRegion = [b.x - radius, b.y - radius, radius * 2, 2.57 * radius]
             let ballImage = images.clip(imageInfo, ballRegion[0], ballRegion[1], ballRegion[2], ballRegion[3])
             // 用于判定是否可收取
@@ -247,9 +255,6 @@ let bridgeHandler = {
             if (collectableRecheckAvg < threshold || !isOwn && collectableBall.isWatering) {
               collectableBall.invalid = true
               collectableBall.isHelp = false
-            }
-            if (b.y < config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > config.tree_collect_top + config.tree_collect_height) {
-              collectableBall.outofRange = true
             }
             collectableBall.ballRegion = ballRegion
             collectableBall.bottomRegion = bottomRegion

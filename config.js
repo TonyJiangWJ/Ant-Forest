@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-04 20:52:39
+ * @Last Modified time: 2021-01-05 23:34:48
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -287,12 +287,9 @@ if (!isRunningMode) {
  * 脚本更新后自动恢复一些不太稳定的配置
  */
 function resetConfigsIfNeeded () {
-  if (config.updated_temp_flag_1328) {
-    if (config.friend_home_check_regex === '浇水') {
-      config.friend_home_check_regex = default_config.friend_home_check_regex
-      storageConfig.put('friend_home_check_regex', default_config.friend_home_check_regex)
-    }
-    storageConfig.put('updated_temp_flag_1328', false)
+  if (config.friend_home_check_regex === '浇水') {
+    config.friend_home_check_regex = default_config.friend_home_check_regex
+    storageConfig.put('friend_home_check_regex', default_config.friend_home_check_regex)
   }
   if (config.updated_temp_flag_1346) {
     // 默认关闭帮助收取，帮收还得发通知，容易影响到别人

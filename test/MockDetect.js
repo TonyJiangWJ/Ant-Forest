@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-30 20:33:39
+ * @Last Modified time: 2021-01-05 23:01:02
  * @Description: 
  */
 let resolver = require('../lib/AutoJSRemoveDexResolver.js')
@@ -19,362 +19,75 @@ importClass(java.util.concurrent.Executors)
 resolver()
 
 let { config: _config } = require('../config.js')(runtime, this)
+_config.show_debug_log = true
+_config.develop_mode = true
+_config.save_log_file = false
+_config.useTesseracOcr = false
+_config.useOcr = false
+_config.help_friend = true
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
-let _widgetUtils = singletonRequire('WidgetUtils')
-let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
-let numberUtil = require('../lib/MockNumberOcrUtil.js')
-_config.show_debug_log = true
-_config.develop_mode = true
+let _ImgBasedFriendListScanner = require('../core/ImgBasedFriendListScanner.js')
+const _checkPoints = []
+for (let i = 0; i < 30 * _config.scaleRate; i++) {
+  for (let j = 0; j < 30 * _config.scaleRate; j++) {
+    if (i === j) {
+      if (i <= 5) {
+        _checkPoints.push([i, j, "#ffffff"])
+      } else {
+        _checkPoints.push([i, j, "#000000"])
+      }
+    }
+  }
+}
+for (let i = 20; i < 30 * _config.scaleRate; i++) {
+  for (let j = 30; j > 20 * _config.scaleRate; j--) {
+    if (i - 20 === (30 - j)) {
+      _checkPoints.push([i, j, "#000000"])
+    }
+  }
+}
+const MockFriendListScanner = function () {
+  _ImgBasedFriendListScanner.call(this)
+  this.collectOrHelpList = []
+
+  this.checkBottomAndRecycle = function (grayScreen) {
+    this.has_next = false
+    grayScreen && grayScreen.recycle()
+  }
+
+  this.operateCollectIfNeeded = function (collectOrHelpList) {
+    this.collectOrHelpList = collectOrHelpList
+  }
+
+  this.checkRunningCountdown = function (countingDownContainers) {
+    this.collectOrHelpList = this.collectOrHelpList.concat(countingDownContainers)
+  }
+}
+MockFriendListScanner.prototype = Object.create(_ImgBasedFriendListScanner.prototype)
+MockFriendListScanner.prototype.constructor = _ImgBasedFriendListScanner
+
 requestScreenCapture(false)
 
 _commonFunctions.autoSetUpBangOffset(true)
 let offset = _config.bang_offset
-let save_img = false
 
-let SCRIPT_LOGGER = new ScriptLogger({
-  log: function (message) {
-    logInfo(message)
-  },
-  debug: function (message) {
-    debugInfo(message)
-  },
-  error: function (message) {
-    errorInfo(message)
+
+let scanner = new MockFriendListScanner()
+scanner.init()
+let points = null
+let collecting = false
+let scannerThread = threads.start(function () {
+  while (true) {
+    collecting = true
+    scanner.collecting(true)
+    points = scanner.collectOrHelpList
+    collecting = false
+    sleep(50)
   }
 })
-
-function Countdown () {
-  this.start = new Date().getTime()
-  this.getCost = function () {
-    return new Date().getTime() - this.start
-  }
-
-  this.summary = function (content) {
-    debugInfo(content + ' 耗时' + this.getCost() + 'ms')
-  }
-
-  this.restart = function () {
-    this.start = new Date().getTime()
-  }
-
-}
-
-const SCALE_RATE = _config.scaleRate
-const checkPoints = []
-for (let i = 0; i < 30 * SCALE_RATE; i++) {
-  for (let j = 0; j < 30 * SCALE_RATE; j++) {
-    if (i === j) {
-      if (i <= 5) {
-        checkPoints.push([i, j, "#ffffff"])
-      } else {
-        checkPoints.push([i, j, "#000000"])
-      }
-    }
-  }
-}
-for (let i = 20; i < 30 * SCALE_RATE; i++) {
-  for (let j = 30; j > 20 * SCALE_RATE; j--) {
-    if (i - 20 === (30 - j)) {
-      checkPoints.push([i, j, "#000000"])
-    }
-  }
-}
-
-function CollectDetect () {
-
-  this.threadPool = null
-  this.min_countdown_pixels = 10
-  this.resolved_pixels = {}
-  this.last_check_point = null
-  this.last_check_color = null
-
-  this.init = function () {
-    this.createNewThreadPool()
-  }
-
-
-  this.createNewThreadPool = function () {
-    this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 8, 60,
-      TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256),
-      new ThreadFactory({
-        newThread: function (runnable) {
-          let thread = Executors.defaultThreadFactory().newThread(runnable)
-          thread.setName(_config.thread_name_prefix + engines.myEngine().id + '-mock-detect-' + thread.getName())
-          return thread
-        }
-      })
-    )
-    let self = this
-    _commonFunctions.registerOnEngineRemoved(function () {
-      self.destory()
-    }, 'shutdown mockdetect thread pool')
-  }
-
-  /**
-   * 目前可能存在误判 帮收和可收 移除和帮收比较接近的可收点
-   */
-  this.sortAndReduce = function (points, gap) {
-    gap = gap || 100 * _config.scaleRate
-    debugInfo(['reduce gap: {}', gap])
-    let lastY = -gap - 1
-    let lastIsHelp = false
-    let resultPoints = []
-    if (points && points.length > 0) {
-      points.sort((pd1, pd2) => {
-        let p1 = pd1.point
-        let p2 = pd2.point
-        if (p1.y > p2.y) {
-          return 1
-        } else if (p1.y < p2.y) {
-          return -1
-        } else {
-          return 0
-        }
-      }).forEach(pointData => {
-        let point = pointData.point
-        if (point.y - lastY > gap) {
-          resultPoints.push(pointData)
-          lastY = point.y
-          lastIsHelp = pointData.isHelp
-        } else {
-          if (lastIsHelp || !pointData.isHelp) {
-            // 距离过近的丢弃
-            debugInfo(['丢弃距离较上一个:{} 比较近的：{}', lastY, JSON.stringify(pointData)])
-          } else {
-            // 上一个点非帮助 且当前点为帮助点 丢弃上一个点
-            let dropLast = resultPoints.splice(resultPoints.length - 1)
-            debugInfo(['丢弃上一个距离比较近的非帮助点：{}', JSON.stringify(dropLast)])
-            resultPoints.push(pointData)
-            lastY = point.y
-            lastIsHelp = pointData.isHelp
-          }
-        }
-      })
-      debugInfo('重新分析后的点：' + JSON.stringify(resultPoints))
-    }
-    return resultPoints
-  }
-
-  this.destory = function () {
-    if (this.threadPool !== null) {
-      this.threadPool.shutdown()
-      debugInfo(['等待mockDetect线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
-      this.threadPool = null
-    }
-  }
-
-  this.checkIsCanCollect = function (img, point) {
-
-    if (_config.check_finger_by_pixels_amount) {
-      debugInfo(['使用像素点个数判断是否是可收集，当前点像素点个数为：{} 判断阈值为<={}', point.regionSame, _config.finger_img_pixels])
-      return point.regionSame <= _config.finger_img_pixels
-    } else {
-      let countdown = new Countdown()
-      let height = point.bottom - point.top
-      let width = point.right - point.left
-      debugInfo(['checkPoints: {}', JSON.stringify(checkPoints)])
-      let p = images.findMultiColors(com.stardust.autojs.core.image.ImageWrapper.ofBitmap(img.getBitmap()), "#ffffff", checkPoints, {
-        region: [
-          point.left + width - width / Math.sqrt(2),
-          point.top,
-          width / Math.sqrt(2) / 2,
-          height / Math.sqrt(2) / 2
-        ],
-        threshold: 0
-      })
-
-      let flag = p !== null
-      debugInfo(['point: {} 判定结果：{} {}', JSON.stringify(point), flag, JSON.stringify(p)])
-      countdown.summary('判断是否可收取的点')
-      return {
-        match: flag,
-        matchPoint: p
-      }
-    }
-  }
-  this.collecting = function () {
-    let screen = null
-    let grayScreen = null
-    let intervalScreenForDetectCollect = null
-    let intervalScreenForDetectHelp = null
-    screen = captureScreen()
-    // 重新复制一份
-    grayScreen = images.grayscale(images.copy(screen))
-    let originScreen = images.copy(screen, true)
-    intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, _config.can_collect_color_gray || '#828282', _config.color_offset), 5)
-    if (save_img) {
-      images.save(intervalScreenForDetectCollect, files.cwd() + "/interval_" + (Math.random() * 10000).toFixed(0) + ".png")
-      save_img = false
-      toastLog('保存成功')
-    }
-    intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
-    let countdown = new Countdown()
-    let waitForCheckPoints = []
-
-    let helpPoints = this.detectHelp(intervalScreenForDetectHelp)
-    if (helpPoints && helpPoints.length > 0) {
-      waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
-        helpPoint => {
-          return {
-            isHelp: true,
-            point: helpPoint
-          }
-        })
-      )
-    }
-
-    let collectPoints = this.detectCollect(intervalScreenForDetectCollect)
-    if (collectPoints && collectPoints.length > 0) {
-      waitForCheckPoints = waitForCheckPoints.concat(collectPoints.map(
-        collectPoint => {
-          return {
-            isHelp: false,
-            point: collectPoint
-          }
-        })
-      )
-    }
-    waitForCheckPoints = this.sortAndReduce(waitForCheckPoints)
-    countdown.summary('获取可帮助和可能可收取的点')
-    if (waitForCheckPoints.length > 0) {
-      if (!_config.help_friend) {
-        waitForCheckPoints = waitForCheckPoints.filter(p => !p.isHelp)
-        debugInfo(['移除帮助收取的点之后：{}', JSON.stringify(waitForCheckPoints)])
-      }
-      countdown.restart()
-      let countdownLatch = new CountDownLatch(waitForCheckPoints.length)
-      let listWriteLock = threads.lock()
-      let collectOrHelpList = []
-      let countdownList = []
-      let that = this
-      waitForCheckPoints.forEach(pointData => {
-        if (pointData.isHelp) {
-          this.threadPool.execute(function () {
-            let calculator = new ColorCenterCalculatorWithInterval(
-              images.copy(intervalScreenForDetectHelp), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
-            )
-            calculator.setScriptLogger(SCRIPT_LOGGER)
-            let point = calculator.getCenterPoint()
-            debugInfo('可帮助收取位置：' + JSON.stringify(point))
-            listWriteLock.lock()
-            collectOrHelpList.push({
-              point: point,
-              isHelp: true
-            })
-            countdownLatch.countDown()
-            listWriteLock.unlock()
-            calculator = null
-          })
-        } else {
-          this.threadPool.execute(function () {
-            let calculator = new ColorCenterCalculatorWithInterval(
-              images.copy(intervalScreenForDetectCollect), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
-            )
-            calculator.setScriptLogger(SCRIPT_LOGGER)
-            let point = calculator.getCenterPoint()
-            try {
-              let matches = that.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), point)
-              if (matches === true || matches && matches.match) {
-                debugInfo('判定可收取位置：' + JSON.stringify(point))
-                listWriteLock.lock()
-                collectOrHelpList.push({ point: point, isHelp: false, matchPoint: matches !== true ? matches.matchPoint : null })
-                countdownLatch.countDown()
-                listWriteLock.unlock()
-              } else {
-                let height = point.bottom - point.top
-                let width = point.right - point.left
-                let countdownImg = images.clip(
-                  images.copy(originScreen),
-                  point.left + width - width / Math.sqrt(2),
-                  point.top,
-                  width / Math.sqrt(2),
-                  height / Math.sqrt(2)
-                )
-                let num = numberUtil.doRecognize(countdownImg)
-                debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame + ' 倒计时值：' + num)
-                // 直接标记执行完毕 将OCR请求交给异步处理
-                listWriteLock.lock()
-                countdownList.push({ point: point, isCountdown: true, num: num })
-                countdownLatch.countDown()
-                listWriteLock.unlock()
-              }
-            } catch (e) {
-              errorInfo('发生异常：' + e)
-            }
-            calculator = null
-          })
-        }
-      })
-      // 等待五秒
-      if (!countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)) {
-        let activeCount = this.threadPool.getActiveCount()
-        errorInfo('有线程执行失败 运行中的线程数：' + activeCount)
-        if (activeCount > 0) {
-          debugInfo('将线程池关闭然后重建线程池')
-          this.threadPool.shutdown()
-          debugInfo(['强制关闭mockDetect线程池，等待线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
-          this.createNewThreadPool()
-        }
-      }
-      originScreen.recycle()
-      resourceMonitor.releaseAll()
-      countdown.summary('分析所有可帮助和可收取的点')
-      return collectOrHelpList.concat(countdownList)
-    }
-    return null
-  }
-
-  this.detectHelp = function (img) {
-    let helpPoints = this.detectColors(img)
-    debugInfo('可帮助的点：' + JSON.stringify(helpPoints))
-    return helpPoints
-  }
-
-  this.detectCollect = function (img) {
-    let collectPoints = this.detectColors(img)
-    debugInfo('可能可收取的点：' + JSON.stringify(collectPoints))
-    return collectPoints
-  }
-
-  this.detectColors = function (img) {
-    let use_img = images.copy(img)
-    let movingY = parseInt(180 * SCALE_RATE)
-    let movingX = parseInt(100 * SCALE_RATE)
-    debugInfo(['moving window size: [{},{}]', movingX, movingY])
-    // 预留70左右的高度
-    let endY = _config.device_height - movingY - 70 * SCALE_RATE
-    let runningY = 440 * SCALE_RATE
-    let startX = _config.device_width - movingX
-    let regionWindow = []
-    let findColorPoints = []
-    let countdown = new Countdown()
-    let hasNext = true
-    do {
-      if (runningY > endY) {
-        runningY = endY
-        hasNext = false
-      }
-      regionWindow = [startX, runningY, movingX, movingY]
-      debugForDev('检测区域：' + JSON.stringify(regionWindow))
-      let point = images.findColor(use_img, '#FFFFFF', {
-        region: regionWindow
-      })
-      if (_config.develop_mode) {
-        countdown.summary('检测初始点')
-      }
-      if (point) {
-        findColorPoints.push(point)
-      }
-      runningY += movingY
-      countdown.restart()
-    } while (hasNext)
-    return findColorPoints
-  }
-}
-
 
 
 var window = floaty.rawWindow(
@@ -472,15 +185,10 @@ function exitAndClean () {
     sleep(1000)
     window.close()
   }
+  scannerThread.interrupt()
+  scanner.destory()
   exit()
 }
-
-let detect = new CollectDetect()
-detect.init()
-let points = null
-setInterval(function () {
-  points = detect.collecting()
-}, 50)
 
 let converted = false
 let startTime = new Date().getTime()
@@ -510,7 +218,7 @@ window.canvas.on("draw", function (canvas) {
   paint.setDither(true)
   paint.setTextSize(30)
   let countdown = (targetEndTime - new Date().getTime()) / 1000
-  drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 100 }, canvas, paint)
+  drawText('关闭倒计时：' + countdown.toFixed(0) + 's', { x: 100, y: 200 }, canvas, paint)
 
   if (points && points.length > 0) {
     points.forEach(pointData => {
@@ -526,13 +234,13 @@ window.canvas.on("draw", function (canvas) {
         ]),
         '#ff0000', canvas, paint)
       if (pointData.isCountdown) {
-        drawRectAndText('倒计时:' + pointData.num, [point.left - 10, point.top - 10, point.right + 10, point.bottom + 10], '#ff0000', canvas, paint)
-        drawPoints(point.left + width - width / Math.sqrt(2), point.top + 5, checkPoints, canvas, paint)
+        drawRectAndText('倒计时:' + pointData.countdown, [point.left - 10, point.top - 10, point.right + 10, point.bottom + 10], '#ff0000', canvas, paint)
+        !collecting && drawPoints(point.left + width - width / Math.sqrt(2), point.top + 5, _checkPoints, canvas, paint)
       } else {
         drawRectAndText(pointData.isHelp ? '帮收' : '可收', [point.left - 10, point.top - 10, point.right + 10, point.bottom + 10], '#ff0000', canvas, paint)
-        if (!pointData.isHelp && pointData.matchPoint) {
+        if (!pointData.isHelp && pointData.matchPoint && !collecting) {
           let matchPoint = pointData.matchPoint
-          drawPoints(matchPoint.x, matchPoint.y, checkPoints, canvas, paint)
+          drawPoints(matchPoint.x, matchPoint.y, _checkPoints, canvas, paint)
         }
       }
       drawText(point.same, { x: point.left, y: point.top - 30 }, canvas, paint)
