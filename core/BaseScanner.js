@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-05 23:30:28
+ * @Last Modified time: 2021-01-06 09:20:48
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -25,6 +25,7 @@ let _HoughHelper = require('../utils/HoughHelper.js')
 let _VisualHelper = require('../utils/VisualHelper.js')
 
 const BaseScanner = function () {
+  let self = this
   // 针对奇葩分辨率，比如辣鸡瀑布屏
   let SCALE_RATE = _config.scaleRate
   let cvt = (v) => parseInt(v * SCALE_RATE)
@@ -60,7 +61,6 @@ const BaseScanner = function () {
         }
       })
     )
-    let self = this
     // 注册生命周期结束后关闭线程池，防止脚本意外中断时未调用destroy导致线程池一直运行
     this.lifecycleCallbackId = _commonFunctions.registerOnEngineRemoved(function () {
       self.baseDestory()
@@ -211,7 +211,6 @@ const BaseScanner = function () {
 
   this.detectCollectableBalls = function (rgbImg, findBalls, findPointCallback, findInvalidCallback) {
     let _start = new Date().getTime()
-    let self = this
     let clickPoints = []
     let invalidPoints = []
     let countdownLatch = new CountDownLatch(findBalls.length)
@@ -436,7 +435,6 @@ const BaseScanner = function () {
    * @param {string} name
    */
   this.protectInfoDetect = function (name) {
-    let self = this
     this.isProtectDetectDone = false
     this.isProtected = false
     this.threadPool.execute(function () {
