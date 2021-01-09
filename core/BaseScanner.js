@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-04 21:13:01
+ * @Last Modified time: 2021-01-08 00:40:13
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -25,20 +25,17 @@ let _HoughHelper = require('../utils/HoughHelper.js')
 let _VisualHelper = require('../utils/VisualHelper.js')
 
 const BaseScanner = function () {
+  let self = this
   // 针对奇葩分辨率，比如辣鸡瀑布屏
   let SCALE_RATE = _config.scaleRate
   let cvt = (v) => parseInt(v * SCALE_RATE)
-  let detectRegion = [
-    _config.tree_collect_left, _config.tree_collect_top,
-    _config.tree_collect_width, _config.tree_collect_height
-  ]
-  let GAP = parseInt(detectRegion[2] / 6)
-  let multiCheckPoints = []
-  for (let x = -parseInt(25 * SCALE_RATE); x <= parseInt(25 * SCALE_RATE); x += 2) {
-    multiCheckPoints.push([x, 0, '#ffffff'])
-  }
+  let COLLECTING_THRESHOLD = 25
+  let EMPTY_FUNC = () => { }
   this.temp_img = null
   this.collect_operated = false
+  this.is_own = false
+  this.recheck = false
+  this.collect_count = 0
   this.increased_energy = 0
   this.current_time = 0
   this.collect_any = false
@@ -65,7 +62,6 @@ const BaseScanner = function () {
         }
       })
     )
-    let self = this
     // 注册生命周期结束后关闭线程池，防止脚本意外中断时未调用destroy导致线程池一直运行
     this.lifecycleCallbackId = _commonFunctions.registerOnEngineRemoved(function () {
       self.baseDestory()
@@ -125,36 +121,6 @@ const BaseScanner = function () {
     }
   }
 
-  /**
-   * 收集目标能量球能量
-   * 
-   * @param {*} energy_ball 能量球对象
-   * @param {boolean} isDesc 是否是desc类型
-   */
-  this.collectBallEnergy = function (energy_ball, isDesc) {
-    if (_config.skip_five && !isOwn) {
-      let regexCheck = /(\d+)/
-      let execResult
-      if (isDesc) {
-        debugInfo('获取能量球desc数据')
-        execResult = regexCheck.exec(energy_ball.desc())
-      } else {
-        debugInfo('获取能量球text数据')
-        execResult = regexCheck.exec(energy_ball.text())
-      }
-      if (execResult.length > 1 && parseInt(execResult[1]) <= 5) {
-        debugInfo(
-          '能量小于等于五克跳过收取 ' + isDesc ? energy_ball.desc() : energy_ball.text()
-        )
-        return
-      }
-    }
-    debugInfo(isDesc ? energy_ball.desc() : energy_ball.text())
-    automator.clickCenter(energy_ball)
-    sleep(300)
-    return true
-  }
-
   // 收取能量
   this.collectEnergy = function (isHelp) {
     this.checkAndCollectByHough()
@@ -185,35 +151,31 @@ const BaseScanner = function () {
    * @param {function} findInvalidCallback 测试用 回调非可点击的点
    */
   this.checkAndCollectByHough = function (isOwn, findBallsCallback, findPointCallback, findInvalidCallback, recheckLimit) {
-    findBallsCallback = findBallsCallback || function () { }
-    findPointCallback = findPointCallback || function () { }
-    findInvalidCallback = findInvalidCallback || function () { }
+    findBallsCallback = findBallsCallback || EMPTY_FUNC
+    findPointCallback = findPointCallback || EMPTY_FUNC
+    findInvalidCallback = findInvalidCallback || EMPTY_FUNC
     recheckLimit = recheckLimit || 3
-    isOwn = isOwn || false
-    if (isOwn) {
+    this.is_own = isOwn || false
+    if (this.is_own) {
       // 收集自己，直接设置保护罩检测完毕
       this.isProtectDetectDone = true
     }
     let start = new Date().getTime()
-    let recheck = false
-    let lock = threads.lock()
     let haveValidBalls = false, haveBalls = false
-    let self = this
     this.collect_operated = false
+    this.collect_count = 0
     this.ensureThreadPoolCreated()
     let repeat = false
     this.initHoughHelperIfNeeded()
     do {
       haveValidBalls = false
       haveBalls = false
-      recheck = false
+      this.recheck = false
       let screen = _commonFunctions.checkCaptureScreenPermission()
       if (screen) {
-        let _start = new Date().getTime()
         this.temp_img = images.copy(screen, true)
         let rgbImg = images.copy(screen, true)
-        screen = images.medianBlur(screen, 5)
-        let grayImgInfo = images.grayscale(screen)
+        let grayImgInfo = images.grayscale(images.medianBlur(screen, 5))
         let findBalls = images.findCircles(
           grayImgInfo,
           {
@@ -221,164 +183,192 @@ const BaseScanner = function () {
             param2: _config.hough_param2 || 30,
             minRadius: _config.hough_min_radius || cvt(65),
             maxRadius: _config.hough_max_radius || cvt(75),
-            minDst: _config.hough_min_dst || cvt(100),
-            // region: detectRegion
+            minDst: _config.hough_min_dst || cvt(100)
           }
         )
         debugInfo(['找到的球:{}', JSON.stringify(findBalls)])
+        haveBalls = findBalls && findBalls.length > 0
         if (this.isProtected) {
           // 已判定为使用了保护罩
           return
         }
-        if (findBalls && findBalls.length > 0) {
-          let dayOrNightImg = images.clip(rgbImg, _config.tree_collect_left, _config.tree_collect_top, 40, 40)
-          let result = OpenCvUtil.getMedian(dayOrNightImg)
-          let isNight = result < 100
+        if (haveBalls) {
           findBallsCallback(findBalls)
-          let clickPoints = []
-          let invalidPoints = []
-          let threshold = 25
-          let countdownLatch = new CountDownLatch(findBalls.length)
-          findBalls.forEach(b => {
-            this.threadPool.execute(function () {
-              try {
-                if (rgbImg.getMat().dims() >= 2) {
-                  /**
-                   * 能量球多维度采样，通过不同的数值来判断是否可收取、帮助、浇水球
-                   */
-                  let startForColorValue = new Date().getTime()
-                  let radius = parseInt(b.radius)
-                  let ballImage = images.clip(rgbImg, b.x - radius, b.y - radius, radius * 2, 2.57 * radius)
-                  // 用于判定是否可收取
-                  let intervalForCollectCheck = images.inRange(ballImage, '#a5c600', '#ffff5d')
-                  let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
-                  // 用于判定是否帮助收取
-                  let intervalForHelpCheck = images.inRange(ballImage, '#6f0028', '#ffa8b2')
-                  // 识别底部是否有白色
-                  let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
-                  let avgBottom = OpenCvUtil.getHistAverage(bottomImg)
-                  // 判定是否为浇水球
-                  let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
-                  // 判定是不是真实的能量球，包括倒计时中的，因为帮收和倒计时中的颜色特征有几率一模一样
-                  let intervalForCollatableRecheck = images.inRange(ballImage, '#77cc00', '#ffff91')
-                  let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
-                  let collectableBall = { ball: b, isHelp: false, isNight: isNight, isOwn: isOwn, avg: avgHsv, mainAvg: avgForCollectable, recheckAvg: collectableRecheckAvg, avgBottom: avgBottom }
-
-                  debugForDev(['取色耗时：{}ms', new Date().getTime() - startForColorValue])
-                  if (avgHsv >= threshold) {
-                    // 浇水能量球
-                    collectableBall.isWatering = true
-                    recheck = isOwn
-                  } else if (!isOwn && avgBottom > threshold) {
-                    // 判定为帮收
-                    collectableBall.isHelp = true
-                  } else if (avgForCollectable < threshold) {
-                    // 非帮助或可收取, 大于25的则是可收取的，否则为无效球
-                    collectableBall.invalid = true
-                  }
-                  // 排除非可收取的和好友页面中的浇水球
-                  if (collectableRecheckAvg < threshold || !isOwn && collectableBall.isWatering) {
-                    collectableBall.invalid = true
-                    collectableBall.isHelp = false
-                  }
-                  lock.lock()
-                  if (_config.develop_saving_mode) {
-                    if (typeof formatDate === 'undefined')
-                      formatDate = require('../lib/DateUtil.js')
-                    collectableBall.createTime = formatDate(new Date())
-                    self.houghHelper.saveImage(ballImage, collectableBall)
-                  }
-                  if (!collectableBall.invalid) {
-                    clickPoints.push(collectableBall)
-                    self.visualHelper.addCircle(collectableBall.isHelp ? '帮助能量球' : collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball)
-                  } else {
-                    self.visualHelper.addCircle('非有效能量球', collectableBall.ball)
-                    invalidPoints.push(collectableBall)
-                    findInvalidCallback(collectableBall)
-                  }
-                  lock.unlock()
-                } else {
-                  debugInfo(['mat dims is smaller then two, rgb: {}', rgbImg.getMat().dims()])
-                }
-              } catch (e) {
-                errorInfo('baseScanner线程执行异常：' + e)
-                _commonFunctions.printExceptionStack(e)
-              } finally {
-                countdownLatch.countDown()
-              }
-
-            })
-          })
-          debugInfo(['countdownLatch waiting count: {}', countdownLatch.getCount()])
-          countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)
-          debugInfo(['判断可收集或帮助能量球信息总耗时：{}ms', new Date().getTime() - _start])
-          self.visualHelper.displayAndClearAll()
-          if (!this.awaitForCollectable()) {
-            return
-          }
-          if (clickPoints && clickPoints.length > 0) {
-            let clickStart = new Date().getTime()
-            debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
-            clickPoints.forEach((point, idx) => {
-              let b = point.ball
-              if (b.y < _config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > _config.tree_collect_top + _config.tree_collect_height) {
-                // 可能是左上角的活动图标 或者 识别到了其他范围的球
-                return
-              }
-              haveValidBalls = true
-              findPointCallback(point)
-              if (
-                // 收取自身的好友浇水球
-                isOwn && point.isWatering && !_config.skip_own_watering_ball
-                // 非帮收球且非浇水直接收取
-                || !point.isHelp && !point.isWatering) {
-                self.collect_operated = true
-                automator.click(b.x, b.y)
-                if (idx < clickPoints.length - 1) {
-                  sleep(100)
-                }
-              } else if (point.isHelp && _config.help_friend) {
-                // 帮助收取
-                automator.click(b.x, b.y)
-                sleep(100)
-                let notifyButton = _widgetUtils.widgetGetOne(_config.help_and_notify || '知道了.*去提醒', 1000)
-                if (notifyButton) {
-                  automator.clickCenter(notifyButton)
-                  sleep(500)
-                }
-              }
-            })
-            debugInfo(['点击能量球耗时：{}ms', new Date().getTime() - clickStart])
-          } else {
-            debugInfo('未找到匹配的可收取或帮助的点')
-            if (_config.develop_mode && !isOwn) {
-              debugForDev(['图片数据：[data:image/png;base64,{}]', images.toBase64(rgbImg)], false, true)
-              debugForDev(['invalidBalls: [{}]', JSON.stringify(invalidPoints)])
-            }
-          }
-          if (isOwn && _config.cutAndSaveTreeCollect && recheck && rgbImg) {
-            let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
-              + 'collect_own_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
-            files.ensureDir(savePath)
-            images.save(rgbImg, savePath)
-            debugForDev(['保存自身能量球图片：「{}」', savePath])
-          }
-          if (!isOwn && !haveValidBalls) {
-            this.savingDevelopImageForNotFound()
-          }
+          haveValidBalls = this.detectCollectableBalls(rgbImg, findBalls, findPointCallback, findInvalidCallback)
         }
         rgbImg.recycle()
       }
       // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次 || 使用了双击卡，且点击过球
-      repeat = recheck && isOwn && --recheckLimit > 0
+      repeat = this.recheck && this.is_own && --recheckLimit > 0
         || !haveValidBalls && haveBalls && --recheckLimit >= 2
         || _config.use_double_click_card && haveValidBalls && --recheckLimit > 0
       if (repeat) {
-        debugInfo(['需要二次校验，等待{}ms', isOwn ? 200 : 500])
-        sleep(isOwn ? 200 : 500)
+        debugInfo(['需要二次校验，等待{}ms', this.is_own ? 200 : 500])
+        sleep(this.is_own ? 200 : 500)
       }
     } while (repeat)
     debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
+  }
+
+
+  this.detectCollectableBalls = function (rgbImg, findBalls, findPointCallback, findInvalidCallback) {
+    let _start = new Date().getTime()
+    let clickPoints = []
+    let invalidPoints = []
+    let countdownLatch = new CountDownLatch(findBalls.length)
+    let lock = threads.lock()
+    findBalls.forEach(ball => {
+      this.threadPool.execute(function () {
+        try {
+          let collectableBall = self.doDetectCollectableBalls(rgbImg, ball)
+          if (collectableBall) {
+            lock.lock()
+            if (_config.develop_saving_mode) {
+              if (typeof formatDate === 'undefined')
+                formatDate = require('../lib/DateUtil.js')
+              collectableBall.createTime = formatDate(new Date())
+              self.houghHelper.saveImage(collectableBall.ballImage, collectableBall)
+            }
+            collectableBall.ballImage = null
+            if (!collectableBall.invalid) {
+              clickPoints.push(collectableBall)
+              self.visualHelper.addCircle(collectableBall.isHelp ? '帮助能量球' : collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball)
+            } else {
+              self.visualHelper.addCircle('非有效能量球', collectableBall.ball)
+              invalidPoints.push(collectableBall)
+              findInvalidCallback(collectableBall)
+            }
+            lock.unlock()
+          }
+        } catch (e) {
+          errorInfo('baseScanner线程执行异常：' + e)
+          _commonFunctions.printExceptionStack(e)
+        } finally {
+          countdownLatch.countDown()
+        }
+      })
+    })
+    debugInfo(['countdownLatch waiting count: {}', countdownLatch.getCount()])
+    countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)
+    debugInfo(['判断可收集或帮助能量球信息总耗时：{}ms', new Date().getTime() - _start])
+    this.visualHelper.displayAndClearAll()
+    if (!this.awaitForCollectable()) {
+      return
+    }
+    let haveValidBalls = clickPoints && clickPoints.length > 0
+    if (haveValidBalls) {
+      this.operateCollect(clickPoints, findPointCallback)
+    } else {
+      debugInfo('未找到匹配的可收取或帮助的点')
+      if (_config.develop_mode && !this.is_own) {
+        debugForDev(['图片数据：[data:image/png;base64,{}]', images.toBase64(rgbImg)], false, true)
+        debugForDev(['invalidBalls: [{}]', JSON.stringify(invalidPoints)])
+      }
+    }
+    if (this.is_own && _config.cutAndSaveTreeCollect && this.recheck && rgbImg) {
+      let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+        + 'collect_own_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
+      files.ensureDir(savePath)
+      images.save(rgbImg, savePath)
+      debugForDev(['保存自身能量球图片：「{}」', savePath])
+    }
+    if (!this.is_own && !haveValidBalls) {
+      this.savingDevelopImageForNotFound()
+    }
+    return haveValidBalls
+  }
+
+  this.doDetectCollectableBalls = function (rgbImg, ball) {
+    if (rgbImg.getMat().dims() >= 2) {
+      /**
+       * 能量球多维度采样，通过不同的数值来判断是否可收取、帮助、浇水球
+       */
+      let startForColorValue = new Date().getTime()
+      let radius = parseInt(ball.radius)
+      if (
+        // 可能是左上角的活动图标 或者 识别到了其他范围的球
+        ball.y < _config.tree_collect_top - (this.is_own ? cvt(80) : 0) || ball.y > _config.tree_collect_top + _config.tree_collect_height
+        || ball.x < _config.tree_collect_left || ball.x > _config.tree_collect_left + _config.tree_collect_width
+        // 取值范围就不正确的无效球，避免后续报错，理论上不会进来，除非配置有误
+        || ball.x - radius <= 0 || ball.x + radius >= _config.device_width || ball.y - radius <= 0 || ball.y + 1.6 * radius >= _config.device_height) {
+        return
+      }
+      let ballImage = images.clip(rgbImg, ball.x - radius, ball.y - radius, radius * 2, 2.6 * radius)
+      // 用于判定是否可收取
+      let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#a5c600', _config.collectable_upper || '#ffff5d')
+      let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
+      // 用于判定是否帮助收取
+      let intervalForHelpCheck = images.inRange(ballImage, _config.helpable_lower || '#6f0028', _config.helpable_upper || '#ffb2b2')
+      // 识别底部是否有白色
+      let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
+      let avgBottom = OpenCvUtil.getHistAverage(bottomImg)
+      // 判定是否为浇水球
+      let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
+      // 判定是不是真实的能量球，包括倒计时中的，因为帮收和倒计时中的颜色特征有几率一模一样
+      let intervalForCollatableRecheck = images.inRange(ballImage, _config.valid_collectable_lower || '#77cc00', _config.valid_collectable_upper || '#ffff91')
+      let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
+      let collectableBall = {
+        ball: ball, isHelp: false, isOwn: this.is_own, avg: avgHsv,
+        mainAvg: avgForCollectable, recheckAvg: collectableRecheckAvg, avgBottom: avgBottom,
+        ballImage: ballImage
+      }
+
+      debugForDev(['取色耗时：{}ms', new Date().getTime() - startForColorValue])
+      if (avgHsv >= COLLECTING_THRESHOLD) {
+        // 浇水能量球
+        collectableBall.isWatering = true
+        recheck = this.is_own
+      } else if (!this.is_own && avgBottom > COLLECTING_THRESHOLD) {
+        // 判定为帮收
+        collectableBall.isHelp = true
+      } else if (avgForCollectable < COLLECTING_THRESHOLD) {
+        // 非帮助或可收取, 大于25的则是可收取的，否则为无效球
+        collectableBall.invalid = true
+      }
+      // 排除非可收取的和好友页面中的浇水球
+      if (collectableRecheckAvg < COLLECTING_THRESHOLD || !this.is_own && collectableBall.isWatering) {
+        collectableBall.invalid = true
+        collectableBall.isHelp = false
+      }
+      return collectableBall
+    } else {
+      debugInfo(['mat dims is smaller then two, rgb: {}', rgbImg.getMat().dims()])
+    }
+    return null
+  }
+
+  this.operateCollect = function (clickPoints, findPointCallback) {
+    let clickStart = new Date().getTime()
+    debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
+    if (findPointCallback === EMPTY_FUNC) {
+      clickPoints.forEach((point, idx) => {
+        let b = point.ball
+        if (
+          // 收取自身的好友浇水球
+          this.is_own && point.isWatering && !_config.skip_own_watering_ball
+          // 非帮收球且非浇水直接收取
+          || !point.isHelp && !point.isWatering) {
+          self.collect_operated = true
+          self.collect_count++
+          automator.click(b.x, b.y)
+          if (idx < clickPoints.length - 1) {
+            sleep(100)
+          }
+        } else if (point.isHelp && _config.help_friend) {
+          // 帮助收取
+          automator.click(b.x, b.y)
+          sleep(100)
+          let notifyButton = _widgetUtils.widgetGetOne(_config.help_and_notify || '知道了.*去提醒', 1000)
+          if (notifyButton) {
+            automator.clickCenter(notifyButton)
+            sleep(500)
+          }
+        }
+      })
+      debugInfo(['点击能量球耗时：{}ms', new Date().getTime() - clickStart])
+    } else {
+      findPointCallback(clickPoints)
+    }
   }
 
   // 收取能量同时帮好友收取
@@ -448,7 +438,6 @@ const BaseScanner = function () {
    * @param {string} name
    */
   this.protectInfoDetect = function (name) {
-    let self = this
     this.isProtectDetectDone = false
     this.isProtected = false
     this.threadPool.execute(function () {
@@ -569,8 +558,14 @@ const BaseScanner = function () {
     let postCollected = oldCollected, postEnergy = oldFriendEnergy
     if (this.collect_operated) {
       debugInfo(['等待能量值数据刷新，原始值collect:{} energy:{}', oldCollected, oldFriendEnergy])
+      let sleepTime = 1000
+      if (this.collect_count > 1) {
+        // 多个能量球，多等待五百毫秒
+        sleep(500)
+        sleepTime = 500
+      }
       // 最多等一秒
-      let timeout = new Date().getTime() + 1000
+      let timeout = new Date().getTime() + sleepTime
       let timeoutFlag = false
       while (postCollected === oldCollected && postEnergy === oldFriendEnergy) {
         if (new Date().getTime() > timeout) {
@@ -587,7 +582,7 @@ const BaseScanner = function () {
           '能量值数据刷新，新值collect:{} energy:{} 总耗时：{}ms',
           this.checkAndDisplayIncreased(postCollected, oldCollected),
           this.checkAndDisplayIncreased(postEnergy, oldFriendEnergy),
-          new Date().getTime() - timeout + 1000
+          new Date().getTime() - timeout + sleepTime
         ])
       }
     }

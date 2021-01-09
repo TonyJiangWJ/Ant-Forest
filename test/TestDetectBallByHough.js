@@ -2,11 +2,16 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-30 20:59:11
+ * @Last Modified time: 2021-01-05 23:20:33
  * @Description: 
  */
 
 let { config } = require('../config.js')(runtime, this)
+config.cutAndSaveTreeCollect = false
+config.show_debug_log = true
+config.async_save_log_file = false
+config.develop_mode = true
+config.capture_waiting_time = 3000
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
@@ -16,9 +21,6 @@ let _BaseScanner = require('../core/BaseScanner.js')
 commonFunction.autoSetUpBangOffset()
 commonFunction.checkCaptureScreenPermission = checkCaptureScreenPermission
 let offset = config.bang_offset
-config.cutAndSaveTreeCollect = false
-config.show_debug_log = true
-config.async_save_log_file = false
 requestScreenCapture(false)
 var window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
@@ -57,10 +59,16 @@ let detectThread = threads.start(function () {
       try {
         let _start = new Date().getTime()
         scanner.isProtectDetectDone = true
-        scanner.checkAndCollectByHough(flag === 1, balls => findBalls = balls, point => clickPoints.push(point), ball => {
-          invalidPoints.push(ball)
-          console.verbose('添加无效球：' + JSON.stringify(ball))
-        })
+        scanner.checkAndCollectByHough(
+          flag === 1,
+          balls => findBalls = balls,
+          points => clickPoints = points,
+          ball => {
+            invalidPoints.push(ball)
+            console.verbose('添加无效球：' + JSON.stringify(ball))
+          },
+          1
+        )
         logInfo(['识别总耗时：{}ms', new Date().getTime() - _start])
       } catch (e) {
         commonFunction.printExceptionStack(e)

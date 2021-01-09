@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-29 18:13:20
+ * @Last Modified time: 2021-01-09 18:31:40
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, this)
@@ -43,19 +43,19 @@ let formatDate = require('./lib/DateUtil.js')
 callStateListener.exitIfNotIdle()
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
+  config.resetBrightness && config.resetBrightness()
+  events.removeAllListeners()
+  events.recycle()
+  debugInfo('校验并移除已加载的dex')
+  resolver()
+  flushAllLogs()
+  !config.is_pro && console.clear()
   // 移除运行中任务
   runningQueueDispatcher.removeRunningTask(true, true,
     () => {
       // 保存是否需要重新锁屏
       unlocker.saveNeedRelock()
-      unlocker.unlocker.relock && config.resetBrightness && config.resetBrightness()
-      events.removeAllListeners()
-      events.recycle()
-      debugInfo('校验并移除已加载的dex')
-      resolver()
-      flushAllLogs()
       config.isRunning = false
-      console.clear()
     }
   )
 }, 'main')

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-23 23:08:06
+ * @Last Modified time: 2021-01-09 18:47:51
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 
@@ -41,6 +41,13 @@ let mixin_methods = {
         return { color: v }
       } else {
         return null
+      }
+    },
+    toFixed2: function (v) {
+      if (v && typeof v === 'number') {
+        return v.toFixed(2)
+      } else {
+        return v ? v : ''
       }
     }
   }

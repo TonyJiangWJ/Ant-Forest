@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-04 21:23:12
+ * @Last Modified time: 2021-01-09 14:42:40
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -19,7 +19,6 @@ let ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
 let BaseScanner = require('./BaseScanner.js')
 
 function Ant_forest () {
-  const _package_name = 'com.eg.android.AlipayGphone'
   let _base_scanner = new BaseScanner()
   _commonFunctions.registerOnEngineRemoved(function () {
     if (_base_scanner !== null) {
@@ -47,16 +46,15 @@ function Ant_forest () {
 
   // 进入蚂蚁森林主页
   const startApp = function () {
-    _commonFunctions.launchPackage(_package_name)
-    sleep(500)
-    if (_config.is_alipay_locked) {
-      alipayUnlocker.unlockAlipay()
-    }
     app.startActivity({
       action: 'VIEW',
       data: 'alipays://platformapi/startapp?appId=60000002',
-      packageName: _package_name
+      packageName: _config.package_name
     })
+    if (_config.is_alipay_locked) {
+      sleep(1000)
+      alipayUnlocker.unlockAlipay()
+    }
   }
 
   const recordLost = function (reason) {
@@ -241,7 +239,7 @@ function Ant_forest () {
     if (target && target.exists()) {
       let ball = target.untilFind()
       debugInfo('待收取球数' + ball.length)
-      toasts = getToastAsync(_package_name, ball.length >= 2 ? 2 : ball.length, function () {
+      toasts = getToastAsync(_config.package_name, ball.length >= 2 ? 2 : ball.length, function () {
         let screen = _commonFunctions.checkCaptureScreenPermission()
         let count = 0
         for (let i = 0; i < ball.length; i++) {
@@ -279,7 +277,7 @@ function Ant_forest () {
           }
         })
         debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
-        toasts = getToastAsync(_package_name, ballPoints.length >= 2 ? 2 : ballPoints.length,
+        toasts = getToastAsync(_config.package_name, ballPoints.length >= 2 ? 2 : ballPoints.length,
           () => {
             let count = 0
             ballPoints.forEach(point => {
@@ -914,7 +912,6 @@ function Ant_forest () {
               // 展示一下悬浮窗信息 提示还剩多久启动
               _commonFunctions.showTextFloaty('脚本将在' + _min_countdown + '分钟后自动执行')
               sleep(3000)
-              _runningQueueDispatcher.removeRunningTask()
               exit()
             } else {
               _commonFunctions.commonDelay(_min_countdown - delayTime)

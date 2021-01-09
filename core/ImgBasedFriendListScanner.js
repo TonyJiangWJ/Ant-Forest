@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-30 20:03:38
+ * @Last Modified time: 2021-01-05 23:34:22
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -18,7 +18,7 @@ let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
 let TesseracOcrUtil = require('../lib/TesseracOcrUtil.js')
 let OcrUtil = _config.useTesseracOcr ? TesseracOcrUtil : BaiduOcrUtil
 let useMockOcr = false
-if (!_config.useTesseracOcr || !_config.useOcr) {
+if (!_config.useTesseracOcr && !_config.useOcr) {
   OcrUtil = require('../lib/MockNumberOcrUtil.js')
   useMockOcr = true
 }
@@ -56,16 +56,18 @@ for (let i = 20; i < 30 * SCALE_RATE; i++) {
     }
   }
 }
-
+const EXECUTE_FAILED = true
 const ImgBasedFriendListScanner = function () {
   BaseScanner.call(this)
   this.threadPool = null
   this.min_countdown_pixels = 10
   this.last_check_point = null
   this.last_check_color = null
-
+  this.stroll_up_check_count = 0
+  this.has_next = true
   let self = this
   this.init = function (option) {
+    option = option || {}
     this.current_time = option.currentTime || 0
     this.increased_energy = option.increasedEnergy || 0
     this.createNewThreadPool()
@@ -209,17 +211,17 @@ const ImgBasedFriendListScanner = function () {
    * @return { true } if failed
    * @return { minCountdown, lostSomeone } if successful
    */
-  this.collecting = function () {
+  this.collecting = function (testing) {
     let screen = null
     let grayScreen = null
     let intervalScreenForDetectCollect = null
     let intervalScreenForDetectHelp = null
     // console.show()
     let countingDownContainers = []
+    // 列表中的滑动次数
     let count = 0
-    let hasNext = true
-    let that = this
-    let strollUpCheckCount = 0
+    this.has_next = true
+    this.stroll_up_check_count = 0
     do {
       screen = _commonFunctions.checkCaptureScreenPermission(5)
       // 重新复制一份
@@ -228,32 +230,7 @@ const ImgBasedFriendListScanner = function () {
       intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, _config.can_collect_color_gray || '#828282', _config.color_offset), 5)
       intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
       let countdown = new Countdown()
-      let waitForCheckPoints = []
-
-      let helpPoints = this.detectHelp(intervalScreenForDetectHelp)
-      if (helpPoints && helpPoints.length > 0) {
-        waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
-          helpPoint => {
-            return {
-              isHelp: true,
-              point: helpPoint
-            }
-          })
-        )
-      }
-
-      let collectPoints = this.detectCollect(intervalScreenForDetectCollect)
-      if (collectPoints && collectPoints.length > 0) {
-        waitForCheckPoints = waitForCheckPoints.concat(collectPoints.map(
-          collectPoint => {
-            return {
-              isHelp: false,
-              point: collectPoint
-            }
-          })
-        )
-      }
-      waitForCheckPoints = this.sortAndReduce(waitForCheckPoints)
+      let waitForCheckPoints = this.getAllCheckPoints(intervalScreenForDetectHelp, intervalScreenForDetectCollect)
       countdown.summary('获取可帮助和可能可收取的点')
       if (waitForCheckPoints.length > 0) {
         if (!_config.help_friend) {
@@ -269,38 +246,7 @@ const ImgBasedFriendListScanner = function () {
         waitForCheckPoints.forEach(pointData => {
           if (pointData.isHelp) {
             this.threadPool.execute(function () {
-              let executeSuccess = false
-              try {
-                if (_config.collect_by_stroll_only) {
-                  return
-                }
-                let calculator = new ColorCenterCalculatorWithInterval(
-                  images.copy(intervalScreenForDetectHelp), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
-                )
-                calculator.setScriptLogger(SCRIPT_LOGGER)
-                let point = calculator.getCenterPoint()
-                debugInfo('可帮助收取位置：' + JSON.stringify(point))
-                listWriteLock.lock()
-                try {
-                  collectOrHelpList.push({
-                    point: point,
-                    isHelp: true
-                  })
-                  self.visualHelper.addRectangle('可帮助点', [point.left, point.top, point.right - point.left, point.bottom - point.top])
-                } finally {
-                  executeSuccess = true
-                  countdownLatch.countDown()
-                  listWriteLock.unlock()
-                  calculator = null
-                }
-              } catch (e) {
-                errorInfo(['区域检测线程执行异常: {}', e])
-                _commonFunctions.printExceptionStack(e)
-              } finally {
-                if (!executeSuccess) {
-                  countdownLatch.countDown()
-                }
-              }
+              self.solveHelpPoint(intervalScreenForDetectHelp, pointData, listWriteLock, countdownLatch, collectOrHelpList)
             })
           } else {
             this.threadPool.execute(function () {
@@ -311,98 +257,22 @@ const ImgBasedFriendListScanner = function () {
                 )
                 calculator.setScriptLogger(SCRIPT_LOGGER)
                 let point = calculator.getCenterPoint()
-                if (that.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), point)) {
-                  if (_config.collect_by_stroll_only) {
-                    return
-                  }
-                  debugInfo('可收取位置：' + JSON.stringify(point))
-                  if (_config.autoSetThreshold && _config.ocrThreshold > point.regionSame * 1.44) {
-                    _config.ocrThreshold = parseInt(point.regionSame * 1.44)
-                    infoLog('自动设置ocr阈值：' + _config.ocrThreshold)
-                    let configStorage = storages.create(_storage_name)
-                    configStorage.put('ocrThreshold', _config.ocrThreshold)
-                  }
-                  listWriteLock.lock()
-                  try {
-                    collectOrHelpList.push({ point: point, isHelp: false })
+                if (self.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), point)) {
+                  // 可收取
+                  executeSuccess = self.solveCollectable(point, listWriteLock, countdownLatch, collectOrHelpList)
+                } else {
+                  if (!testing) {
+                    // 倒计时数据，直接标记执行完毕 将OCR请求交给异步处理
                     countdownLatch.countDown()
                     executeSuccess = true
-                    self.visualHelper.addRectangle('可收取点', [point.left, point.top, point.right - point.left, point.bottom - point.top])
-                  } finally {
-                    listWriteLock.unlock()
                   }
-                } else {
-                  debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame)
-                  let forOcrScreen = images.copy(grayScreen)
-                  // 直接标记执行完毕 将OCR请求交给异步处理
-                  countdownLatch.countDown()
-                  executeSuccess = true
-                  if (!_config.is_cycle) {
-                    let width = point.right - point.left
-                    let height = point.bottom - point.top
-                    let offset = parseInt((width > height ? height - height / Math.sqrt(2) : width - width / Math.sqrt(2)) * 0.9)
-                    let down_off = parseInt(offset / 4)
-                    let base64String = null
-                    imgResolveLock.lock()
-                    try {
-                      self.visualHelper.addRectangle('倒计时中', [point.left, point.top, width, height])
-                      let countdownImg = images.clip(forOcrScreen, point.left + offset + down_off, point.top + down_off, point.right - point.left - offset - down_off, point.bottom - point.top - offset)
-                      let scale = 30 / countdownImg.width
-                      if (_config.develop_mode) {
-                        debugForDev(['图片压缩前base64 「data:image/png;base64,{}」', images.toBase64(countdownImg)])
-                      }
-                      if (useMockOcr) {
-                        // 将图片压缩或者放大到1080P下的分辨率
-                        scale = 1 / _config.scaleRate
-                      }
-                      if (scale !== 1) {
-                        countdownImg = images.resize(countdownImg, [parseInt(countdownImg.width * scale), parseInt(countdownImg.height * scale)])
-                      }
-                      countdownImg = images.interval(countdownImg, '#FFFFFF', 40)
-
-                      try {
-                        base64String = images.toBase64(countdownImg)
-                        if (_config.saveBase64ImgInfo) {
-                          debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「data:image/png;base64,{}」', point.regionSame, base64String])
-                        }
-                      } catch (e) {
-                        errorInfo('存储倒计时图片失败：' + e)
-                        _commonFunctions.printExceptionStack(e)
-                      }
-                    } finally {
-                      imgResolveLock.unlock()
-                    }
-
-                    if (base64String) {
-                      if (point.regionSame >= (_config.ocrThreshold || 2900) && that.min_countdown >= 2 || useMockOcr) {
-                        // Ocr识图API获取文本
-                        let countdown = OcrUtil.getImageNumber(base64String)
-                        if (isFinite(countdown) && countdown > 0) {
-                          countdownLock.lock()
-                          try {
-                            // self.visualHelper.addText(countdown, { x: point.left, y: point.top - 10 })
-                            debugInfo('获取倒计时数据为：' + countdown)
-                            if (countdown < that.min_countdown) {
-                              debugInfo('设置最小倒计时：' + countdown)
-                              that.min_countdown = countdown
-                              that.min_countdown_pixels = point.regionSame
-                            }
-                            countingDownContainers.push({
-                              countdown: countdown,
-                              stamp: new Date().getTime()
-                            })
-                          } finally {
-                            countdownLock.unlock()
-                          }
-                        }
-
-                      } else {
-                        debugInfo(['当前倒计时校验最小像素阈值：{} 已获取最小倒计时：{}', (_config.ocrThreshold || 2900), that.min_countdown])
-                      }
-                    }
+                  self.solveCountdown(grayScreen, point, imgResolveLock, countdownLock, countingDownContainers)
+                  if (testing) {
+                    // 测试时等待
+                    countdownLatch.countDown()
+                    executeSuccess = true
                   }
                 }
-                calculator = null
               } catch (e) {
                 errorInfo('是否可收取及倒计时识别线程执行异常' + e)
                 _commonFunctions.printExceptionStack(e)
@@ -427,83 +297,15 @@ const ImgBasedFriendListScanner = function () {
         }
         originScreen.recycle()
         countdown.summary('分析所有可帮助和可收取的点')
-        if (!_config.collect_by_stroll_only) {
-          if (collectOrHelpList && collectOrHelpList.length > 0) {
-            debugInfo(['开始收集和帮助收取，总数：{}', collectOrHelpList.length])
-            if (_config.develop_mode) {
-              collectOrHelpList.forEach(target => {
-                debugInfo(JSON.stringify(target))
-              })
-            }
-            let noError = true
-            collectOrHelpList.forEach(point => {
-              if (noError) {
-                if (false === that.collectTargetFriend(point)) {
-                  noError = false
-                }
-              }
-            })
-            if (!noError) {
-              // true is error
-              return true
-            }
-          } else {
-            debugInfo('无可收取或帮助的内容')
-          }
-        } else {
-          debugInfo('只通过逛一逛收集，跳过排行榜中的收取，仅识别倒计时')
+        if (this.operateCollectIfNeeded(collectOrHelpList)) {
+          return EXECUTE_FAILED
         }
       }
-      self.visualHelper.displayAndClearAll()
-      automator.scrollDown()
-      sleep(300)
-      count++
-      if (_config.checkBottomBaseImg) {
-        if (!images.isValidImg(grayScreen)) {
-          screen = _commonFunctions.checkCaptureScreenPermission()
-          grayScreen = images.grayscale(screen)
-        }
-        let reached = _widgetUtils.reachBottom(grayScreen)
-        if (reached) {
-          grayScreen.recycle()
-          // 二次校验，避免因为加载中导致的错误判断
-          screen = _commonFunctions.checkCaptureScreenPermission()
-          grayScreen = images.grayscale(screen)
-          reached = _widgetUtils.reachBottom(grayScreen)
-        }
-        hasNext = !reached
-      } else {
-        hasNext = count < (_config.friendListScrollTime || 30)
+      this.visualHelper.displayAndClearAll()
+      if (this.checkBottomAndRecycle(grayScreen, ++count)) {
+        return EXECUTE_FAILED
       }
-      // 每5次滑动判断一次是否在排行榜中
-      if (hasNext && count % 5 == 0) {
-        if (!_widgetUtils.friendListWaiting()) {
-          errorInfo('当前不在好友排行榜！')
-          // true is error
-          return true
-        }
-        if (!images.isValidImg(grayScreen)) {
-          // 判断列表是否加载失败，重新上划 触发加载
-          screen = _commonFunctions.checkCaptureScreenPermission()
-          grayScreen = images.grayscale(screen)
-        }
-        if (!this.scrollUpIfNeeded(images.copy(grayScreen))) {
-          if (++strollUpCheckCount >= 5) {
-            warnInfo('滑动校验失败达到5次，重新执行')
-            return true
-          }
-        } else {
-          strollUpCheckCount = 0
-        }
-      }
-      grayScreen && grayScreen.recycle()
-    } while (hasNext)
-    sleep(100)
-    if (!_widgetUtils.friendListWaiting()) {
-      errorInfo('当前不在好友排行榜！')
-      // true is error
-      return true
-    }
+    } while (this.has_next)
     let poolWaitCount = 0
     while (this.threadPool.getActiveCount() > 0) {
       debugInfo(['当前线程池还有工作线程未结束，继续等待。运行中数量：{}', this.threadPool.getActiveCount()])
@@ -522,6 +324,288 @@ const ImgBasedFriendListScanner = function () {
     this.checkRunningCountdown(countingDownContainers)
 
     return this.getCollectResult()
+  }
+
+  /**
+   * 获取所有的待校验节点
+   * 
+   * @param {*} intervalScreenForDetectHelp 
+   * @param {*} intervalScreenForDetectCollect 
+   */
+  this.getAllCheckPoints = function (intervalScreenForDetectHelp, intervalScreenForDetectCollect) {
+    let waitForCheckPoints = []
+
+    let helpPoints = this.detectHelp(intervalScreenForDetectHelp)
+    if (helpPoints && helpPoints.length > 0) {
+      waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
+        helpPoint => {
+          return {
+            isHelp: true,
+            point: helpPoint
+          }
+        })
+      )
+    }
+
+    let collectPoints = this.detectCollect(intervalScreenForDetectCollect)
+    if (collectPoints && collectPoints.length > 0) {
+      waitForCheckPoints = waitForCheckPoints.concat(collectPoints.map(
+        collectPoint => {
+          return {
+            isHelp: false,
+            point: collectPoint
+          }
+        })
+      )
+    }
+    return this.sortAndReduce(waitForCheckPoints)
+  }
+
+  /**
+   * 校验可帮助节点，并获取中心点
+   * 
+   * @param {*} intervalScreenForDetectHelp 
+   * @param {*} pointData 
+   * @param {*} listWriteLock 
+   * @param {*} countdownLatch 
+   * @param {*} collectOrHelpList 
+   */
+  this.solveHelpPoint = function (intervalScreenForDetectHelp, pointData, listWriteLock, countdownLatch, collectOrHelpList) {
+    let executeSuccess = false
+    try {
+      if (_config.collect_by_stroll_only) {
+        return
+      }
+      let calculator = new ColorCenterCalculatorWithInterval(
+        images.copy(intervalScreenForDetectHelp), _config.device_width - parseInt(200 * SCALE_RATE), pointData.point.x, pointData.point.y
+      )
+      calculator.setScriptLogger(SCRIPT_LOGGER)
+      let point = calculator.getCenterPoint()
+      debugInfo('可帮助收取位置：' + JSON.stringify(point))
+      listWriteLock.lock()
+      try {
+        collectOrHelpList.push({
+          point: point,
+          isHelp: true
+        })
+        this.visualHelper.addRectangle('可帮助点', [point.left, point.top, point.right - point.left, point.bottom - point.top])
+      } finally {
+        executeSuccess = true
+        countdownLatch.countDown()
+        listWriteLock.unlock()
+        calculator = null
+      }
+    } catch (e) {
+      errorInfo(['区域检测线程执行异常: {}', e])
+      _commonFunctions.printExceptionStack(e)
+    } finally {
+      if (!executeSuccess) {
+        countdownLatch.countDown()
+      }
+    }
+  }
+
+  /**
+   * 校验可收取节点
+   * 
+   * @param {*} point 
+   * @param {*} listWriteLock 
+   * @param {*} countdownLatch 
+   * @param {*} collectOrHelpList 
+   */
+  this.solveCollectable = function (point, listWriteLock, countdownLatch, collectOrHelpList) {
+    if (_config.collect_by_stroll_only) {
+      return true
+    }
+    let executeSuccess = false
+    debugInfo('可收取位置：' + JSON.stringify(point))
+    if (_config.autoSetThreshold && _config.ocrThreshold > point.regionSame * 1.44) {
+      _config.ocrThreshold = parseInt(point.regionSame * 1.44)
+      infoLog('自动设置ocr阈值：' + _config.ocrThreshold)
+      let configStorage = storages.create(_storage_name)
+      configStorage.put('ocrThreshold', _config.ocrThreshold)
+    }
+    listWriteLock.lock()
+    try {
+      collectOrHelpList.push({ point: point, isHelp: false })
+      countdownLatch.countDown()
+      executeSuccess = true
+      this.visualHelper.addRectangle('可收取点', [point.left, point.top, point.right - point.left, point.bottom - point.top])
+    } finally {
+      listWriteLock.unlock()
+    }
+    return executeSuccess
+  }
+
+  /**
+   * 处理倒计时节点
+   * 
+   * @param {*} grayScreen 
+   * @param {*} point 
+   * @param {*} imgResolveLock 
+   * @param {*} countdownLock 
+   * @param {*} countingDownContainers 
+   */
+  this.solveCountdown = function (grayScreen, point, imgResolveLock, countdownLock, countingDownContainers) {
+    if (!_config.is_cycle) {
+      debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame)
+      let forOcrScreen = images.copy(grayScreen)
+      let width = point.right - point.left
+      let height = point.bottom - point.top
+      let offset = parseInt((width > height ? height - height / Math.sqrt(2) : width - width / Math.sqrt(2)) * 0.9)
+      let down_off = parseInt(offset / 4)
+      let base64String = null
+      imgResolveLock.lock()
+      try {
+        this.visualHelper.addRectangle('倒计时中', [point.left, point.top, width, height])
+        let countdownImg = images.clip(forOcrScreen, point.left + offset + down_off, point.top + down_off, point.right - point.left - offset - down_off, point.bottom - point.top - offset)
+        let scale = 30 / countdownImg.width
+        if (_config.develop_mode) {
+          debugForDev(['图片压缩前base64 「data:image/png;base64,{}」', images.toBase64(countdownImg)])
+        }
+        if (useMockOcr) {
+          // 将图片压缩或者放大到1080P下的分辨率
+          scale = 1 / _config.scaleRate
+        }
+        if (scale !== 1) {
+          countdownImg = images.resize(countdownImg, [parseInt(countdownImg.width * scale), parseInt(countdownImg.height * scale)])
+        }
+        countdownImg = images.interval(countdownImg, '#FFFFFF', 40)
+
+        try {
+          base64String = images.toBase64(countdownImg)
+          if (_config.saveBase64ImgInfo) {
+            debugInfo(['[记录运行数据]像素点数：「{}」倒计时图片：「data:image/png;base64,{}」', point.regionSame, base64String])
+          }
+        } catch (e) {
+          errorInfo('存储倒计时图片失败：' + e)
+          _commonFunctions.printExceptionStack(e)
+        }
+      } finally {
+        imgResolveLock.unlock()
+      }
+
+      if (base64String) {
+        if (point.regionSame >= (_config.ocrThreshold || 2900) && this.min_countdown >= 2 || useMockOcr) {
+          // Ocr识图API获取文本
+          let countdown = OcrUtil.getImageNumber(base64String)
+          if (isFinite(countdown) && countdown > 0) {
+            countdownLock.lock()
+            try {
+              debugInfo('获取倒计时数据为：' + countdown)
+              if (countdown < this.min_countdown) {
+                debugInfo('设置最小倒计时：' + countdown)
+                this.min_countdown = countdown
+                this.min_countdown_pixels = point.regionSame
+              }
+              countingDownContainers.push({
+                point: point,
+                isCountdown: true,
+                countdown: countdown,
+                stamp: new Date().getTime()
+              })
+            } finally {
+              countdownLock.unlock()
+            }
+          }
+
+        } else {
+          debugInfo(['当前倒计时校验最小像素阈值：{} 已获取最小倒计时：{}', (_config.ocrThreshold || 2900), this.min_countdown])
+        }
+      }
+    }
+
+  }
+
+  /**
+   * 下滑并校验是否到达底部
+   * 
+   * @param {*} grayScreen 
+   * @param {*} count 
+   */
+  this.checkBottomAndRecycle = function (grayScreen, count) {
+    automator.scrollDown()
+    sleep(300)
+    let screen = null
+    let failed = false
+    if (_config.checkBottomBaseImg) {
+      if (!images.isValidImg(grayScreen)) {
+        screen = _commonFunctions.checkCaptureScreenPermission()
+        grayScreen = images.grayscale(screen)
+      }
+      let reached = _widgetUtils.reachBottom(grayScreen)
+      if (reached) {
+        grayScreen.recycle()
+        // 二次校验，避免因为加载中导致的错误判断
+        screen = _commonFunctions.checkCaptureScreenPermission()
+        grayScreen = images.grayscale(screen)
+        reached = _widgetUtils.reachBottom(grayScreen)
+      }
+      this.has_next = !reached
+    } else {
+      this.has_next = count < (_config.friendListScrollTime || 30)
+    }
+    // 每5次滑动判断一次是否在排行榜中
+    if (this.has_next && count % 5 == 0) {
+      if (!_widgetUtils.friendListWaiting()) {
+        errorInfo('当前不在好友排行榜！')
+        failed = true
+      }
+      if (!images.isValidImg(grayScreen)) {
+        // 判断列表是否加载失败，重新上划 触发加载
+        screen = _commonFunctions.checkCaptureScreenPermission()
+        grayScreen = images.grayscale(screen)
+      }
+      if (!this.scrollUpIfNeeded(images.copy(grayScreen))) {
+        if (++this.stroll_up_check_count >= 5) {
+          warnInfo('滑动校验失败达到5次，重新执行')
+          failed = true
+        }
+      } else {
+        this.stroll_up_check_count = 0
+      }
+    }
+    if (!this.has_next) {
+      if (!_widgetUtils.friendListWaiting()) {
+        errorInfo('当前不在好友排行榜！')
+        failed = true
+      }
+    }
+    grayScreen && grayScreen.recycle()
+    return failed
+  }
+
+  /**
+   * 执行收取动作
+   * 
+   * @param {*} collectOrHelpList 
+   */
+  this.operateCollectIfNeeded = function (collectOrHelpList) {
+    if (!_config.collect_by_stroll_only) {
+      if (collectOrHelpList && collectOrHelpList.length > 0) {
+        debugInfo(['开始收集和帮助收取，总数：{}', collectOrHelpList.length])
+        if (_config.develop_mode) {
+          collectOrHelpList.forEach(target => {
+            debugInfo(JSON.stringify(target))
+          })
+        }
+        let noError = true
+        collectOrHelpList.forEach(point => {
+          if (noError) {
+            if (false === this.collectTargetFriend(point)) {
+              noError = false
+            }
+          }
+        })
+        if (!noError) {
+          return EXECUTE_FAILED
+        }
+      } else {
+        debugInfo('无可收取或帮助的内容')
+      }
+    } else {
+      debugInfo('只通过逛一逛收集，跳过排行榜中的收取，仅识别倒计时')
+    }
   }
 
   this.detectHelp = function (img) {
