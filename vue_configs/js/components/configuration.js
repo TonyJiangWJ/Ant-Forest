@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-04 20:52:56
+ * @Last Modified time: 2021-01-09 18:48:03
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 /**
@@ -759,6 +759,12 @@ Vue.component('widget-configs', function (resolve, reject) {
           can_collect_color_gray: '#828282',
           can_help_color: '#f99236',
           help_and_notify: '知道了.*去提醒',
+          collectable_lower: '#a5c600',
+          collectable_upper: '#ffff5d',
+          helpable_lower: '#6f0028',
+          helpable_upper: '#ffb2b2',
+          valid_collectable_lower: '#77cc00',
+          valid_collectable_upper: '#ffff91',
           timeout_findOne: 1000,
           timeout_existing: 8000,
         },
@@ -814,6 +820,13 @@ Vue.component('widget-configs', function (resolve, reject) {
       <number-field v-model="configs.timeout_existing" label="校验控件是否存在超时时间" label-width="12em" placeholder="请输入超时时间" >\
         <template #right-icon><span>毫秒</span></template>\
       </number-field>\
+      <tip-block>以下配置为执行优化使用，尽量不要修改除非出问题了</tip-block>\
+      <color-input-field label="可收取颜色值起始值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_lower"/>\
+      <color-input-field label="可收取颜色值结束值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_upper"/>\
+      <color-input-field label="可帮助颜色值起始值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_lower"/>\
+      <color-input-field label="可帮助颜色值结束值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_upper"/>\
+      <color-input-field label="有效球颜色值起始值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.valid_collectable_lower"/>\
+      <color-input-field label="有效球颜色值结束值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.valid_collectable_upper"/>\
     </div>'
   })
 })

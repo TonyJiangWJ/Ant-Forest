@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-05 23:34:48
+ * @Last Modified time: 2021-01-08 00:39:41
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -88,10 +88,6 @@ let default_config = {
   useCustomScrollDown: true,
   // 排行榜列表下滑速度 200毫秒 不要太低否则滑动不生效 仅仅针对useCustomScrollDown=true的情况
   scrollDownSpeed: 200,
-  // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
-  can_collect_color_gray: '#828282',
-  can_help_color: '#f99236',
-  helpBallColors: ['#f99236', '#f7af70'],
   // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
   wateringBack: true,
   // 浇水阈值40克
@@ -132,6 +128,15 @@ let default_config = {
   using_protect_content: '使用了保护罩',
   collectable_energy_ball_content: '收集能量\\d+克',
   help_and_notify: '知道了.*去提醒',
+  // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
+  can_collect_color_gray: '#828282',
+  can_help_color: '#f99236',
+  collectable_lower: '#a5c600',
+  collectable_upper: '#ffff5d',
+  helpable_lower: '#6f0028',
+  helpable_upper: '#ffb2b2',
+  valid_collectable_lower: '#77cc00',
+  valid_collectable_upper: '#ffff91',
   // 排行榜校验区域
   rank_check_left: 250,
   rank_check_top: 250,
@@ -180,7 +185,8 @@ let default_config = {
   // 更新后需要强制执行的标记
   updated_temp_flag_1328: true,
   updated_temp_flag_1346: true,
-  thread_name_prefix: 'antforest_'
+  thread_name_prefix: 'antforest_',
+  package_name: 'com.eg.android.AlipayGphone'
 }
 // 自动生成的配置数据 
 let auto_generate_config = {
@@ -295,5 +301,19 @@ function resetConfigsIfNeeded () {
     // 默认关闭帮助收取，帮收还得发通知，容易影响到别人
     config.help_friend = default_config.help_friend
     storageConfig.put('updated_temp_flag_1346', false)
+  }
+  let resetFields = [
+    'collectable_lower',
+    'collectable_upper',
+    'helpable_lower',
+    'helpable_upper',
+    'valid_collectable_lower',
+    'valid_collectable_upper'
+  ]
+  if (config.updated_temp_flag_1347) {
+    resetFields.forEach(key => {
+      config[key] = default_config[key]
+    })
+    storageConfig.put('updated_temp_flag_1347', false)
   }
 }
