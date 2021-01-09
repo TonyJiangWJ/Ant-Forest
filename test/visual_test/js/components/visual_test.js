@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-12-22 21:30:51
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-30 20:54:45
+ * @Last Modified time: 2021-01-09 18:47:28
  * @Description: 开发测试时使用的组件
  */
 
@@ -297,7 +297,7 @@ let ColorRangeSlider = {
       type: String,
       default: '#000000'
     },
-    higherRange: {
+    upperRange: {
       type: String,
       default: '#ffffff'
     }
@@ -311,7 +311,7 @@ let ColorRangeSlider = {
       intervalByGray: false,
       showEditDialog: false,
       newLowerRange: 0,
-      newHigherRange: 0,
+      newUpperRange: 0,
       targetEditRange: ''
     }
   },
@@ -326,7 +326,7 @@ let ColorRangeSlider = {
     editRange: function (target) {
       this.targetEditRange = target
       this.newLowerRange = this[target][0]
-      this.newHigherRange = this[target][1]
+      this.newUpperRange = this[target][1]
       this.showEditDialog = true
     },
     resetRangeValue: function (v) {
@@ -342,7 +342,7 @@ let ColorRangeSlider = {
     doConfirmRangeEdit: function () {
       if (this.isNotEmpty(this.targetEditRange)) {
         this.$set(this[this.targetEditRange], 0, this.resetRangeValue(this.newLowerRange))
-        this.$set(this[this.targetEditRange], 1, this.resetRangeValue(this.newHigherRange))
+        this.$set(this[this.targetEditRange], 1, this.resetRangeValue(this.newUpperRange))
       }
     },
     handleDragStart: function () {
@@ -361,7 +361,7 @@ let ColorRangeSlider = {
         return ('#' + this.toHex(this.intervalRangeRed[0]) + this.toHex(this.intervalRangeGreen[0]) + this.toHex(this.intervalRangeBlue[0])).toUpperCase()
       }
     },
-    innerHigherRange: function () {
+    innerUpperRange: function () {
       if (this.intervalByGray) {
         let hex = this.toHex(this.intervalRangeRed[1])
         return ('#' + hex + hex + hex).toUpperCase()
@@ -380,8 +380,8 @@ let ColorRangeSlider = {
     innerLowerRange: function (v) {
       this.$emit('lower-range-change', v)
     },
-    innerHigherRange: function (v) {
-      this.$emit('higher-range-change', v)
+    innerUpperRange: function (v) {
+      this.$emit('upper-range-change', v)
     },
     intervalByGray: function (v) {
       this.$emit('interval-by-gray', v)
@@ -389,18 +389,18 @@ let ColorRangeSlider = {
   },
   mounted () {
     let lowerRangeColor = parseInt(this.lowerRange.substring(1), 16)
-    let higherRangeColor = parseInt(this.higherRange.substring(1), 16)
+    let upperRangeColor = parseInt(this.upperRange.substring(1), 16)
     this.$set(this.intervalRangeRed, 0, (lowerRangeColor >> 16) & 0xFF)
-    this.$set(this.intervalRangeRed, 1, (higherRangeColor >> 16) & 0xFF)
+    this.$set(this.intervalRangeRed, 1, (upperRangeColor >> 16) & 0xFF)
     this.$set(this.intervalRangeGreen, 0, (lowerRangeColor >> 8) & 0xFF)
-    this.$set(this.intervalRangeGreen, 1, (higherRangeColor >> 8) & 0xFF)
+    this.$set(this.intervalRangeGreen, 1, (upperRangeColor >> 8) & 0xFF)
     this.$set(this.intervalRangeBlue, 0, lowerRangeColor & 0xFF)
-    this.$set(this.intervalRangeBlue, 1, higherRangeColor & 0xFF)
+    this.$set(this.intervalRangeBlue, 1, upperRangeColor & 0xFF)
   },
   template: '<div>\
     <van-divider content-position="left">\
       <label>灰度</label><van-switch v-model="intervalByGray" size="0.8rem" /> 二值化区间&nbsp;&nbsp;<span :style="innerLowerRange | styleTextColor">{{innerLowerRange}}</span>\
-      &nbsp;&nbsp;-&nbsp;&nbsp;<span :style="innerHigherRange | styleTextColor">{{innerHigherRange}}</span>\
+      &nbsp;&nbsp;-&nbsp;&nbsp;<span :style="innerUpperRange | styleTextColor">{{innerUpperRange}}</span>\
       <van-button @click="showSlider=true" size="mini">修改</van-button>\
     </van-divider>\
     <van-popup v-model="showSlider" position="bottom" :style="{ height: intervalByGray ? \'15%\' : \'30%\' }" :get-container="getContainer">\
@@ -431,7 +431,7 @@ let ColorRangeSlider = {
     </van-popup>\
     <van-dialog v-model="showEditDialog" title="手动输入" show-cancel-button @confirm="doConfirmRangeEdit" :get-container="getContainer">\
       <van-field v-model="newLowerRange" type="number" placeholder="请输入低阈值" label="低阈值" />\
-      <van-field v-model="newHigherRange" type="number" placeholder="请输入高阈值" label="高阈值" />\
+      <van-field v-model="newUpperRange" type="number" placeholder="请输入高阈值" label="高阈值" />\
     </van-dialog>\
   </div>'
 }
@@ -452,7 +452,7 @@ let BallImageDataVisualTest = {
       filterRange3: '',
       targetDefaultImage: '0',
       lowerRange: '#ad8500',
-      higherRange: '#f4ddff',
+      upperRange: '#f4ddff',
     }
   },
   methods: {
@@ -476,7 +476,7 @@ let BallImageDataVisualTest = {
         offset: this.offset,
         filterOption: this.filterOption,
         lowerRange: this.lowerRange,
-        higherRange: this.higherRange
+        upperRange: this.upperRange
       }).then(data => {
         this.imageList = data.ballInfos
         this.offset = data.offset
@@ -490,8 +490,8 @@ let BallImageDataVisualTest = {
     handleLowerRange: function (v) {
       this.lowerRange = v
     },
-    handleHigherRange: function (v) {
-      this.higherRange = v
+    handleUpperRange: function (v) {
+      this.upperRange = v
     },
     handleIntervalByGray: function (v) {
       this.intervalByGray = v
@@ -531,6 +531,10 @@ let BallImageDataVisualTest = {
   },
   mounted () {
     this.loadMoreImageDatas()
+    $nativeApi.request('loadDefaultHelpRange', {}).then(resp => {
+      this.lowerRange = resp.lower
+      this.upperRange = resp.upper
+    })
   },
   template: '<div style="background: #ffffff;">\
       <van-divider content-position="left">\
@@ -551,10 +555,10 @@ let BallImageDataVisualTest = {
           </van-radio-group>\
         </van-col>\
       </van-row>\
-      <color-range-slider :lower-range="lowerRange" :higher-range="higherRange" \
+      <color-range-slider :lower-range="lowerRange" :upper-range="upperRange" \
         @interval-by-gray="handleIntervalByGray"\
         @lower-range-change="handleLowerRange"\
-        @higher-range-change="handleHigherRange"/>\
+        @upper-range-change="handleUpperRange"/>\
       <van-row type="flex" justify="left">\
         <van-col offset="1">\
           <van-radio-group v-model="filterRange2" direction="horizontal" icon-size="15">\
@@ -582,7 +586,7 @@ let BallImageDataVisualTest = {
           </van-radio-group>\
         </van-col>\
       </van-row>\
-      <van-row type="flex" justify="center" v-for="image in imageList" style="padding: 0.5rem;">\
+      <van-row type="flex" justify="center" v-for="image in imageList" style="padding: 0.5rem;" :key="image.createTime">\
         <van-col span="4" :style="{ color: image.invalid ? \'gray\' : image.isHelp ? \'orange\' : \'green\'}">\
         {{image.invalid ? \'无效球\' : \'有效球\'}}\
         </van-col>\
@@ -590,7 +594,7 @@ let BallImageDataVisualTest = {
           <ImageViewer :image="image" :default-image="targetDefaultImage" />\
         </van-col>\
         <van-col span="14">\
-        avg:{{image.avg.toFixed(2)}} mainAvg:{{image.mainAvg.toFixed(2)}} avgBottom:{{image.avgBottom.toFixed(2)}} recheckAvg:{{image.recheckAvg.toFixed(2)}}\
+        avg:{{image.avg | toFixed2}} mainAvg:{{image.mainAvg | toFixed2}} avgBottom:{{image.avgBottom | toFixed2}} recheckAvg:{{image.recheckAvg | toFixed2}}\
         createTime:{{image.createTime}}\
         </van-col>\
       </van-row>\
@@ -618,7 +622,8 @@ let BallDetectVisualTest = {
         height: 0,
         ballInfos: []
       },
-      fileIndex: 0
+      fileIndex: 0,
+      ballImagePath: 'test/tree_collect'
     }
   },
   methods: {
@@ -636,6 +641,7 @@ let BallDetectVisualTest = {
       this.loading = true
       $nativeApi.request('doDetectBalls', { fileIndex: this.fileIndex++ })
         .then(resp => {
+          this.ballImagePath = resp.path
           if (resp.success) {
             console.log('get result success, imageData: ' + resp.originImageData.substring(0, 40))
             this.image.originImageData = resp.originImageData
@@ -658,7 +664,7 @@ let BallDetectVisualTest = {
     this.doDetectBalls()
   },
   template: '<div>\
-    <tip-block>请保存需要调试的图片到 resources/tree_collect 路径下</tip-block>\
+    <tip-block>请保存需要调试的图片到 {{ballImagePath}} 路径下</tip-block>\
     <van-divider content-position="left">\
       测试图片&nbsp;&nbsp;&nbsp;<van-button v-if="fileIndex >= 2"size="mini" @click="loadLast">加载上一张</van-button><van-button size="mini" @click="doDetectBalls">加载下一张</van-button>\
     </van-divider>\
@@ -684,7 +690,7 @@ let CommonImageTest = {
       intervalBase64Only: false,
       targetDefaultImage: '0',
       lowerRange: '#ad8500',
-      higherRange: '#f4ddff',
+      upperRange: '#f4ddff',
       image: {
         intervalImageData: '',
         grayImageData: '',
@@ -737,8 +743,8 @@ let CommonImageTest = {
     handleLowerRange: function (v) {
       this.lowerRange = v
     },
-    handleHigherRange: function (v) {
-      this.higherRange = v
+    handleUpperRange: function (v) {
+      this.upperRange = v
     },
     handleIntervalByGray: function (v) {
       this.intervalByGray = v
@@ -763,7 +769,7 @@ let CommonImageTest = {
       return {
         intervalByGray: this.intervalByGray,
         lowerRange: this.lowerRange,
-        higherRange: this.higherRange,
+        upperRange: this.upperRange,
         intervalBase64Only: this.intervalBase64Only
       }
     }
@@ -789,6 +795,10 @@ let CommonImageTest = {
   },
   mounted () {
     this.doLoadImage()
+    $nativeApi.request('loadDefaultHelpRange', {}).then(resp => {
+      this.lowerRange = resp.lower
+      this.upperRange = resp.upper
+    })
   },
   template: '<div>\
     <tip-block>请保存需要调试的图片到 test/visual_test/测试用图片.png 路径下</tip-block>\
@@ -808,11 +818,11 @@ let CommonImageTest = {
       颜色值：{{pointColor.rgbColor}} 灰度值：{{pointColor.grayColor}}\
     </van-divider>\
     <position-input-field v-model="colorPoint" label="图片取色位置" />\
-    <color-range-slider :lower-range="lowerRange" :higher-range="higherRange" \
+    <color-range-slider :lower-range="lowerRange" :upper-range="upperRange" \
         @drag-start="draging=true" @drag-end="handleDragingEnd" \
         @interval-by-gray="handleIntervalByGray"\
         @lower-range-change="handleLowerRange"\
-        @higher-range-change="handleHigherRange"/>\
+        @upper-range-change="handleUpperRange"/>\
     <CanvasViewer :image="image" image-style="width:100%;" :default-image="targetDefaultImage" :draw-point="colorPoint" @get-point-color="handlePointColor" />\
     <van-overlay :show="loading">\
       <van-loading type="spinner" class="wrapper" />\

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-05 23:34:34
+ * @Last Modified time: 2021-01-09 11:40:02
  * @Description: 
  */
 "ui";
@@ -30,7 +30,9 @@ activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LI
 let singletonRequire = require('../../lib/SingletonRequirer.js')(runtime, this)
 let FileUtils = singletonRequire('FileUtils')
 let { config } = require('../../config.js')(runtime, this)
+let _config = config
 config.develop_mode = true
+config.show_debug_log = true
 config.async_save_log_file = false
 let commonFunctions = singletonRequire('CommonFunction')
 let resourceMonitor = require('../../lib/ResourceMonitor.js')(runtime, this)
@@ -56,8 +58,8 @@ let indexFilePath = "file://" + mainScriptPath + "/test/visual_test/index.html"
 // 图片数据
 let imageDataPath = FileUtils.getCurrentWorkPath() + '/logs/ball_image.data'
 let testImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/测试用图片.png'
-// let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/'
-let testBallImagePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/'
+// let testBallImagePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
 let BASE64_PREFIX = 'data:image/png;base64,'
 let bridgeHandler = {
   toast: data => {
@@ -71,6 +73,9 @@ let bridgeHandler = {
     log('callback param:' + JSON.stringify(data))
     postMessageToWebView({ callbackId: callbackId, data: { message: 'hello,' + callbackId } })
   },
+  loadDefaultHelpRange: (data, callbackId) => {
+    postMessageToWebView({ callbackId: callbackId, data: { lower: config.helpable_lower, upper: config.helpable_upper } })
+  },
   loadImageInfo: (data, callbackId) => {
     threads.start(function () {
       if (files.exists(testImagePath)) {
@@ -78,7 +83,7 @@ let bridgeHandler = {
         let imageInfo = images.read(testImagePath)
         let grayImageInfo = images.grayscale(imageInfo)
         let intervalImageInfo = images.inRange(data.intervalByGray ? grayImageInfo : imageInfo
-          , data.lowerRange || '#000000', data.higherRange || '#FFFFFF')
+          , data.lowerRange || '#000000', data.upperRange || '#FFFFFF')
         countdown.summary('图片灰度二值化处理等')
         countdown.restart()
         let image = {
@@ -114,13 +119,13 @@ let bridgeHandler = {
             ballInfo.originImageData = ballInfo.imageData
             let grayImg = images.grayscale(imageInfo)
             ballInfo.grayImageData = BASE64_PREFIX + images.toBase64(grayImg)
-            // let intervalImg = images.inRange(grayImg, data.lowerRange || '#a1a1a1', data.higherRange || '#b1b1b1')
+            // let intervalImg = images.inRange(grayImg, data.lowerRange || '#a1a1a1', data.upperRange || '#b1b1b1')
             let intervalImg = null
             console.verbose('interval by gray: ' + data.filterOption.intervalByGray)
             if (data.filterOption.intervalByGray) {
-              intervalImg = images.inRange(grayImg, data.lowerRange || '#a1a1a1', data.higherRange || '#b1b1b1')
+              intervalImg = images.inRange(grayImg, data.lowerRange || '#a1a1a1', data.upperRange || '#b1b1b1')
             } else {
-              intervalImg = images.inRange(imageInfo, data.lowerRange || '#a1a1a1', data.higherRange || '#b1b1b1')
+              intervalImg = images.inRange(imageInfo, data.lowerRange || '#a1a1a1', data.upperRange || '#b1b1b1')
             }
             ballInfo.oldAvg = ballInfo.avg
             ballInfo.avg = OpenCvUtil.getHistAverage(intervalImg)
@@ -131,8 +136,8 @@ let bridgeHandler = {
             ballInfo.intervalImageData = BASE64_PREFIX + images.toBase64(intervalImg)
             ballInfos.push(ballInfo)/**/
           }
+          newOffset = i + 1
         }
-        newOffset = i + 1
         line = fd.readline()
       }
       console.verbose(util.format('total valid balls: %d', ballInfos.length))
@@ -165,7 +170,7 @@ let bridgeHandler = {
         let imageFiles = files.listDir(testBallImagePath, function (fileName) { return fileName.endsWith('.png') })
         if (!imageFiles || imageFiles.length === 0) {
           toastLog('图片数据不存在，无法执行')
-          postMessageToWebView({ callbackId: callbackId, data: { success: false } })
+          postMessageToWebView({ callbackId: callbackId, data: { success: false, path: testBallImagePath } })
           return
         }
         let index = data.fileIndex || 0
@@ -173,7 +178,7 @@ let bridgeHandler = {
         let imageInfo = images.read(targetFilePath)
         if (!imageInfo) {
           toastLog('读取图片失败，path: ' + targetFilePath)
-          postMessageToWebView({ callbackId: callbackId, data: { success: false } })
+          postMessageToWebView({ callbackId: callbackId, data: { success: false, path: testBallImagePath } })
           return
         }
         // let SCALE_RATE = imageInfo.width / 1080
@@ -215,19 +220,19 @@ let bridgeHandler = {
             let radius = parseInt(b.radius)
             if (
               // 可能是左上角的活动图标 或者 识别到了其他范围的球
-              b.y < _config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > _config.tree_collect_top + _config.tree_collect_height
-              || b.x < _config.tree_collect_left || b.x > _config.tree_collect_left + _config.tree_collect_width
+              b.y < config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > config.tree_collect_top + config.tree_collect_height
+              || b.x < config.tree_collect_left || b.x > config.tree_collect_left + config.tree_collect_width
               // 取值范围就不正确的无效球，避免后续报错，理论上不会进来，除非配置有误
-              || b.x - radius <= 0 || b.x + radius >= _config.device_width || b.y - radius <= 0 || b.y + 1.57 * radius >= _config.device_height) {
+              || b.x - radius <= 0 || b.x + radius >= config.device_width || b.y - radius <= 0 || b.y + 1.57 * radius >= config.device_height) {
               return
             }
             let ballRegion = [b.x - radius, b.y - radius, radius * 2, 2.57 * radius]
             let ballImage = images.clip(imageInfo, ballRegion[0], ballRegion[1], ballRegion[2], ballRegion[3])
             // 用于判定是否可收取
-            let intervalForCollectCheck = images.inRange(ballImage, '#a5c600', '#ffff5d')
+            let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#a5c600', _config.collectable_upper || '#ffff5d')
             let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
             // 用于判定是否帮助收取
-            let intervalForHelpCheck = images.inRange(ballImage, '#6f0028', '#ffa8b2')
+            let intervalForHelpCheck = images.inRange(ballImage, _config.helpable_lower || '#6f0028', _config.helpable_upper || '#ffb2b2')
             // intervalForHelpCheck = com.stardust.autojs.core.image.ImageWrapper.ofBitmap(intervalForHelpCheck.getBitmap())
             let bottomRegion = [b.x + 0 - radius, b.y + radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius]
             let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
@@ -235,7 +240,7 @@ let bridgeHandler = {
             // 判定是否为浇水球
             let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
             // 判定是不是真实的能量球，包括倒计时中的，因为帮收和倒计时中的颜色特征有几率一模一样
-            let intervalForCollatableRecheck = images.inRange(ballImage, '#77cc00', '#ffff91')
+            let intervalForCollatableRecheck = images.inRange(ballImage, _config.valid_collectable_lower || '#77cc00', _config.valid_collectable_upper || '#ffff91')
             let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
             let collectableBall = { ball: b, isHelp: false, isNight: isNight, isOwn: isOwn, avg: avgHsv, avgBottom: avgBottom, recheckAvg: collectableRecheckAvg, mainAvg: avgForCollectable }
             console.verbose('取色耗时：' + (new Date().getTime() - startForColorValue) + 'ms')
@@ -267,6 +272,7 @@ let bridgeHandler = {
           callbackId: callbackId,
           data: {
             success: true,
+            path: testBallImagePath,
             size: {
               width: imageInfo.width,
               height: imageInfo.height
