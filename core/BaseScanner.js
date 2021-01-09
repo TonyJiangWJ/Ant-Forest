@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-06 09:20:48
+ * @Last Modified time: 2021-01-08 00:40:13
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -35,6 +35,7 @@ const BaseScanner = function () {
   this.collect_operated = false
   this.is_own = false
   this.recheck = false
+  this.collect_count = 0
   this.increased_energy = 0
   this.current_time = 0
   this.collect_any = false
@@ -162,6 +163,7 @@ const BaseScanner = function () {
     let start = new Date().getTime()
     let haveValidBalls = false, haveBalls = false
     this.collect_operated = false
+    this.collect_count = 0
     this.ensureThreadPoolCreated()
     let repeat = false
     this.initHoughHelperIfNeeded()
@@ -293,17 +295,17 @@ const BaseScanner = function () {
       }
       let ballImage = images.clip(rgbImg, ball.x - radius, ball.y - radius, radius * 2, 2.6 * radius)
       // 用于判定是否可收取
-      let intervalForCollectCheck = images.inRange(ballImage, '#a5c600', '#ffff5d')
+      let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#a5c600', _config.collectable_upper || '#ffff5d')
       let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
       // 用于判定是否帮助收取
-      let intervalForHelpCheck = images.inRange(ballImage, '#6f0028', '#ffa8b2')
+      let intervalForHelpCheck = images.inRange(ballImage, _config.helpable_lower || '#6f0028', _config.helpable_upper || '#ffb2b2')
       // 识别底部是否有白色
       let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
       let avgBottom = OpenCvUtil.getHistAverage(bottomImg)
       // 判定是否为浇水球
       let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
       // 判定是不是真实的能量球，包括倒计时中的，因为帮收和倒计时中的颜色特征有几率一模一样
-      let intervalForCollatableRecheck = images.inRange(ballImage, '#77cc00', '#ffff91')
+      let intervalForCollatableRecheck = images.inRange(ballImage, _config.valid_collectable_lower || '#77cc00', _config.valid_collectable_upper || '#ffff91')
       let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
       let collectableBall = {
         ball: ball, isHelp: false, isOwn: this.is_own, avg: avgHsv,
@@ -347,6 +349,7 @@ const BaseScanner = function () {
           // 非帮收球且非浇水直接收取
           || !point.isHelp && !point.isWatering) {
           self.collect_operated = true
+          self.collect_count++
           automator.click(b.x, b.y)
           if (idx < clickPoints.length - 1) {
             sleep(100)
@@ -555,8 +558,14 @@ const BaseScanner = function () {
     let postCollected = oldCollected, postEnergy = oldFriendEnergy
     if (this.collect_operated) {
       debugInfo(['等待能量值数据刷新，原始值collect:{} energy:{}', oldCollected, oldFriendEnergy])
+      let sleepTime = 1000
+      if (this.collect_count > 1) {
+        // 多个能量球，多等待五百毫秒
+        sleep(500)
+        sleepTime = 500
+      }
       // 最多等一秒
-      let timeout = new Date().getTime() + 1000
+      let timeout = new Date().getTime() + sleepTime
       let timeoutFlag = false
       while (postCollected === oldCollected && postEnergy === oldFriendEnergy) {
         if (new Date().getTime() > timeout) {
@@ -573,7 +582,7 @@ const BaseScanner = function () {
           '能量值数据刷新，新值collect:{} energy:{} 总耗时：{}ms',
           this.checkAndDisplayIncreased(postCollected, oldCollected),
           this.checkAndDisplayIncreased(postEnergy, oldFriendEnergy),
-          new Date().getTime() - timeout + 1000
+          new Date().getTime() - timeout + sleepTime
         ])
       }
     }
