@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-09 14:42:40
+ * @Last Modified time: 2021-01-10 11:21:39
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
@@ -51,6 +51,7 @@ function Ant_forest () {
       data: 'alipays://platformapi/startapp?appId=60000002',
       packageName: _config.package_name
     })
+    _commonFunctions.readyForAlipayWidgets()
     if (_config.is_alipay_locked) {
       sleep(1000)
       alipayUnlocker.unlockAlipay()

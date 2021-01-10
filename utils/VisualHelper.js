@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-20 16:55:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-18 21:50:23
+ * @Last Modified time: 2021-01-10 11:36:41
  * @Description: 
  */
 
@@ -10,7 +10,6 @@ let { config } = require('../config.js')(runtime, this)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
-commonFunction.autoSetUpBangOffset()
 let offset = config.bang_offset
 
 function VisualHelper () {
@@ -22,6 +21,7 @@ function VisualHelper () {
     if (!config.enable_visual_helper) {
       return
     }
+    commonFunction.autoSetUpBangOffset()
     this.window = floaty.rawWindow(
       <canvas id="canvas" layout_weight="1" />
     )
