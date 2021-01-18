@@ -476,7 +476,8 @@ function Ant_forest () {
       automator.clickClose()
       sleep(1000)
       // 返回最小化支付宝
-      _commonFunctions.minimize()
+      _commonFunctions.disableAlipayWidgets()
+      _commonFunctions.minimize(_config.package_name)
     }
   }
 

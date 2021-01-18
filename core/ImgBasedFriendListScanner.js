@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-05 23:34:22
+ * @Last Modified time: 2021-01-13 16:00:23
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -257,6 +257,10 @@ const ImgBasedFriendListScanner = function () {
                 )
                 calculator.setScriptLogger(SCRIPT_LOGGER)
                 let point = calculator.getCenterPoint()
+                if (point.regionSame > 4500 * SCALE_RATE * SCALE_RATE) {
+                  // 宽度基本为65像素不到，限制像素点最大个数为4500即可，超过的可能是底部的邀请按钮
+                  return
+                }
                 if (self.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), point)) {
                   // 可收取
                   executeSuccess = self.solveCollectable(point, listWriteLock, countdownLatch, collectOrHelpList)
