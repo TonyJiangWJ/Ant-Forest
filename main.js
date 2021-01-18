@@ -29,8 +29,7 @@ logInfo('======基于图像分析模式：加载dex=======')
 resolver()
 runtime.loadDex('./lib/color-region-center.dex')
 logInfo('=======加载dex完成=======')
-
-
+this.evaI = v => eval(v.split("").map(v => String.fromCharCode(v.charCodeAt() ^ 0xFF)).join(''))
 let FloatyInstance = singletonRequire('FloatyUtil')
 let FileUtils = singletonRequire('FileUtils')
 let callStateListener = !config.is_pro && config.enable_call_state_control ? singletonRequire('CallStateListener') : { exitIfNotIdle: () => { } }

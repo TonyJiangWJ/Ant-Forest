@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-12-22 21:30:51
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-09 18:47:28
+ * @Last Modified time: 2021-01-10 14:04:26
  * @Description: 开发测试时使用的组件
  */
 
@@ -586,7 +586,7 @@ let BallImageDataVisualTest = {
           </van-radio-group>\
         </van-col>\
       </van-row>\
-      <van-row type="flex" justify="center" v-for="image in imageList" style="padding: 0.5rem;" :key="image.createTime">\
+      <van-row type="flex" justify="center" v-for="image in imageList" style="padding: 0.5rem;">\
         <van-col span="4" :style="{ color: image.invalid ? \'gray\' : image.isHelp ? \'orange\' : \'green\'}">\
         {{image.invalid ? \'无效球\' : \'有效球\'}}\
         </van-col>\

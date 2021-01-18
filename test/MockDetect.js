@@ -27,6 +27,7 @@ _config.useOcr = false
 _config.help_friend = true
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _commonFunctions = singletonRequire('CommonFunction')
+let _tesserOcrUtil = singletonRequire('TesserOcrUtil')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
 let _ImgBasedFriendListScanner = require('../core/ImgBasedFriendListScanner.js')
@@ -65,9 +66,32 @@ const MockFriendListScanner = function () {
   this.checkRunningCountdown = function (countingDownContainers) {
     this.collectOrHelpList = this.collectOrHelpList.concat(countingDownContainers)
   }
+
+  this.doRecognizeIfPossiable = function () {
+    if (!_tesserOcrUtil.enabled) {
+      return
+    }
+    if (this.collectOrHelpList && this.collectOrHelpList.length > 0) {
+      let image = captureScreen()
+      if (image) {
+        image = images.copy(image, true)
+        // image = images.copy(images.interval(image, '#000000', 10), true)
+        this.collectOrHelpList.forEach(pointData => {
+          let point = pointData.point
+          if (point.top + 300 >= _config.device_height) {
+            return
+          }
+          let text = _tesserOcrUtil.recognize(images.clip(image, 280, point.top, 300, 120))
+          pointData.text = text
+          logInfo(['识别文字：[280,{}] {}', point.top, pointData.text])
+        })
+        image.recycle()
+      }
+    }
+  }
 }
 MockFriendListScanner.prototype = Object.create(_ImgBasedFriendListScanner.prototype)
-MockFriendListScanner.prototype.constructor = _ImgBasedFriendListScanner
+MockFriendListScanner.prototype.constructor = MockFriendListScanner
 
 requestScreenCapture(false)
 
@@ -83,6 +107,7 @@ let scannerThread = threads.start(function () {
   while (true) {
     collecting = true
     scanner.collecting(true)
+    scanner.doRecognizeIfPossiable()
     points = scanner.collectOrHelpList
     collecting = false
     sleep(50)
@@ -243,6 +268,10 @@ window.canvas.on("draw", function (canvas) {
           drawPoints(matchPoint.x, matchPoint.y, _checkPoints, canvas, paint)
         }
       }
+      if (pointData.text) {
+        drawText(pointData.text, { x: point.left, y: point.top - 40 }, canvas, paint)
+      }
+      !collecting && drawRectAndText('文字识别区域' + pointData.text, [280, point.top, 580, point.top + 120], '#828282', canvas, paint)
       drawText(point.same, { x: point.left, y: point.top - 30 }, canvas, paint)
     })
   }
