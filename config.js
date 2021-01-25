@@ -125,6 +125,7 @@ let default_config = {
   load_more_ui_content: '查看更多',
   watering_widget_content: '浇水',
   do_watering_button_content: '送给\\s*TA|浇水送祝福',
+  friend_load_more_content: '点击展开好友动态',
   using_protect_content: '使用了保护罩',
   collectable_energy_ball_content: '收集能量\\d+克',
   help_and_notify: '知道了.*去提醒',

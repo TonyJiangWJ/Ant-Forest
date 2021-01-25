@@ -476,7 +476,8 @@ function Ant_forest () {
       automator.clickClose()
       sleep(1000)
       // 返回最小化支付宝
-      _commonFunctions.minimize()
+      _commonFunctions.disableAlipayWidgets()
+      _commonFunctions.minimize(_config.package_name)
     }
   }
 
@@ -655,7 +656,7 @@ function Ant_forest () {
       // 首先尝试逛一逛收集
       tryCollectByStroll()
     }
-    automator.enterFriendList()
+    _widgetUtils.enterFriendList()
     let enterFlag = _widgetUtils.friendListWaiting()
     if (!enterFlag) {
       errorInfo('进入好友排行榜失败')

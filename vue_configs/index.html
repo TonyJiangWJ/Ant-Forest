@@ -14,6 +14,7 @@
   <meta name=viewport content="width=device-width,initial-scale=1">
   <title>配置工具</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@2.10/lib/index.css" />
+  <link rel="stylesheet" href="./css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script>
   <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
   <script src="https://cdn.jsdelivr.net/npm/vant@2.10/lib/vant.min.js"></script>
@@ -67,41 +68,7 @@
   </div>
 </body>
 <script type="text/javascript">
-  /** 
-   * 加载本地js文件
-   */
-  function appendScripts(filePath) {
-    let element = document.createElement('script')
-    // element.src = 'file://' + filePath + '/vue_configs/js/vue.min.js'
-    // document.head.appendChild(element)
-    let scripts = ['/vue_configs/js/webview_bridge.js', '/vue_configs/js/components/common.js', '/vue_configs/js/components/configuration.js', '/vue_configs/js/app.js']
-    let index = 0
-    scripts.forEach(script => {
-      setTimeout(function () {
-        element = document.createElement('script')
-        element.src = filePath + script
-        document.head.appendChild(element)
-      }, 100 + (index++) * 10)
-    })
-    console.log('append scripts done')
-    let csses = ['/vue_configs/css/style.css']
-    csses.forEach(css => {
-      element = document.createElement('link')
-      element.href = filePath + css
-      element.rel = "stylesheet"
-      document.head.appendChild(element)
-    })
-    console.log('append css done')
-  }
-  function nativeInvoke(message) {
-    //document.getElementById('content').innerText = message
-  }
 
-  // 挂载本地js脚本
-  window.onload = () => {
-    let location = window.location.href
-    appendScripts(location.substring(0, location.indexOf('/vue_configs/index.html')))
-  }
   /**
    * 禁用长按菜单，复制等 
    **/
@@ -113,4 +80,7 @@
   }, false);
 </script>
 
+<script src="./js/components/common.js"></script>
+<script src="./js/components/configuration.js"></script>
+<script src="./js/app.js"></script>
 </html>

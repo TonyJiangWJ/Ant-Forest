@@ -283,6 +283,7 @@ Vue.component('advance-configs', function (resolve, reject) {
         newBlack: '',
         newSkipRunningPackage: '',
         newSkipRunningAppName: '',
+        protectList: [{ name: 'friendName', timeout: '2021-01-25 23:23:23' }],
         configs: {
           // 排行榜校验区域
           rank_check_left: null,
@@ -400,6 +401,7 @@ Vue.component('advance-configs', function (resolve, reject) {
           }
           this.mounted = true
         })
+        this.loadProtectedList()
       },
       isNotEmpty: function (v) {
         return !(typeof v === 'undefined' || v === null || v === '')
@@ -434,6 +436,17 @@ Vue.component('advance-configs', function (resolve, reject) {
           message: '确认要删除' + this.configs.white_list[idx] + '吗？'
         }).then(() => {
           this.configs.white_list.splice(idx, 1)
+        }).catch(() => { })
+      },
+      deleteProtect: function (idx) {
+        this.$dialog.confirm({
+          message: '确认要删除' + this.protectList[idx].name + '吗？'
+        }).then(() => {
+          $nativeApi.request('removeFromProtectList', { name: this.protectList[idx].name }).then(resp => {
+            if (resp.success) {
+              this.loadProtectedList()
+            }
+          })
         }).catch(() => { })
       },
       addBlack: function () {
@@ -483,6 +496,11 @@ Vue.component('advance-configs', function (resolve, reject) {
       handlePackageChange: function (payload) {
         this.newSkipRunningAppName = payload.appName
         this.newSkipRunningPackage = payload.packageName
+      },
+      loadProtectedList: function () {
+        $nativeApi.request('loadProtectedList', {}).then(resp => {
+          this.protectList = resp.protectList
+        })
       }
     },
     computed: {
@@ -680,6 +698,19 @@ Vue.component('advance-configs', function (resolve, reject) {
         </van-swipe-cell>\
         </div>\
       </van-cell-group>\
+      <van-divider content-position="left" v-if="protectList && protectList.length > 0">\
+        好友保护罩使用记录\
+      </van-divider>\
+      <van-cell-group v-if="protectList && protectList.length > 0">\
+        <div style="max-height:10rem;overflow:scroll;padding:1rem;background:#f1f1f1;">\
+        <van-swipe-cell v-for="(protectInfo,idx) in protectList" :key="protectInfo.name" stop-propagation>\
+          <van-cell :title="protectInfo.name" :label="\'超时时间:\' + protectInfo.timeout" />\
+          <template #right>\
+            <van-button square type="danger" text="删除" @click="deleteProtect(idx)" style="height: 100%" />\
+          </template>\
+        </van-swipe-cell>\
+        </div>\
+      </van-cell-group>\
       <van-divider content-position="left">浇水设置</van-divider>\
       <van-cell-group>\
         <switch-cell title="是否浇水回馈" v-model="configs.wateringBack" />\
@@ -754,6 +785,7 @@ Vue.component('widget-configs', function (resolve, reject) {
           no_more_ui_content: '没有更多了',
           load_more_ui_content: '查看更多',
           do_watering_button_content: '送给\\s*TA|浇水送祝福',
+          friend_load_more_content: '点击展开好友动态',
           using_protect_content: '使用了保护罩',
           collectable_energy_ball_content: '收集能量\\d+克',
           can_collect_color_gray: '#828282',
@@ -807,6 +839,7 @@ Vue.component('widget-configs', function (resolve, reject) {
       <van-field v-model="configs.friend_name_getting_regex" label="好友名称正则表达式" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.enter_friend_list_ui_content" label="查看更多好友按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.stroll_end_ui_content" label="逛一逛结束文本" label-width="10em" type="text" placeholder="逛一逛结束文本" input-align="right" />\
+      <van-field v-model="configs.friend_load_more_content" label="加载好友动态按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.using_protect_content" label="保护罩使用记录" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.help_and_notify" label="帮助收取，提醒按钮" label-width="10em" type="text" placeholder="请输入提醒按钮控件文本" input-align="right" />\
       <van-field v-model="configs.do_watering_button_content" label="确认浇水按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\

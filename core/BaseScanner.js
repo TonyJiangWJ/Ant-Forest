@@ -459,6 +459,15 @@ const BaseScanner = function () {
   }
 
   this._protectInfoDetect = function (name) {
+    let loadMoreButton = _widgetUtils.widgetGetOne(_config.friend_load_more_content || '点击展开好友动态', 1000)
+    if (loadMoreButton) {
+      debugInfo(['点击展开好友动态：[{},{}]', loadMoreButton.bounds().centerX(), loadMoreButton.bounds().centerY()])
+      automator.clickCenter(loadMoreButton)
+      sleep(100)
+    } else {
+      debugInfo(['未找到加载更多按钮:「{}」', _config.friend_load_more_content || '点击展开好友动态'])
+      return false
+    }
     let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 500, true, true)
     if (usingInfo !== null) {
       let target = usingInfo.target
@@ -611,7 +620,7 @@ const BaseScanner = function () {
       errorInfo("[" + obj.name + "]获取收集前能量异常" + e)
       _commonFunctions.printExceptionStack(e)
     }
-    let temp = temp || this.protectDetect(_package_name, obj.name)
+    temp = temp || this.protectDetect(_package_name, obj.name)
     if (_config.help_friend) {
       rentery = this.collectAndHelp(obj.isHelp)
     } else {
@@ -619,7 +628,7 @@ const BaseScanner = function () {
     }
     if (this.isProtected) {
       debugInfo(['异步判定已使用了保护罩，跳过后续操作 name: {}', obj.name])
-      return this.backToListIfNeeded(false, obj)
+      return this.backToListIfNeeded(false, obj, temp)
     }
     try {
       // 等待控件数据刷新

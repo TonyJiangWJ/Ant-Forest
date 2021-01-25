@@ -119,7 +119,7 @@ const StrollScanner = function () {
     return result
   }
 
-  this.backToListIfNeeded = function (rentery, obj) {
+  this.backToListIfNeeded = function (rentery, obj, temp) {
     if (!rentery) {
       debugInfo('准备逛下一个，等待200ms')
       sleep(200)
@@ -128,7 +128,7 @@ const StrollScanner = function () {
       debugInfo('二次校验好友信息，等待250ms')
       sleep(250)
       obj.recheck = true
-      return this.doCollectTargetFriend(obj)
+      return this.doCollectTargetFriend(obj, temp)
     }
   }
 

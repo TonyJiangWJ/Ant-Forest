@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-05 23:34:22
+ * @Last Modified time: 2021-01-13 16:00:23
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -257,6 +257,10 @@ const ImgBasedFriendListScanner = function () {
                 )
                 calculator.setScriptLogger(SCRIPT_LOGGER)
                 let point = calculator.getCenterPoint()
+                if (point.regionSame > 4500 * SCALE_RATE * SCALE_RATE) {
+                  // 宽度基本为65像素不到，限制像素点最大个数为4500即可，超过的可能是底部的邀请按钮
+                  return
+                }
                 if (self.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), point)) {
                   // 可收取
                   executeSuccess = self.solveCollectable(point, listWriteLock, countdownLatch, collectOrHelpList)
@@ -452,14 +456,14 @@ const ImgBasedFriendListScanner = function () {
       let forOcrScreen = images.copy(grayScreen)
       let width = point.right - point.left
       let height = point.bottom - point.top
-      let offset = parseInt((width > height ? height - height / Math.sqrt(2) : width - width / Math.sqrt(2)) * 0.9)
+      let offset = parseInt((width > height ? height - height / Math.sqrt(2) : width - width / Math.sqrt(2)))
       let down_off = parseInt(offset / 4)
       let base64String = null
       imgResolveLock.lock()
       try {
         this.visualHelper.addRectangle('倒计时中', [point.left, point.top, width, height])
-        let countdownImg = images.clip(forOcrScreen, point.left + offset + down_off, point.top + down_off, point.right - point.left - offset - down_off, point.bottom - point.top - offset)
-        let scale = 30 / countdownImg.width
+        let countdownImg = images.clip(forOcrScreen, point.left + offset + down_off * 1.5, point.top + down_off, point.right - point.left - offset - down_off * 3, point.bottom - point.top - offset)
+        let scale = 1
         if (_config.develop_mode) {
           debugForDev(['图片压缩前base64 「data:image/png;base64,{}」', images.toBase64(countdownImg)])
         }
