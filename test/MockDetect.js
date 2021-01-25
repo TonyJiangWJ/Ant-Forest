@@ -22,7 +22,8 @@ let { config: _config } = require('../config.js')(runtime, this)
 _config.show_debug_log = true
 _config.develop_mode = true
 _config.save_log_file = false
-_config.useTesseracOcr = false
+// 启用或者禁用ocr 都禁用则使用默认
+_config.useTesseracOcr = true
 _config.useOcr = false
 _config.help_friend = true
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
