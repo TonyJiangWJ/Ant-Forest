@@ -16,8 +16,7 @@
 ## 其他脚本
 
 - [蚂蚁庄园传送门](https://github.com/TonyJiangWJ/Ant-Manor)
-- [支付宝积分签到传送门](https://github.com/TonyJiangWJ/Alipay-Credits)
-- [京东签到传送门](https://github.com/TonyJiangWJ/JingDongBeans)
+- [聚合签到-签到薅羊毛](https://github.com/TonyJiangWJ/Unify-Sign)
 - 拆分出来了基础项目，用于快速开发AutoJS脚本[AutoScriptBase](https://github.com/TonyJiangWJ/AutoScriptBase)
 
 ## 使用
@@ -70,8 +69,9 @@
 - 可以自动打开无障碍，需要配合adb赋权，不同的软件请自行替换包名: Pro版为 `org.autojs.autojspro` 可以通过 `context.getPackageName()` 获取
 
   ```shell
-  adb shell pm grant org.autojs.autojs android.permission.WRITE_SECURE_SETTINGS
+    adb shell pm grant org.autojs.autojs android.permission.WRITE_SECURE_SETTINGS
   ```
+
 - [通过ADB授权脚本自动获取无障碍权限](https://github.com/TonyJiangWJ/AutoScriptBase/blob/master/resources/doc/ADB%E6%8E%88%E6%9D%83%E8%84%9A%E6%9C%AC%E8%87%AA%E5%8A%A8%E5%BC%80%E5%90%AF%E6%97%A0%E9%9A%9C%E7%A2%8D%E6%9D%83%E9%99%90.md)
 - 提供了在线OCR识别服务，用于识别倒计时数字，如果觉得准确率欠佳可以选择申请百度OCR接口权限
 - ROOT设备可以实现自动锁屏，非ROOT设备需要扩展锁屏方法，具体见[#添加自定义锁屏代码](#添加自定义锁屏代码)，默认实现的是下拉状态栏中指定位置放了个锁屏按键
