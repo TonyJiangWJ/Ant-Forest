@@ -220,84 +220,35 @@ function Ant_forest () {
 
   // 获取自己的能量球中可收取倒计时的最小值
   const getMinCountdownOwn = function () {
-    let target
-    if (className('Button').descMatches(/\s/).exists()) {
-      target = className('Button')
-        .descMatches(/\s/)
-        .filter(function (obj) {
-          return obj.bounds().height() / obj.bounds().width() > 1.05
-        })
-    } else if (className('Button').textMatches(/\s/).exists()) {
-      target = className('Button')
-        .textMatches(/\s/)
-        .filter(function (obj) {
-          return obj.bounds().height() / obj.bounds().width() > 1.05
-        })
-    }
     let temp = []
     let toasts = []
-    // 先分析控件是否存在，存在直接通过控件判断倒计时
-    if (target && target.exists()) {
-      let ball = target.untilFind()
-      debugInfo('待收取球数' + ball.length)
-      toasts = getToastAsync(_config.package_name, ball.length >= 2 ? 2 : ball.length, function () {
-        let screen = _commonFunctions.checkCaptureScreenPermission()
-        let count = 0
-        for (let i = 0; i < ball.length; i++) {
-          let countDownBall = ball[i]
-          let bounds = countDownBall.bounds()
-          let halfHeight = parseInt(bounds.height() / 2)
-          if (!images.findColor(screen, '#d1971a', {
-            region: [bounds.left, bounds.top + parseInt(halfHeight / 2), bounds.right - bounds.left, halfHeight],
-            threshold: _config.color_offset || 20
-          })) {
+
+    // 通过图像分别判断白天和晚上的倒计时球颜色数据
+    let ballPoints = []
+    _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, null, 1)
+    if (ballPoints && ballPoints.length > 0) {
+      ballPoints.sort((a, b) => a.x - b.x)
+      debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
+      toasts = getToastAsync(_config.package_name, ballPoints.length >= 2 ? 2 : ballPoints.length,
+        () => {
+          let count = 0
+          ballPoints.forEach(point => {
+            if (point.y < _config.tree_collect_top || point.y > _config.tree_collect_top + _config.tree_collect_height) {
+              // 可能是左上角的活动图标 或者 识别到了其他范围的球
+              return
+            }
+            automator.click(point.x, point.y)
+            sleep(500)
             count++
-          }
-          automator.clickCenter(countDownBall)
-          sleep(500)
-          // 只需要点击两个球就够了
-          if (count >= 2) {
-            break
-          }
+          })
+          // 返回实际倒计时个数, 用于终止toast等待
+          return count
         }
-        // 返回实际倒计时个数，用于终止toast等待
-        return count
-      })
+      )
     } else {
-      // 无法获取到控件 通过图像分别判断白天和晚上的倒计时球颜色数据
-      let ballPoints = []
-      _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, null, 1)
-      if (ballPoints && ballPoints.length > 0) {
-        ballPoints.sort((a, b) => {
-          if (a.x > b.x) {
-            return 1
-          } else if (a.x === b.x) {
-            return 0
-          } else {
-            return -1
-          }
-        })
-        debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
-        toasts = getToastAsync(_config.package_name, ballPoints.length >= 2 ? 2 : ballPoints.length,
-          () => {
-            let count = 0
-            ballPoints.forEach(point => {
-              if (point.y < _config.tree_collect_top || point.y > _config.tree_collect_top + _config.tree_collect_height) {
-                // 可能是左上角的活动图标 或者 识别到了其他范围的球
-                return
-              }
-              automator.click(point.x, point.y)
-              sleep(500)
-              count++
-            })
-            // 返回实际倒计时个数, 用于终止toast等待
-            return count
-          }
-        )
-      } else {
-        debugInfo('未找到能量球')
-      }
+      debugInfo('未找到能量球')
     }
+    
     toasts.forEach(function (toast) {
       let countdown = toast.match(/\d+/g)
       if (countdown !== null && countdown.length >= 2) {
@@ -315,14 +266,6 @@ function Ant_forest () {
     let countDownNow = calculateMinCountdown()
     _min_countdown = isFinite(countDownNow) ? countDownNow : _min_countdown
     logInfo(['获取最终倒计时时间：{}', _min_countdown])
-  }
-
-  const peekCountdownContainer = function (container) {
-    if (container) {
-      return _commonFunctions.formatString('倒计时数据总长度：{} 文本属性来自[{}]', container.target.length, (container.isDesc ? 'desc' : 'text'))
-    } else {
-      return null
-    }
   }
 
   const calculateMinCountdown = function (lastMin, lastTimestamp) {
@@ -343,23 +286,6 @@ function Ant_forest () {
       lastMin = lastMin - passedTime
       debugInfo('重新获取倒计时经过了：[' + passedTime + ']分，最终记录上轮倒计时：[' + lastMin + ']分')
       lastMin >= 0 ? temp.push(lastMin) : temp.push(0)
-    }
-    let friCountDownContainer = _widgetUtils.widgetGetAll('\\d+’', 1000, true)
-
-    debugInfo('get \\d+’ container:' + peekCountdownContainer(friCountDownContainer))
-    if (friCountDownContainer) {
-      let isDesc = friCountDownContainer.isDesc
-      friCountDownContainer.target.forEach(function (countdown) {
-        let countdown_fri = null
-        if (isDesc) {
-          countdown_fri = parseInt(countdown.desc().match(/\d+/))
-        } else if (countdown.text()) {
-          countdown_fri = parseInt(countdown.text().match(/\d+/))
-        }
-        if (countdown_fri) {
-          temp.push(countdown_fri)
-        }
-      })
     }
     if (temp.length === 0) {
       return
@@ -534,10 +460,13 @@ function Ant_forest () {
     scanner.destory()
     if (runResult) {
       automator.back()
-      _widgetUtils.homePageWaiting()
+      if (!_widgetUtils.homePageWaiting()) {
+        return false
+      }
       _post_energy = getCurrentEnergy(true)
       logInfo('逛一逛结束 当前能量：' + _post_energy)
     }
+    return true
   }
 
   const autoDetectTreeCollectRegion = function () {
@@ -654,7 +583,10 @@ function Ant_forest () {
     _commonFunctions.addOpenPlacehold('开始收集好友能量')
     if (_config.try_collect_by_stroll) {
       // 首先尝试逛一逛收集
-      tryCollectByStroll()
+      if (!tryCollectByStroll()) {
+        recordLost('逛一逛执行异常')
+        return false
+      }
     }
     _widgetUtils.enterFriendList()
     let enterFlag = _widgetUtils.friendListWaiting()

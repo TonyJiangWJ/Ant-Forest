@@ -19,6 +19,7 @@ activity.getWindow().setStatusBarColor(android.R.color.white)
 activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
 // ---修改状态栏颜色 end--
 
+let dateFormat = require('./lib/DateUtil.js')
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 let FileUtils = singletonRequire('FileUtils')
 let AesUtil = require('./lib/AesUtil.js')

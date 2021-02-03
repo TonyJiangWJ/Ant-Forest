@@ -186,6 +186,7 @@ Vue.component('sample-configs', function (resolve, reject) {
             <template #right-icon><span>分</span></template>\
           </number-field>\
         </template>\
+        <tip-block>对话框的倒计时时间，如果设置成0则不显示对话框</tip-block>\
         <number-field v-model="configs.delayStartTime" label="延迟启动时间" label-width="10em" placeholder="请输入延迟启动时间" >\
           <template #right-icon><span>秒</span></template>\
         </number-field>\
