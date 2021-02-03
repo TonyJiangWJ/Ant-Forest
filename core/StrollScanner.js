@@ -100,7 +100,6 @@ const StrollScanner = function () {
         hasNext = false
       }
     }
-    let firstTime = true
     while (hasNext) {
       if (this.duplicateChecker.checkIsAllDuplicated()) {
         debugInfo('全部都在白名单，没有可以逛一逛的了')
