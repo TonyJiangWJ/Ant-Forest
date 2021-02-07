@@ -595,6 +595,8 @@ function Ant_forest () {
       recordLost('进入好友排行榜失败')
       return false
     }
+    // 延迟操作 避免截图失败
+    sleep(200)
     let loadedStatus = _widgetUtils.ensureRankListLoaded(3)
     if (!loadedStatus) {
       warnInfo('排行榜加载中')
