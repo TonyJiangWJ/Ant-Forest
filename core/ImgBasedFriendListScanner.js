@@ -77,6 +77,7 @@ const ImgBasedFriendListScanner = function () {
     this.min_countdown = 10000
     this.min_countdown_pixels = 10
     debugInfo('图像分析即将开始')
+    sleep(200)
     return this.collecting()
   }
 
@@ -551,7 +552,7 @@ const ImgBasedFriendListScanner = function () {
     }
     // 每5次滑动判断一次是否在排行榜中
     if (this.has_next && count % 5 == 0) {
-      if (!_widgetUtils.friendListWaiting()) {
+      if (!_widgetUtils.friendListWaiting(screen)) {
         errorInfo('当前不在好友排行榜！')
         failed = true
       }
@@ -570,7 +571,7 @@ const ImgBasedFriendListScanner = function () {
       }
     }
     if (!this.has_next) {
-      if (!_widgetUtils.friendListWaiting()) {
+      if (!_widgetUtils.friendListWaiting(screen)) {
         errorInfo('当前不在好友排行榜！')
         failed = true
       }

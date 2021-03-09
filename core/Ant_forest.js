@@ -12,7 +12,7 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
-let callStateListener = _config.enable_call_state_control ? singletonRequire('CallStateListener')
+let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
 let StrollScanner = require('./StrollScanner.js')
 let ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
@@ -214,7 +214,7 @@ function Ant_forest () {
     debugInfo('阻塞等待结束，等待锁释放')
     lock.unlock()
     debugInfo('获取toast结果成功：' + result)
-    thread.interrupt()
+    events.removeAllListeners('toast')
     return result
   }
 
@@ -595,6 +595,8 @@ function Ant_forest () {
       recordLost('进入好友排行榜失败')
       return false
     }
+    // 延迟操作 避免截图失败
+    sleep(200)
     let loadedStatus = _widgetUtils.ensureRankListLoaded(3)
     if (!loadedStatus) {
       warnInfo('排行榜加载中')
