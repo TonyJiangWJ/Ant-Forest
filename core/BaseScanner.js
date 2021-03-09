@@ -462,7 +462,7 @@ const BaseScanner = function () {
     let loadMoreButton = _widgetUtils.widgetGetOne(_config.friend_load_more_content || '点击展开好友动态', 1000)
     if (loadMoreButton) {
       debugInfo(['点击展开好友动态：[{},{}]', loadMoreButton.bounds().centerX(), loadMoreButton.bounds().centerY()])
-      automator.clickCenter(loadMoreButton)
+      automator.clickRandom(loadMoreButton)
       sleep(100)
     } else {
       debugInfo(['未找到加载更多按钮:「{}」', _config.friend_load_more_content || '点击展开好友动态'])
@@ -606,7 +606,7 @@ const BaseScanner = function () {
     return newVal + '(' + (compare > 0 ? '+' + compare : compare) + ')'
   }
 
-  this.doCollectTargetFriend = function (obj, temp) {
+  this.doCollectTargetFriend = function (obj, toastListenThread) {
     debugInfo(['准备开始收取好友：「{}」', obj.name])
     let preGot, postGet, preE, postE, rentery = false
     let screen = null
@@ -620,7 +620,7 @@ const BaseScanner = function () {
       errorInfo("[" + obj.name + "]获取收集前能量异常" + e)
       _commonFunctions.printExceptionStack(e)
     }
-    temp = temp || this.protectDetect(_package_name, obj.name)
+    toastListenThread = toastListenThread || this.protectDetect(_package_name, obj.name)
     if (_config.help_friend) {
       rentery = this.collectAndHelp(obj.isHelp)
     } else {
@@ -628,7 +628,7 @@ const BaseScanner = function () {
     }
     if (this.isProtected) {
       debugInfo(['异步判定已使用了保护罩，跳过后续操作 name: {}', obj.name])
-      return this.backToListIfNeeded(false, obj, temp)
+      return this.backToListIfNeeded(false, obj, toastListenThread)
     }
     try {
       // 等待控件数据刷新
@@ -716,11 +716,14 @@ const BaseScanner = function () {
       }
     }
     screen && screen.recycle()
-    temp.interrupt()
+    events.removeAllListeners('toast')
     return this.backToListIfNeeded(rentery, obj)
   }
 
-  this.backToListIfNeeded = function (rentery, obj) {
+  this.backToListIfNeeded = function (rentery, obj, toastListenThread) {
+    if (toastListenThread) {
+      events.removeAllListeners('toast')
+    }
     if (rentery) {
       debugInfo('好友能量收取完毕, 有帮助收取 重新校验是否有新能量球')
       sleep(500)
