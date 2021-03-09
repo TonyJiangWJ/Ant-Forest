@@ -7,7 +7,7 @@
  */
 let currentEngine = engines.myEngine().getSource() + ''
 let isRunningMode = currentEngine.endsWith('/config.js') && typeof module === 'undefined'
-let is_pro = Object.prototype.toString.call(com.stardust.autojs.core.timing.TimedTask.Companion).match(/Java(Class|Object)/)
+let is_pro = !!Object.prototype.toString.call(com.stardust.autojs.core.timing.TimedTask.Companion).match(/Java(Class|Object)/)
 let default_config = {
   password: '',
   is_alipay_locked: false,
@@ -132,8 +132,8 @@ let default_config = {
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
   can_collect_color_gray: '#828282',
   can_help_color: '#f99236',
-  collectable_lower: '#a5c600',
-  collectable_upper: '#ffff5d',
+  collectable_lower: '#00c600',
+  collectable_upper: '#ffff29',
   helpable_lower: '#6f0028',
   helpable_upper: '#ffb2b2',
   valid_collectable_lower: '#77cc00',
@@ -181,6 +181,8 @@ let default_config = {
   limit_runnable_time_range: true,
   // 当以下包正在前台运行时，延迟执行
   skip_running_packages: [],
+  warn_skipped_ignore_package: false,
+  warn_skipped_too_much: false,
   enable_visual_helper: false,
   auto_restart_when_crashed: true,
   // 更新后需要强制执行的标记

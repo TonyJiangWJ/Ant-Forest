@@ -172,7 +172,7 @@ Vue.component('sample-configs', function (resolve, reject) {
         <switch-cell title="是否帮助收取" label="帮助收取会发送好友消息，容易打扰别人，不建议开启" title-style="flex:3.5;" v-model="configs.help_friend" />\
         <switch-cell title="是否循环" v-model="configs.is_cycle" />\
         <number-field v-if="configs.is_cycle" v-model="configs.cycle_times" label="循环次数" placeholder="请输入单次运行循环次数" />\
-        <switch-cell title="是否永不停止" v-model="configs.never_stop" />\
+        <switch-cell title="是否永不停止" v-model="configs.never_stop" v-if="!configs.is_cycle"/>\
         <template  v-if="configs.never_stop">\
           <tip-block>永不停止模式请不要全天24小时运行，具体见README</tip-block>\
           <tip-block>重新激活时间可以选择随机范围，按如下格式输入即可：30-40。{{reactiveTimeDisplay}}</tip-block>\
@@ -350,6 +350,8 @@ Vue.component('advance-configs', function (resolve, reject) {
           thread_pool_max_size: '',
           thread_pool_queue_size: '',
           thread_pool_waiting_time: '',
+          warn_skipped_ignore_package: false,
+          warn_skipped_too_much: false,
           skip_running_packages: [{ packageName: 'com.tony.test', appName: 'test' }, { packageName: 'com.tony.test2', appName: 'test2' }],
           check_finger_by_pixels_amount: false,
           finger_img_pixels: 1800
@@ -750,6 +752,8 @@ Vue.component('advance-configs', function (resolve, reject) {
           </template>\
         </van-swipe-cell>\
         </div>\
+        <switch-cell title="当前台白名单跳过次数过多时提醒" label="当白名单跳过3次之后会toast提醒，按音量下可以直接执行" title-style="width: 12em;flex:2;" v-model="configs.warn_skipped_too_much" />\
+        <switch-cell v-if="configs.warn_skipped_too_much" title="是否无视前台包名" title-style="width: 10em;flex:2;" label="默认情况下包名相同且重复多次时才提醒" v-model="configs.warn_skipped_ignore_package" />\
       </van-cell-group>\
       <van-dialog v-model="showAddWhiteDialog" title="增加白名单" show-cancel-button @confirm="doAddWhite" :get-container="getContainer">\
         <van-field v-model="newWhite" placeholder="请输入好友昵称" label="好友昵称" />\
