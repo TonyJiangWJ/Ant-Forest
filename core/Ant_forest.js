@@ -662,6 +662,7 @@ function Ant_forest () {
       _runningQueueDispatcher.addRunningTask()
       // 取消定时任务
       _commonFunctions.cancelAllTimedTasks()
+      _commonFunctions.delayIfBatteryLow()
       if (!(images.hasOwnProperty('isDelegated') && images.isDelegated())) {
         warnInfo('图片资源代理丢失，重新启动')
         _commonFunctions.getAndUpdateDismissReason('_lost_image_delegate')
@@ -697,6 +698,8 @@ function Ant_forest () {
         _base_scanner.destory()
         _base_scanner = null
       }
+      // 清除过长日志
+      _commonFunctions.reduceConsoleLogs()
     }
 
     this.interruptStopListenThread = function () {

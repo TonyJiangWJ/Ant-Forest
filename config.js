@@ -39,6 +39,8 @@ let default_config = {
   check_device_posture: false,
   check_distance: false,
   posture_threshold_z: 6,
+  // 电量保护，低于该值延迟60分钟执行脚本
+  battery_keep_threshold: 20,
   // 开发用开关，截图并保存一些图片
   // 保存倒计时图片
   cutAndSaveCountdown: false,
@@ -58,6 +60,8 @@ let default_config = {
   // 异步写入日志文件
   async_save_log_file: true,
   back_size: '100',
+  // 控制台最大日志长度，仅免费版有用
+  console_log_maximum_size: 1500,
   enable_call_state_control: false,
   collect_self_only: false,
   not_collect_self: false,
@@ -189,7 +193,9 @@ let default_config = {
   updated_temp_flag_1328: true,
   updated_temp_flag_1346: true,
   thread_name_prefix: 'antforest_',
-  package_name: 'com.eg.android.AlipayGphone'
+  package_name: 'com.eg.android.AlipayGphone',
+  auto_check_update: true,
+  github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest'
 }
 // 自动生成的配置数据 
 let auto_generate_config = {

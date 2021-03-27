@@ -13,6 +13,7 @@ let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFil
 let commonFunctions = singletonRequire('CommonFunction')
 // 避免定时任务打断前台运行中的任务
 commonFunctions.checkAnyReadyAndSleep()
+commonFunctions.delayIfBatteryLow()
 // 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
 if (config.single_script) {
   logInfo('======单脚本运行直接清空任务队列=======')
@@ -48,7 +49,8 @@ commonFunctions.registerOnEngineRemoved(function () {
   debugInfo('校验并移除已加载的dex')
   resolver()
   flushAllLogs()
-  !config.is_pro && console.clear()
+  // 减少控制台日志数量，避免内存泄露，仅免费版有用
+  commonFunctions.reduceConsoleLogs()
   // 移除运行中任务
   runningQueueDispatcher.removeRunningTask(true, true,
     () => {
