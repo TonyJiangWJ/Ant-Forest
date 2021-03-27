@@ -500,17 +500,20 @@ const BaseScanner = function () {
             debugInfo(['前天row:{}', dayBeforeYesterdayRow])
           }
         }
-        let timeRe = /(\d{2}:\d{2})/
-        let match = timeRe.exec(time)
-        if (match) {
-          usingTime = match[1]
-          let compare = new Date('1999/01/01 ' + usingTime)
-          let usingFlag = compare.getHours() * 60 + compare.getMinutes()
-          let now = new Date().getHours() * 60 + new Date().getMinutes()
-          if (usingFlag < now) {
-            return false
-          }
+      }
+      let timeRe = /(\d{2}:\d{2})/
+      let match = timeRe.exec(time)
+      if (match) {
+        usingTime = match[1]
+        let compare = new Date('1999/01/01 ' + usingTime)
+        let usingFlag = compare.getHours() * 60 + compare.getMinutes()
+        let now = new Date().getHours() * 60 + new Date().getMinutes()
+        if (!isToday && usingFlag < now) {
+          // 非今天使用，且使用时间点早于当前时间点
+          return false
         }
+      } else {
+        warnInfo(['未能正确获取保护罩使用时间的文本信息：{}', time])
       }
       debugInfo(['using time:{}-{} rows: yesterday[{}] target[{}]', (isToday ? '今天' : '昨天'), usingTime || time, yesterdayRow, targetRow], true)
       let timeout = isToday ? new Date(formatDate(new Date(new Date().getTime() + 24 * 3600000), 'yyyy/MM/dd ') + usingTime).getTime()
