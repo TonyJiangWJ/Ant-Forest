@@ -29,6 +29,7 @@ Vue.component('sample-configs', function (resolve, reject) {
           save_log_file: false,
           back_size: '',
           async_save_log_file: false,
+          console_log_maximum_size: 1500,
           help_friend: false,
           is_cycle: false,
           cycle_times: 10,
@@ -44,6 +45,7 @@ Vue.component('sample-configs', function (resolve, reject) {
           check_device_posture: false,
           check_distance: false,
           posture_threshold_z: 6,
+          battery_keep_threshold: 20,
           auto_lock: false,
           hasRootPermission: false,
           lock_x: 150,
@@ -56,7 +58,13 @@ Vue.component('sample-configs', function (resolve, reject) {
           cutAndSaveCountdown: false,
           cutAndSaveTreeCollect: false,
           saveBase64ImgInfo: false,
-          enable_visual_helper: false
+          enable_visual_helper: false,
+          auto_check_update: true,
+          is_pro: false,
+          enable_watering_cooperation: false,
+          watering_cooperation_name: '',
+          watering_cooperation_amount: '',
+          watering_cooperation_threshold: '',
         },
         device: {
           pos_x: 0,
@@ -197,7 +205,18 @@ Vue.component('sample-configs', function (resolve, reject) {
         <number-field v-if="configs.async_waiting_capture" v-model="configs.capture_waiting_time" label="获取截图超时时间" label-width="8em" placeholder="请输入超时时间" >\
           <template #right-icon><span>毫秒</span></template>\
         </number-field>\
-        <switch-cell title="是否通话时暂停脚本" title-style="width: 10em;flex:2;" label="需要授权AutoJS获取通话状态，Pro版暂时无法使用" v-model="configs.enable_call_state_control" />\
+        <switch-cell v-if="!configs.is_pro" title="是否通话时暂停脚本" title-style="width: 10em;flex:2;" label="需要授权AutoJS获取通话状态，Pro版暂时无法使用" v-model="configs.enable_call_state_control" />\
+        <switch-cell title="是否启用合种浇水" title-style="width: 10em;flex:2;" v-model="configs.enable_watering_cooperation" />\
+        <template v-if="configs.enable_watering_cooperation">\
+          <van-field v-model="configs.watering_cooperation_name" label="合种名称" placeholder="请输入合种名称" input-align="right" />\
+          <number-field v-model="configs.watering_cooperation_amount" label="浇水数量" placeholder="请输入浇水数量" />\
+            <template #right-icon><span>克</span></template>\
+          </number-field>\
+          <tip-block>当今日收集数量超过该阈值之后才执行合种浇水</tip-block>\
+          <number-field v-model="configs.watering_cooperation_threshold" label="浇水阈值" placeholder="请输入浇水阈值" />\
+            <template #right-icon><span>克</span></template>\
+          </number-field>\
+        </template>\
       </van-cell-group>\
       <van-divider content-position="left">锁屏相关</van-divider>\
       <van-cell-group>\
@@ -222,6 +241,8 @@ Vue.component('sample-configs', function (resolve, reject) {
           <number-field v-model="configs.lock_x" label="横坐标位置" placeholder="请输入横坐标位置" />\
           <number-field v-model="configs.lock_y" label="纵坐标位置" placeholder="请输入纵坐标位置" />\
         </template>\
+        <tip-block>设置脚本运行的最低电量(充电时不受限制)，防止早晨低电量持续运行导致自动关机，发生意外情况，比如闹钟歇菜导致上班迟到等情况。如不需要设置为0即可</tip-block>\
+        <number-field v-model="configs.battery_keep_threshold" label="脚本可运行的最低电量" label-width="12em" placeholder="请输入最低电量" />\
       </van-cell-group>\
       <van-divider content-position="left">悬浮窗配置</van-divider>\
       <van-cell-group>\
@@ -240,6 +261,8 @@ Vue.component('sample-configs', function (resolve, reject) {
       </van-cell-group>\
       <van-divider content-position="left">日志配置</van-divider>\
       <van-cell-group>\
+        <tip-block v-if="!configs.is_pro">控制台保留的日志行数，避免运行时间长后保留太多的无用日志，导致内存浪费</tip-block>\
+        <number-field v-if="!configs.is_pro" v-model="configs.console_log_maximum_size" label="控制台日志最大保留行数" label-width="12em" />\
         <switch-cell title="是否显示debug日志" v-model="configs.show_debug_log" />\
         <switch-cell title="是否显示脚本引擎id" v-model="configs.show_engine_id" />\
         <switch-cell title="是否保存日志到文件" v-model="configs.save_log_file" />\
@@ -248,6 +271,7 @@ Vue.component('sample-configs', function (resolve, reject) {
         </number-field>\
         <switch-cell title="是否异步保存日志到文件" v-model="configs.async_save_log_file" />\
       </van-cell-group>\
+      <switch-cell title="是否自动检测更新" v-model="configs.auto_check_update" />\
       <van-divider content-position="left">开发模式配置</van-divider>\
       <van-cell-group>\
         <switch-cell title="是否启用开发模式" v-model="configs.develop_mode" />\

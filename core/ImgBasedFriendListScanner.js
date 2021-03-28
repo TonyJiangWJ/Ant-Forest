@@ -29,7 +29,7 @@ let SCRIPT_LOGGER = new ScriptLogger({
     logInfo(message)
   },
   debug: function (message) {
-    debugInfo(message)
+    debugForDev(message)
   },
   error: function (message) {
     errorInfo(message)
@@ -529,8 +529,9 @@ const ImgBasedFriendListScanner = function () {
    * @param {*} count 
    */
   this.checkBottomAndRecycle = function (grayScreen, count) {
+    debugInfo('滑动下一页')
     automator.scrollDown()
-    sleep(300)
+    sleep(100)
     let screen = null
     let failed = false
     if (_config.checkBottomBaseImg) {
