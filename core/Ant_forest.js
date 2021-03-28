@@ -533,6 +533,12 @@ function Ant_forest () {
     // 自动识别能量球区域
     autoDetectTreeCollectRegion()
     clearPopup()
+    // 执行合种浇水
+    _widgetUtils.enterCooperationPlantAndDoWatering()
+    if (!_widgetUtils.homePageWaiting()) {
+      errorInfo('合种浇水后返回异常，重新打开森林')
+      return openAndWaitForPersonalHome()
+    }
     getPreEnergy()
   }
 

@@ -60,7 +60,11 @@ Vue.component('sample-configs', function (resolve, reject) {
           saveBase64ImgInfo: false,
           enable_visual_helper: false,
           auto_check_update: true,
-          is_pro: false
+          is_pro: false,
+          enable_watering_cooperation: false,
+          watering_cooperation_name: '',
+          watering_cooperation_amount: '',
+          watering_cooperation_threshold: '',
         },
         device: {
           pos_x: 0,
@@ -202,6 +206,17 @@ Vue.component('sample-configs', function (resolve, reject) {
           <template #right-icon><span>毫秒</span></template>\
         </number-field>\
         <switch-cell v-if="!configs.is_pro" title="是否通话时暂停脚本" title-style="width: 10em;flex:2;" label="需要授权AutoJS获取通话状态，Pro版暂时无法使用" v-model="configs.enable_call_state_control" />\
+        <switch-cell title="是否启用合种浇水" title-style="width: 10em;flex:2;" v-model="configs.enable_watering_cooperation" />\
+        <template v-if="configs.enable_watering_cooperation">\
+          <van-field v-model="configs.watering_cooperation_name" label="合种名称" placeholder="请输入合种名称" input-align="right" />\
+          <number-field v-model="configs.watering_cooperation_amount" label="浇水数量" placeholder="请输入浇水数量" />\
+            <template #right-icon><span>克</span></template>\
+          </number-field>\
+          <tip-block>当今日收集数量超过该阈值之后才执行合种浇水</tip-block>\
+          <number-field v-model="configs.watering_cooperation_threshold" label="浇水阈值" placeholder="请输入浇水阈值" />\
+            <template #right-icon><span>克</span></template>\
+          </number-field>\
+        </template>\
       </van-cell-group>\
       <van-divider content-position="left">锁屏相关</van-divider>\
       <van-cell-group>\

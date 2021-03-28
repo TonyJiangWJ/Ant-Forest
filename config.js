@@ -195,7 +195,11 @@ let default_config = {
   thread_name_prefix: 'antforest_',
   package_name: 'com.eg.android.AlipayGphone',
   auto_check_update: true,
-  github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest'
+  github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest',
+  enable_watering_cooperation: false,
+  watering_cooperation_name: '',
+  watering_cooperation_amount: '',
+  watering_cooperation_threshold: '',
 }
 // 自动生成的配置数据 
 let auto_generate_config = {
