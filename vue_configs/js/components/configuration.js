@@ -209,11 +209,11 @@ Vue.component('sample-configs', function (resolve, reject) {
         <switch-cell title="是否启用合种浇水" title-style="width: 10em;flex:2;" v-model="configs.enable_watering_cooperation" />\
         <template v-if="configs.enable_watering_cooperation">\
           <van-field v-model="configs.watering_cooperation_name" label="合种名称" placeholder="请输入合种名称" input-align="right" />\
-          <number-field v-model="configs.watering_cooperation_amount" label="浇水数量" placeholder="请输入浇水数量" />\
+          <number-field v-model="configs.watering_cooperation_amount" label="浇水数量" label-width="8em" placeholder="请输入浇水数量" >\
             <template #right-icon><span>克</span></template>\
           </number-field>\
           <tip-block>当今日收集数量超过该阈值之后才执行合种浇水</tip-block>\
-          <number-field v-model="configs.watering_cooperation_threshold" label="浇水阈值" placeholder="请输入浇水阈值" />\
+          <number-field v-model="configs.watering_cooperation_threshold" label="浇水阈值" label-width="8em" placeholder="请输入浇水阈值" >\
             <template #right-icon><span>克</span></template>\
           </number-field>\
         </template>\
@@ -378,7 +378,9 @@ Vue.component('advance-configs', function (resolve, reject) {
           warn_skipped_too_much: false,
           skip_running_packages: [{ packageName: 'com.tony.test', appName: 'test' }, { packageName: 'com.tony.test2', appName: 'test2' }],
           check_finger_by_pixels_amount: false,
-          finger_img_pixels: 1800
+          finger_img_pixels: 1800,
+          merge_countdown_by_gaps: true,
+          countdown_gaps: 60
         },
         validations: {
           stroll_button_region: {
@@ -635,6 +637,11 @@ Vue.component('advance-configs', function (resolve, reject) {
         <switch-cell title="是否在收集或帮助后重新检查排行榜" title-style="flex:2;" v-model="configs.recheck_rank_list" />\
         <switch-cell title="是否使用能量双击卡" v-model="configs.use_double_click_card" />\
         <switch-cell title="是否限制0:30-6:50不可运行" title-style="flex:2;" v-model="configs.limit_runnable_time_range" />\
+        <tip-block>开启合并倒计时后会统计倒计时N分钟内的按最大倒计时来执行定时任务，比如设置N为5分钟，识别到倒计时[1,2,2,3,6,10,11]将以6(1+5)为最小倒计时设置定时任务</tip-block>\
+        <switch-cell title="是否合并N分钟内的倒计时" title-style="flex:2;" v-model="configs.merge_countdown_by_gaps" />\
+        <number-field v-if="configs.merge_countdown_by_gaps" v-model="configs.countdown_gaps" label="倒计时间隔时间" label-width="8em" placeholder="请输入倒计时间隔时间" >\
+          <template #right-icon><span>分</span></template>\
+        </number-field>\
         <switch-cell title="是否通过逛一逛收集能量" v-model="configs.try_collect_by_stroll" />\
         <template v-if="configs.try_collect_by_stroll">\
           <region-input-field v-if="!configs.stroll_button_regenerate"\
@@ -643,6 +650,8 @@ Vue.component('advance-configs', function (resolve, reject) {
             v-model="configs.stroll_button_region" label="逛一逛按钮区域" label-width="10em" />\
           <van-field :readonly="true" v-else value="下次运行时重新识别" label="逛一逛按钮区域" label-width="10em" type="text" input-align="right" />\
           <switch-cell title="下次运行时重新识别" v-model="configs.stroll_button_regenerate" />\
+          <tip-block>开启仅仅执行逛一逛后将只通过逛一逛执行，此时将不从排行榜识别倒计时数据，会影响后续定时任务的设置，仅循环模式有效</tip-block>\
+          <switch-cell title="仅仅执行逛一逛" v-model="configs.disable_image_based_collect" />\
           <tip-block>开启仅识别倒计时可以仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，能够避免重复进入白名单或者保护罩好友页面，\
             但是也有一定几率会漏收倒计时刚刚结束的能量，请酌情选择是否开启</tip-block>\
           <switch-cell title="排行榜中仅识别倒计时" v-model="configs.collect_by_stroll_only" />\

@@ -80,7 +80,8 @@ let default_config = {
   thread_pool_queue_size: 16,
   thread_pool_waiting_time: 5,
   white_list: [],
-
+  merge_countdown_by_gaps: false,
+  countdown_gaps: 5,
   // 单脚本模式 是否只运行一个脚本 不会同时使用其他的 开启单脚本模式 会取消任务队列的功能。
   // 比如同时使用蚂蚁庄园 则保持默认 false 否则设置为true 无视其他运行中的脚本
   single_script: false,
@@ -89,7 +90,7 @@ let default_config = {
   // 滑动起始底部高度
   bottomHeight: 200,
   // 是否使用模拟的滑动，如果滑动有问题开启这个 当前默认关闭 经常有人手机上有虚拟按键 然后又不看文档注释的
-  useCustomScrollDown: true,
+  useCustomScrollDown: false,
   // 排行榜列表下滑速度 200毫秒 不要太低否则滑动不生效 仅仅针对useCustomScrollDown=true的情况
   scrollDownSpeed: 200,
   // 是否开启自动浇水 每日收集某个好友达到下一个阈值之后会进行浇水
@@ -177,6 +178,7 @@ let default_config = {
   is_pro: is_pro,
   // 尝试先逛一逛进行能量收取
   try_collect_by_stroll: true,
+  disable_image_based_collect: false,
   stroll_end_ui_content: '返回我的森林',
   collect_by_stroll_only: false,
   stroll_button_regenerate: true,
@@ -189,9 +191,6 @@ let default_config = {
   warn_skipped_too_much: false,
   enable_visual_helper: false,
   auto_restart_when_crashed: true,
-  // 更新后需要强制执行的标记
-  updated_temp_flag_1328: true,
-  updated_temp_flag_1346: true,
   thread_name_prefix: 'antforest_',
   package_name: 'com.eg.android.AlipayGphone',
   auto_check_update: true,
@@ -200,6 +199,10 @@ let default_config = {
   watering_cooperation_name: '',
   watering_cooperation_amount: '',
   watering_cooperation_threshold: '',
+  // 更新后需要强制执行的标记
+  updated_temp_flag_1328: true,
+  updated_temp_flag_1346: true,
+  updated_temp_flag_1352: true,
 }
 // 自动生成的配置数据 
 let auto_generate_config = {
@@ -314,6 +317,11 @@ function resetConfigsIfNeeded () {
     // 默认关闭帮助收取，帮收还得发通知，容易影响到别人
     config.help_friend = default_config.help_friend
     storageConfig.put('updated_temp_flag_1346', false)
+  }
+  if (config.updated_temp_flag_1352) {
+    // 新版模拟滑动会有问题。默认关闭改用自带的scrollDown
+    config.useCustomScrollDown = default_config.useCustomScrollDown
+    storageConfig.put('updated_temp_flag_1352', false)
   }
   let resetFields = [
     'collectable_lower',

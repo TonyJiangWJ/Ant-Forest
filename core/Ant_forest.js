@@ -380,7 +380,7 @@ function Ant_forest () {
   // 记录最终能量值
   const getPostEnergy = function (collectedFriend) {
     if (collectedFriend) {
-      debugInfo('非仅收自己，返回主页面')
+      debugInfo('非仅收自己，返回主页面' + _config.disable_image_based_collect)
       automator.back()
       _widgetUtils.homePageWaiting()
       // 二次收集自身能量
@@ -594,29 +594,31 @@ function Ant_forest () {
         return false
       }
     }
-    _widgetUtils.enterFriendList()
-    let enterFlag = _widgetUtils.friendListWaiting()
-    if (!enterFlag) {
-      errorInfo('进入好友排行榜失败')
-      recordLost('进入好友排行榜失败')
-      return false
-    }
-    // 延迟操作 避免截图失败
-    sleep(200)
-    let loadedStatus = _widgetUtils.ensureRankListLoaded(3)
-    if (!loadedStatus) {
-      warnInfo('排行榜加载中')
-    }
-    debugInfo('进入好友排行榜成功')
-    if (true === findAndCollect()) {
-      _min_countdown = null
-      _has_next = true
-      _current_time = _current_time == 0 ? 0 : _current_time - 1
-      errorInfo('收集好友能量失败，重新开始')
-      _re_try++
-      return false
-    } else {
-      _re_try = 0
+    if (!(_config.disable_image_based_collect && _config.is_cycle && _config.try_collect_by_stroll)) {
+      _widgetUtils.enterFriendList()
+      let enterFlag = _widgetUtils.friendListWaiting()
+      if (!enterFlag) {
+        errorInfo('进入好友排行榜失败')
+        recordLost('进入好友排行榜失败')
+        return false
+      }
+      // 延迟操作 避免截图失败
+      sleep(200)
+      let loadedStatus = _widgetUtils.ensureRankListLoaded(3)
+      if (!loadedStatus) {
+        warnInfo('排行榜加载中')
+      }
+      debugInfo('进入好友排行榜成功')
+      if (true === findAndCollect()) {
+        _min_countdown = null
+        _has_next = true
+        _current_time = _current_time == 0 ? 0 : _current_time - 1
+        errorInfo('收集好友能量失败，重新开始')
+        _re_try++
+        return false
+      } else {
+        _re_try = 0
+      }
     }
     _commonFunctions.addClosePlacehold("收集好友能量结束")
   }
@@ -759,7 +761,7 @@ function Ant_forest () {
           }
           if (runSuccess) {
             generateNext()
-            getPostEnergy(!_config.collect_self_only)
+            getPostEnergy(!_config.collect_self_only && !_config.disable_image_based_collect)
           }
         } catch (e) {
           errorInfo('发生异常 [' + e + ']')
@@ -776,7 +778,7 @@ function Ant_forest () {
       this.endLoop()
       this.endCollect()
       // 返回最小化支付宝
-      _commonFunctions.minimize()
+      _commonFunctions.minimize(_config.package_name)
     }
   }
 
