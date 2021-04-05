@@ -736,6 +736,7 @@ ImgBasedFriendListScanner.prototype.checkRunningCountdown = function (countingDo
   if (!_config.is_cycle && countingDownContainers.length > 0) {
     debugInfo(['倒计时中的好友数[{}]', countingDownContainers.length])
     let that = this
+    let countdownTimes = []
     countingDownContainers.forEach((item, idx) => {
       if (item.countdown <= 0) {
         return
@@ -754,9 +755,22 @@ ImgBasedFriendListScanner.prototype.checkRunningCountdown = function (countingDo
         that.recordLost('有倒计时结束')
       } else {
         let rest = count - passed
-        that.min_countdown = rest < that.min_countdown ? rest : that.min_countdown
+        countdownTimes.push(rest)
       }
     })
+    let sortedList = countdownTimes.sort((a, b) => a - b)
+    let max = min = sortedList[0]
+    let maxIdx = 0
+    if (_config.merge_countdown_by_gaps) {
+      sortedList.forEach((time, idx) => {
+        if (time - min <= _config.countdown_gaps) {
+          max = time
+          maxIdx = idx
+        }
+      })
+      debugInfo(['当前最小倒计时为：{} 与它相近且间隔小于等于{}的有{}个, 采用倒计时：{}', min, _config.countdown_gaps, maxIdx, max])
+    }
+    this.min_countdown = max
   }
 }
 
