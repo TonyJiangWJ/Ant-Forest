@@ -420,6 +420,7 @@ const ImgBasedFriendListScanner = function () {
    */
   this.solveCollectable = function (point, listWriteLock, countdownLatch, collectOrHelpList) {
     if (_config.collect_by_stroll_only) {
+      countdownLatch.countDown()
       return true
     }
     let executeSuccess = false

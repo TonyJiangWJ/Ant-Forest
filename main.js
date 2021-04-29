@@ -106,6 +106,9 @@ logInfo('======解锁并校验截图权限======')
 try {
   unlocker.exec()
 } catch (e) {
+  if (/无障碍/.test(e + '')) {
+    commonFunctions.disableAccessibilityAndRestart()
+  }
   if (!config.forceStop) {
     errorInfo('解锁发生异常, 三分钟后重新开始' + e)
     commonFunctions.printExceptionStack(e)
