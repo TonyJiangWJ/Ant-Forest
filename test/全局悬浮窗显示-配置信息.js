@@ -12,10 +12,10 @@ if (runningSize > 1) {
   })
 }
 
+let { config } = require('../config.js')(runtime, this)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
-let { config } = require('../config.js')(runtime, this)
 let fileUtils = sRequire('FileUtils')
 let commonFunction = sRequire('CommonFunction')
 commonFunction.autoSetUpBangOffset(true)

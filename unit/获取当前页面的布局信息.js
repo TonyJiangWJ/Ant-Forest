@@ -5,12 +5,12 @@
  * @Last Modified time: 2020-10-19 17:52:05
  * @Description: 
  */
+let { config } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let widgetUtils = singletonRequire('WidgetUtils')
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
-let { config } = require('../config.js')(runtime, this)
 commonFunctions.registerOnEngineRemoved(function () {
   logUtils.showCostingInfo()
 }, 'logging cost')

@@ -179,7 +179,7 @@ let default_config = {
   // 尝试先逛一逛进行能量收取
   try_collect_by_stroll: true,
   disable_image_based_collect: false,
-  stroll_end_ui_content: '返回我的森林',
+  stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?$',
   collect_by_stroll_only: false,
   stroll_button_regenerate: true,
   auto_set_bang_offset: true,
@@ -200,9 +200,7 @@ let default_config = {
   watering_cooperation_amount: '',
   watering_cooperation_threshold: '',
   // 更新后需要强制执行的标记
-  updated_temp_flag_1328: true,
-  updated_temp_flag_1346: true,
-  updated_temp_flag_1352: true,
+  updated_temp_flag_1354: true
 }
 // 自动生成的配置数据 
 let auto_generate_config = {
@@ -313,28 +311,19 @@ function resetConfigsIfNeeded () {
     config.friend_home_check_regex = default_config.friend_home_check_regex
     storageConfig.put('friend_home_check_regex', default_config.friend_home_check_regex)
   }
-  if (config.updated_temp_flag_1346) {
-    // 默认关闭帮助收取，帮收还得发通知，容易影响到别人
-    config.help_friend = default_config.help_friend
-    storageConfig.put('updated_temp_flag_1346', false)
-  }
-  if (config.updated_temp_flag_1352) {
-    // 新版模拟滑动会有问题。默认关闭改用自带的scrollDown
-    config.useCustomScrollDown = default_config.useCustomScrollDown
-    storageConfig.put('updated_temp_flag_1352', false)
-  }
   let resetFields = [
-    'collectable_lower',
-    'collectable_upper',
-    'helpable_lower',
-    'helpable_upper',
-    'valid_collectable_lower',
-    'valid_collectable_upper'
+    // 新版模拟滑动会有问题。默认关闭改用自带的scrollDown
+    'useCustomScrollDown',
+    // 默认关闭帮助收取，帮收还得发通知，容易影响到别人
+    'help_friend',
+    // 修改逛一逛结束标志
+    'stroll_end_ui_content'
   ]
-  if (config.updated_temp_flag_1347) {
+  if (config.updated_temp_flag_1354) {
     resetFields.forEach(key => {
       config[key] = default_config[key]
+      storageConfig.put(key, default_config[key])
     })
-    storageConfig.put('updated_temp_flag_1347', false)
+    storageConfig.put('updated_temp_flag_1354', false)
   }
 }
