@@ -20,10 +20,10 @@ activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LI
 // ---修改状态栏颜色 end--
 
 let dateFormat = require('./lib/DateUtil.js')
+let { config, default_config, storage_name } = require('./config.js')(runtime, this)
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 let FileUtils = singletonRequire('FileUtils')
 let AesUtil = require('./lib/AesUtil.js')
-let { config, default_config, storage_name } = require('./config.js')(runtime, this)
 let commonFunctions = singletonRequire('CommonFunction')
 config.hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
 if (config.device_width < 10 || config.device_height < 10) {

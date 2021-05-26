@@ -6,10 +6,10 @@
  * @Description: 
  */ 
 
+let { config: _config } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let commonFunctions = singletonRequire('CommonFunction')
-let { config: _config } = require('../config.js')(runtime, this)
 _config.show_debug_log = true
 let automator = singletonRequire('Automator')
 let {
