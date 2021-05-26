@@ -248,7 +248,7 @@ function Ant_forest () {
     } else {
       debugInfo('未找到能量球')
     }
-    
+
     toasts.forEach(function (toast) {
       let countdown = toast.match(/\d+/g)
       if (countdown !== null && countdown.length >= 2) {
@@ -459,7 +459,13 @@ function Ant_forest () {
     let runResult = scanner.start()
     scanner.destory()
     if (runResult) {
-      automator.back()
+      let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?$/, 1000)
+      if (backToForest) {
+        automator.clickCenter(backToForest)
+      } else {
+        automator.back()
+      }
+      sleep(500)
       if (!_widgetUtils.homePageWaiting()) {
         return false
       }

@@ -876,7 +876,8 @@ Vue.component('widget-configs', function (resolve, reject) {
       <van-field v-model="configs.friend_home_check_regex" label="判断是否好友首页" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.friend_name_getting_regex" label="好友名称正则表达式" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.enter_friend_list_ui_content" label="查看更多好友按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
-      <van-field v-model="configs.stroll_end_ui_content" label="逛一逛结束文本" label-width="10em" type="text" placeholder="逛一逛结束文本" input-align="right" />\
+      <tip-block>逛一逛结束按钮影响执行逻辑，请不要随意修改</tip-block>\
+      <van-field v-model="configs.stroll_end_ui_content" label="逛一逛结束返回按钮" label-width="10em" type="text" placeholder="逛一逛结束返回按钮" input-align="right" />\
       <van-field v-model="configs.friend_load_more_content" label="加载好友动态按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.using_protect_content" label="保护罩使用记录" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.help_and_notify" label="帮助收取，提醒按钮" label-width="10em" type="text" placeholder="请输入提醒按钮控件文本" input-align="right" />\
