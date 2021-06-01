@@ -195,6 +195,7 @@ let default_config = {
   package_name: 'com.eg.android.AlipayGphone',
   auto_check_update: true,
   github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest',
+  release_access_token: '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',
   enable_watering_cooperation: false,
   watering_cooperation_name: '',
   watering_cooperation_amount: '',
@@ -209,13 +210,15 @@ let auto_generate_config = {
   stroll_button_width: null,
   stroll_button_height: null,
 }
+// 文件更新后直接生效，不使用缓存的值
+let no_cache_configs = ['release_access_token']
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
 let config = {}
 let storageConfig = storages.create(CONFIG_STORAGE_NAME)
 Object.keys(default_config).forEach(key => {
   let storedVal = storageConfig.get(key)
-  if (typeof storedVal !== 'undefined') {
+  if (typeof storedVal !== 'undefined' && no_cache_configs.indexOf(key) < 0) {
     config[key] = storedVal
   } else {
     config[key] = default_config[key]
