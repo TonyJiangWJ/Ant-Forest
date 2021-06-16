@@ -65,3 +65,15 @@ let app = new Vue({
     // document.getElementById('app').style.minHeight = this.clientHeight + 'px'
   }
 })
+
+// 直接浏览器调试时，mock js bridge方法
+if (typeof $app === 'undefined') {
+  window.$app = {
+    invoke: (bridgeName, data, callback) => {},
+    receiveMessage: params => {},
+    registerFunction: (functionName, func) => {}
+  }
+  window.$nativeApi = {
+    request: (bridgeName, data) => {}
+  }
+}

@@ -350,9 +350,9 @@ const BaseScanner = function () {
           || !point.isHelp && !point.isWatering) {
           self.collect_operated = true
           self.collect_count++
-          automator.click(b.x, b.y)
+          automator.click(b.x + this.getRandomOffset(b), b.y + this.getRandomOffset(b))
           if (idx < clickPoints.length - 1) {
-            sleep(100)
+            this.randomSleep(100)
           }
         } else if (point.isHelp && _config.help_friend) {
           // 帮助收取
@@ -369,6 +369,14 @@ const BaseScanner = function () {
     } else {
       findPointCallback(clickPoints)
     }
+  }
+
+  this.getRandomOffset = function (b) {
+    return Math.random() * b.radius / 2
+  }
+
+  this.randomSleep = function () {
+    sleep(100 + Math.random() * (_config.random_sleep_time || 500))
   }
 
   // 收取能量同时帮好友收取
