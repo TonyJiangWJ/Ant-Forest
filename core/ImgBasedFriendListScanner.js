@@ -191,7 +191,7 @@ const ImgBasedFriendListScanner = function () {
       let height = point.bottom - point.top
       let width = point.right - point.left
       debugForDev(['checkPoints: {}', JSON.stringify(checkPoints)])
-      let p = images.findMultiColors(com.stardust.autojs.core.image.ImageWrapper.ofBitmap(img.getBitmap()), "#ffffff", checkPoints, {
+      let p = images.findMultiColors(_commonFunctions.convertImageFromSingleChannel(img), "#ffffff", checkPoints, {
         region: [
           point.left + width - width / Math.sqrt(2),
           point.top,

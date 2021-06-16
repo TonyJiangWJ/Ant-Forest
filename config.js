@@ -31,6 +31,7 @@ let default_config = {
   // 异步等待截图，当截图超时后重新获取截图 默认开启
   async_waiting_capture: true,
   capture_waiting_time: 500,
+  random_sleep_time: 500,
   max_collect_wait_time: 60,
   show_debug_log: true,
   show_engine_id: false,
