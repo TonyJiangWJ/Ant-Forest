@@ -853,21 +853,18 @@ function Ant_forest () {
           }
         } else {
           debugInfo(['获取到的倒计时时间：{}', _min_countdown])
-          if (_min_countdown > 0) {
-            // 提前10秒左右结束计时
-            let delayTime = 10 / 60.0
-            // 延迟自动启动，用于防止autoJs自动崩溃等情况下导致的问题
-            delayTime += (_config.delayStartTime || 5000) / 60000.0
-            _commonFunctions.setUpAutoStart(_min_countdown - delayTime)
+          let realSleepTime = getRealSleepTime(_min_countdown)
+          if (realSleepTime > 0) {
+            _commonFunctions.setUpAutoStart(realSleepTime)
             _runningQueueDispatcher.removeRunningTask()
             // 如果不驻留悬浮窗  则不延迟，直接关闭
             if (_config.not_lingering_float_window) {
               // 展示一下悬浮窗信息 提示还剩多久启动
-              _commonFunctions.showTextFloaty('脚本将在' + _min_countdown + '分钟后自动执行')
+              _commonFunctions.showTextFloaty('脚本将在' + realSleepTime.toFixed(2) + '分钟后自动执行')
               sleep(3000)
               exit()
             } else {
-              _commonFunctions.commonDelay(_min_countdown - delayTime)
+              _commonFunctions.commonDelay(realSleepTime)
             }
           }
         }
@@ -905,6 +902,28 @@ function Ant_forest () {
       }
       this.endCollect()
     }
+  }
+
+  /**
+   * 根据实际结束时间倒推倒计时时间 
+   * 比如获取到倒计时为1分钟 当前时间为 07:02:30 那么得到倒计时目标执行时间 07:03:30 
+   * 该方法进行调整 07:03:30 => 07:03:00 返回 0.5
+   * 
+   * @param {integer} countdown 倒计时，分
+   * @returns 
+   */
+  function getRealSleepTime (countdown) {
+    if (countdown <= 0) {
+      return 0
+    }
+    debugInfo(['倒计时：{} ', countdown])
+    let now = new Date().getTime()
+    let targetTime = new Date(now + 60000 * countdown)
+    // 对时间取整，07:03:30 => 07:03:00
+    targetTime = new Date(targetTime.getTime() - targetTime.getTime() % 60000)
+    let newCountdown = (targetTime - now) / 60000
+    debugInfo(['重新计算倒计时：{}', newCountdown])
+    return newCountdown > 0 ? newCountdown : 0
   }
 
   return {
