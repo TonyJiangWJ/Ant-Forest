@@ -16,6 +16,8 @@ let default_config = {
   // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
   show_small_floaty: true,
   not_lingering_float_window: false,
+  not_setup_auto_start: false,
+  disable_all_auto_start: false,
   min_floaty_x: 150,
   min_floaty_y: 20,
   min_floaty_color: '#00ff00',
