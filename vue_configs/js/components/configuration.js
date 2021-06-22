@@ -24,6 +24,8 @@ Vue.component('sample-configs', function (resolve, reject) {
           min_floaty_x: '',
           min_floaty_y: '',
           not_lingering_float_window: false,
+          not_setup_auto_start: false,
+          disable_all_auto_start: false,
           show_debug_log: false,
           show_engine_id: false,
           save_log_file: false,
@@ -257,7 +259,9 @@ Vue.component('sample-configs', function (resolve, reject) {
         <van-cell center title="当前偏移量">\
           <span>{{configs.auto_set_bang_offset ? "下次执行时重新识别": configs.bang_offset}}</span>\
         </van-cell>\
-        <switch-cell title="不驻留前台" label="是否在脚本执行完成后不驻留前台，关闭倒计时悬浮窗" title-style="flex:3;" v-model="configs.not_lingering_float_window" />\
+        <switch-cell title="不自动设置定时任务" label="是否在脚本执行完成后不自动设置定时任务，仅保留倒计时悬浮窗" title-style="flex:3;" v-model="configs.not_setup_auto_start" />\
+        <switch-cell v-if="configs.not_setup_auto_start" title="完全关闭定时任务功能" label="完全禁止脚本设置定时任务，开启后自动重启功能将无法使用" title-style="flex:3;" v-model="configs.disable_all_auto_start" />\
+        <switch-cell v-if="!configs.not_setup_auto_start" title="不驻留前台" label="是否在脚本执行完成后不驻留前台，关闭倒计时悬浮窗" title-style="flex:3;" v-model="configs.not_lingering_float_window" />\
       </van-cell-group>\
       <van-divider content-position="left">日志配置</van-divider>\
       <van-cell-group>\

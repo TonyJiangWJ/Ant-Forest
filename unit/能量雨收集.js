@@ -176,9 +176,7 @@ clickButtonWindow.changeStatus.click(function () {
 })
 
 clickButtonWindow.closeBtn.click(function () {
-  threadPool.execute(function () {
     exitAndClean()
-  })
 })
 
 ui.run(function () {
@@ -258,10 +256,13 @@ function exitAndClean () {
   if (window !== null) {
     window.canvas.removeAllListeners()
     toastLog('close in 1 seconds')
-    sleep(1000)
-    window.close()
+    setTimeout(function () {
+      window.close()
+      exit()
+    }, 1000)
+  } else {
+    exit()
   }
-  exit()
 }
 
 commonFunction.registerOnEngineRemoved(function () {
