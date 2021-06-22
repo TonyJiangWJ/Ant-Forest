@@ -255,6 +255,12 @@ let bridgeHandler = {
     log('移除保护罩使用记录：' + data.name)
     commonFunctions.removeFromProtectList(data.name)
     postMessageToWebView({ callbackId: callbackId, data: { success: true } })
+  },
+  startRainCollect: () => {
+    postMessageToWebView({ functionName: 'saveBasicConfigs' })
+    ui.run(function () {
+      engines.execScriptFile(mainScriptPath + "/unit/能量雨收集.js", { path: mainScriptPath + "/unit/" })
+    })
   }
 }
 postMessageToWebView = prepareWebView(ui.webview, {

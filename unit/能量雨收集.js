@@ -88,7 +88,15 @@ threadPool.execute(function () {
     if (screen) {
       debugInfo(['请求截图成功：{}ms', new Date().getTime() - start])
       try {
-        passedTime = new Date().getTime() - startTimestamp
+        passedTime = (new Date().getTime() - startTimestamp) / 1000
+        if (!isTest && config.rain_collect_debug_mode && passedTime >= 13) {
+          automator.back()
+          isTest = true
+          changeButtonInfo()
+        } else if (!isTest && passedTime > 20) {
+          isTest = true
+          changeButtonInfo()
+        }
         if (recognize_region === null) {
           recognize_region = [0, screen.height * 0.1, screen.width, screen.height * 0.3]
         }
@@ -98,7 +106,11 @@ threadPool.execute(function () {
           writeLock.lock()
           try {
             clickPoint = point
-            clickOffset = passedTime >= 9 ? cvt(100) : cvt(50)
+            if (config.use_maintain_click_offset) {
+              clickOffset = passedTime >= 9 ? config.maintain_click_offset_after || cvt(100) : config.maintain_click_offset_before || cvt(50)
+            } else {
+              clickOffset = passedTime >= 9 ? cvt(100) : cvt(50)
+            }
             ballsComplete.signal()
             // 等待点击完毕
             clickComplete.await()
@@ -159,6 +171,9 @@ let clickButtonWindow = floaty.rawWindow(
       <button id="changeStatus" text="开始点击" />
     </vertical>
     <vertical>
+      <button id="delayClose" text="续命" />
+    </vertical>
+    <vertical>
       <button id="closeBtn" text="关闭" />
     </vertical>
   </vertical>
@@ -176,12 +191,16 @@ clickButtonWindow.changeStatus.click(function () {
 })
 
 clickButtonWindow.closeBtn.click(function () {
-    exitAndClean()
+  exitAndClean()
+})
+
+clickButtonWindow.delayClose.click(function () {
+  targetEndTime = new Date().getTime() + 120000
 })
 
 ui.run(function () {
   clickButtonWindow.changeStatus.setBackgroundColor(colors.parseColor('#9ed900'))
-  clickButtonWindow.setPosition(cvt(100), config.device_height * 0.75)
+  clickButtonWindow.setPosition(cvt(100), config.device_height * 0.7)
 })
 
 window.canvas.on("draw", function (canvas) {
@@ -207,8 +226,11 @@ window.canvas.on("draw", function (canvas) {
     let countdown = (targetEndTime - new Date().getTime()) / 1000
     drawText('请进入能量雨界面并手动开始，音量上键可关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 200 }, canvas, paint)
     drawText('将在' + countdown.toFixed(0) + 's后自动关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 150 }, canvas, paint)
-    drawText('音量下键进入' + (isTest ? '点击模式' : '识别模式'), { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#ff0000')
+    drawText('音量下键进入' + (isTest ? '点击模式' : '识别模式') + ' 点击偏移量：' + clickOffset, { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#ff0000')
     drawText('如果漏收严重，请清理手机后台避免卡顿', { x: displayInfoZone[0], y: displayInfoZone[1] - 50 }, canvas, paint, '#00ff00')
+    if (config.rain_collect_debug_mode) {
+      drawText(passedTime + ' config:' + config.use_maintain_click_offset + ' ' + config.maintain_click_offset_after + ',' + config.maintain_click_offset_before, { x: displayInfoZone[0], y: displayInfoZone[1] }, canvas, paint, '#00ff00')
+    }
     passwindow = new Date().getTime() - startTime
 
     if (isTest) {
@@ -246,7 +268,11 @@ threads.start(function () {
   })
 })
 
-setTimeout(function () { exitAndClean() }, 120000)
+setInterval(function () { 
+  if (targetEndTime < new Date().getTime()) {
+    exitAndClean() 
+  }
+}, 1000)
 
 function exitAndClean () {
   if (!isRunning) {
