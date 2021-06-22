@@ -203,6 +203,11 @@ let default_config = {
   watering_cooperation_name: '',
   watering_cooperation_amount: '',
   watering_cooperation_threshold: '',
+  // 能量雨设置
+  use_maintain_click_offset: false,
+  rain_collect_debug_mode: false,
+  maintain_click_offset_before: null,
+  maintain_click_offset_after: null,
   // 更新后需要强制执行的标记
   updated_temp_flag_1354: true
 }

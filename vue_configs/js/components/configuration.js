@@ -67,6 +67,10 @@ Vue.component('sample-configs', function (resolve, reject) {
           watering_cooperation_name: '',
           watering_cooperation_amount: '',
           watering_cooperation_threshold: '',
+          use_maintain_click_offset: false,
+          rain_collect_debug_mode: false,
+          maintain_click_offset_before: null,
+          maintain_click_offset_after: null,
         },
         device: {
           pos_x: 0,
@@ -133,6 +137,9 @@ Vue.component('sample-configs', function (resolve, reject) {
       },
       distanceSensorChange: function (data) {
         this.device.distance = data.distance
+      },
+      startRainCollect: function () {
+        $app.invoke('startRainCollect', {})
       }
     },
     computed: {
@@ -177,6 +184,17 @@ Vue.component('sample-configs', function (resolve, reject) {
       $app.registerFunction('reloadBasicConfigs', this.loadConfigs)
     },
     template: '<div>\
+      <van-divider content-position="left">\
+        能量雨设置\
+        <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="startRainCollect">启动能量雨</van-button>\
+      </van-divider>\
+      <van-cell-group>\
+        <switch-cell title="使用自定义点击偏移量" label="具体值自行调试，理论上1080P的使用默认机制即可" title-style="width: 12em;flex:2;" v-model="configs.use_maintain_click_offset" />\
+        <tip-block v-if="configs.use_maintain_click_offset" >能量雨在9秒后会有个小加速，因此设置9秒前和9秒后的两个偏移量即可，或者两个都设置为同样的值也可以，1080P下可以都为100</tip-block>\
+        <number-field v-if="configs.use_maintain_click_offset" label-width="8em" v-model="configs.maintain_click_offset_before" label="9秒前点击偏移量" placeholder="使用默认机制请留空" />\
+        <number-field v-if="configs.use_maintain_click_offset" label-width="8em" v-model="configs.maintain_click_offset_after" label="9秒后点击偏移量" placeholder="使用默认机制请留空" />\
+        <switch-cell title="调试模式" label="开始点击约13秒后自动返回退出，防止消耗机会" title-style="width: 12em;flex:2;" v-model="configs.rain_collect_debug_mode" />\
+      </van-cell-group>\
       <van-divider content-position="left">收集配置</van-divider>\
       <van-cell-group>\
         <switch-cell title="是否帮助收取" label="帮助收取会发送好友消息，容易打扰别人，不建议开启" title-style="flex:3.5;" v-model="configs.help_friend" />\
