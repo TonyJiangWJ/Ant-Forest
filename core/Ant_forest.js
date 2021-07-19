@@ -852,6 +852,7 @@ function Ant_forest () {
             exit()
           }
         } else {
+          _commonFunctions.exitIfCoolDown()
           debugInfo(['获取到的倒计时时间：{}', _min_countdown])
           let realSleepTime = getRealSleepTime(_min_countdown)
           if (realSleepTime > 0) {

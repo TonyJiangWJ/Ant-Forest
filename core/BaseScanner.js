@@ -318,10 +318,10 @@ const BaseScanner = function () {
         // 浇水能量球
         collectableBall.isWatering = true
         recheck = this.is_own
-      } else if (!this.is_own && avgBottom > COLLECTING_THRESHOLD) {
+      } /* else if (!this.is_own && avgBottom > COLLECTING_THRESHOLD) {
         // 判定为帮收
         collectableBall.isHelp = true
-      } else if (avgForCollectable < COLLECTING_THRESHOLD) {
+      } */ else if (avgForCollectable < COLLECTING_THRESHOLD) {
         // 非帮助或可收取, 大于25的则是可收取的，否则为无效球
         collectableBall.invalid = true
       }

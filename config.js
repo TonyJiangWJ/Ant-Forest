@@ -42,6 +42,10 @@ let default_config = {
   check_device_posture: false,
   check_distance: false,
   posture_threshold_z: 6,
+  // 执行冷却
+  cool_down_if_coolect_too_much: true,
+  cool_down_per_increase: 1000,
+  cool_down_minutes: 60,
   // 电量保护，低于该值延迟60分钟执行脚本
   battery_keep_threshold: 20,
   // 开发用开关，截图并保存一些图片

@@ -261,6 +261,13 @@ let bridgeHandler = {
     ui.run(function () {
       engines.execScriptFile(mainScriptPath + "/unit/能量雨收集.js", { path: mainScriptPath + "/unit/" })
     })
+  },
+  cancelCurrentCoolDown: () => {
+    commonFunctions.cancelCurrentCoolDown()
+    toastLog('撤销成功')
+  },
+  checkIfInCooldwon: (data, callbackId) => {
+    postMessageToWebView({ callbackId: callbackId, data: { coolDownInfo: commonFunctions.checkIfNeedCoolDown() } })
   }
 }
 postMessageToWebView = prepareWebView(ui.webview, {

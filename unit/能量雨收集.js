@@ -31,6 +31,7 @@ if (!commonFunction.requestScreenCaptureOrRestart(true)) {
   toastLog('获取截图权限失败，无法执行')
   exit()
 }
+config.show_debug_log = false
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
 commonFunction.autoSetUpBangOffset(true)
 runningQueueDispatcher.addRunningTask()
@@ -60,7 +61,7 @@ let startTime = new Date().getTime()
 // 两分钟后自动关闭
 let targetEndTime = startTime + 120000
 let passwindow = 0
-let isTest = true
+let disableClick = true
 let isRunning = true
 let isWaiting = true
 let displayInfoZone = [config.device_width * 0.05, config.device_height * 0.7, config.device_width * 0.9, 150 * config.scaleRate]
@@ -69,6 +70,11 @@ let clickComplete = writeLock.newCondition()
 let ballsComplete = writeLock.newCondition()
 let clickPoint = null
 
+// 是否启用暴力点击
+let enableViolent = true
+// 暴力点击的区域
+let violentClickPoints = [200, 350, 550, 750, 900].map(v => [cvt(v), cvt(300)])
+let VIOLENT_CLICK_TIME = config.rain_collect_debug_mode ? 13 : 18
 
 let recognize_region = null
 
@@ -78,7 +84,7 @@ let passedTime = 0
 let clickOffset = 0
 threadPool.execute(function () {
   while (isRunning) {
-    if (isWaiting) {
+    if (isWaiting || enableViolent) {
       sleep(100)
       continue
     }
@@ -89,16 +95,16 @@ threadPool.execute(function () {
       debugInfo(['请求截图成功：{}ms', new Date().getTime() - start])
       try {
         passedTime = (new Date().getTime() - startTimestamp) / 1000
-        if (!isTest && config.rain_collect_debug_mode && passedTime >= 13) {
+        if (!disableClick && config.rain_collect_debug_mode && passedTime >= 13) {
           automator.back()
-          isTest = true
+          disableClick = true
           changeButtonInfo()
-        } else if (!isTest && passedTime > 20) {
-          isTest = true
+        } else if (!disableClick && passedTime > 20) {
+          disableClick = true
           changeButtonInfo()
         }
         if (recognize_region === null) {
-          recognize_region = [0, screen.height * 0.1, screen.width, screen.height * 0.3]
+          recognize_region = [0, screen.height * 0.1, screen.width, screen.height * 0.25]
         }
         let point = images.findColor(screen, '#CDFF00', { region: recognize_region, threshold: 1 })
         if (point) {
@@ -112,14 +118,19 @@ threadPool.execute(function () {
               clickOffset = passedTime >= 9 ? cvt(100) : cvt(50)
             }
             ballsComplete.signal()
-            // 等待点击完毕
-            clickComplete.await()
+            if (enableViolent) {
+              // 暴力模式直接等待100ms
+              sleep(100)
+            } else {
+              // 等待点击完毕
+              clickComplete.await()
+            }
           } finally {
             writeLock.unlock()
           }
         } else {
           debugInfo(['no ball found cost: {}', new Date().getTime() - start])
-          if (++noBallCount >= 3) {
+          if (++noBallCount >= 3 && !enableViolent) {
             // 重新开始
             startTimestamp = new Date().getTime()
           }
@@ -137,27 +148,47 @@ threadPool.execute(function () {
 // 点击线程
 threadPool.execute(function () {
   while (isRunning) {
-    writeLock.lock()
-    while (clickPoint == null) {
-      debugInfo(['图片未识别完成，等待'])
-      ballsComplete.await()
-    }
-    try {
-      debugInfo(['图片识别识别完成，得到球位置：{},{}', clickPoint.x, clickPoint.y])
-      let start = new Date().getTime()
-      if (isTest) {
-        sleep(150)
-      } else {
-        automator.click(clickPoint.x, clickPoint.y + clickOffset)
+    if (enableViolent) {
+      writeLock.lock()
+      try {
+        passedTime = (new Date().getTime() - startTimestamp) / 1000
+      } finally {
+        writeLock.unlock()
       }
-      debugInfo(['点击完毕 耗时：{}ms', new Date().getTime() - start])
-      clickPoint = null
-      clickComplete.signal()
-    } catch (e) {
-      errorInfo('点击线程执行异常：' + e)
-      commonFunction.printExceptionStack(e)
-    } finally {
-      writeLock.unlock()
+      if (!disableClick) {
+        // 暴力点击方式执行
+        if (passedTime <= VIOLENT_CLICK_TIME) {
+          violentClickPoints.forEach(p => press(p[0], p[1], 7))
+        } else {
+          infoLog('暴力点击完毕')
+          disableClick = true
+          changeButtonInfo()
+        }
+      }
+    } else {
+      writeLock.lock()
+      while (clickPoint == null && !enableViolent) {
+        debugInfo(['图片未识别完成，等待'])
+        ballsComplete.await()
+      }
+      try {
+        debugInfo(['图片识别识别完成，得到球位置：{},{}', clickPoint.x, clickPoint.y])
+        let start = new Date().getTime()
+        if (disableClick) {
+          sleep(150)
+        } else {
+          automator.click(clickPoint.x, clickPoint.y + clickOffset)
+          sleep(30)
+        }
+        debugInfo(['点击完毕 耗时：{}ms', new Date().getTime() - start])
+        clickPoint = null
+        clickComplete.signal()
+      } catch (e) {
+        errorInfo('点击线程执行异常：' + e)
+        commonFunction.printExceptionStack(e)
+      } finally {
+        writeLock.unlock()
+      }
     }
   }
 })
@@ -169,6 +200,9 @@ let clickButtonWindow = floaty.rawWindow(
     </vertical>
     <vertical>
       <button id="changeStatus" text="开始点击" />
+    </vertical>
+    <vertical>
+      <button id="changeViolent" text="启用识别点击" />
     </vertical>
     <vertical>
       <button id="delayClose" text="续命" />
@@ -186,8 +220,26 @@ clickButtonWindow.openRainPage.click(function () {
 })
 
 clickButtonWindow.changeStatus.click(function () {
-  isTest = !isTest
+  if (disableClick) {
+    writeLock.lock()
+    try {
+      disableClick = false
+      startTimestamp = new Date().getTime()
+      ballsComplete.signal()
+    } finally {
+      writeLock.unlock()
+    }
+  } else {
+    disableClick = true
+  }
   changeButtonInfo()
+})
+
+clickButtonWindow.changeViolent.click(function () {
+  if (disableClick) {
+    enableViolent = !enableViolent
+    changeButtonInfo()
+  }
 })
 
 clickButtonWindow.closeBtn.click(function () {
@@ -199,8 +251,8 @@ clickButtonWindow.delayClose.click(function () {
 })
 
 ui.run(function () {
-  clickButtonWindow.changeStatus.setBackgroundColor(colors.parseColor('#9ed900'))
-  clickButtonWindow.setPosition(cvt(100), config.device_height * 0.7)
+  clickButtonWindow.setPosition(cvt(100), config.device_height * 0.65)
+  changeButtonInfo()
 })
 
 window.canvas.on("draw", function (canvas) {
@@ -219,21 +271,28 @@ window.canvas.on("draw", function (canvas) {
     paint.setStrokeJoin(Paint.Join.ROUND)
     paint.setDither(true)
 
-    recognize_region != null && drawRectAndText('识别区域', recognize_region, '#888888', canvas, paint)
+    if (enableViolent) {
+      violentClickPoints.forEach(v => drawRectAndText('click', [v[0] - 5, v[1] - 5, 10, 10], '#ff0000', canvas, paint))
+    } else {
+      recognize_region != null && drawRectAndText('识别区域', recognize_region, '#888888', canvas, paint)
+    }
 
     // 倒计时
     paint.setTextSize(30)
     let countdown = (targetEndTime - new Date().getTime()) / 1000
     drawText('请进入能量雨界面并手动开始，音量上键可关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 200 }, canvas, paint)
     drawText('将在' + countdown.toFixed(0) + 's后自动关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 150 }, canvas, paint)
-    drawText('音量下键进入' + (isTest ? '点击模式' : '识别模式') + ' 点击偏移量：' + clickOffset, { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#ff0000')
+    drawText('音量下键进入' + (disableClick ? '点击模式' : '识别模式') + ' 点击偏移量：' + clickOffset, { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#ff0000')
     drawText('如果漏收严重，请清理手机后台避免卡顿', { x: displayInfoZone[0], y: displayInfoZone[1] - 50 }, canvas, paint, '#00ff00')
+    if (enableViolent) {
+      drawText('点击倒计时：' + (VIOLENT_CLICK_TIME - passedTime).toFixed(1) + 's', { x: displayInfoZone[0], y: displayInfoZone[1] }, canvas, paint, '#00ff00')
+    }
     if (config.rain_collect_debug_mode) {
-      drawText(passedTime + ' config:' + config.use_maintain_click_offset + ' ' + config.maintain_click_offset_after + ',' + config.maintain_click_offset_before, { x: displayInfoZone[0], y: displayInfoZone[1] }, canvas, paint, '#00ff00')
+      drawText(passedTime + ' config:' + config.use_maintain_click_offset + ' ' + config.maintain_click_offset_after + ',' + config.maintain_click_offset_before, { x: displayInfoZone[0], y: displayInfoZone[1] + 50 }, canvas, paint, '#00ff00')
     }
     passwindow = new Date().getTime() - startTime
 
-    if (isTest) {
+    if (disableClick) {
       let displayBallPoint = clickPoint
       if (displayBallPoint) {
         let radius = cvt(60)
@@ -261,16 +320,16 @@ threads.start(function () {
       // 设置最低间隔200毫秒，避免修改太快
       if (new Date().getTime() - lastChangedTime > 200) {
         lastChangedTime = new Date().getTime()
-        isTest = !isTest
+        disableClick = !disableClick
         changeButtonInfo()
       }
     }
   })
 })
 
-setInterval(function () { 
+setInterval(function () {
   if (targetEndTime < new Date().getTime()) {
-    exitAndClean() 
+    exitAndClean()
   }
 }, 1000)
 
@@ -302,8 +361,9 @@ commonFunction.registerOnEngineRemoved(function () {
 
 function changeButtonInfo () {
   isWaiting = false
-  clickButtonWindow.changeStatus.setText(isTest ? '开始点击' : '停止点击')
-  clickButtonWindow.changeStatus.setBackgroundColor(isTest ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
+  clickButtonWindow.changeStatus.setText(disableClick ? '开始点击' : '停止点击')
+  clickButtonWindow.changeStatus.setBackgroundColor(disableClick ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
+  clickButtonWindow.changeViolent.setText(enableViolent ? '启用识别点击' : '启用暴力点击')
 }
 
 function convertArrayToRect (a) {
