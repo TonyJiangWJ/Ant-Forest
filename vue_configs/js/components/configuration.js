@@ -71,7 +71,12 @@ Vue.component('sample-configs', function (resolve, reject) {
           rain_collect_debug_mode: false,
           maintain_click_offset_before: null,
           maintain_click_offset_after: null,
+          // 执行冷却
+          cool_down_if_coolect_too_much: true,
+          cool_down_per_increase: 1000,
+          cool_down_minutes: 60,
         },
+        currentInCoolDown: false,
         device: {
           pos_x: 0,
           pos_y: 0,
@@ -118,7 +123,30 @@ Vue.component('sample-configs', function (resolve, reject) {
               }
               return ''
             }
-          }
+          },
+          cool_down_per_increase: {
+            validate: () => false,
+            message: v => {
+              if (v) {
+                if (isNaN(v) || parseInt(v) <= 0) {
+                  return '请输入一个正整数'
+                }
+              }
+              return ''
+            }
+          },
+          cool_down_minutes: {
+            validate: () => false,
+            message: v => {
+              if (v) {
+                let coolDownMinutes = this.configs.cool_down_minutes
+                if (isNaN(coolDownMinutes) || parseInt(coolDownMinutes) <= 0) {
+                  return '请输入一个正整数'
+                }
+              }
+              return ''
+            }
+          },
         }
       }
     },
@@ -140,6 +168,9 @@ Vue.component('sample-configs', function (resolve, reject) {
       },
       startRainCollect: function () {
         $app.invoke('startRainCollect', {})
+      },
+      cancelCurrentCoolDown: function () {
+        $app.invoke('cancelCurrentCoolDown', {})
       }
     },
     computed: {
@@ -182,6 +213,9 @@ Vue.component('sample-configs', function (resolve, reject) {
       $app.registerFunction('gravitySensorChange', this.gravitySensorChange)
       $app.registerFunction('distanceSensorChange', this.distanceSensorChange)
       $app.registerFunction('reloadBasicConfigs', this.loadConfigs)
+      $nativeApi.request('checkIfInCooldwon', {}).then(resp => {
+        this.currentInCoolDown = resp.coolDownInfo.coolDown
+      })
     },
     template: '<div>\
       <van-divider content-position="left">\
@@ -197,6 +231,18 @@ Vue.component('sample-configs', function (resolve, reject) {
       </van-cell-group>\
       <van-divider content-position="left">收集配置</van-divider>\
       <van-cell-group>\
+        <switch-cell title="执行冷却" label="为了避免被支付宝检测为异常，设置一个阈值，达到该值后暂停收集一段时间" title-style="flex:3.5;" v-model="configs.cool_down_if_coolect_too_much" />\
+        <template v-if="configs.cool_down_if_coolect_too_much">\
+          <tip-block>当一个脚本活动周期内累计收取了这个值之后，将暂停收集配置的时间。默认收集1000克后冷却60分钟\
+          <van-button v-if="currentInCoolDown" style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="cancelCurrentCoolDown">撤销当前冷却</van-button>\
+          </tip-block>\
+         <number-field v-model="configs.cool_down_per_increase" :error-message="validationError.cool_down_per_increase" error-message-align="right" label="收集阈值" type="text" placeholder="请输入收集阈值" input-align="right" >\
+            <template #right-icon><span>克</span></template>\
+          </number-field>\
+         <number-field v-model="configs.cool_down_minutes" :error-message="validationError.cool_down_minutes" error-message-align="right" label="冷却时间" type="text" placeholder="请输入冷却时间" input-align="right" >\
+            <template #right-icon><span>分</span></template>\
+          </number-field>\
+        </template>\
         <switch-cell title="是否帮助收取" label="帮助收取会发送好友消息，容易打扰别人，不建议开启" title-style="flex:3.5;" v-model="configs.help_friend" />\
         <switch-cell title="是否循环" v-model="configs.is_cycle" />\
         <number-field v-if="configs.is_cycle" v-model="configs.cycle_times" label="循环次数" placeholder="请输入单次运行循环次数" />\
