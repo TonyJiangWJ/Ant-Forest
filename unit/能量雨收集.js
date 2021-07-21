@@ -64,7 +64,7 @@ let passwindow = 0
 let disableClick = true
 let isRunning = true
 let isWaiting = true
-let displayInfoZone = [config.device_width * 0.05, config.device_height * 0.7, config.device_width * 0.9, 150 * config.scaleRate]
+let displayInfoZone = [config.device_width * 0.05, config.device_height * 0.65, config.device_width * 0.9, 150 * config.scaleRate]
 let writeLock = threads.lock()
 let clickComplete = writeLock.newCondition()
 let ballsComplete = writeLock.newCondition()
@@ -194,7 +194,7 @@ threadPool.execute(function () {
 })
 
 let clickButtonWindow = floaty.rawWindow(
-  <vertical padding="8">
+  <vertical padding="1">
     <vertical>
       <button id="openRainPage" text="打开能量雨界面" />
     </vertical>
@@ -221,13 +221,22 @@ clickButtonWindow.openRainPage.click(function () {
 
 clickButtonWindow.changeStatus.click(function () {
   if (disableClick) {
-    writeLock.lock()
-    try {
-      disableClick = false
-      startTimestamp = new Date().getTime()
-      ballsComplete.signal()
-    } finally {
-      writeLock.unlock()
+    let startBtn = widgetUtils.widgetGetOne('开始拯救绿色能量', 1000)
+    if (startBtn) {
+      threadPool.execute(function () {
+        writeLock.lock()
+        try {
+          automator.clickCenter(startBtn)
+          disableClick = false
+          startTimestamp = new Date().getTime()
+          ballsComplete.signal()
+          changeButtonInfo()
+        } finally {
+          writeLock.unlock()
+        }
+      })
+    } else {
+      warnInfo(['未能找到开始拯救按钮，可能已经没有机会了'], true)
     }
   } else {
     disableClick = true
@@ -361,7 +370,7 @@ commonFunction.registerOnEngineRemoved(function () {
 
 function changeButtonInfo () {
   isWaiting = false
-  clickButtonWindow.changeStatus.setText(disableClick ? '开始点击' : '停止点击')
+  clickButtonWindow.changeStatus.setText(disableClick ? '开始点击' : enableViolent ? '音量下停止点击' : '停止点击')
   clickButtonWindow.changeStatus.setBackgroundColor(disableClick ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
   clickButtonWindow.changeViolent.setText(enableViolent ? '启用识别点击' : '启用暴力点击')
 }
