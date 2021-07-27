@@ -60,8 +60,13 @@
         </van-col>
       </van-row>
       <van-divider :style="{ margin: '0' }"></van-divider>
-      <van-row type="flex" justify="center" class="van-cell" style="margin-bottom: 2rem;">
+      <van-row type="flex" justify="center" class="van-cell" >
         <van-col @click="restoreRuntimeStorage">从备份文件中导入运行时数据
+        </van-col>
+      </van-row>
+      <van-divider :style="{ margin: '0' }"></van-divider>
+      <van-row type="flex" justify="center" class="van-cell" style="margin-bottom: 2rem;">
+        <van-col @click="doUpdate">更新脚本
         </van-col>
       </van-row>
     </van-dialog>
