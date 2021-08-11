@@ -124,6 +124,9 @@ let default_config = {
   // 秘钥
   secretKey: '',
   my_id: '',
+  suspend_on_alarm_clock: false,
+  suspend_alarm_content: '滑动关闭闹钟',
+  delay_start_pay_code_content: '向商家付(钱|款)',
   home_ui_content: '查看更多动态.*',
   friend_home_check_regex: '你收取TA|TA收取你',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
@@ -202,6 +205,10 @@ let default_config = {
   package_name: 'com.eg.android.AlipayGphone',
   auto_check_update: true,
   github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest',
+  gitee_relase_url: 'https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/releases/latest',
+  history_tag_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/tags',
+  gitee_package_prefix: 'Ant-Forest-',
+  gitee_package_url: 'https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/',
   release_access_token: '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',
   enable_watering_cooperation: false,
   watering_cooperation_name: '',
@@ -212,6 +219,7 @@ let default_config = {
   rain_collect_debug_mode: false,
   maintain_click_offset_before: null,
   maintain_click_offset_after: null,
+  auto_start_rain: false,
   // 更新后需要强制执行的标记
   updated_temp_flag_1354: true
 }

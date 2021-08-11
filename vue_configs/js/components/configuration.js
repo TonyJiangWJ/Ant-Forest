@@ -883,6 +883,9 @@ Vue.component('widget-configs', function (resolve, reject) {
       return {
         configs: {
           my_id: '',
+          suspend_on_alarm_clock: false,
+          suspend_alarm_content: '滑动关闭闹钟',
+          delay_start_pay_code_content: '向商家付(钱|款)',
           home_ui_content: '查看更多动态.*',
           friend_home_check_regex: '你收取TA|TA收取你',
           friend_name_getting_regex: '(.*)的蚂蚁森林',
@@ -940,6 +943,10 @@ Vue.component('widget-configs', function (resolve, reject) {
       <tip-block>一般情况下不需要修改这一块的配置，除非你的支付宝是英文的</tip-block>\
       <tip-block>我的ID主要用来准确获取当前收集的能量数据，可不配置</tip-block>\
       <van-field v-model="configs.my_id" label="我的ID" type="text" placeholder="" input-align="right" />\
+      <switch-cell title="闹钟响铃时暂停执行" title-style="width: 12em;flex:2;" v-model="configs.suspend_on_alarm_clock" />\
+      <van-field v-if="configs.suspend_on_alarm_clock" v-model="configs.suspend_alarm_content" label="闹钟响铃文本" type="text" placeholder="请输入闹钟响铃文本" input-align="right" />\
+      <tip-block>配置在支付码界面时延迟5分钟执行，避免打断日常支付操作</tip-block>\
+      <van-field v-model="configs.delay_start_pay_code_content" label="支付码界面文本" label-width="10em" type="text" placeholder="请输入支付码界面文本" input-align="right" />\
       <van-field v-model="configs.home_ui_content" label="个人首页" type="text" placeholder="请输入个人首页控件文本" input-align="right" />\
       <van-field v-model="configs.friend_home_check_regex" label="判断是否好友首页" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\
       <van-field v-model="configs.friend_name_getting_regex" label="好友名称正则表达式" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />\

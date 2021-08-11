@@ -59,7 +59,7 @@ let threadPool = new ThreadPoolExecutor(4, 4, 60,
 )
 let startTime = new Date().getTime()
 // 两分钟后自动关闭
-let targetEndTime = startTime + 120000
+let targetEndTime = startTime + (config.auto_start_rain ? 30000 : 120000)
 let passwindow = 0
 let disableClick = true
 let isRunning = true
@@ -221,23 +221,7 @@ clickButtonWindow.openRainPage.click(function () {
 
 clickButtonWindow.changeStatus.click(function () {
   if (disableClick) {
-    let startBtn = widgetUtils.widgetGetOne('开始拯救绿色能量', 1000)
-    if (startBtn) {
-      threadPool.execute(function () {
-        writeLock.lock()
-        try {
-          automator.clickCenter(startBtn)
-          disableClick = false
-          startTimestamp = new Date().getTime()
-          ballsComplete.signal()
-          changeButtonInfo()
-        } finally {
-          writeLock.unlock()
-        }
-      })
-    } else {
-      warnInfo(['未能找到开始拯救按钮，可能已经没有机会了'], true)
-    }
+    checkAndStartCollect()
   } else {
     disableClick = true
   }
@@ -259,10 +243,37 @@ clickButtonWindow.delayClose.click(function () {
   targetEndTime = new Date().getTime() + 120000
 })
 
+function checkAndStartCollect () {
+  let startBtn = widgetUtils.widgetGetOne('开始拯救绿色能量|再来一次', 1000)
+  if (startBtn) {
+    let ended = widgetUtils.widgetGetOne('每天都可以来拯救哦', 1000)
+    if (ended) {
+      warnInfo(['今日机会已用完或者需要好友助力'], true)
+      return
+    } 
+    threadPool.execute(function () {
+      writeLock.lock()
+      try {
+        automator.clickCenter(startBtn)
+        disableClick = false
+        startTimestamp = new Date().getTime()
+        ballsComplete.signal()
+        changeButtonInfo()
+      } finally {
+        writeLock.unlock()
+      }
+    })
+  } else {
+    warnInfo(['未能找到开始拯救按钮，可能已经没有机会了'], true)
+  }
+}
+
 ui.run(function () {
   clickButtonWindow.setPosition(cvt(100), config.device_height * 0.65)
   changeButtonInfo()
 })
+
+config.auto_start_rain && openRainPage()
 
 window.canvas.on("draw", function (canvas) {
   if (!isRunning) {
@@ -291,10 +302,11 @@ window.canvas.on("draw", function (canvas) {
     let countdown = (targetEndTime - new Date().getTime()) / 1000
     drawText('请进入能量雨界面并手动开始，音量上键可关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 200 }, canvas, paint)
     drawText('将在' + countdown.toFixed(0) + 's后自动关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 150 }, canvas, paint)
-    drawText('音量下键进入' + (disableClick ? '点击模式' : '识别模式') + ' 点击偏移量：' + clickOffset, { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#ff0000')
-    drawText('如果漏收严重，请清理手机后台避免卡顿', { x: displayInfoZone[0], y: displayInfoZone[1] - 50 }, canvas, paint, '#00ff00')
     if (enableViolent) {
-      drawText('点击倒计时：' + (VIOLENT_CLICK_TIME - passedTime).toFixed(1) + 's', { x: displayInfoZone[0], y: displayInfoZone[1] }, canvas, paint, '#00ff00')
+      drawText('点击倒计时：' + (VIOLENT_CLICK_TIME - passedTime).toFixed(1) + 's', { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#00ff00')
+    } else {
+      drawText('音量下键进入' + (disableClick ? '点击模式' : '识别模式') + ' 点击偏移量：' + clickOffset, { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#ff0000')
+      drawText('如果漏收严重，请清理手机后台避免卡顿', { x: displayInfoZone[0], y: displayInfoZone[1] - 50 }, canvas, paint, '#00ff00')
     }
     if (config.rain_collect_debug_mode) {
       drawText(passedTime + ' config:' + config.use_maintain_click_offset + ' ' + config.maintain_click_offset_after + ',' + config.maintain_click_offset_before, { x: displayInfoZone[0], y: displayInfoZone[1] + 50 }, canvas, paint, '#00ff00')
@@ -425,6 +437,7 @@ function openRainPage () {
   if (confirm) {
     automator.clickCenter(confirm)
   }
+  widgetUtils.widgetWaiting('.*返回蚂蚁森林.*') && config.auto_start_rain && checkAndStartCollect()
   ui.run(function () {
     clickButtonWindow.openRainPage.setText('打开能量雨界面')
   })

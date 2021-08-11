@@ -25,6 +25,7 @@ let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 let FileUtils = singletonRequire('FileUtils')
 let AesUtil = require('./lib/AesUtil.js')
 let commonFunctions = singletonRequire('CommonFunction')
+let { updateDownloader } = require('./lib/UpdateChecker')
 config.hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
 if (config.device_width < 10 || config.device_height < 10) {
   toastLog('设备分辨率信息不正确，可能无法正常运行脚本, 请先运行一遍main.js以便自动获取分辨率')
@@ -239,6 +240,11 @@ let bridgeHandler = {
           }
         }
       })
+    })
+  },
+  downloadUpdate: () => {
+    threads.start(function () {
+      updateDownloader.downloadUpdate()
     })
   },
   // 测试回调

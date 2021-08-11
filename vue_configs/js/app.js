@@ -50,6 +50,9 @@ let app = new Vue({
     restoreRuntimeStorage: function () {
       $app.invoke('restoreRuntimeStorage')
     },
+    doUpdate: function () {
+      $app.invoke('downloadUpdate')
+    },
     getDialogContainer: function () {
       return document.querySelector('html')
     }
