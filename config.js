@@ -206,6 +206,7 @@ let default_config = {
   auto_check_update: true,
   github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   gitee_relase_url: 'https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/releases/latest',
+  history_tag_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/tags',
   gitee_package_prefix: 'Ant-Forest-',
   gitee_package_url: 'https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/',
   release_access_token: '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',
@@ -218,6 +219,7 @@ let default_config = {
   rain_collect_debug_mode: false,
   maintain_click_offset_before: null,
   maintain_click_offset_after: null,
+  auto_start_rain: false,
   // 更新后需要强制执行的标记
   updated_temp_flag_1354: true
 }
