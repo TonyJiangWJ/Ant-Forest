@@ -4,6 +4,8 @@ var configStorage = storages.create(_storage_name)
 let FileUtils = singletonRequire('FileUtils')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 
+let unlocker = require('../lib/Unlock.js')
+unlocker.exec()
 configStorage.put("auto_start_rain", true)
 toastLog("配置完毕done")
 let mainScriptPath = FileUtils.getRealMainScriptPath(true)
