@@ -10,7 +10,3 @@ configStorage.put("auto_start_rain", true)
 toastLog("配置完毕done")
 let mainScriptPath = FileUtils.getRealMainScriptPath(true)
 engines.execScriptFile(mainScriptPath + "/unit/能量雨收集.js", { path: mainScriptPath + "/unit/" })
-
-setTimeout(function () {
-  configStorage.put("auto_start_rain", false)
-}, 3000)

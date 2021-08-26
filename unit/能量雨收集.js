@@ -20,7 +20,7 @@ if (runningSize > 1) {
     }
   })
 }
-let { config } = require('../config.js')(runtime, this)
+let { config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
@@ -212,7 +212,6 @@ let clickButtonWindow = floaty.rawWindow(
     </vertical>
   </vertical>
 );
-
 clickButtonWindow.openRainPage.click(function () {
   threadPool.execute(function () {
     openRainPage()
@@ -250,15 +249,18 @@ function checkAndStartCollect () {
     if (ended) {
       warnInfo(['今日机会已用完或者需要好友助力'], true)
       return
-    } 
+    }
     threadPool.execute(function () {
       writeLock.lock()
       try {
-        automator.clickCenter(startBtn)
         disableClick = false
+        clickButtonWindow.setPosition(-cvt(150), config.device_height * 0.65)
+        sleep(50)
+        automator.clickCenter(startBtn)
         startTimestamp = new Date().getTime()
         ballsComplete.signal()
         changeButtonInfo()
+        targetEndTime = targetEndTime > new Date().getTime() + 20000 ? targetEndTime : new Date().getTime() + 20000
       } finally {
         writeLock.unlock()
       }
@@ -269,7 +271,6 @@ function checkAndStartCollect () {
 }
 
 ui.run(function () {
-  clickButtonWindow.setPosition(cvt(100), config.device_height * 0.65)
   changeButtonInfo()
 })
 
@@ -376,15 +377,22 @@ commonFunction.registerOnEngineRemoved(function () {
   isRunning = false
   threadPool.shutdown()
   debugInfo(['等待线程池关闭:{}', threadPool.awaitTermination(5, TimeUnit.SECONDS)])
+  if (config.auto_start_rain) {
+    // 执行结束后关闭自动启动
+    var configStorage = storages.create(_storage_name)
+    configStorage.put("auto_start_rain", false)
+  }
 })
 
 // ---------------------
-
 function changeButtonInfo () {
   isWaiting = false
   clickButtonWindow.changeStatus.setText(disableClick ? '开始点击' : enableViolent ? '音量下停止点击' : '停止点击')
   clickButtonWindow.changeStatus.setBackgroundColor(disableClick ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
   clickButtonWindow.changeViolent.setText(enableViolent ? '启用识别点击' : '启用暴力点击')
+  if (disableClick) {
+    clickButtonWindow.setPosition(cvt(100), config.device_height * 0.65)
+  }
 }
 
 function convertArrayToRect (a) {
