@@ -245,9 +245,12 @@ clickButtonWindow.delayClose.click(function () {
 function checkAndStartCollect () {
   let startBtn = widgetUtils.widgetGetOne('开始拯救绿色能量|再来一次', 1000)
   if (startBtn) {
-    let ended = widgetUtils.widgetGetOne('每天都可以来拯救哦', 1000)
+    let ended = widgetUtils.widgetGetOne('.*明天再来.*', 1000)
     if (ended) {
       warnInfo(['今日机会已用完或者需要好友助力'], true)
+      if (config.auto_start_rain) {
+        targetEndTime = new Date().getTime()
+      }
       return
     }
     threadPool.execute(function () {
