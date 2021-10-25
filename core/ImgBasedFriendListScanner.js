@@ -340,7 +340,7 @@ const ImgBasedFriendListScanner = function () {
   this.getAllCheckPoints = function (intervalScreenForDetectHelp, intervalScreenForDetectCollect) {
     let waitForCheckPoints = []
 
-    let helpPoints = this.detectHelp(intervalScreenForDetectHelp)
+    let helpPoints = _config.help_friend ? this.detectHelp(intervalScreenForDetectHelp) : []
     if (helpPoints && helpPoints.length > 0) {
       waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
         helpPoint => {
@@ -691,7 +691,8 @@ ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
       debugInfo(
         '未能进入主页，尝试再次进入 count:' + count++
       )
-      automator.click(obj.point.x, obj.point.y)
+      // 无法点击时，尝试点击其他位置
+      automator.click(obj.point.x - 100, obj.point.y + obj.point.bottom - obj.point.top)
       sleep(500)
       if (count >= 3) {
         warnInfo('重试超过3次，取消操作')

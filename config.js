@@ -124,6 +124,8 @@ let default_config = {
   // 秘钥
   secretKey: '',
   my_id: '',
+  rain_start_content: '再来一次|立即开启',
+  rain_end_content: '.*去蚂蚁森林看看.*',
   suspend_on_alarm_clock: false,
   suspend_alarm_content: '滑动关闭闹钟',
   delay_start_pay_code_content: '向商家付(钱|款)',

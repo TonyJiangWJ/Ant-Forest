@@ -17,14 +17,15 @@
   <link rel="stylesheet" href="./css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script>
   <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
+  <script src="https://unpkg.com/vue-router@3.4.9/dist/vue-router.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vant@2.10/lib/vant.min.js"></script>
 </head>
 
 <body>
   <noscript><strong>We're sorry but this doesn't work properly without JavaScript enabled. Please enable
       it to continue.</strong></noscript>
-  <div id=app class="root-container" v-cloak style="min-height:755px;background: #ffffff;">
-    <van-tabs v-model="activeTab" sticky swipeable>
+  <div id=app class="root-container" style="min-height:755px;background: #ffffff;">
+    <van-tabs v-model="activeTab" sticky swipeable v-cloak>
       <van-tab title="基础设置">
         <sample-configs />
       </van-tab>
@@ -86,6 +87,9 @@
 </script>
 
 <script src="./js/components/common.js"></script>
-<script src="./js/components/configuration.js"></script>
+<script src="./js/components/configuration/SampleConfigs.js"></script>
+<script src="./js/components/configuration/AdvanceConfigs.js"></script>
+<script src="./js/components/configuration/WidgetConfigs.js"></script>
+<script src="./js/index.js"></script>
 <script src="./js/app.js"></script>
 </html>
