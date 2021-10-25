@@ -275,10 +275,11 @@ let bridgeHandler = {
     })
   }
 }
+let handlerBuilder = () => bridgeHandler
 postMessageToWebView = prepareWebView(ui.webview, {
   indexFilePath: indexFilePath,
   mainScriptPath: mainScriptPath,
-  bridgeHandler: bridgeHandler
+  bridgeHandler: handlerBuilder
 })
 // ---------------------
 
