@@ -4,3 +4,6 @@
 *.ign.js
 LockScreen.js
 ExternalUnlockDevice.js
+能量雨收集-phone.js
+.lhignore
+.lh/
