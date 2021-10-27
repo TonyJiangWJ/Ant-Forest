@@ -61,12 +61,10 @@
           watering_cooperation_name: '',
           watering_cooperation_amount: '',
           watering_cooperation_threshold: '',
-          use_maintain_click_offset: false,
-          rain_collect_debug_mode: false,
           rain_start_content: '再来一次|立即开启',
           rain_end_content: '.*去蚂蚁森林看看.*',
-          maintain_click_offset_before: null,
-          maintain_click_offset_after: null,
+          send_chance_to_friend: '',
+          rain_click_top: 300,
           // 执行冷却
           cool_down_if_coolect_too_much: true,
           cool_down_per_increase: 1000,
@@ -221,11 +219,9 @@
       <van-cell-group>
         <van-field v-model="configs.rain_start_content" label="启动按钮文本" label-width="10em" type="text" placeholder="请输入启动按钮文本" input-align="right" />
         <van-field v-model="configs.rain_end_content" label="无能量雨机会文本" label-width="10em" type="text" placeholder="请输入无能量雨机会文本" input-align="right" />
-        <switch-cell title="使用自定义点击偏移量" label="具体值自行调试，理论上1080P的使用默认机制即可" title-style="width: 12em;flex:2;" v-model="configs.use_maintain_click_offset" />
-        <tip-block v-if="configs.use_maintain_click_offset" >能量雨在9秒后会有个小加速，因此设置9秒前和9秒后的两个偏移量即可，或者两个都设置为同样的值也可以，1080P下可以都为100</tip-block>
-        <number-field v-if="configs.use_maintain_click_offset" label-width="8em" v-model="configs.maintain_click_offset_before" label="9秒前点击偏移量" placeholder="使用默认机制请留空" />
-        <number-field v-if="configs.use_maintain_click_offset" label-width="8em" v-model="configs.maintain_click_offset_after" label="9秒后点击偏移量" placeholder="使用默认机制请留空" />
-        <switch-cell title="调试模式" label="开始点击约13秒后自动返回退出，防止消耗机会" title-style="width: 12em;flex:2;" v-model="configs.rain_collect_debug_mode" />
+        <tip-block>在执行一次之后自动判断是否可以赠送好友机会，配置后自动送给对应好友一次机会，不配置则不会赠送，脚本只执行一轮。</tip-block>
+        <van-field v-model="configs.send_chance_to_friend" label="赠送好友" label-width="10em" type="text" placeholder="请输入需要赠送机会的好友" input-align="right" />
+        <number-field v-model="configs.rain_click_top" label="距离顶部的点击高度" label-width="10em" type="text" placeholder="请输入距离顶部的点击高度" input-align="right" />
       </van-cell-group>
       <van-divider content-position="left">收集配置</van-divider>
       <van-cell-group>
