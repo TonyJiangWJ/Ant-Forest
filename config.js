@@ -126,6 +126,8 @@ let default_config = {
   my_id: '',
   rain_start_content: '再来一次|立即开启',
   rain_end_content: '.*去蚂蚁森林看看.*',
+  send_chance_to_friend: '',
+  rain_click_top: 300,
   suspend_on_alarm_clock: false,
   suspend_alarm_content: '滑动关闭闹钟',
   delay_start_pay_code_content: '向商家付(钱|款)',
@@ -156,10 +158,10 @@ let default_config = {
   valid_collectable_lower: '#77cc00',
   valid_collectable_upper: '#ffff91',
   // 排行榜校验区域
-  rank_check_left: 250,
-  rank_check_top: 250,
-  rank_check_width: 550,
-  rank_check_height: 130,
+  rank_check_left: 190,
+  rank_check_top: 170,
+  rank_check_width: 750,
+  rank_check_height: 200,
   // 能量球所在范围
   auto_detect_tree_collect_region: true,
   tree_collect_left: 150,
@@ -217,10 +219,7 @@ let default_config = {
   watering_cooperation_amount: '',
   watering_cooperation_threshold: '',
   // 能量雨设置
-  use_maintain_click_offset: false,
   rain_collect_debug_mode: false,
-  maintain_click_offset_before: null,
-  maintain_click_offset_after: null,
   auto_start_rain: false,
   // 更新后需要强制执行的标记
   updated_temp_flag_1354: true

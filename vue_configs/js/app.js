@@ -57,14 +57,13 @@ let app = new Vue({
       return document.querySelector('html')
     }
   },
-  mounted() {
+  mounted () {
     // vant.Toast('vue加载完成');
     let self = this
     setTimeout(function () {
       self.clientHeight = document.querySelector('html').clientHeight
       console.log('client-height:' + self.clientHeight)
     }, 200)
-    
     // document.getElementById('app').style.minHeight = this.clientHeight + 'px'
   }
 })
@@ -72,11 +71,11 @@ let app = new Vue({
 // 直接浏览器调试时，mock js bridge方法
 if (typeof $app === 'undefined') {
   window.$app = {
-    invoke: (bridgeName, data, callback) => {},
-    receiveMessage: params => {},
-    registerFunction: (functionName, func) => {}
+    invoke: (bridgeName, data, callback) => { },
+    receiveMessage: params => { },
+    registerFunction: (functionName, func) => { }
   }
   window.$nativeApi = {
-    request: (bridgeName, data) => {}
+    request: (bridgeName, data) => { }
   }
 }

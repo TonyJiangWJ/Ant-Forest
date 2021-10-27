@@ -63,131 +63,39 @@ let targetEndTime = startTime + (config.auto_start_rain ? 30000 : 120000)
 let passwindow = 0
 let disableClick = true
 let isRunning = true
-let isWaiting = true
 let displayInfoZone = [config.device_width * 0.05, config.device_height * 0.65, config.device_width * 0.9, 150 * config.scaleRate]
 let writeLock = threads.lock()
-let clickComplete = writeLock.newCondition()
 let ballsComplete = writeLock.newCondition()
 let clickPoint = null
 
 // 是否启用暴力点击
 let enableViolent = true
 // 暴力点击的区域
-let violentClickPoints = [200, 350, 550, 750, 900].map(v => [cvt(v), cvt(300)])
+let violentClickPoints = [200, 350, 550, 750, 900].map(v => [cvt(v), config.rain_click_top || cvt(300)])
 let VIOLENT_CLICK_TIME = config.rain_collect_debug_mode ? 13 : 18
 
-let recognize_region = null
-
 let startTimestamp = new Date().getTime()
-let noBallCount = 0
 let passedTime = 0
-let clickOffset = 0
-threadPool.execute(function () {
-  while (isRunning) {
-    if (isWaiting || enableViolent) {
-      sleep(100)
-      continue
-    }
-    let start = new Date().getTime()
-    debugInfo(['开始请求截图'])
-    let screen = captureScreen()
-    if (screen) {
-      debugInfo(['请求截图成功：{}ms', new Date().getTime() - start])
-      try {
-        passedTime = (new Date().getTime() - startTimestamp) / 1000
-        if (!disableClick && config.rain_collect_debug_mode && passedTime >= 13) {
-          automator.back()
-          disableClick = true
-          changeButtonInfo()
-        } else if (!disableClick && passedTime > 20) {
-          disableClick = true
-          changeButtonInfo()
-        }
-        if (recognize_region === null) {
-          recognize_region = [0, screen.height * 0.1, screen.width, screen.height * 0.25]
-        }
-        let point = images.findColor(screen, '#CDFF00', { region: recognize_region, threshold: 1 })
-        if (point) {
-          noBallCount = 0
-          writeLock.lock()
-          try {
-            clickPoint = point
-            if (config.use_maintain_click_offset) {
-              clickOffset = passedTime >= 9 ? config.maintain_click_offset_after || cvt(100) : config.maintain_click_offset_before || cvt(50)
-            } else {
-              clickOffset = passedTime >= 9 ? cvt(100) : cvt(50)
-            }
-            ballsComplete.signal()
-            if (enableViolent) {
-              // 暴力模式直接等待100ms
-              sleep(100)
-            } else {
-              // 等待点击完毕
-              clickComplete.await()
-            }
-          } finally {
-            writeLock.unlock()
-          }
-        } else {
-          debugInfo(['no ball found cost: {}', new Date().getTime() - start])
-          if (++noBallCount >= 3 && !enableViolent) {
-            // 重新开始
-            startTimestamp = new Date().getTime()
-          }
-        }
-      } catch (e) {
-        errorInfo('识别线程执行异常' + e)
-        commonFunction.printExceptionStack(e)
-      }
-    } else {
-      debugInfo(['请求截图失败：{}ms', new Date().getTime() - start])
-    }
-  }
-})
 
 // 点击线程
 threadPool.execute(function () {
   while (isRunning) {
-    if (enableViolent) {
-      writeLock.lock()
-      try {
-        passedTime = (new Date().getTime() - startTimestamp) / 1000
-      } finally {
-        writeLock.unlock()
-      }
-      if (!disableClick) {
-        // 暴力点击方式执行
-        if (passedTime <= VIOLENT_CLICK_TIME) {
-          violentClickPoints.forEach(p => press(p[0], p[1], 7))
-        } else {
-          infoLog('暴力点击完毕')
-          disableClick = true
-          changeButtonInfo()
-        }
-      }
-    } else {
-      writeLock.lock()
-      while (clickPoint == null && !enableViolent) {
-        debugInfo(['图片未识别完成，等待'])
-        ballsComplete.await()
-      }
-      try {
-        debugInfo(['图片识别识别完成，得到球位置：{},{}', clickPoint.x, clickPoint.y])
-        let start = new Date().getTime()
-        if (disableClick) {
-          sleep(150)
-        } else {
-          automator.click(clickPoint.x, clickPoint.y + clickOffset)
-          sleep(30)
-        }
-        debugInfo(['点击完毕 耗时：{}ms', new Date().getTime() - start])
-        clickPoint = null
-        clickComplete.signal()
-      } catch (e) {
-        errorInfo('点击线程执行异常：' + e)
-        commonFunction.printExceptionStack(e)
-      } finally {
-        writeLock.unlock()
+    writeLock.lock()
+    try {
+      passedTime = (new Date().getTime() - startTimestamp) / 1000
+    } finally {
+      writeLock.unlock()
+    }
+    if (!disableClick) {
+      // 暴力点击方式执行
+      if (passedTime <= VIOLENT_CLICK_TIME) {
+        violentClickPoints.forEach(p => press(p[0], p[1], 7))
+      } else {
+        infoLog('暴力点击完毕')
+        disableClick = true
+        changeButtonInfo()
+        sleep(1000)
+        checkAndStartCollect()
       }
     }
   }
@@ -200,9 +108,6 @@ let clickButtonWindow = floaty.rawWindow(
     </vertical>
     <vertical>
       <button id="changeStatus" text="开始点击" />
-    </vertical>
-    <vertical>
-      <button id="changeViolent" text="启用识别点击" />
     </vertical>
     <vertical>
       <button id="delayClose" text="续命" />
@@ -227,13 +132,6 @@ clickButtonWindow.changeStatus.click(function () {
   changeButtonInfo()
 })
 
-clickButtonWindow.changeViolent.click(function () {
-  if (disableClick) {
-    enableViolent = !enableViolent
-    changeButtonInfo()
-  }
-})
-
 clickButtonWindow.closeBtn.click(function () {
   exitAndClean()
 })
@@ -242,12 +140,51 @@ clickButtonWindow.delayClose.click(function () {
   targetEndTime = new Date().getTime() + 120000
 })
 
+function checkAndSendChance () {
+  let showMoreFriend = widgetUtils.widgetGetOne('更多好友', 1000)
+  if (showMoreFriend && config.send_chance_to_friend) {
+    threadPool.execute(function () {
+      automator.clickCenter(showMoreFriend)
+      infoLog(['点击了更多好友'])
+      sleep(2000)
+      let targetFriend = widgetUtils.widgetGetOne(config.send_chance_to_friend, 1000)
+      if (targetFriend) {
+        infoLog(['找到了目标好友{} index{}', targetFriend.text(), targetFriend.indexInParent()])
+        let send = targetFriend.parent().child(targetFriend.indexInParent() + 1)
+        if (send) {
+          let context = send.text() || send.desc()
+          if (!/送TA机会/.test(context)) {
+            warnInfo(['目标好友已被赠送，无法再次赠送'], true)
+            return false
+          }
+          infoLog(['送ta机会按钮：{}', send.text() || send.desc()], true)
+          send.click()
+          infoLog(['点击了送ta机会'])
+          let newEnd = new Date().getTime() + 25 * 60
+          targetEndTime = newEnd > targetEndTime ? newEnd : targetEndTime
+          sleep(1000)
+          // 点击空白区域 触发关闭蒙层
+          automator.click(violentClickPoints[0][0], violentClickPoints[0][1])
+          sleep(2000)
+          checkAndStartCollect()
+        }
+      } else {
+        warnInfo(['未找赠送对象'], true)
+      }
+    })
+  } else {
+    infoLog(['未找 更多好友 或者未配置赠送对象'], true)
+  }
+  return false
+}
+
 function checkAndStartCollect () {
   let startBtn = widgetUtils.widgetGetOne(config.rain_start_content || '开始拯救绿色能量|再来一次|立即开启', 1000)
   if (startBtn) {
     let ended = widgetUtils.widgetGetOne(config.rain_end_content || '.*去蚂蚁森林看看.*', 1000)
     if (ended) {
       warnInfo(['今日机会已用完或者需要好友助力'], true)
+      checkAndSendChance()
       if (config.auto_start_rain) {
         targetEndTime = new Date().getTime()
       }
@@ -263,13 +200,14 @@ function checkAndStartCollect () {
         startTimestamp = new Date().getTime()
         ballsComplete.signal()
         changeButtonInfo()
-        targetEndTime = targetEndTime > new Date().getTime() + 20000 ? targetEndTime : new Date().getTime() + 20000
+        targetEndTime = targetEndTime > new Date().getTime() + 30000 ? targetEndTime : new Date().getTime() + 30000
       } finally {
         writeLock.unlock()
       }
     })
   } else {
     warnInfo(['未能找到开始拯救按钮，可能已经没有机会了'], true)
+    checkAndSendChance()
   }
 }
 
@@ -295,26 +233,15 @@ window.canvas.on("draw", function (canvas) {
     paint.setStrokeJoin(Paint.Join.ROUND)
     paint.setDither(true)
 
-    if (enableViolent) {
-      violentClickPoints.forEach(v => drawRectAndText('click', [v[0] - 5, v[1] - 5, 10, 10], '#ff0000', canvas, paint))
-    } else {
-      recognize_region != null && drawRectAndText('识别区域', recognize_region, '#888888', canvas, paint)
-    }
+    violentClickPoints.forEach(v => drawRectAndText('click', [v[0] - 5, v[1] - 5, 10, 10], '#ff0000', canvas, paint))
 
     // 倒计时
     paint.setTextSize(30)
     let countdown = (targetEndTime - new Date().getTime()) / 1000
     drawText('请进入能量雨界面并手动开始，音量上键可关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 200 }, canvas, paint)
     drawText('将在' + countdown.toFixed(0) + 's后自动关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 150 }, canvas, paint)
-    if (enableViolent) {
-      drawText('点击倒计时：' + (VIOLENT_CLICK_TIME - passedTime).toFixed(1) + 's', { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#00ff00')
-    } else {
-      drawText('音量下键进入' + (disableClick ? '点击模式' : '识别模式') + ' 点击偏移量：' + clickOffset, { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#ff0000')
-      drawText('如果漏收严重，请清理手机后台避免卡顿', { x: displayInfoZone[0], y: displayInfoZone[1] - 50 }, canvas, paint, '#00ff00')
-    }
-    if (config.rain_collect_debug_mode) {
-      drawText(passedTime + ' config:' + config.use_maintain_click_offset + ' ' + config.maintain_click_offset_after + ',' + config.maintain_click_offset_before, { x: displayInfoZone[0], y: displayInfoZone[1] + 50 }, canvas, paint, '#00ff00')
-    }
+    drawText('点击倒计时：' + (VIOLENT_CLICK_TIME - passedTime).toFixed(1) + 's', { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#00ff00')
+
     passwindow = new Date().getTime() - startTime
 
     if (disableClick) {
@@ -392,7 +319,6 @@ function changeButtonInfo () {
   isWaiting = false
   clickButtonWindow.changeStatus.setText(disableClick ? '开始点击' : enableViolent ? '音量下停止点击' : '停止点击')
   clickButtonWindow.changeStatus.setBackgroundColor(disableClick ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
-  clickButtonWindow.changeViolent.setText(enableViolent ? '启用识别点击' : '启用暴力点击')
   if (disableClick) {
     clickButtonWindow.setPosition(cvt(100), config.device_height * 0.65)
   }
