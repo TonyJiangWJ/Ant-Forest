@@ -188,6 +188,10 @@ module.exports = function (obj) {
   
   ![alipay_qrcode](./resources/alipay_qrcode.jpg)  ![wechat_qrcode](./resources/wechat_qrcode.png)
 
+- 支付宝扫码领红包，你拿红包我也有份。
+
+- ![扫码领红包](./resources/扫码领红包.png)
+
 ### 感谢充电~
 
 #### alipay
