@@ -113,7 +113,7 @@ let default_config = {
   // 是否使用百度的ocr识别倒计时
   useOcr: false,
   // 使用自建tesserac_ocr服务
-  useTesseracOcr: true,
+  useTesseracOcr: false,
   // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
   ocrThreshold: 2600,
   autoSetThreshold: true,
