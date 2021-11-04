@@ -1,9 +1,9 @@
-var { default_config, storage_name: _storage_name } = require('../config.js')(runtime, this)
+var { default_config, config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 var configStorage = storages.create(_storage_name)
 let FileUtils = singletonRequire('FileUtils')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
-
+config._auto_start_with_current_engine = true
 let unlocker = require('../lib/Unlock.js')
 unlocker.exec()
 configStorage.put("auto_start_rain", true)

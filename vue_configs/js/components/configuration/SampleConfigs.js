@@ -207,7 +207,7 @@
       $app.registerFunction('gravitySensorChange', this.gravitySensorChange)
       $app.registerFunction('distanceSensorChange', this.distanceSensorChange)
       $app.registerFunction('reloadBasicConfigs', this.loadConfigs)
-      $nativeApi.request('checkIfInCooldwon', {}).then(resp => {
+      $nativeApi.request('checkIfInCooldown', {}).then(resp => {
         this.currentInCoolDown = resp.coolDownInfo.coolDown
       })
     },
