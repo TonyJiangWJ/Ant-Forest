@@ -859,7 +859,7 @@ function Ant_forest () {
             !_config.not_setup_auto_start && _commonFunctions.setUpAutoStart(realSleepTime)
             _runningQueueDispatcher.removeRunningTask()
             // 如果不驻留悬浮窗  则不延迟，直接关闭
-            if (!_config.not_setup_auto_start && _config.not_lingering_float_window) {
+            if (realSleepTime > 1 && !_config.not_setup_auto_start && _config.not_lingering_float_window) {
               // 展示一下悬浮窗信息 提示还剩多久启动
               _commonFunctions.showTextFloaty('脚本将在' + realSleepTime.toFixed(2) + '分钟后自动执行')
               sleep(3000)

@@ -40,7 +40,8 @@
         <widget-configs />
       </van-tab>
     </van-tabs>
-    <van-dialog v-model="showMenuDialog" v-cloak title="菜单" :show-confirm-button="false" :close-on-click-overlay="true" :get-container="getDialogContainer">
+    <van-dialog v-model="showMenuDialog" v-cloak title="菜单" :show-confirm-button="false" :close-on-click-overlay="true"
+      :get-container="getDialogContainer">
       <van-divider :style="{ margin: '0' }"></van-divider>
       <van-row type="flex" justify="center" class="van-cell">
         <van-col @click="resetDefaultConfigs">重置所有配置为默认值
@@ -61,7 +62,7 @@
         </van-col>
       </van-row>
       <van-divider :style="{ margin: '0' }"></van-divider>
-      <van-row type="flex" justify="center" class="van-cell" >
+      <van-row type="flex" justify="center" class="van-cell">
         <van-col @click="restoreRuntimeStorage">从备份文件中导入运行时数据
         </van-col>
       </van-row>
@@ -81,9 +82,12 @@
   window.addEventListener('contextmenu', function (e) {
     e.preventDefault()
   })
-  window.addEventListener('resize', function(e) {
+  window.addEventListener('resize', function (e) {
     console.log('页面高度:' + document.body.clientHeight)
   }, false);
+  // PC打开时的mock
+  window.$app = { invoke: () => { }, registerFunction() { } }
+  window.$nativeApi = {request(){return Promise.reject()}}
 </script>
 
 <script src="./js/components/common.js"></script>
@@ -92,4 +96,5 @@
 <script src="./js/components/configuration/WidgetConfigs.js"></script>
 <script src="./js/index.js"></script>
 <script src="./js/app.js"></script>
+
 </html>

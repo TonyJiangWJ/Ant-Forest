@@ -116,7 +116,7 @@ let default_config = {
   useTesseracOcr: false,
   // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
   ocrThreshold: 2600,
-  autoSetThreshold: true,
+  autoSetThreshold: false,
   // 是否记录图片base64信息到日志中
   saveBase64ImgInfo: false,
   // ApiKey和SecretKey都来自百度AI平台 需要自己申请
@@ -222,7 +222,7 @@ let default_config = {
   rain_collect_debug_mode: false,
   auto_start_rain: false,
   // 更新后需要强制执行的标记
-  updated_temp_flag_1354: true
+  updated_temp_flag_13549: true
 }
 // 自动生成的配置数据 
 let auto_generate_config = {
@@ -341,13 +341,21 @@ function resetConfigsIfNeeded () {
     // 默认关闭帮助收取，帮收还得发通知，容易影响到别人
     'help_friend',
     // 修改逛一逛结束标志
-    'stroll_end_ui_content'
+    'stroll_end_ui_content',
+    // 自动设置ocr阈值
+    'autoSetThreshold',
+    // 阈值
+    'ocrThreshold',
   ]
-  if (config.updated_temp_flag_1354) {
+  if (config.updated_temp_flag_13549) {
     resetFields.forEach(key => {
       config[key] = default_config[key]
       storageConfig.put(key, default_config[key])
     })
-    storageConfig.put('updated_temp_flag_1354', false)
+    storageConfig.put('updated_temp_flag_13549', false)
+  }
+  if (config.useTesseracOcr && new Date().getTime() >= new Date('2021/12/09').getTime()) {
+    // 服务器到期 自动关闭OCR
+    storageConfig.put('useTesseracOcr', false)
   }
 }

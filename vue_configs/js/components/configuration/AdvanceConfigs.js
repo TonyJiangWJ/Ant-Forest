@@ -243,6 +243,9 @@
       }
     },
     computed: {
+      isTesseracOcrAvailable: function () {
+        return new Date().getTime() < new Date('2020/12/09').getTime()
+      },
       strollButtonRegion: function () {
         return this.configs.stroll_button_region
       },
@@ -334,6 +337,9 @@
       $app.registerFunction('ocr_invoke_count', this.updateOcrInvokeCount)
       $app.registerFunction('reloadAdvanceConfigs', this.loadConfigs)
       // this.loadConfigs()
+      if (!this.isTesseracOcrAvailable) {
+        this.configs.useTesseracOcr = false
+      }
     },
     template: `<div>
       <van-cell-group>
@@ -422,12 +428,17 @@
         <van-divider/>
         <tip-block>当不启用以下任意一种OCR的时候会使用多点找色方式模拟识别倒计时，如果模拟识别不准确时可以看情况选择其中一种OCR方式</tip-block>
         <tip-block v-if="configs.useTesseracOcr || configs.useOcr">{{ocr_invoke_count}}</tip-block>
-        <switch-cell title="是否启用自建OCR服务器识别倒计时" label="服务器到期时间2021-12-09" title-style="flex:2;" v-model="configs.useTesseracOcr" />
+        <switch-cell title="是否启用自建OCR服务器识别倒计时" label="服务器到期时间2021-12-09" title-style="flex:2;" v-model="configs.useTesseracOcr" v-if="isTesseracOcrAvailable"/>
         <switch-cell title="是否启用百度OCR倒计时" v-model="configs.useOcr" />
         <template v-if="!configs.useTesseracOcr && configs.useOcr">
           <tip-block>请填写百度AI平台申请的API_KEY和SECRET_KEY</tip-block>
           <van-field v-model="configs.apiKey" label="" placeholder="apiKey" label-width="8em" type="text" input-align="right" />
           <van-field v-model="configs.secretKey" label="" placeholder="secretKey" label-width="8em" type="password" input-align="right" />
+        </template>
+        <template v-if="configs.useTesseracOcr || configs.useOcr">
+          <tip-block>通过图片中非白色的像素点阈值筛选当前图片是否进行OCR请求 理论上像素点越多数值越小 越有必要进行OCR识别 从而节省识别次数</tip-block>
+          <switch-cell title="是否自动判断OCR像素阈值" v-model="configs.autoSetThreshold"/>
+          <number-field v-model="configs.ocrThreshold" label="OCR像素阈值" placeholder="留空使用默认配置" label-width="8em" />
         </template>
       </van-cell-group>
       <van-divider content-position="left">

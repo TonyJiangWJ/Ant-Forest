@@ -27,11 +27,17 @@ let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire
 let commonFunction = sRequire('CommonFunction')
 let widgetUtils = sRequire('WidgetUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
+let FloatyInstance = sRequire('FloatyUtil')
+if (!FloatyInstance.init()) {
+  toastLog('初始化悬浮窗失败')
+  exit()
+}
+FloatyInstance.enableLog()
 if (!commonFunction.requestScreenCaptureOrRestart(true)) {
   toastLog('获取截图权限失败，无法执行')
   exit()
 }
-config.show_debug_log = false
+config.show_debug_log = true
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
 commonFunction.autoSetUpBangOffset(true)
 runningQueueDispatcher.addRunningTask()
@@ -61,7 +67,8 @@ let startTime = new Date().getTime()
 // 两分钟后自动关闭
 let targetEndTime = startTime + (config.auto_start_rain ? 30000 : 120000)
 let passwindow = 0
-let disableClick = true
+let canStart = true
+let onFloatDisplay = false
 let isRunning = true
 let displayInfoZone = [config.device_width * 0.05, config.device_height * 0.65, config.device_width * 0.9, 150 * config.scaleRate]
 let writeLock = threads.lock()
@@ -86,13 +93,13 @@ threadPool.execute(function () {
     } finally {
       writeLock.unlock()
     }
-    if (!disableClick) {
+    if (!canStart) {
       // 暴力点击方式执行
       if (passedTime <= VIOLENT_CLICK_TIME) {
         violentClickPoints.forEach(p => press(p[0], p[1], 7))
       } else {
         infoLog('暴力点击完毕')
-        disableClick = true
+        canStart = true
         changeButtonInfo()
         sleep(1000)
         checkAndStartCollect()
@@ -124,10 +131,13 @@ clickButtonWindow.openRainPage.click(function () {
 })
 
 clickButtonWindow.changeStatus.click(function () {
-  if (disableClick) {
+  if (onFloatDisplay) {
+    return
+  }
+  if (canStart) {
     checkAndStartCollect()
   } else {
-    disableClick = true
+    canStart = true
   }
   changeButtonInfo()
 })
@@ -141,39 +151,64 @@ clickButtonWindow.delayClose.click(function () {
 })
 
 function checkAndSendChance () {
+  setDisplayText('正在校验是否存在 “更多好友”，请稍等')
   let showMoreFriend = widgetUtils.widgetGetOne('更多好友', 1000)
   if (showMoreFriend && config.send_chance_to_friend) {
     threadPool.execute(function () {
       automator.clickCenter(showMoreFriend)
       infoLog(['点击了更多好友'])
+      setDisplayText('点击了更多好友，校验是否存在目标好友', showMoreFriend.bounds().centerX(), showMoreFriend.bounds().centerY())
       sleep(2000)
-      let targetFriend = widgetUtils.widgetGetOne(config.send_chance_to_friend, 1000)
-      if (targetFriend) {
-        infoLog(['找到了目标好友{} index{}', targetFriend.text(), targetFriend.indexInParent()])
-        let send = targetFriend.parent().child(targetFriend.indexInParent() + 1)
-        if (send) {
-          let context = send.text() || send.desc()
-          if (!/送TA机会/.test(context)) {
-            warnInfo(['目标好友已被赠送，无法再次赠送'], true)
-            return false
+      setDisplayText('查找目标好友中')
+      let targetFriends = widgetUtils.widgetGetAll(config.send_chance_to_friend, 3000)
+      if (targetFriends) {
+        let matched = false
+        // 从尾部开始 避开默认显示的值
+        targetFriends.reverse().forEach(targetFriend => {
+          if (matched) return
+          infoLog(['找到了目标好友{} index{}', targetFriend.text(), targetFriend.indexInParent()])
+          let send = targetFriend.parent().child(targetFriend.indexInParent() + 1)
+          if (send) {
+            let context = send.text() || send.desc()
+            if (!/送TA机会/.test(context)) {
+              warnInfo(['目标好友已被赠送，无法再次赠送 {}', context], true)
+              setDisplayText('目标好友已被赠送，无法再次赠送:' + context)
+              clearDisplayText()
+              return false
+            }
+            infoLog(['送ta机会按钮：{}', send.text() || send.desc()], true)
+            send.click()
+            infoLog(['点击了送ta机会'])
+            setDisplayText('点击了送ta机会')
+            let newEnd = new Date().getTime() + 25 * 60
+            targetEndTime = newEnd > targetEndTime ? newEnd : targetEndTime
+            sleep(1000)
+            // 点击空白区域 触发关闭蒙层
+            automator.click(violentClickPoints[0][0], violentClickPoints[0][1])
+            sleep(2000)
+            clearDisplayText()
+            checkAndStartCollect()
+            matched = true
           }
-          infoLog(['送ta机会按钮：{}', send.text() || send.desc()], true)
-          send.click()
-          infoLog(['点击了送ta机会'])
-          let newEnd = new Date().getTime() + 25 * 60
-          targetEndTime = newEnd > targetEndTime ? newEnd : targetEndTime
-          sleep(1000)
-          // 点击空白区域 触发关闭蒙层
-          automator.click(violentClickPoints[0][0], violentClickPoints[0][1])
-          sleep(2000)
-          checkAndStartCollect()
-        }
+        })
+        
       } else {
         warnInfo(['未找赠送对象'], true)
+        setDisplayText('未找到赠送对象')
+        sleep(1000)
+        clearDisplayText()
+        if (config.auto_start_rain) {
+          targetEndTime = new Date().getTime()
+        }
       }
     })
   } else {
     infoLog(['未找 更多好友 或者未配置赠送对象'], true)
+    setDisplayText('未找 更多好友 或者未配置赠送对象')
+    clearDisplayText()
+    if (config.auto_start_rain) {
+      targetEndTime = new Date().getTime()
+    }
   }
   return false
 }
@@ -185,15 +220,12 @@ function checkAndStartCollect () {
     if (ended) {
       warnInfo(['今日机会已用完或者需要好友助力'], true)
       checkAndSendChance()
-      if (config.auto_start_rain) {
-        targetEndTime = new Date().getTime()
-      }
       return
     }
     threadPool.execute(function () {
       writeLock.lock()
       try {
-        disableClick = false
+        canStart = false
         clickButtonWindow.setPosition(-cvt(150), config.device_height * 0.65)
         sleep(50)
         automator.clickCenter(startBtn)
@@ -238,13 +270,13 @@ window.canvas.on("draw", function (canvas) {
     // 倒计时
     paint.setTextSize(30)
     let countdown = (targetEndTime - new Date().getTime()) / 1000
-    drawText('请进入能量雨界面并手动开始，音量上键可关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 200 }, canvas, paint)
+    drawText('请进入能量雨界面后点击“开始点击”，音量上键可关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 200 }, canvas, paint)
     drawText('将在' + countdown.toFixed(0) + 's后自动关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 150 }, canvas, paint)
     drawText('点击倒计时：' + (VIOLENT_CLICK_TIME - passedTime).toFixed(1) + 's', { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#00ff00')
 
     passwindow = new Date().getTime() - startTime
 
-    if (disableClick) {
+    if (canStart) {
       let displayBallPoint = clickPoint
       if (displayBallPoint) {
         let radius = cvt(60)
@@ -272,7 +304,7 @@ threads.start(function () {
       // 设置最低间隔200毫秒，避免修改太快
       if (new Date().getTime() - lastChangedTime > 200) {
         lastChangedTime = new Date().getTime()
-        disableClick = !disableClick
+        canStart = !canStart
         changeButtonInfo()
       }
     }
@@ -317,10 +349,10 @@ commonFunction.registerOnEngineRemoved(function () {
 // ---------------------
 function changeButtonInfo () {
   isWaiting = false
-  clickButtonWindow.changeStatus.setText(disableClick ? '开始点击' : enableViolent ? '音量下停止点击' : '停止点击')
-  clickButtonWindow.changeStatus.setBackgroundColor(disableClick ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
-  if (disableClick) {
-    clickButtonWindow.setPosition(cvt(100), config.device_height * 0.65)
+  clickButtonWindow.changeStatus.setText(canStart ? '开始点击' : enableViolent ? '音量下停止点击' : '停止点击')
+  clickButtonWindow.changeStatus.setBackgroundColor(canStart ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
+  if (canStart) {
+    clickButtonWindow.setPosition(config.device_width / 2 -~~(clickButtonWindow.getWidth() / 2), config.device_height * 0.65)
   }
 }
 
@@ -379,4 +411,24 @@ function openRainPage () {
     clickButtonWindow.openRainPage.setText('打开能量雨界面')
   })
   starting = false
+}
+
+function setDisplayText(textContent, x, y) {
+  onFloatDisplay = true
+  x = x || config.device_width / 3
+  y = y || config.device_height / 2
+  debugInfo(['设置悬浮窗文本：{}, ({},{})', textContent, x, y])
+  FloatyInstance.setFloatyInfo({
+    x: x, y: y
+  }, textContent)
+}
+
+function clearDisplayText() {
+  ui.run(function () {
+    setTimeout(function () {
+      debugInfo('隐藏悬浮窗')
+      FloatyInstance.setFloatyPosition(-100, -100)
+      onFloatDisplay = false
+    }, 1000)
+  })
 }
