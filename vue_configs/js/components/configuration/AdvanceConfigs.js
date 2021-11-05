@@ -244,7 +244,7 @@
     },
     computed: {
       isTesseracOcrAvailable: function () {
-        return new Date().getTime() < new Date('2020/12/09').getTime()
+        return new Date().getTime() < new Date('2021/12/09').getTime()
       },
       strollButtonRegion: function () {
         return this.configs.stroll_button_region
