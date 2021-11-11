@@ -28,15 +28,18 @@ let commonFunction = sRequire('CommonFunction')
 let widgetUtils = sRequire('WidgetUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
 let FloatyInstance = sRequire('FloatyUtil')
+let processShare = sRequire('ProcessShare')
+let unlocker = require('../lib/Unlock.js')
+
 if (!FloatyInstance.init()) {
   toastLog('初始化悬浮窗失败')
   exit()
 }
 FloatyInstance.enableLog()
-if (!commonFunction.requestScreenCaptureOrRestart(true)) {
-  toastLog('获取截图权限失败，无法执行')
-  exit()
-}
+// if (!commonFunction.requestScreenCaptureOrRestart(true)) {
+//   toastLog('获取截图权限失败，无法执行')
+//   exit()
+// }
 config.show_debug_log = true
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
 commonFunction.autoSetUpBangOffset(true)
@@ -75,8 +78,6 @@ let writeLock = threads.lock()
 let ballsComplete = writeLock.newCondition()
 let clickPoint = null
 
-// 是否启用暴力点击
-let enableViolent = true
 // 暴力点击的区域
 let violentClickPoints = [200, 350, 550, 750, 900].map(v => [cvt(v), config.rain_click_top || cvt(300)])
 let VIOLENT_CLICK_TIME = config.rain_collect_debug_mode ? 13 : 18
@@ -191,7 +192,7 @@ function checkAndSendChance () {
             matched = true
           }
         })
-        
+
       } else {
         warnInfo(['未找赠送对象'], true)
         setDisplayText('未找到赠送对象')
@@ -227,7 +228,7 @@ function checkAndStartCollect () {
       try {
         canStart = false
         clickButtonWindow.setPosition(-cvt(150), config.device_height * 0.65)
-        sleep(50)
+        sleep(250)
         automator.clickCenter(startBtn)
         startTimestamp = new Date().getTime()
         ballsComplete.signal()
@@ -270,8 +271,8 @@ window.canvas.on("draw", function (canvas) {
     // 倒计时
     paint.setTextSize(30)
     let countdown = (targetEndTime - new Date().getTime()) / 1000
-    drawText('请进入能量雨界面后点击“开始点击”，音量上键可关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 200 }, canvas, paint)
-    drawText('将在' + countdown.toFixed(0) + 's后自动关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 150 }, canvas, paint)
+    drawText('请进入能量雨界面后手动开始，音量上键可关闭脚本，音量下停止点击', { x: displayInfoZone[0], y: displayInfoZone[1] - 200 }, canvas, paint, '#00ff00')
+    drawText('将在' + countdown.toFixed(0) + 's后自动关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 150 }, canvas, paint, '#00ff00')
     drawText('点击倒计时：' + (VIOLENT_CLICK_TIME - passedTime).toFixed(1) + 's', { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#00ff00')
 
     passwindow = new Date().getTime() - startTime
@@ -321,6 +322,16 @@ function exitAndClean () {
   if (!isRunning) {
     return
   }
+
+  if (config.auto_start_rain) {
+    if (config.auto_lock === true && unlocker.needRelock() === true) {
+      debugInfo('重新锁定屏幕')
+      automator.lockScreen()
+    }
+    // 发送消息，能量雨执行完毕
+    debugInfo('发送消息，能量雨执行完毕', true)
+    processShare.postInfo('能量雨执行完毕')
+  }
   isRunning = false
   if (window !== null) {
     window.canvas.removeAllListeners()
@@ -349,10 +360,10 @@ commonFunction.registerOnEngineRemoved(function () {
 // ---------------------
 function changeButtonInfo () {
   isWaiting = false
-  clickButtonWindow.changeStatus.setText(canStart ? '开始点击' : enableViolent ? '音量下停止点击' : '停止点击')
+  clickButtonWindow.changeStatus.setText(canStart ? '点我开始！' : '音量下停止点击')
   clickButtonWindow.changeStatus.setBackgroundColor(canStart ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
   if (canStart) {
-    clickButtonWindow.setPosition(config.device_width / 2 -~~(clickButtonWindow.getWidth() / 2), config.device_height * 0.65)
+    clickButtonWindow.setPosition(config.device_width / 2 - ~~(clickButtonWindow.getWidth() / 2), config.device_height * 0.65)
   }
 }
 
@@ -413,7 +424,7 @@ function openRainPage () {
   starting = false
 }
 
-function setDisplayText(textContent, x, y) {
+function setDisplayText (textContent, x, y) {
   onFloatDisplay = true
   x = x || config.device_width / 3
   y = y || config.device_height / 2
@@ -423,7 +434,7 @@ function setDisplayText(textContent, x, y) {
   }, textContent)
 }
 
-function clearDisplayText() {
+function clearDisplayText () {
   ui.run(function () {
     setTimeout(function () {
       debugInfo('隐藏悬浮窗')

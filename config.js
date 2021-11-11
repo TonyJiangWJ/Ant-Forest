@@ -127,7 +127,7 @@ let default_config = {
   rain_start_content: '再来一次|立即开启',
   rain_end_content: '.*去蚂蚁森林看看.*',
   send_chance_to_friend: '',
-  rain_click_top: 300,
+  rain_click_top: 400,
   suspend_on_alarm_clock: false,
   suspend_alarm_content: '滑动关闭闹钟',
   delay_start_pay_code_content: '向商家付(钱|款)',
@@ -193,7 +193,7 @@ let default_config = {
   // 尝试先逛一逛进行能量收取
   try_collect_by_stroll: true,
   disable_image_based_collect: false,
-  stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?$',
+  stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$',
   collect_by_stroll_only: false,
   stroll_button_regenerate: true,
   auto_set_bang_offset: true,
