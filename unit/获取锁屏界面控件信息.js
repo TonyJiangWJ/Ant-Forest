@@ -106,7 +106,7 @@ dialogs.build({
     exit()
   })
   .on('positive', () => {
-    setClip(content)
+    setClip(logContents)
     toastLog('布局日志已复制到剪切板！')
   })
   .show()

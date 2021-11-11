@@ -10,6 +10,7 @@ let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
+let fileUtils = singletonRequire('FileUtils')
 
 let BaseScanner = require('./BaseScanner.js')
 
@@ -139,7 +140,7 @@ const StrollScanner = function () {
    */
   this.getFriendName = function () {
     let friendNameGettingRegex = _config.friend_name_getting_regex || '(.*)的蚂蚁森林'
-    let titleContainer = _widgetUtils.alternativeWidget(friendNameGettingRegex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?$/, null, true)
+    let titleContainer = _widgetUtils.alternativeWidget(friendNameGettingRegex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, null, true)
     if (titleContainer.value === 1) {
       let regex = new RegExp(friendNameGettingRegex)
       if (titleContainer && regex.test(titleContainer.content)) {
@@ -164,10 +165,18 @@ StrollScanner.prototype.collectTargetFriend = function () {
   ///sleep(1000)
   let alternativeFriendOrDone = 0
   // 未找到好友首页控件 循环等待三次
-  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?$/)) !== 1) {
+  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/)) !== 1) {
     // 找到了结束标志信息 停止逛一逛
     if (alternativeFriendOrDone === 2) {
       debugInfo('逛一逛啥也没有，不再瞎逛')
+      return false
+    }
+    if (_widgetUtils.widgetCheck(_config.rain_start_content || '开始拯救绿色能量|再来一次|立即开启', 500)) {
+      debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
+      let source = fileUtils.getCurrentWorkPath() + '/unit/自动启动并执行能量雨.js'
+      engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')) })
+      _commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
+      this.showCollectSummaryFloaty()
       return false
     }
     debugInfo(

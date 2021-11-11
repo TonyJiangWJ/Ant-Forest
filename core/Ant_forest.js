@@ -459,7 +459,7 @@ function Ant_forest () {
     let runResult = scanner.start()
     scanner.destory()
     if (runResult) {
-      let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?$/, 1000)
+      let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
       if (backToForest) {
         automator.clickCenter(backToForest)
       } else {
