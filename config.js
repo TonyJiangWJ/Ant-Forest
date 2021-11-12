@@ -290,6 +290,7 @@ if (!isRunningMode) {
   }
   module.exports = function (__runtime__, scope) {
     if (typeof scope.config_instance === 'undefined') {
+      console.verbose('config未实例化，准备实例化config.js')
       config.getReactiveTime = () => {
         let reactiveTime = config.reactive_time
         if (isNaN(reactiveTime)) {
@@ -308,15 +309,6 @@ if (!isRunningMode) {
         storage_name: CONFIG_STORAGE_NAME,
         project_name: PROJECT_NAME
       }
-      events.broadcast.on(CONFIG_STORAGE_NAME + 'config_changed', function (params) {
-        let newConfig = params.config
-        let currentId = engines.myEngine().id
-        let senderId = params.id
-        if (currentId !== senderId) {
-          console.verbose(currentId + ' 获取从' + senderId + '得到的新的配置信息' + JSON.stringify(newConfig))
-          Object.assign(scope.config_instance.config, newConfig)
-        }
-      })
     }
     return scope.config_instance
   }
