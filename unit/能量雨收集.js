@@ -253,6 +253,7 @@ ui.run(function () {
 })
 
 executeByTimeTask && openRainPage()
+executeByStroll && checkAndStartCollect()
 
 window.canvas.on("draw", function (canvas) {
   if (!isRunning) {
@@ -418,7 +419,7 @@ function openRainPage () {
   if (confirm) {
     automator.clickCenter(confirm)
   }
-  widgetUtils.widgetWaiting('.*返回蚂蚁森林.*') && (autoStartCollect) && checkAndStartCollect()
+  widgetUtils.widgetWaiting('.*返回蚂蚁森林.*') && executeByTimeTask && checkAndStartCollect()
   ui.run(function () {
     clickButtonWindow.openRainPage.setText('打开能量雨界面')
   })
