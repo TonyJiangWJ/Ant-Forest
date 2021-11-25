@@ -20,6 +20,11 @@ if (runningSize > 1) {
     }
   })
 }
+
+let args = engines.myEngine().execArgv
+let executeByStroll = args.executeByStroll
+let executeByTimeTask = args.executeByTimeTask
+let autoStartCollect = executeByStroll || executeByTimeTask
 let { config, storage_name: _storage_name } = require('../config.js')(runtime, this)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
@@ -29,17 +34,16 @@ let widgetUtils = sRequire('WidgetUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
 let FloatyInstance = sRequire('FloatyUtil')
 let processShare = sRequire('ProcessShare')
-let unlocker = require('../lib/Unlock.js')
 
 if (!FloatyInstance.init()) {
   toastLog('初始化悬浮窗失败')
   exit()
 }
 FloatyInstance.enableLog()
-// if (!commonFunction.requestScreenCaptureOrRestart(true)) {
-//   toastLog('获取截图权限失败，无法执行')
-//   exit()
-// }
+if (!commonFunction.ensureAccessibilityEnabled()) {
+  errorInfo('获取无障碍权限失败')
+  exit()
+}
 config.show_debug_log = true
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
 commonFunction.autoSetUpBangOffset(true)
@@ -68,7 +72,7 @@ let threadPool = new ThreadPoolExecutor(4, 4, 60,
 )
 let startTime = new Date().getTime()
 // 两分钟后自动关闭
-let targetEndTime = startTime + (config.auto_start_rain ? 30000 : 120000)
+let targetEndTime = startTime + (autoStartCollect ? 30000 : 120000)
 let passwindow = 0
 let canStart = true
 let onFloatDisplay = false
@@ -198,7 +202,7 @@ function checkAndSendChance () {
         setDisplayText('未找到赠送对象')
         sleep(1000)
         clearDisplayText()
-        if (config.auto_start_rain) {
+        if (autoStartCollect) {
           targetEndTime = new Date().getTime()
         }
       }
@@ -207,7 +211,7 @@ function checkAndSendChance () {
     infoLog(['未找 更多好友 或者未配置赠送对象'], true)
     setDisplayText('未找 更多好友 或者未配置赠送对象')
     clearDisplayText()
-    if (config.auto_start_rain) {
+    if (autoStartCollect) {
       targetEndTime = new Date().getTime()
     }
   }
@@ -248,7 +252,7 @@ ui.run(function () {
   changeButtonInfo()
 })
 
-config.auto_start_rain && openRainPage()
+executeByTimeTask && openRainPage()
 
 window.canvas.on("draw", function (canvas) {
   if (!isRunning) {
@@ -323,11 +327,13 @@ function exitAndClean () {
     return
   }
 
-  if (config.auto_start_rain) {
-    if (config.auto_lock === true && unlocker.needRelock() === true) {
+  if (executeByTimeTask) {
+    commonFunction.minimize()
+    if (config.auto_lock && args.needRelock) {
       debugInfo('重新锁定屏幕')
       automator.lockScreen()
     }
+  } else if (executeByStroll) {
     // 发送消息，能量雨执行完毕
     debugInfo('发送消息，能量雨执行完毕', true)
     processShare.postInfo('能量雨执行完毕')
@@ -350,11 +356,6 @@ commonFunction.registerOnEngineRemoved(function () {
   isRunning = false
   threadPool.shutdown()
   debugInfo(['等待线程池关闭:{}', threadPool.awaitTermination(5, TimeUnit.SECONDS)])
-  if (config.auto_start_rain) {
-    // 执行结束后关闭自动启动
-    var configStorage = storages.create(_storage_name)
-    configStorage.put("auto_start_rain", false)
-  }
 })
 
 // ---------------------
@@ -417,7 +418,7 @@ function openRainPage () {
   if (confirm) {
     automator.clickCenter(confirm)
   }
-  widgetUtils.widgetWaiting('.*返回蚂蚁森林.*') && config.auto_start_rain && checkAndStartCollect()
+  widgetUtils.widgetWaiting('.*返回蚂蚁森林.*') && (autoStartCollect) && checkAndStartCollect()
   ui.run(function () {
     clickButtonWindow.openRainPage.setText('打开能量雨界面')
   })
