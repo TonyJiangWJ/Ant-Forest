@@ -19,6 +19,12 @@
         newSkipRunningPackage: '',
         newSkipRunningAppName: '',
         protectList: [{ name: 'friendName', timeout: '2021-01-25 23:23:23' }],
+        newProtectedName: '',
+        expireTime: '',
+        currentDate: new Date(),
+        showAddProtectedDialog: false,
+        editProtected: false,
+        editProtectedIdx: -1,
         configs: {
           // 排行榜校验区域
           rank_check_left: null,
@@ -148,6 +154,7 @@
       saveConfigs: function () {
         console.log('save advnace configs')
         this.doSaveConfigs(['stroll_button_region', 'rank_check_region', 'bottom_check_region', 'tree_collect_region'])
+        $app.invoke('updateProtectList', { protectList: this.protectList })
       },
       updateOcrInvokeCount: function (data) {
         this.ocr_invoke_count = data
@@ -176,6 +183,51 @@
         }).then(() => {
           this.configs.white_list.splice(idx, 1)
         }).catch(() => { })
+      },
+      addProtected: function () {
+        this.newProtectedName = ''
+        this.expireTime = new Date()
+        this.showAddProtectedDialog = true
+        this.editProtected = false
+      },
+      changeProtect: function (idx) {
+        this.newProtectedName = this.protectList[idx].name
+        this.expireTime = new Date(this.protectList[idx].timeout.replace(/-/g,'/'))
+        this.showAddProtectedDialog = true
+        this.editProtected = true
+        this.editProtectedIdx = idx
+      },
+      doAddProtected: function () {
+        if (this.newProtectedName && this.expireTime) {
+          console.log('name:', this.newProtectedName, 'time:', this.expireTime)
+          if (this.editProtected) {
+            this.editProtected = false
+            this.protectList[this.editProtectedIdx].timeout = formatDate(this.expireTime)
+            return
+          }
+          if (this.protectList.filter(v => v.name === this.newProtectedName).length > 0) {
+            this.$notify({ message: '该好友已在白名单中', type: 'warning'})
+            return
+          }
+          this.protectList.push({
+            name: this.newProtectedName,
+            timeout: formatDate(this.expireTime)
+          })
+        } else {
+          this.showAddProtectedDialog = true
+        }
+      },
+      beforeProtectedClose: function (action, done) {
+        if (action === 'confirm') {
+          let pass = true
+          if (!(this.newProtectedName && this.expireTime)) {
+            this.$notify({ message: '请输入好友昵称和过期时间', type: 'warning'})
+            pass = false
+          }
+          done(pass)
+        } else {
+          done()
+        }
       },
       deleteProtect: function (idx) {
         this.$dialog.confirm({
@@ -238,8 +290,12 @@
       },
       loadProtectedList: function () {
         $nativeApi.request('loadProtectedList', {}).then(resp => {
-          this.protectList = resp.protectList
+          this.protectList = (resp.protectList || [])
+          this.sortProtectList()
         })
+      },
+      sortProtectList: function () {
+        this.protectList = this.protectList.sort((a,b)=> a.timeout > b.timeout ? 1 : -1)
       }
     },
     computed: {
@@ -330,6 +386,14 @@
           $app.invoke('saveConfigs', v)
         },
         deep: true
+      },
+      showAddProtectedDialog: {
+        handler: function (v) {
+          // 关闭弹窗时进行排序
+          if (!v && this.protectList && this.protectList.length > 0) {
+            this.sortProtectList()
+          }
+        }
       }
     },
     mounted () {
@@ -455,15 +519,19 @@
         </van-swipe-cell>
         </div>
       </van-cell-group>
-      <van-divider content-position="left" v-if="protectList && protectList.length > 0">
+      <van-divider content-position="left">
         好友保护罩使用记录
+        <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addProtected">增加</van-button>
       </van-divider>
-      <van-cell-group v-if="protectList && protectList.length > 0">
+      <van-cell-group>
         <div style="max-height:10rem;overflow:scroll;padding:1rem;background:#f1f1f1;">
         <van-swipe-cell v-for="(protectInfo,idx) in protectList" :key="protectInfo.name" stop-propagation>
           <van-cell :title="protectInfo.name" :label="'超时时间:' + protectInfo.timeout" />
           <template #right>
-            <van-button square type="danger" text="删除" @click="deleteProtect(idx)" style="height: 100%" />
+            <div style="display: flex;height: 100%;">
+              <van-button square type="primary" text="修改" @click="changeProtect(idx)" style="height: 100%" />
+              <van-button square type="danger" text="删除" @click="deleteProtect(idx)" style="height: 100%" />
+            </div>
           </template>
         </van-swipe-cell>
         </div>
@@ -521,6 +589,10 @@
         </template>
         <van-field v-model="newSkipRunningAppName" placeholder="请输入应用名称" label="应用名称" />
         <van-field v-model="newSkipRunningPackage" placeholder="请输入应用包名" label="应用包名" />
+      </van-dialog>
+      <van-dialog v-model="showAddProtectedDialog" show-cancel-button @confirm="doAddProtected" :get-container="getContainer" title="增加保护罩使用好友" :before-close="beforeProtectedClose">
+        <van-field v-model="newProtectedName" placeholder="请输入好友昵称" label="好友昵称" :readonly="editProtected" />
+        <van-datetime-picker v-model="expireTime" type="datetime" title="请选择保护罩到期时间" :min-date="currentDate" :show-toolbar="false"/>
       </van-dialog>
     </div>`
   })
