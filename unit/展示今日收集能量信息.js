@@ -5,6 +5,7 @@
  * @Last Modified time: 2020-07-03 19:57:29
  * @Description: 
  */
+let { config } = require('../config')(runtime, this)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let commonFunctions = singletonRequire('CommonFunction')
 console.show()
