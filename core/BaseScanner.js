@@ -133,6 +133,7 @@ const BaseScanner = function () {
     if (!this.isProtectDetectDone) {
       this.protectDetectingLock.lock()
       try {
+        // TODO 如果昨日在保护罩中，需要等待更久 避免列表过长未识别完成
         debugInfo(['等待能量保护罩检测结束：{}', this.protectDetectingCondition.await(600, TimeUnit.MILLISECONDS)])
       } catch (e) {
         warnInfo('等待保护罩校验完毕异常' + e)
@@ -470,7 +471,7 @@ const BaseScanner = function () {
     let loadMoreButton = _widgetUtils.widgetGetOne(_config.friend_load_more_content || '点击展开好友动态', 1000)
     if (loadMoreButton) {
       debugInfo(['点击展开好友动态：[{},{}]', loadMoreButton.bounds().centerX(), loadMoreButton.bounds().centerY()])
-      automator.clickRandom(loadMoreButton)
+      automator.clickCenter(loadMoreButton)
       sleep(100)
     } else {
       debugInfo(['未找到加载更多按钮:「{}」', _config.friend_load_more_content || '点击展开好友动态'])
