@@ -42,12 +42,13 @@ let unlocker = require('./lib/Unlock.js')
 let antForestRunner = require('./core/Ant_forest.js')
 let formatDate = require('./lib/DateUtil.js')
 
+events.on('exit', function () {
+  config.isRunning = false
+})
 callStateListener.exitIfNotIdle()
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
   config.resetBrightness && config.resetBrightness()
-  events.removeAllListeners()
-  events.recycle()
   debugInfo('校验并移除已加载的dex')
   resolver()
   flushAllLogs()
@@ -120,9 +121,13 @@ try {
   }
 }
 logInfo('解锁成功')
-
-commonFunctions.requestScreenCaptureOrRestart()
-commonFunctions.ensureDeviceSizeValid()
+let executeArguments = engines.myEngine().execArgv
+debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
+// 定时启动的任务, 将截图权限滞后请求
+if (!executeArguments.intent || executeArguments.executeByDispatcher) {
+  commonFunctions.requestScreenCaptureOrRestart()
+  commonFunctions.ensureDeviceSizeValid()
+}
 // 初始化悬浮窗
 if (!FloatyInstance.init()) {
   runningQueueDispatcher.removeRunningTask()

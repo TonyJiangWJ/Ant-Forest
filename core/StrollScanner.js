@@ -173,8 +173,8 @@ StrollScanner.prototype.collectTargetFriend = function () {
     }
     if (_widgetUtils.widgetCheck(_config.rain_start_content || '开始拯救绿色能量|再来一次|立即开启', 500)) {
       debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
-      let source = fileUtils.getCurrentWorkPath() + '/unit/自动启动并执行能量雨.js'
-      engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')) })
+      let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
+      engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByStroll: true } })
       _commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
       this.showCollectSummaryFloaty()
       return false
@@ -214,6 +214,8 @@ StrollScanner.prototype.collectTargetFriend = function () {
     return true
   }
   if (!obj.recheck) {
+    // 增加延迟 避免展开好友动态失败
+    sleep(100)
     this.protectInfoDetect(obj.name)
   } else {
     this.isProtected = false

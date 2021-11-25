@@ -64,6 +64,7 @@ const ImgBasedFriendListScanner = function () {
   this.last_check_point = null
   this.last_check_color = null
   this.stroll_up_check_count = 0
+  this.stroll_up_check_bottom = 0
   this.has_next = true
   let self = this
   this.init = function (option) {
@@ -146,18 +147,22 @@ const ImgBasedFriendListScanner = function () {
           '校验点:{} 颜色：{} 不匹配 {}，正常继续',
           JSON.stringify(this.last_check_point), colors.toString(checkPointColor), colors.toString(this.last_check_color)
         ])
+        this.stroll_up_check_bottom = 0
       }
     }
     this.last_check_point = images.findColor(grayImg, '#e5e5e5', { region: region })
     if (this.last_check_point) {
       this.last_check_color = grayImg.getBitmap().getPixel(this.last_check_point.x, this.last_check_point.y)
+      debugInfo(['尝试获取校验点成功：({},{}) 颜色：{}', this.last_check_point.x, this.last_check_point.y, colors.toString(this.last_check_color)])
     } else {
+      debugInfo(['尝试获取校验点失败'])
       this.last_check_color = null
     }
 
 
     if (shouldScrollUp) {
-      debugInfo(['校验点颜色相同，上划重新触发加载，{}', JSON.stringify(last_p)])
+      debugInfo(['校验点颜色相同，上划重新触发加载，{} times: {}', JSON.stringify(last_p), this.stroll_up_check_bottom])
+      if (this.stroll_up_check_bottom++ >= 3) _config.bottom_check_succeed = false
       _widgetUtils.tryFindBottomRegion(grayImg)
       automator.scrollUp()
     }
@@ -227,7 +232,6 @@ const ImgBasedFriendListScanner = function () {
       screen = _commonFunctions.checkCaptureScreenPermission(5)
       // 重新复制一份
       grayScreen = images.copy(images.grayscale(images.copy(screen)), true)
-      let originScreen = images.copy(screen)
       intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, _config.can_collect_color_gray || '#828282', _config.color_offset), 5)
       intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
       let countdown = new Countdown()
@@ -300,7 +304,6 @@ const ImgBasedFriendListScanner = function () {
           this.createNewThreadPool()
           // }
         }
-        originScreen.recycle()
         countdown.summary('分析所有可帮助和可收取的点')
         if (this.operateCollectIfNeeded(collectOrHelpList)) {
           return EXECUTE_FAILED
@@ -340,7 +343,7 @@ const ImgBasedFriendListScanner = function () {
   this.getAllCheckPoints = function (intervalScreenForDetectHelp, intervalScreenForDetectCollect) {
     let waitForCheckPoints = []
 
-    let helpPoints = _config.help_friend ? this.detectHelp(intervalScreenForDetectHelp) : []
+    let helpPoints = this.detectHelp(intervalScreenForDetectHelp)
     if (helpPoints && helpPoints.length > 0) {
       waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
         helpPoint => {

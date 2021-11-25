@@ -466,8 +466,14 @@ function Ant_forest () {
         automator.back()
       }
       sleep(500)
-      if (!_widgetUtils.homePageWaiting()) {
-        return false
+      let tryCount = 1
+      while (!_widgetUtils.homePageWaiting()) {
+        if (tryCount++ > 3) {
+          return false
+        }
+        warnInfo('逛一逛结束后未正确回到首页，尝试重新打开')
+        startApp()
+        sleep(500)
       }
       _post_energy = getCurrentEnergy(true)
       logInfo('逛一逛结束 当前能量：' + _post_energy)
