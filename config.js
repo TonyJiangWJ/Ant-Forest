@@ -53,7 +53,7 @@ let default_config = {
   cutAndSaveCountdown: false,
   // 保存好友页面可收取和可帮助图片
   cutAndSaveTreeCollect: false,
-  auto_lock: false,
+  auto_lock: device.sdkInt >= 28,
   lock_x: 150,
   lock_y: 970,
   // 是否根据当前锁屏状态来设置屏幕亮度，当锁屏状态下启动时 设置为最低亮度，结束后设置成自动亮度
@@ -222,7 +222,8 @@ let default_config = {
   rain_collect_debug_mode: false,
   auto_start_rain: false,
   // 更新后需要强制执行的标记
-  updated_temp_flag_13549: true
+  updated_temp_flag_13549: true,
+  updated_temp_flag_13510: true
 }
 // 自动生成的配置数据 
 let auto_generate_config = {
@@ -339,12 +340,15 @@ function resetConfigsIfNeeded () {
     // 阈值
     'ocrThreshold',
   ]
-  if (config.updated_temp_flag_13549) {
+  if (config.updated_temp_flag_13510) {
     resetFields.forEach(key => {
       config[key] = default_config[key]
       storageConfig.put(key, default_config[key])
     })
-    storageConfig.put('updated_temp_flag_13549', false)
+    storageConfig.put('updated_temp_flag_13510', false)
+    if (!config.auto_lock) {
+      config.auto_lock = default_config.auto_lock
+    }
   }
   if (config.useTesseracOcr && new Date().getTime() >= new Date('2021/12/09').getTime()) {
     // 服务器到期 自动关闭OCR

@@ -297,7 +297,7 @@
         </template>
         <switch-cell title="自动锁屏" label="脚本执行完毕后自动锁定屏幕" v-model="configs.auto_lock" />
         <template v-if="configs.auto_lock && !configs.hasRootPermission">
-          <tip-block>自动锁屏功能默认仅支持MIUI12，其他系统需要自行扩展实现：extends/LockScreen.js</tip-block>
+          <tip-block>安卓9以上支持通过无障碍服务直接锁屏；低版本的需要通过模拟点击的方式自动锁屏，默认仅支持MIUI12+（在控制中心下拉放置锁屏快捷按钮然后配置坐标），其他系统需要自行扩展实现：extends/LockScreen.js</tip-block>
           <number-field v-model="configs.lock_x" label="横坐标位置" placeholder="请输入横坐标位置" />
           <number-field v-model="configs.lock_y" label="纵坐标位置" placeholder="请输入纵坐标位置" />
         </template>
