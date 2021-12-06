@@ -310,6 +310,20 @@ if (!isRunningMode) {
         storage_name: CONFIG_STORAGE_NAME,
         project_name: PROJECT_NAME
       }
+      if (currentEngine.endsWith('/main.js')) {
+        // 运行main.js时监听配置是否变更 实现动态更新配置
+        let processShare = require('./lib/prototype/ProcessShare.js')
+        processShare.loop().subscribe(function (newConfigInfos) {
+          try {
+            newConfigInfos = JSON.parse(newConfigInfos)
+            Object.keys(newConfigInfos).forEach(key => {
+              scope.config_instance.config[key] = newConfigInfos[key]
+            })
+          } catch (e) {
+            console.error('接收到config变更消息，但是处理发生异常', newConfigInfos, e)
+          }
+        }, -1, '.configShare')
+      }
     }
     return scope.config_instance
   }
