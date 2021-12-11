@@ -11,7 +11,8 @@ if (runningSize > 1) {
     }
   })
 }
-
+this.subscribe_interval = 50
+this.subscribe_config_change = true
 let { config } = require('../config.js')(runtime, this)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let automator = sRequire('Automator')
@@ -117,7 +118,7 @@ let refreshThread = threads.start(function () {
     bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
     validBallRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
     scaleRate = config.scaleRate
-    sleep(100)
+    sleep(30)
   }
 })
 

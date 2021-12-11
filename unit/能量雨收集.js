@@ -82,8 +82,10 @@ let writeLock = threads.lock()
 let ballsComplete = writeLock.newCondition()
 let clickPoint = null
 
+let clickGap = cvt(180)
+let middlePoint = config.device_width / 2
 // 暴力点击的区域
-let violentClickPoints = [200, 350, 550, 750, 900].map(v => [cvt(v), config.rain_click_top || cvt(300)])
+let violentClickPoints = [middlePoint - 2 * clickGap, middlePoint - clickGap, middlePoint, middlePoint + clickGap, middlePoint + 2 * clickGap].map(v => [v, config.rain_click_top || cvt(300)])
 let VIOLENT_CLICK_TIME = config.rain_collect_debug_mode ? 13 : 18
 
 let startTimestamp = new Date().getTime()
@@ -91,6 +93,9 @@ let passedTime = 0
 
 // 点击线程
 threadPool.execute(function () {
+  let pressDuration = config.rain_press_duration || 7
+  let sleepTime = 5 * pressDuration + 10
+  sleepTime = sleepTime > 120 ? 120 : sleepTime
   while (isRunning) {
     writeLock.lock()
     try {
@@ -101,7 +106,8 @@ threadPool.execute(function () {
     if (!canStart) {
       // 暴力点击方式执行
       if (passedTime <= VIOLENT_CLICK_TIME) {
-        violentClickPoints.forEach(p => press(p[0], p[1], 7))
+        violentClickPoints.forEach(p => press(p[0], p[1], pressDuration))
+        sleep(sleepTime)
       } else {
         infoLog('暴力点击完毕')
         canStart = true
@@ -122,7 +128,7 @@ let clickButtonWindow = floaty.rawWindow(
       <button id="changeStatus" text="开始点击" />
     </vertical>
     <vertical>
-      <button id="delayClose" text="续命" />
+      <button id="delayClose" text="续命(拖动)" />
     </vertical>
     <vertical>
       <button id="closeBtn" text="关闭" />
@@ -151,9 +157,63 @@ clickButtonWindow.closeBtn.click(function () {
   exitAndClean()
 })
 
-clickButtonWindow.delayClose.click(function () {
-  targetEndTime = new Date().getTime() + 120000
-})
+// clickButtonWindow.delayClose.click(function () {
+//   targetEndTime = new Date().getTime() + 120000
+// })
+
+let eventStartX,eventStartY
+let windowStartX = clickButtonWindow.getX()
+let windowStartY = clickButtonWindow.getY()
+let eventKeep = false
+let eventMoving = false
+let touchDownTime = new Date().getTime()
+
+/**
+ * 数组所有值平方和开方 勾股定理计算距离
+ * @param {*} dx 
+ * @param {*} dy 
+ * @returns 
+ */
+function getDistance (dx, dy) {
+  return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+}
+
+clickButtonWindow.delayClose.setOnTouchListener(new android.view.View.OnTouchListener((view, event) => {
+  try {
+    switch (event.getAction()) {
+      case event.ACTION_DOWN:
+        eventStartX = event.getRawX();
+        eventStartY = event.getRawY();
+        windowStartX = clickButtonWindow.getX();
+        windowStartY = clickButtonWindow.getY();
+        eventKeep = true; //按下,开启计时
+        touchDownTime = new Date().getTime()
+        break;
+      case event.ACTION_MOVE:
+        var sx = event.getRawX() - eventStartX;
+        var sy = event.getRawY() - eventStartY;
+        if (!eventMoving && eventKeep && getDistance(sx, sy) >= 10) {
+          eventMoving = true;
+        };
+        if (eventMoving && eventKeep) {
+          clickButtonWindow.setPosition(windowStartX + sx, windowStartY + sy);
+        };
+        break;
+      case event.ACTION_UP:
+        if (!eventMoving && eventKeep && touchDownTime > new Date().getTime() - 1000) {
+          targetEndTime = new Date().getTime() + 120000
+        };
+        eventKeep = false;
+        touchDownTime = 0;
+        eventMoving = false;
+        break;
+    };
+  } catch (e) {
+    console.error('异常' + e)
+  }
+  return true;
+}))
+
 
 function checkAndSendChance () {
   setDisplayText('正在校验是否存在 “更多好友”，请稍等')
