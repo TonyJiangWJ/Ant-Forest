@@ -128,6 +128,7 @@ let default_config = {
   rain_end_content: '.*去蚂蚁森林看看.*',
   send_chance_to_friend: '',
   rain_click_top: 400,
+  rain_press_duration: 7,
   suspend_on_alarm_clock: false,
   suspend_alarm_content: '滑动关闭闹钟',
   delay_start_pay_code_content: '向商家付(钱|款)',
@@ -221,6 +222,8 @@ let default_config = {
   // 能量雨设置
   rain_collect_debug_mode: false,
   auto_start_rain: false,
+  // 设置无障碍权限时开启其他的无障碍权限
+  other_accessisibility_services: '',
   // 更新后需要强制执行的标记
   updated_temp_flag_13549: true,
   updated_temp_flag_13510: true
@@ -310,10 +313,10 @@ if (!isRunningMode) {
         storage_name: CONFIG_STORAGE_NAME,
         project_name: PROJECT_NAME
       }
-      if (currentEngine.endsWith('/main.js')) {
+      if (currentEngine.endsWith('/main.js') || scope.subscribe_config_change) {
         // 运行main.js时监听配置是否变更 实现动态更新配置
         let processShare = require('./lib/prototype/ProcessShare.js')
-        processShare.loop().subscribe(function (newConfigInfos) {
+        processShare.loop().setInterval(scope.subscribe_interval).subscribe(function (newConfigInfos) {
           try {
             newConfigInfos = JSON.parse(newConfigInfos)
             Object.keys(newConfigInfos).forEach(key => {

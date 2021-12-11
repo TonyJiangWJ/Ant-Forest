@@ -96,7 +96,8 @@
           check_finger_by_pixels_amount: false,
           finger_img_pixels: 1800,
           merge_countdown_by_gaps: true,
-          countdown_gaps: 60
+          countdown_gaps: 60,
+          other_accessisibility_services: ''
         },
         validations: {
           stroll_button_region: {
@@ -411,7 +412,9 @@
         <switch-cell title="是否单脚本运行" v-model="configs.single_script" />
         <tip-block>AutoJS有时候会莫名其妙的崩溃，但是授权了自启动权限之后又会自动启动。开启该选项之后会创建一个广播事件的定时任务，
           当脚本执行过程中AutoJS崩溃自启，将重新开始执行脚本。如果脚本执行完毕，则不会触发执行</tip-block>
-        <switch-cell title="AutoJS崩溃自启后重启脚本" v-model="configs.auto_restart_when_crashed" />
+        <switch-cell title="AutoJS崩溃自启后重启脚本" title-style="flex:2;" v-model="configs.auto_restart_when_crashed" />
+        <tip-block>拥有ADB权限时，授权AutoJS无障碍权限的同时授权其他应用无障碍服务权限 多个服务用:分隔</tip-block>
+        <van-field v-model="configs.other_accessisibility_services" label="无障碍服务service" label-width="10em" type="text" placeholder="请输入" input-align="right" />
         <switch-cell title="只收自己的能量" v-model="configs.collect_self_only" />
         <switch-cell title="不收自己的能量" v-model="configs.not_collect_self" />
         <switch-cell title="是否在收集或帮助后重新检查排行榜" title-style="flex:2;" v-model="configs.recheck_rank_list" />
