@@ -11,7 +11,8 @@ if (runningSize > 1) {
     }
   })
 }
-this.subscribe_interval = 50
+// 标记当前脚本需要监听
+this.subscribe_interval = 10
 this.subscribe_config_change = true
 let { config } = require('../config.js')(runtime, this)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
@@ -110,17 +111,13 @@ let validBallRegion = [config.tree_collect_left, config.tree_collect_top, config
 
 let scaleRate = config.scaleRate
 
-let refreshThread = threads.start(function () {
-  while (true) {
-    // console.log('新获取的配置信息：' + JSON.stringify(config))
-    rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
-    strollButtonRegion = [config.stroll_button_left, config.stroll_button_top, config.stroll_button_width, config.stroll_button_height]
-    bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
-    validBallRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
-    scaleRate = config.scaleRate
-    sleep(30)
-  }
-})
+this.subscribe_callback = (newConfig) => {
+  rankRegion = [config.rank_check_left, config.rank_check_top, config.rank_check_width, config.rank_check_height]
+  strollButtonRegion = [config.stroll_button_left, config.stroll_button_top, config.stroll_button_width, config.stroll_button_height]
+  bottomRegion = [config.bottom_check_left, config.bottom_check_top, config.bottom_check_width, config.bottom_check_height]
+  validBallRegion = [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height]
+  scaleRate = config.scaleRate
+}
 
 function exitAndClean () {
   if (window !== null) {
@@ -129,7 +126,6 @@ function exitAndClean () {
     sleep(1000)
     window.close()
   }
-  refreshThread.interrupt()
   exit()
 }
 let back_img = null

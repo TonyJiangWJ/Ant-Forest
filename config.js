@@ -316,16 +316,22 @@ if (!isRunningMode) {
       if (currentEngine.endsWith('/main.js') || scope.subscribe_config_change) {
         // 运行main.js时监听配置是否变更 实现动态更新配置
         let processShare = require('./lib/prototype/ProcessShare.js')
-        processShare.loop().setInterval(scope.subscribe_interval).subscribe(function (newConfigInfos) {
-          try {
-            newConfigInfos = JSON.parse(newConfigInfos)
-            Object.keys(newConfigInfos).forEach(key => {
-              scope.config_instance.config[key] = newConfigInfos[key]
-            })
-          } catch (e) {
-            console.error('接收到config变更消息，但是处理发生异常', newConfigInfos, e)
-          }
-        }, -1, '.configShare')
+        processShare
+          // 设置缓冲区大小为2MB
+          .setBufferSize(2048 * 1024)
+          .loop().setInterval(scope.subscribe_interval).subscribe(function (newConfigInfos) {
+            try {
+              newConfigInfos = JSON.parse(newConfigInfos)
+              Object.keys(newConfigInfos).forEach(key => {
+                scope.config_instance.config[key] = newConfigInfos[key]
+              })
+              if (scope.subscribe_callback) {
+                scope.subscribe_callback(scope.config_instance.config)
+              }
+            } catch (e) {
+              console.error('接收到config变更消息，但是处理发生异常', newConfigInfos, e)
+            }
+          }, -1, scope.subscribe_file_name || '.configShare')
       }
     }
     return scope.config_instance
