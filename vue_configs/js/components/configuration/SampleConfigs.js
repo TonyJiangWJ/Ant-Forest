@@ -66,6 +66,7 @@
           rain_press_duration: 7,
           send_chance_to_friend: '',
           rain_click_top: 300,
+          rain_click_gap: 300,
           // 执行冷却
           cool_down_if_coolect_too_much: true,
           cool_down_per_increase: 1000,
@@ -238,6 +239,7 @@
            <template #right-icon><span>毫秒</span></template>
          </number-field>
         <number-field v-model="configs.rain_click_top" label="距离顶部的点击高度" label-width="10em" type="text" placeholder="请输入距离顶部的点击高度" input-align="right" />
+        <number-field v-model="configs.rain_click_gap" label="点击间距" label-width="10em" type="text" placeholder="请输入点击间距" input-align="right" />
       </van-cell-group>
       <van-divider content-position="left">收集配置</van-divider>
       <van-cell-group>

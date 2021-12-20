@@ -9,6 +9,7 @@ let currentEngine = engines.myEngine().getSource() + ''
 let isRunningMode = currentEngine.endsWith('/config.js') && typeof module === 'undefined'
 let is_pro = !!Object.prototype.toString.call(com.stardust.autojs.core.timing.TimedTask.Companion).match(/Java(Class|Object)/)
 let default_config = {
+  unlock_device_flag: 'normal',
   password: '',
   is_alipay_locked: false,
   alipay_lock_password: '',
@@ -128,6 +129,7 @@ let default_config = {
   rain_end_content: '.*去蚂蚁森林看看.*',
   send_chance_to_friend: '',
   rain_click_top: 400,
+  rain_click_gap: null,
   rain_press_duration: 7,
   suspend_on_alarm_clock: false,
   suspend_alarm_content: '滑动关闭闹钟',

@@ -414,7 +414,7 @@
           当脚本执行过程中AutoJS崩溃自启，将重新开始执行脚本。如果脚本执行完毕，则不会触发执行</tip-block>
         <switch-cell title="AutoJS崩溃自启后重启脚本" title-style="flex:2;" v-model="configs.auto_restart_when_crashed" />
         <tip-block>拥有ADB权限时，授权AutoJS无障碍权限的同时授权其他应用无障碍服务权限 多个服务用:分隔</tip-block>
-        <van-field v-model="configs.other_accessisibility_services" label="无障碍服务service" label-width="10em" type="text" placeholder="请输入" input-align="right" />
+        <van-field v-model="configs.other_accessisibility_services" label="无障碍服务service" label-width="10em" type="text" placeholder="请输入" input-align="right" stop-propagation />
         <switch-cell title="只收自己的能量" v-model="configs.collect_self_only" />
         <switch-cell title="不收自己的能量" v-model="configs.not_collect_self" />
         <switch-cell title="是否在收集或帮助后重新检查排行榜" title-style="flex:2;" v-model="configs.recheck_rank_list" />

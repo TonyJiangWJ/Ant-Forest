@@ -34,7 +34,7 @@ let widgetUtils = sRequire('WidgetUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
 let FloatyInstance = sRequire('FloatyUtil')
 let processShare = sRequire('ProcessShare')
-
+let storage = storages.create(_storage_name)
 if (!FloatyInstance.init()) {
   toastLog('初始化悬浮窗失败')
   exit()
@@ -82,7 +82,7 @@ let writeLock = threads.lock()
 let ballsComplete = writeLock.newCondition()
 let clickPoint = null
 
-let clickGap = cvt(180)
+let clickGap = config.rain_click_gap || cvt(195)
 let middlePoint = config.device_width / 2
 // 暴力点击的区域
 let violentClickPoints = [middlePoint - 2 * clickGap, middlePoint - clickGap, middlePoint, middlePoint + clickGap, middlePoint + 2 * clickGap].map(v => [v, config.rain_click_top || cvt(300)])
@@ -120,21 +120,54 @@ threadPool.execute(function () {
 })
 
 let clickButtonWindow = floaty.rawWindow(
-  <vertical padding="1">
-    <vertical>
-      <button id="openRainPage" text="打开能量雨界面" />
+  <horizontal>
+    <vertical padding="1">
+      <vertical>
+        <button id="openRainPage" text="打开能量雨界面" />
+      </vertical>
+      <vertical>
+        <button id="changeStatus" text="开始点击" />
+      </vertical>
+      <vertical>
+        <button id="delayClose" text="续命(拖动)" />
+      </vertical>
+      <vertical>
+        <button id="closeBtn" text="关闭" />
+      </vertical>
+      <seekbar id="zoom" progress="{{clickGap}}" max="500" w="*" h="*" />
     </vertical>
-    <vertical>
-      <button id="changeStatus" text="开始点击" />
+    <vertical h="*" w="40">
+      <seekbar id="zoomClick" progress="{{clickGap}}" max="{{config.device_height/2}}" rotation="90" w="200" h="*" />
     </vertical>
-    <vertical>
-      <button id="delayClose" text="续命(拖动)" />
-    </vertical>
-    <vertical>
-      <button id="closeBtn" text="关闭" />
-    </vertical>
-  </vertical>
+  </horizontal>
 );
+let rainClickTop = config.rain_click_top
+ui.run(function () {
+  clickButtonWindow.zoomClick.setTranslationX(-(clickButtonWindow.zoomClick.getWidth() / 2) + 40)
+})
+clickButtonWindow.zoomClick.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (!fromUser) return
+    rainClickTop = Number(clickButtonWindow.zoomClick.getProgress().toString()) + 100
+    violentClickPoints = [middlePoint - 2 * clickGap, middlePoint - clickGap, middlePoint, middlePoint + clickGap, middlePoint + 2 * clickGap].map(v => [v, rainClickTop || config.rain_click_top || cvt(300)])
+  }
+});
+clickButtonWindow.zoom.setOnSeekBarChangeListener({
+  onProgressChanged: function (seekbar, p, fromUser) {
+    if (!fromUser) return
+    clickGap = Number(clickButtonWindow.zoom.getProgress().toString())
+    violentClickPoints = [middlePoint - 2 * clickGap, middlePoint - clickGap, middlePoint, middlePoint + clickGap, middlePoint + 2 * clickGap].map(v => [v, config.rain_click_top || cvt(300)])
+  }
+});
+
+/**
+ * 保存点击信息
+ */
+function saveClickGap () {
+  storage.put('rain_click_gap', clickGap)
+  storage.put('rain_click_top', rainClickTop)
+}
+
 clickButtonWindow.openRainPage.click(function () {
   threadPool.execute(function () {
     openRainPage()
@@ -146,6 +179,7 @@ clickButtonWindow.changeStatus.click(function () {
     return
   }
   if (canStart) {
+    saveClickGap(clickGap)
     checkAndStartCollect()
   } else {
     canStart = true
@@ -161,7 +195,7 @@ clickButtonWindow.closeBtn.click(function () {
 //   targetEndTime = new Date().getTime() + 120000
 // })
 
-let eventStartX,eventStartY
+let eventStartX, eventStartY
 let windowStartX = clickButtonWindow.getX()
 let windowStartY = clickButtonWindow.getY()
 let eventKeep = false
