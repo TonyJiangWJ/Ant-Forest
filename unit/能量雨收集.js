@@ -156,7 +156,7 @@ clickButtonWindow.zoom.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
     if (!fromUser) return
     clickGap = Number(clickButtonWindow.zoom.getProgress().toString())
-    violentClickPoints = [middlePoint - 2 * clickGap, middlePoint - clickGap, middlePoint, middlePoint + clickGap, middlePoint + 2 * clickGap].map(v => [v, config.rain_click_top || cvt(300)])
+    violentClickPoints = [middlePoint - 2 * clickGap, middlePoint - clickGap, middlePoint, middlePoint + clickGap, middlePoint + 2 * clickGap].map(v => [v, rainClickTop || config.rain_click_top || cvt(300)])
   }
 });
 
