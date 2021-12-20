@@ -7,7 +7,7 @@ if (runningSize > 1) {
     let compareEngine = engine
     let compareSource = compareEngine.getSource() + ''
     if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
-      engines.myEngine().forceStop()
+      exit()
     }
   })
 }

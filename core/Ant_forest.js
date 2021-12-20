@@ -139,7 +139,7 @@ function Ant_forest () {
     )
     window.stop.on('click', () => {
       _runningQueueDispatcher.removeRunningTask()
-      engines.myEngine().forceStop()
+      exit()
     })
     logInfo(text)
     ui.run(function () {
@@ -393,7 +393,7 @@ function Ant_forest () {
     _commonFunctions.showEnergyInfo()
     let energyInfo = _commonFunctions.getTodaysRuntimeStorage('energy')
     if (!_has_next) {
-      showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共收取' + energyInfo.totalIncrease + 'g')
+      showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共增加' + energyInfo.totalIncrease + 'g')
     } else {
       showCollectSummaryFloaty()
     }
@@ -460,11 +460,7 @@ function Ant_forest () {
     scanner.destory()
     if (runResult) {
       let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
-      if (backToForest) {
-        automator.clickCenter(backToForest)
-      } else {
-        automator.back()
-      }
+      automator.back()
       sleep(500)
       let tryCount = 1
       while (!_widgetUtils.homePageWaiting()) {
@@ -539,7 +535,7 @@ function Ant_forest () {
     }
     if (!waitFlag && restartCount >= 5) {
       logInfo('退出脚本')
-      engines.myEngine().forceStop()
+      exit()
     }
     logInfo('进入个人首页成功')
     // 自动识别能量球区域
@@ -669,8 +665,8 @@ function Ant_forest () {
           if (stop) {
             unlocker && unlocker.saveNeedRelock(true)
             _runningQueueDispatcher.removeRunningTask()
-            engines.myEngine().forceStop()
             _config.resetBrightness && _config.resetBrightness()
+            exit()
           }
         })
       })

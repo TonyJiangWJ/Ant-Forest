@@ -449,6 +449,19 @@ const BaseScanner = function () {
   this.protectInfoDetect = function (name) {
     this.isProtectDetectDone = false
     this.isProtected = false
+    let loadMoreButton = _widgetUtils.widgetGetOne(_config.friend_load_more_content || '点击展开好友动态', 1000)
+    if (loadMoreButton) {
+      let limit = 3
+      while (loadMoreButton && --limit > 0) {
+        debugInfo(['点击展开好友动态：[{},{}]', loadMoreButton.bounds().centerX(), loadMoreButton.bounds().centerY()])
+        automator.clickCenter(loadMoreButton)
+        sleep(100)
+        loadMoreButton = _widgetUtils.widgetGetOne(_config.friend_load_more_content || '点击展开好友动态', 400)
+      }
+    } else {
+      debugInfo(['未找到加载更多按钮:「{}」', _config.friend_load_more_content || '点击展开好友动态'])
+      return false
+    }
     this.threadPool.execute(function () {
       try {
         self.isProtected = self._protectInfoDetect(name)
@@ -468,15 +481,6 @@ const BaseScanner = function () {
   }
 
   this._protectInfoDetect = function (name) {
-    let loadMoreButton = _widgetUtils.widgetGetOne(_config.friend_load_more_content || '点击展开好友动态', 1000)
-    if (loadMoreButton) {
-      debugInfo(['点击展开好友动态：[{},{}]', loadMoreButton.bounds().centerX(), loadMoreButton.bounds().centerY()])
-      automator.clickCenter(loadMoreButton)
-      sleep(100)
-    } else {
-      debugInfo(['未找到加载更多按钮:「{}」', _config.friend_load_more_content || '点击展开好友动态'])
-      return false
-    }
     let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 500, true, true)
     if (usingInfo !== null) {
       let target = usingInfo.target

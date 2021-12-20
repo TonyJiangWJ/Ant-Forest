@@ -7,6 +7,7 @@
 let { config, storage_name } = require('./config.js')(runtime, this)
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
 const resolver = require('./lib/AutoJSRemoveDexResolver.js')
+require('./modules/init_if_needed.js')(runtime, this)
 
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')

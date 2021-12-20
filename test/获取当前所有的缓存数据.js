@@ -13,6 +13,7 @@ let TESSERAC_INVOKE_COUNT = 'tesseracInvokeCount'
 let DISMISS_AWAIT_DIALOG = 'dismissAwaitDialog'
 let TIMER_AUTO_START = "timerAutoStart"
 let READY = 'ready_engine'
+let USER_NAME_MD5 = 'userNameImgMD5'
 
 storageFactory.initFactoryByKey(ENERGY_TAG, { totalIncrease: 0 })
 storageFactory.initFactoryByKey(RUN_TIMES_TAG, { runTimes: 0 })
@@ -29,7 +30,8 @@ let storageNames = [
   TESSERAC_INVOKE_COUNT,
   DISMISS_AWAIT_DIALOG,
   TIMER_AUTO_START,
-  READY
+  READY,
+  USER_NAME_MD5
 ]
 
 let storage = storages.create(RUNTIME_STORAGE)
