@@ -16,6 +16,7 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
 let TesseracOcrUtil = require('../lib/TesseracOcrUtil.js')
+let aesUtil = require('../lib/AesUtil.js')
 let OcrUtil = _config.useTesseracOcr ? TesseracOcrUtil : BaiduOcrUtil
 let useMockOcr = false
 if (!_config.useTesseracOcr && !_config.useOcr) {
@@ -66,6 +67,10 @@ const ImgBasedFriendListScanner = function () {
   this.stroll_up_check_count = 0
   this.stroll_up_check_bottom = 0
   this.has_next = true
+  // 倒计时数据
+  this.countingDownContainers = []
+  // md5 cache
+  this.imgMd5Cache = {}
   let self = this
   this.init = function (option) {
     option = option || {}
@@ -185,9 +190,10 @@ const ImgBasedFriendListScanner = function () {
    * 判断指定点区域是否为可收取的小手图标
    * 
    * @param {*} img 
+   * @param {*} grayImg 
    * @param {*} point 
    */
-  this.checkIsCanCollect = function (img, point) {
+  this.checkIsCanCollect = function (img, grayImg, point) {
 
     if (_config.check_finger_by_pixels_amount) {
       debugInfo(['使用像素点个数判断是否是可收集，当前点像素点个数为：{} 判断阈值为<={}', point.regionSame, _config.finger_img_pixels])
@@ -196,7 +202,8 @@ const ImgBasedFriendListScanner = function () {
       let height = point.bottom - point.top
       let width = point.right - point.left
       debugForDev(['checkPoints: {}', JSON.stringify(checkPoints)])
-      let p = images.findMultiColors(_commonFunctions.convertImageFromSingleChannel(img), "#ffffff", checkPoints, {
+      let imgSafe = images.copy(_commonFunctions.convertImageFromSingleChannel(img), true)
+      let p = images.findMultiColors(imgSafe, "#ffffff", checkPoints, {
         region: [
           point.left + width - width / Math.sqrt(2),
           point.top,
@@ -208,6 +215,21 @@ const ImgBasedFriendListScanner = function () {
 
       let flag = p !== null
       debugInfo(['point: {} 判定结果：{} {}', JSON.stringify(point), flag, JSON.stringify(p)])
+      if (flag) {
+        try {
+          let key = point.x + '_' + point.y
+          let x = _config.device_width * 0.25, y = point.top + height / 2 , w=_config.device_width * 0.3,h=height
+          this.visualHelper.addRectangle('截取用户名：', [x, y, w, h])
+          debugInfo(['截取用户名：{}', [x, y, w, h]])
+          let base64 = images.toBase64(images.clip(grayImg, x, y, w, h))
+          this.imgMd5Cache[key] = aesUtil.md5(base64).toString()
+          debugForDev(['图片截取：data:image/png;base64,{}', base64])
+          debugInfo(['{} 转换用户名图片MD5 {}', key, this.imgMd5Cache[key]])
+        } catch (e) {
+          debugInfo(['转换用户名图片MD5失败, {}', e])
+        }
+      }
+      imgSafe.recycle()
       return flag
     }
   }
@@ -223,12 +245,13 @@ const ImgBasedFriendListScanner = function () {
     let intervalScreenForDetectCollect = null
     let intervalScreenForDetectHelp = null
     // console.show()
-    let countingDownContainers = []
+    this.countingDownContainers = []
     // 列表中的滑动次数
     let count = 0
     this.has_next = true
     this.stroll_up_check_count = 0
     do {
+      this.imgMd5Cache = {}
       screen = _commonFunctions.checkCaptureScreenPermission(5)
       // 重新复制一份
       grayScreen = images.copy(images.grayscale(images.copy(screen)), true)
@@ -266,7 +289,7 @@ const ImgBasedFriendListScanner = function () {
                   // 宽度基本为65像素不到，限制像素点最大个数为4500即可，超过的可能是底部的邀请按钮
                   return
                 }
-                if (self.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), point)) {
+                if (self.checkIsCanCollect(images.copy(intervalScreenForDetectCollect), grayScreen, point)) {
                   // 可收取
                   executeSuccess = self.solveCollectable(point, listWriteLock, countdownLatch, collectOrHelpList)
                 } else {
@@ -275,7 +298,7 @@ const ImgBasedFriendListScanner = function () {
                     countdownLatch.countDown()
                     executeSuccess = true
                   }
-                  self.solveCountdown(grayScreen, point, imgResolveLock, countdownLock, countingDownContainers)
+                  self.solveCountdown(grayScreen, point, imgResolveLock, countdownLock)
                   if (testing) {
                     // 测试时等待
                     countdownLatch.countDown()
@@ -329,7 +352,7 @@ const ImgBasedFriendListScanner = function () {
       }
     }
 
-    this.checkRunningCountdown(countingDownContainers)
+    this.checkRunningCountdown()
 
     return this.getCollectResult()
   }
@@ -436,7 +459,10 @@ const ImgBasedFriendListScanner = function () {
     }
     listWriteLock.lock()
     try {
-      collectOrHelpList.push({ point: point, isHelp: false })
+      let key = point.x + '_' + point.y
+      let md5 = this.imgMd5Cache[key]
+      collectOrHelpList.push({ point: point, isHelp: false, imgMd5: md5 })
+      debugInfo(['{} cacheImage md5: {}', key, md5])
       countdownLatch.countDown()
       executeSuccess = true
       this.visualHelper.addRectangle('可收取点', [point.left, point.top, point.right - point.left, point.bottom - point.top])
@@ -453,9 +479,8 @@ const ImgBasedFriendListScanner = function () {
    * @param {*} point 
    * @param {*} imgResolveLock 
    * @param {*} countdownLock 
-   * @param {*} countingDownContainers 
    */
-  this.solveCountdown = function (grayScreen, point, imgResolveLock, countdownLock, countingDownContainers) {
+  this.solveCountdown = function (grayScreen, point, imgResolveLock, countdownLock) {
     if (!_config.is_cycle) {
       debugInfo('倒计时中：' + JSON.stringify(point) + ' 像素点总数：' + point.regionSame)
       let forOcrScreen = images.copy(grayScreen)
@@ -506,8 +531,12 @@ const ImgBasedFriendListScanner = function () {
                 debugInfo('设置最小倒计时：' + countdown)
                 this.min_countdown = countdown
                 this.min_countdown_pixels = point.regionSame
+                // 如果当前最小倒计时小于等于1 且 开启了仅逛一逛收取 可以直接返回而不需要判断是否触底
+                if (countdown <= 1 && _config.collect_by_stroll_only) {
+                  this.has_next = false
+                }
               }
-              countingDownContainers.push({
+              this.countingDownContainers.push({
                 point: point,
                 isCountdown: true,
                 countdown: countdown,
@@ -533,6 +562,9 @@ const ImgBasedFriendListScanner = function () {
    * @param {*} count 
    */
   this.checkBottomAndRecycle = function (grayScreen, count) {
+    if (!this.has_next) {
+      return
+    }
     debugInfo('滑动下一页')
     automator.scrollDown()
     sleep(100)
@@ -675,74 +707,93 @@ ImgBasedFriendListScanner.prototype.constructor = ImgBasedFriendListScanner
 
 
 ImgBasedFriendListScanner.prototype.collectTargetFriend = function (obj) {
-  if (!obj.protect) {
-    //automator.click(obj.target.centerX(), obj.target.centerY())
-    debugInfo(['等待进入好友主页, 位置：「{}, {}」设备宽高：[{}, {}]', obj.point.x, obj.point.y, _config.device_width, _config.device_height])
-    if (_config.develop_mode) {
-      let screen = _commonFunctions.checkCaptureScreenPermission()
-      let startY = obj.point.y - 32
-      let height = _config.device_height - startY > 190 ? 190 : _config.device_height - startY - 1
-      let rangeImg = images.clip(screen, 0, startY, _config.device_width, height)
-      let base64 = images.toBase64(rangeImg)
-      debugForDev(['点击区域「{}, {}」startY:{} 图片信息：「data:image/png;base64,{}」', obj.point.x, obj.point.y, startY, base64], false, true)
-    }
-    let restartLoop = false
-    let count = 1
-    automator.click(obj.point.x, obj.point.y)
-    ///sleep(1000)
-    while (!_widgetUtils.friendHomeWaiting()) {
-      debugInfo(
-        '未能进入主页，尝试再次进入 count:' + count++
-      )
-      // 无法点击时，尝试点击其他位置
-      automator.click(obj.point.x - 100, obj.point.y + obj.point.bottom - obj.point.top)
-      sleep(500)
-      if (count >= 3) {
-        warnInfo('重试超过3次，取消操作')
-        restartLoop = true
-        break
-      }
-    }
-    if (restartLoop) {
-      errorInfo('页面流程出错，重新开始')
-      return false
-    }
-    let name = this.getFriendName()
-    if (name) {
-      obj.name = name
-      debugInfo(['进入好友[{}]首页成功', obj.name])
-    } else {
-      errorInfo(['获取好友名称失败，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
-    }
-    let skip = false
-    if (!skip && _config.white_list && _config.white_list.indexOf(obj.name) >= 0) {
+  let cachedName = _commonFunctions.tryGetFriendName(obj.imgMd5)
+  debugInfo(['尝试从缓存中获取好友名称：{} - {}', obj.imgMd5, cachedName])
+  // TODO 如果好友名称能够获取到，直接判断是否在白名单或者保护罩使用记录中
+  if (cachedName) {
+    if (_config.white_list && _config.white_list.indexOf(cachedName) >= 0) {
       debugInfo(['{} 在白名单中不收取他', obj.name])
-      skip = true
+      return true
     }
-    if (!skip && _commonFunctions.checkIsProtected(obj.name)) {
+    if (_commonFunctions.checkIsProtected(cachedName)) {
       warnInfo(['{} 使用了保护罩 不收取他', obj.name])
-      skip = true
+      return true
     }
-    if (skip) {
-      return this.returnToListAndCheck()
-    }
-    if (!obj.recheck) {
-      this.protectInfoDetect(obj.name)
-    } else {
-      this.isProtected = false
-      this.isProtectDetectDone = true
-    }
-    return this.doCollectTargetFriend(obj)
   }
-  return true
+  //automator.click(obj.target.centerX(), obj.target.centerY())
+  debugInfo(['等待进入好友主页, 位置：「{}, {}」设备宽高：[{}, {}] md5: {}', obj.point.x, obj.point.y, _config.device_width, _config.device_height, obj.imgMd5])
+  if (_config.develop_mode) {
+    let screen = _commonFunctions.checkCaptureScreenPermission()
+    let startY = obj.point.y - 32
+    let height = _config.device_height - startY > 190 ? 190 : _config.device_height - startY - 1
+    let rangeImg = images.clip(screen, 0, startY, _config.device_width, height)
+    let base64 = images.toBase64(rangeImg)
+    debugForDev(['点击区域「{}, {}」startY:{} 图片信息：「data:image/png;base64,{}」', obj.point.x, obj.point.y, startY, base64], false, true)
+  }
+  let restartLoop = false
+  let count = 1
+  automator.click(obj.point.x, obj.point.y)
+  ///sleep(1000)
+  while (!_widgetUtils.friendHomeWaiting()) {
+    debugInfo(
+      '未能进入主页，尝试再次进入 count:' + count++
+    )
+    // 无法点击时，尝试点击其他位置
+    automator.click(obj.point.x - 100, obj.point.y + obj.point.bottom - obj.point.top)
+    sleep(500)
+    if (count >= 3) {
+      warnInfo('重试超过3次，取消操作')
+      restartLoop = true
+      break
+    }
+  }
+  if (restartLoop) {
+    errorInfo('页面流程出错，重新开始')
+    return false
+  }
+  let name = this.getFriendName()
+  if (name) {
+    obj.name = name
+    debugInfo(['进入好友[{}]首页成功', obj.name])
+    if (obj.imgMd5 && name !== cachedName) {
+      debugInfo(['更新好友名称缓存：{} {}', name, obj.imgMd5])
+      _commonFunctions.updateFriendNameCache(obj.imgMd5, name)
+    }
+  } else {
+    errorInfo(['获取好友名称失败，请检查好友首页文本"XXX的蚂蚁森林"是否存在'])
+  }
+  let skip = false
+  if (!skip && _config.white_list && _config.white_list.indexOf(obj.name) >= 0) {
+    debugInfo(['{} 在白名单中不收取他', obj.name])
+    skip = true
+  }
+  if (!skip && _commonFunctions.checkIsProtected(obj.name)) {
+    warnInfo(['{} 使用了保护罩 不收取他', obj.name])
+    skip = true
+  }
+  if (skip) {
+    return this.returnToListAndCheck()
+  }
+  if (!obj.recheck) {
+    this.protectInfoDetect(obj.name)
+  } else {
+    this.isProtected = false
+    this.isProtectDetectDone = true
+  }
+  return this.doCollectTargetFriend(obj)
 }
 
-ImgBasedFriendListScanner.prototype.checkRunningCountdown = function (countingDownContainers) {
-  if (!_config.is_cycle && countingDownContainers.length > 0) {
-    debugInfo(['倒计时中的好友数[{}]', countingDownContainers.length])
+/**
+ * 校验倒计时数据
+ * 如果在收集过程中有倒计时已结束，需要返回重新开始
+ * 如果开启了merge_countdown_by_gaps需要将最小的N个倒计时统合 选择区间内的最大倒计时作为最小倒计时
+ */
+ImgBasedFriendListScanner.prototype.checkRunningCountdown = function () {
+  if (!_config.is_cycle && this.countingDownContainers.length > 0) {
+    debugInfo(['倒计时中的好友数[{}]', this.countingDownContainers.length])
     let that = this
     let countdownTimes = []
-    countingDownContainers.forEach((item, idx) => {
+    this.countingDownContainers.forEach((item, idx) => {
       if (item.countdown <= 0) {
         return
       }
@@ -763,7 +814,10 @@ ImgBasedFriendListScanner.prototype.checkRunningCountdown = function (countingDo
         countdownTimes.push(rest)
       }
     })
+
+    // 统计当前倒计时数据，如果配置了统合最近N分钟内的倒计时 将最小倒计时改为该区间内的最大倒计时
     let sortedList = countdownTimes.sort((a, b) => a - b)
+    // 初始化max为最小值
     let max = min = sortedList[0]
     let maxIdx = 0
     if (_config.merge_countdown_by_gaps) {

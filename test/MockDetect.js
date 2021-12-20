@@ -17,11 +17,25 @@ importClass(java.util.concurrent.CountDownLatch)
 importClass(java.util.concurrent.ThreadFactory)
 importClass(java.util.concurrent.Executors)
 resolver()
-
+let currentEngine = engines.myEngine()
+let runningEngines = engines.all()
+let runningSize = runningEngines.length
+let currentSource = currentEngine.getSource() + ''
+if (runningSize > 1) {
+  runningEngines.forEach(engine => {
+    let compareEngine = engine
+    let compareSource = compareEngine.getSource() + ''
+    if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
+      // 强制关闭同名的脚本
+      compareEngine.forceStop()
+    }
+  })
+}
 let { config: _config } = require('../config.js')(runtime, this)
 _config.show_debug_log = true
 _config.develop_mode = true
 _config.save_log_file = false
+_config.enable_visual_helper = true
 // 启用或者禁用ocr 都禁用则使用默认
 _config.useTesseracOcr = true
 _config.useOcr = false
@@ -61,11 +75,11 @@ const MockFriendListScanner = function () {
   }
 
   this.operateCollectIfNeeded = function (collectOrHelpList) {
-    this.collectOrHelpList = collectOrHelpList
+    this.collectOrHelpList = collectOrHelpList || []
   }
 
   this.checkRunningCountdown = function (countingDownContainers) {
-    this.collectOrHelpList = this.collectOrHelpList.concat(countingDownContainers)
+    this.collectOrHelpList = this.collectOrHelpList.concat(countingDownContainers || [])
   }
 
   this.doRecognizeIfPossiable = function () {
@@ -94,7 +108,7 @@ const MockFriendListScanner = function () {
 MockFriendListScanner.prototype = Object.create(_ImgBasedFriendListScanner.prototype)
 MockFriendListScanner.prototype.constructor = MockFriendListScanner
 
-requestScreenCapture(false)
+_commonFunctions.requestScreenCaptureOrRestart(true)
 
 _commonFunctions.autoSetUpBangOffset(true)
 let offset = _config.bang_offset
@@ -110,6 +124,7 @@ let scannerThread = threads.start(function () {
     scanner.collecting(true)
     scanner.doRecognizeIfPossiable()
     points = scanner.collectOrHelpList
+    debugInfo(['points:{}', JSON.stringify(points)])
     collecting = false
     sleep(50)
   }
@@ -272,7 +287,7 @@ window.canvas.on("draw", function (canvas) {
       if (pointData.text) {
         drawText(pointData.text, { x: point.left, y: point.top - 40 }, canvas, paint)
       }
-      !collecting && drawRectAndText('文字识别区域' + pointData.text, [280, point.top, 580, point.top + 120], '#828282', canvas, paint)
+      // !collecting && drawRectAndText('文字识别区域' + pointData.text, [280, point.top, 580, point.top + 120], '#828282', canvas, paint)
       drawText(point.same, { x: point.left, y: point.top - 30 }, canvas, paint)
     })
   }

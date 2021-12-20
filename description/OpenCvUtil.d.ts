@@ -31,9 +31,9 @@ declare module OpenCvUtil {
   ): Array
   /**
    * SIFT特征匹配 来源 AutoJS Pro 高危内测群
-   * @param {*} originalImage
-   * @param {*} templateImage
-   * @returns
+   * @param {ImageWrapper} originalImage 
+   * @param {ImageWrapper} templateImage
+   * @returns {SiftPointInfo}
    */
   function findBySIFT(originalImage, templateImage): Array
 }
