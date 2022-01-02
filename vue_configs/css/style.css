@@ -1,6 +1,13 @@
 [v-cloak] {
   display: none;
 }
+.root-container {
+  position: relative;
+  width: 100%;
+  /* min-height: 755px; */
+  overflow: scroll;
+  background: #ffffff;
+}
 .custom-slide-button {
   min-width: 26px;
   font-size: 10px;
@@ -22,6 +29,95 @@
   align-items: center;
   justify-content: center;
   height: 100%;
+}
+.fixed-bar {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+.view-push-enter {
+  opacity: 0;
+  -webkit-transform: translate(0, 100px);
+  transform: translate(0, 100px);
+}
+.view-push-leave-active {
+  opacity: 0;
+  -webkit-transform: translate(0, -100px);
+  transform: translate(0, -100px);
+}
+.view-pop-enter {
+  opacity: 0;
+  -webkit-transform: translate(0, -100px);
+  transform: translate(0, -100px);
+}
+.view-pop-leave-active {
+  opacity: 0;
+  -webkit-transform: translate(0, 100px);
+  transform: translate(0, 100px);
+}
+
+
+.slide-left-enter,.slide-right-leave-active {
+  opacity: 0;
+  -webkit-transform: translateX(150px);
+  transform: translateX(150px);
+}
+.slide-left-leave-active,.slide-right-enter {
+  opacity: 0;
+  -webkit-transform: translateX(-150px);
+  transform: translateX(-150px);
+}
+
+.router-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+}
+
+.router-view {
+  position: absolute;
+  left: 0;
+  top: 46px;
+  width: 100%;
+  height: 100%;
+  /* transition: all 0.5s cubic-bezier(0.55, 0, 0.1, 1); */
+  transition: all 0.3s ease-in-out;
+}
+.van-dialog {
+  border-radius: 2px;
+}
+
+.icon-settings {
+  content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAFPklEQVRoge2aW2xUVRSGP+wFYgcUsWqsULQMClXbxFREjQ+Y+KDRB40QgzESfNIXiCQavCRGvFBpi61PXl7w+uiTFwhaTcTEYDWCEQ1qaBFjYqK0hdZ2OuPDWrv7zJkz+5yze0pN5E8mZ2b22uuyL2uvtfaBs/h/YCcwBZRCn0lg2xzqlRpDVBphPgNzqFcqLAKKwBhQE/h/of4/DtRmLfScrBkCq4F5wBFkeRmMAIPAfGBF1kLTGNIMbAUaY+hW6fOHiLbv9HlNDI9GYAuwNLF2CZEHjiNr/A/gDgftS0r3ZETb89r2jKP/OuA3pRsEWjz0jcQKrBF/67MIdCPLJIg64BOluTuC133a9iHl+wegHujEeruTZGhM0Ih+ZMM+Dkzof98ie+IK4BXgT6x3itoHVwXaf0dm71JgJXAQ66K3I07j8yyMuSxkREOgrQP4SdvGVHgJKACfAg84+D4EfInMagnxYqP6/SiwJkCbCxnT5GPIJmVwGrggoj0HvKE0I8CLwMUp+DcDfYghJWAPMgthLFEdSsCDKfhPowH4URnsctC1qTBfNFE+C2F0qQ5HKF8VqXAdsh+mEG9ypnGLyp7EbWwiPI2MyHGil9hs4XzgGNVdeWrUAgeU4dtZMEyId1XmF1S6am/ksRuuPSumDtyMdSKJ3G7SEGUecmANI9Mdh1agBziMuNZR/d6jbXEYRPZFDWJMZngNGaFnY+jqEZdaoHoYXwB6ldaFV5V+h7fWISxAwoUJ4EIHXT2wD3tI7gauR1xmA+J1XsaeG/twG7NS6Y7hGaWfB6xFTuAu7Mn6cUy/PuwJ7Ipu27CJV28MzwGl24vEYZuQwYk6OKexk+qZXRG419G3FVkyYzFGGLQhM1NAYrVqeLiKPmbAXojqZKLOU0gAtwcJEO8ClsUo1qN9exIYYdCrfbpj6PLAPcATwDvAN8iAlShP3KZhLPVZj99r344UfdZon0Me8mqw+lagakMCjGjfXIo+Oe0z7CmzTN+scnafATCyfQcvklkQCz34DOnTtXHDMLSDHvIqdAyWZQr6+yTwK1IoOKzPAeBnB+O9qthG4KuEymwM9HXhSiQsuha4GvGKywM6V2AborA5sHzc7zjiWuPQDvxDvPt9JEIXk1UOAI+6hNQq8w3Ac8B+7fxRjHLGnQ7hNqYdm0LvjuFpDsQPkPBoPVJu8irwLUCqJxO4M8E6bIgyjhh2A+Kdcki00IfMhAlR6hz8ZhyiRCFpAFePGOAKGieRmXAZEZQZF6imQl6VGwYWJ6BvRU7sQ8gZM6Lfu0jm2ZYiK+A0cJGHvlWxGhsWJImlZoobVdYossQywXwkvikBr2fFNAHeVJlfE5+7JIIJCI/id1j6IoctAnbOlNltyBmSSTnGAx3IXikCt/syaQROICPyWIwwV+YYhyZkT1TDdtXhBPFXGpHYqgz+IjojW4wt2YwiidklKfgvRwrfJpJ4j2iPuAh7C7AlBf9pLMNmjJ9RXq5chwR7JhELFrH7gfsdfDdTWcQ2acAQcGuAtkFlm4zQ++KnJWBMP3Ky78JmkweU5nLkIDTXCkWkSB1GnvJrhU7kWqEFWwScQs6bJSozszuSoDGmSDeBlDHDFcC6gPA7I3itxxYTwn1rgKewdy9G1lAWRhg0I6F9CQnnb3LQdlPdQewgPuzoQCrvxojML06bkPuJc2PoNmPvO8J4X9s2xPBoQEo/Xhc7WWEtouzBiLZftG1VRNt/DuaFgVOUh9+z+sLAbMEkTlGfWXmFYzbefAB4Cxn9MAqc2TuWs5gz/AslyrEY0l6rswAAAABJRU5ErkJggg==);
+  width: 1rem;
+  height: 1rem;
+}
+
+.about::after {
+  opacity: 0.25;
+  min-height: 500px;
+  content: "";
+  position: absolute;
+  top: 50px;
+  left: -75px;
+  bottom: 0;
+  right: 0;
+  background: url(../images/肌肉doge.png) no-repeat;
+  background-size: cover;
+  pointer-events: none;
+  mask: linear-gradient(110deg, #000 10%, transparent 70%, transparent);
+}
+
+html {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 /* 禁用长按菜单 复制等 */
 * {

@@ -80,12 +80,17 @@ postMessageToWebView = prepareWebView(ui.webview, {
   // 延迟注册
   bridgeHandler: () => bridgeHandlerBuilder(postMessageToWebView),
   onPageFinished: () => {
+    log('页面加载完毕')
     registerSensors()
-    let invokeStorage = config.useTesseracOcr ? commonFunctions.getTesseracInvokeCountStorage() : commonFunctions.getBaiduInvokeCountStorage()
-    postMessageToWebView({ functionName: 'ocr_invoke_count', data: invokeStorage.date + '已调用次数:' + invokeStorage.count + (config.useTesseracOcr ? '' : ' 剩余:' + (500 - invokeStorage.count)) })
     setTimeout(function () {
       ui.loadingWebview.setVisibility(View.GONE)
       ui.webview.setVisibility(View.VISIBLE)
+      log('切换webview')
+      setTimeout(function () {
+        console.log('loadingWebview height:', ui.loadingWebview.getHeight())
+        console.log('webview height:', ui.webview.getHeight())
+        postMessageToWebView({ functionName: 'resizeWindow', data: { height: ui.loadingWebview.getHeight(), width: ui.webview.getWidth()} })
+      }, 100)
       ui.loadingWebview.clearView()
     }, 1000)
   }
@@ -114,6 +119,7 @@ ui.emitter.on('back_pressed', (e) => {
     // 一秒内再按一次
     timeout = new Date().getTime() + 1000
   } else {
+    sensors.unregisterAll()
     toastLog('再见~')
   }
 })
@@ -121,13 +127,15 @@ ui.emitter.on('back_pressed', (e) => {
 let gravitySensor = null
 let distanceSensor = null
 function registerSensors () {
-  if (!gravitySensor) {
-    gravitySensor = sensors.register('gravity', sensors.delay.ui).on('change', (event, x, y, z) => {
+  gravitySensor = sensors.register('gravity', sensors.delay.ui)
+  if (gravitySensor) {
+    gravitySensor.on('change', (event, x, y, z) => {
       postMessageToWebView({ functionName: 'gravitySensorChange', data: { x: x, y: y, z: z } })
     })
   }
+  distanceSensor = sensors.register('proximity', sensors.delay.ui)
   if (!distanceSensor) {
-    distanceSensor = sensors.register('proximity', sensors.delay.ui).on('change', (event, d) => {
+    distanceSensor.on('change', (event, d) => {
       postMessageToWebView({ functionName: 'distanceSensorChange', data: { distance: d } })
     })
   }

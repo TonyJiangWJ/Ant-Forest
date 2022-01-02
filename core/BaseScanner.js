@@ -454,9 +454,13 @@ const BaseScanner = function () {
       let limit = 3
       while (loadMoreButton && --limit > 0) {
         debugInfo(['点击展开好友动态：[{},{}]', loadMoreButton.bounds().centerX(), loadMoreButton.bounds().centerY()])
-        automator.clickCenter(loadMoreButton)
+        // automator.clickCenter(loadMoreButton)
+        loadMoreButton.click()
         sleep(100)
         loadMoreButton = _widgetUtils.widgetGetOne(_config.friend_load_more_content || '点击展开好友动态', 400)
+      }
+      if (loadMoreButton) {
+        warnInfo(['点击展开好友失败 {}', loadMoreButton.bounds()])
       }
     } else {
       debugInfo(['未找到加载更多按钮:「{}」', _config.friend_load_more_content || '点击展开好友动态'])
