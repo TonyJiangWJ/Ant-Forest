@@ -5,7 +5,7 @@
 
 基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha2 版本开发。解锁模块参考自：[https://github.com/e1399579/autojs](https://github.com/e1399579/autojs)
 
-- 脚本执行依赖于：[AutoJs 4.1.1 alpha2](http://47.110.40.234/autojs/autojs-4.1.1-alpha2.apk) or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 若无法访问请百度搜索一下
+- 脚本执行依赖于：AutoJs 4.1.1 alpha2 or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 若无法访问请百度搜索一下
 - 设备系统要求
 
   - 具有 ROOT 权限的安卓 5.0 及以上版本
@@ -22,7 +22,7 @@
 
 ## 使用
 
-- 下载安装 [AutoJs 4.1.1 alpha2](http://47.110.40.234/autojs/autojs-4.1.1-alpha2.apk) or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
+- 下载安装 AutoJs 4.1.1 alpha2 or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
 - 给与软件必要权限 `后台弹出界面`、`显示悬浮窗`、`自启动`、`电量无限制`，并将软件保持后台运行
 - 定时启动脚本，点击 `main.js` 的菜单，选择 `更多` `定时任务` 即可配置定时启动
 - 如果运行提示有任务正在队列中，请运行配置 `可视化配置.js` 然后进到 `进阶配置` 中勾选 `单脚本运行`，该功能是用于多个脚本同时运行时的任务队列 相当于一个调度程序，避免多个脚本抢占前台导致出错
@@ -187,7 +187,7 @@ module.exports = function (obj) {
 - 欢迎使用支付宝或微信请我喝杯咖啡
   - 一元喝速溶、5元喝胶囊、12买全家、33星巴克感激不尽
   
-  ![alipay_qrcode](./resources/alipay_qrcode.jpg)  ![wechat_qrcode](./resources/wechat_qrcode.png)
+  ![alipay_qrcode](./resources/alipay_qrcode.png)  ![wechat_qrcode](./resources/wechat_qrcode.png)
 
 - 支付宝扫码领红包，你拿红包我也有份。
 
