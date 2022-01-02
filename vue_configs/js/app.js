@@ -8,14 +8,17 @@
 
 Vue.use(vant);
 let app = new Vue({
+  router,
+  store,
   el: '#app',
   data () {
     return {
       resourcePath: 'unknown',
       message: '',
-      activeTab: '1',
-      showMenuDialog: false,
-      clientHeight: 0
+      transitionName: 'view-pop',
+      false: true,
+      showBack: this.$route.path != '/',
+      showMenuDialog: false
     }
   },
   methods: {
@@ -31,9 +34,11 @@ let app = new Vue({
       })
     },
     clickedMenu: function (e) {
-      console.log('clicked menu ' + this.clientHeight)
       e.stopPropagation()
       this.showMenuDialog = true
+    },
+    onClickBack: function () {
+      this.$router.back()
     },
     resetDefaultConfigs: function () {
       $app.invoke('resetConfigs')
@@ -57,13 +62,35 @@ let app = new Vue({
       return document.querySelector('html')
     }
   },
+  watch: {
+    '$route': function (to, from) {
+      console.log('router changed from:', from.path, from.meta.index)
+      console.log('router changed to:', to.path, to.meta.index)
+      // this.transitionName = to.meta.index > from.meta.index ? 'view-push' : 'view-pop'
+      this.transitionName = to.meta.index > from.meta.index ? 'slide-left' : 'slide-right'
+      console.log('transitionName', this.transitionName)
+      this.showBack = to.meta.index > 0
+    }
+  },
   mounted () {
-    // vant.Toast('vue加载完成');
-    let self = this
+    this.$store.commit('setIndex', 1)
     setTimeout(function () {
-      self.clientHeight = document.querySelector('html').clientHeight
-      console.log('client-height:' + self.clientHeight)
-    }, 200)
-    // document.getElementById('app').style.minHeight = this.clientHeight + 'px'
+      console.log('mounted currentHeight:', currentHeight, 'window height:', window.innerHeight)
+      if (window.innerHeight > currentHeight) {
+        currentHeight = window.innerHeight
+        document.getElementById('app').style.height = currentHeight + 'px'
+      }
+    }, 1200)
+    $app.registerFunction('resizeWindow', ({ height, width }) => {
+      console.log('resizeWindow currentHeight:', currentHeight, 'window height:', window.innerHeight, 'webview height', height)
+      console.log('resizeWindow window width:', window.innerWidth, 'webview width', width)
+      console.log('body client height:', document.body.getBoundingClientRect().height)
+      let newHeight = window.innerWidth / width * height
+      if (newHeight > currentHeight) {
+        currentHeight = newHeight
+        console.log('设置高度为：' + newHeight)
+        document.getElementById('app').style.height = currentHeight + 'px'
+      }
+    })
   }
 })

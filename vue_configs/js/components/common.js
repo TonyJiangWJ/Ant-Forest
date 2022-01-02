@@ -6,6 +6,20 @@
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 
+const VALIDATOR = {
+  P_INT: {
+    validate: () => false,
+    message: v => {
+      if (v) {
+        if (isNaN(v) || parseInt(v) <= 0) {
+          return '请输入一个正数'
+        }
+      }
+      return ''
+    }
+  }
+}
+
 let mixin_methods = {
   data: function () {
     return {
@@ -59,6 +73,12 @@ let mixin_common = {
     return {}
   },
   methods: {
+    routerTo: function (path) {
+      this.$router.push(path)
+    },
+    saveConfigs: function () {
+      this.doSaveConfigs()
+    },
     loadConfigs: function () {
       $app.invoke('loadConfigs', {}, config => {
         Object.keys(this.configs).forEach(key => {
@@ -109,6 +129,10 @@ let mixin_common = {
   },
   mounted () {
     this.loadConfigs()
+  },
+  destroyed() {
+    console.log('保存当前界面配置')
+    this.saveConfigs()
   }
 }
 
@@ -432,9 +456,6 @@ Vue.component('region-input-field', function (resolve, reject) {
     },
     watch: {
       innerValue: function (v) {
-        if (this.isNotEmpty(this.positionErrorMessage)) {
-          return
-        }
         if (this.arrayValue && this.isNotEmpty(v)) {
           this.$emit('change', v.split(',').map(v => parseInt(v)))
         } else {
@@ -467,7 +488,7 @@ Vue.component('region-input-field', function (resolve, reject) {
         <van-field :error-message="positionErrorMessage" error-message-align="right" v-model="innerValue" :label="label"
          :label-width="labelWidth" type="text" placeholder="请输入校验区域" input-align="right" />
         <template #right>
-          <van-button square type="primary" text="滑动输入" @click="showRegionSlider=true" />
+          <van-button square type="primary" text="滑动输入" @click="showRegionSlider=true" style="height: 100%" />
         </template>
       </van-swipe-cell>
       <van-popup v-model="showRegionSlider" position="bottom" :style="{ height: '30%' }" :get-container="getContainer">
@@ -661,7 +682,7 @@ Vue.component('installed-package-selector', function (resolve, reject) {
       }
     },
     template: `<div>
-      <van-row type="flex" justify="center">
+      <van-row type="flex" justify="center" style="margin-bottom: 0.5rem">
         <van-col>
           新增应用白名单
           <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadInstalledPackages">从已安装的列表中选择</van-button>
@@ -732,7 +753,7 @@ Vue.component('number-field', resolve => {
     },
     template: `
       <van-field
-        v-model="innerValue" :label="label" :label-width="labelWidth" type="number" :placeholder="placeholder" input-align="right">
+        v-model="innerValue" :label="label" :label-width="labelWidth" type="number" :error-message="errorMessage" error-message-align="right" :placeholder="placeholder" input-align="right">
         <template #right-icon><slot name="right-icon"></slot></template>
       </van-field>
       `
@@ -801,6 +822,62 @@ Vue.component('switch-cell', resolve => {
     `
   })
 })
+/**
+ * Base64ImageViewer
+ * 封装是switch按钮
+ */
+Vue.component('base64-image-viewer', resolve => {
+  resolve({
+    mixins: [mixin_methods],
+    props: {
+      value: String,
+      title: String,
+      titleStyle: String
+    },
+    model: {
+      prop: 'value',
+      event: 'change'
+    },
+    data: function () {
+      return {
+        innerValue: this.value,
+        showBase64Inputer: false,
+      }
+    },
+    computed: {
+      base64Data: function () {
+        if (this.innerValue) {
+          return 'data:image/png;base64,' + this.innerValue
+        }
+        return null
+      }
+    },
+    watch: {
+      innerValue: function (v) {
+        this.$emit('change', v)
+      },
+      value: function (v) {
+        this.innerValue = v
+      }
+    },
+    template: `
+    <div>
+      <van-swipe-cell stop-propagation>
+        <div style="display:flex; height: 3rem;align-items: center; padding-left:1rem;">
+          <label>{{title}}:</label>
+          <img :src="base64Data" style="max-height:2.5rem;"/>
+        </div>
+        <template #right>
+          <van-button square type="primary" text="修改Base64" @click="showBase64Inputer=true" />
+        </template>
+      </van-swipe-cell>
+      <van-popup v-model="showBase64Inputer" position="bottom" :style="{ height: '30%', display: 'flex', alignItems: 'center' }" :get-container="getContainer">
+        <van-field v-model="innerValue" label="图片base64" type="textarea" placeholder="请输入base64" input-align="right" rows="6"/>
+      </van-popup>
+    </div>
+    `
+  })
+})
 
 
 function formatDate (date, fmt) {
@@ -827,15 +904,19 @@ function formatDate (date, fmt) {
     '5': '\u4e94',
     '6': '\u516d'
   }
+  let execResult
   if (/(y+)/.test(fmt)) {
-    fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))
+    execResult = /(y+)/.exec(fmt)
+    fmt = fmt.replace(execResult[1], (date.getFullYear() + '').substring(4 - execResult[1].length))
   }
   if (/(E+)/.test(fmt)) {
-    fmt = fmt.replace(RegExp.$1, ((RegExp.$1.length > 1) ? (RegExp.$1.length > 2 ? '\u661f\u671f' : '\u5468') : '') + week[date.getDay() + ''])
+    execResult = /(E+)/.exec(fmt)
+    fmt = fmt.replace(execResult[1], ((execResult[1].length > 1) ? (execResult[1].length > 2 ? '\u661f\u671f' : '\u5468') : '') + week[date.getDay() + ''])
   }
   for (var k in o) {
     if (new RegExp('(' + k + ')').test(fmt)) {
-      fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? (o[k]) : (('00' + o[k]).substr(('' + o[k]).length)))
+      execResult = new RegExp('(' + k + ')').exec(fmt)
+      fmt = fmt.replace(execResult[1], (execResult[1].length === 1) ? (o[k]) : (('00' + o[k]).substring(('' + o[k]).length)))
     }
   }
   return fmt
