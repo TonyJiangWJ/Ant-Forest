@@ -26,9 +26,10 @@ let offset = config.bang_offset
 var window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
 );
-
-window.setSize(config.device_width, config.device_height)
-window.setTouchable(false)
+ui.post(() => {
+  window.setSize(config.device_width, config.device_height)
+  window.setTouchable(false)
+})
 
 function convertArrayToRect (a) {
   // origin array left top width height
