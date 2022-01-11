@@ -44,7 +44,7 @@ let default_config = {
   check_distance: false,
   posture_threshold_z: 6,
   // 执行冷却
-  cool_down_if_coolect_too_much: true,
+  cool_down_if_collect_too_much: true,
   cool_down_per_increase: 1000,
   cool_down_minutes: 60,
   // 电量保护，低于该值延迟60分钟执行脚本

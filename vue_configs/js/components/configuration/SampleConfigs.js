@@ -63,7 +63,7 @@ const CollectConfig = {
         watering_cooperation_amount: '',
         watering_cooperation_threshold: '',
         // 执行冷却
-        cool_down_if_coolect_too_much: true,
+        cool_down_if_collect_too_much: true,
         cool_down_per_increase: 1000,
         cool_down_minutes: 60,
         collect_self_only: true,
@@ -168,8 +168,8 @@ const CollectConfig = {
         <number-field v-model="configs.delayStartTime" label="延迟启动时间" label-width="10em" placeholder="请输入延迟启动时间" >
           <template #right-icon><span>秒</span></template>
         </number-field>
-        <switch-cell title="执行冷却" label="为了避免被支付宝检测为异常，设置一个阈值，达到该值后暂停收集一段时间" title-style="flex:3.5;" v-model="configs.cool_down_if_coolect_too_much" />
-        <template v-if="configs.cool_down_if_coolect_too_much">
+        <switch-cell title="执行冷却" label="为了避免被支付宝检测为异常，设置一个阈值，达到该值后暂停收集一段时间" title-style="flex:3.5;" v-model="configs.cool_down_if_collect_too_much" />
+        <template v-if="configs.cool_down_if_collect_too_much">
           <tip-block>当一个脚本活动周期内累计收取了这个值之后，将暂停收集配置的时间。默认收集1000克后冷却60分钟
           <van-button v-if="currentInCoolDown" style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="cancelCurrentCoolDown">撤销当前冷却</van-button>
           </tip-block>

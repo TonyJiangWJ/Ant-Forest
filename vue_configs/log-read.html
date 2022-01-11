@@ -117,18 +117,30 @@
     opacity: 0.1;
   }
 
+  .file-size {
+    flex: 1;
+    text-align: right;
+    margin-right: 0.05rem;
+    color: gray;
+    font-size: 0.15rem;
+  }
+
   .wd-break.error {
     color: red;
   }
+
   .wd-break.warn {
     color: rgb(0, 0, 255);
   }
+
   .wd-break.info {
     color: rgb(0, 255, 55);
   }
+
   .wd-break.log {
     color: rgb(0, 0, 0);
   }
+
   .wd-break.debug {
     color: #969799;
   }
@@ -161,8 +173,8 @@
         <div ref="top-block" id="top-block"></div>
         <van-cell v-for="(item,idx) in displayLogList" :key="item.origin" :title="item.logContent"
           class="van-clearfix log-item" :ref="backHere && item.origin==backHere?'scroll-back':''"
-          :title-class="'wd-break ' + coloredTxtIfNeeded(item)"
-          @click="showLogDetail(item,idx)" :label="idx + ': ' + item.dateInfo">
+          :title-class="'wd-break ' + coloredTxtIfNeeded(item)" @click="showLogDetail(item,idx)"
+          :label="idx + ': ' + item.dateInfo">
         </van-cell>
         <div ref="bottom-block"></div>
       </van-pull-refresh>
@@ -197,13 +209,14 @@
           <van-field label="当前日志文件大小" label-width="8rem" readonly
             :value="this.total?((this.total/1024).toFixed(2)+'KB') : '未加载'" input-align="right"></van-field>
           <van-field label="单次读取行数" v-model="singleReadLine" input-align="right"></van-field>
-          <van-cell center title="彩色显示" >
+          <van-cell center title="彩色显示">
             <van-switch v-model="colored" size="1.24rem" />
           </van-cell>
         </van-cell-group>
       </div>
     </van-dialog>
-    <van-dialog v-model="showFileSelectDialog" title="选择日志文件" :show-confirm-button="false" close-on-click-overlay  get-container="#app">
+    <van-dialog v-model="showFileSelectDialog" title="选择日志文件" :show-confirm-button="false" close-on-click-overlay
+      get-container="#app">
       <div style="width: 100%;height: 400px;overflow: scroll;">
         <van-cell-group>
           <van-cell v-for="file in files" class="file-cell" @click="selectFile(file)">
@@ -214,6 +227,7 @@
                 <img v-else-if="file.type==='log' || file.type==='txt'" class="log">
                 <img v-else class="unknown">
                 <span>{{file.name}}</span>
+                <span v-if="file.type !== 'dir' && file.type !== 'parent'" class="file-size">{{file.fileSize | fileSizeStr}}</span>
               </div>
             </template>
           </van-cell>
@@ -239,59 +253,59 @@
     }
   }, false)
   // window.onload = () => {
-    // 直接浏览器调试时，mock js bridge方法
-    if (typeof $app === 'undefined') {
-      window.$app = {
-        invoke: (bridgeName, data, callback) => { },
-        receiveMessage: params => { },
-        registerFunction: (functionName, func) => { }
-      }
-      window.$nativeApi = {
-        request: (bridgeName, data) => {
-          if (bridgeName === 'loadLogs') {
-            return Promise.resolve({
-              // PC端测试用数据
-              readResult: {
-                total: 10000,
-                result: [
-                  '2021-12-22 17:25:50,047 - [DEBUG]	[25865]  - 17:25:50.047/V: 当前包名：com.eg.android.AlipayGphone 对比包名: com.eg.android.AlipayGphone',
-                  '2021-12-22 17:25:50,101 - [DEBUG]	[25865]  - 17:25:50.101/V: windowRoots size: 1',
-                  '2021-12-22 17:25:50,104 - [DEBUG]	[25865]  - 17:25:50.103/V: 获取包名总耗时：55ms',
-                  '2021-12-22 17:25:50,117 - [DEBUG]	[25865]  - 17:25:50.117/V: try to find one: 返回|关闭 timeout: 500ms',
-                  '2021-12-22 17:25:50,630 - [DEBUG]	[25865]  - 17:25:50.627/V: cannot find any matches 返回|关闭 timeout:500',
-                  '2021-12-22 17:25:50,634 - [WARN]	[25865]  - 17:25:50.632/W: timeout for finding 返回|关闭',
-                  '2021-12-22 17:25:51,154 - [DEBUG]	[25865]  - 17:25:51.153/V: windowRoots size: 1',
-                  '2021-12-22 17:25:51,155 - [DEBUG]	[25865]  - 17:25:51.155/V: 获取包名总耗时：17ms',
-                  '2021-12-22 17:25:51,157 - [DEBUG]	[25865]  - 17:25:51.156/V: 当前包名：com.taobao.idlefishs.modify.opencv4 对比包名: com.eg.android.AlipayGphone',
-                  '2021-12-22 17:25:51,181 - [DEBUG]	[25865]  - 17:25:51.180/V: windowRoots size: 1',
-                  '2021-12-22 17:25:51,200 - [DEBUG]	[25865]  - 17:25:51.190/V: 获取包名总耗时：25ms',
-                  '2021-12-22 17:25:51,228 - [DEBUG]	[25865]  - 17:25:51.228/V: windowRoots size: 1',
-                  '2021-12-22 17:25:51,232 - [DEBUG]	[25865]  - 17:25:51.232/V: 获取包名总耗时：30ms',
-                  '2021-12-22 17:25:51,240 - [DEBUG]	[25865]  - 17:25:51.233/V: 通话状态监听功能当前启用状态：true',
-                  '2021-12-22 17:25:51,242 - [DEBUG]	[25865]  - 17:25:51.241/V: 移除phoneStateBroadcastReceiver',
-                  '2021-12-22 17:25:51,245 - [DEBUG]	[25865]  - 17:25:51.244/V: 释放图片，总数：125',
-                  '2021-12-22 17:25:51,362 - [DEBUG]	[25865]  - 17:25:51.361/D: 是否需要重新锁定屏幕：false',
-                  '2021-12-22 17:25:51,364 - [DEBUG]	[25865]  - 17:25:51.363/V: 获取运行中任务信息：{"source":"/storage/emulated/0/脚本/energy_store/main.js","engineId":4,"timeout":1640165994575} 超时剩余时间：843秒',
-                  '2021-12-22 17:25:51,366 - [DEBUG]	[25865]  - 17:25:51.365/V: 准备移除运行中任务',
-                  '2021-12-22 17:25:51,377 - [DEBUG]	[25865]  - 17:25:51.376/V: 队列小于等于1 不需要去重:[]',
-                  '2021-12-22 17:25:51,381 - [DEBUG]	[25865]  - 17:25:51.380/V: 无任务等待中',
-                  '2021-12-22 17:25:51,384 - [DEBUG]	[25865]  - 17:25:51.383/V: 设置脚本状态为执行完毕',
-                  '2021-12-22 17:25:51,387 - [DEBUG]	[25865]  - 17:25:51.387/V: 等待scanner线程池关闭, 结果: true',
-                  '2021-12-22 17:25:51,389 - [DEBUG]	[25865]  - 17:25:51.389/V: 移除生命周期回调，id:6 index:5 desc: shutdown scanner thread pool',
-                  '2021-12-22 17:25:51,392 - [DEBUG]	[25865]  - 17:25:51.392/V: 当前日志列表长度： 644',
-                  '2021-12-22 17:25:51,393 - [DEBUG]	[25865]  - 17:25:51.393/D: ========本轮结束========',
-                  '2021-12-22 17:25:51,396 - [DEBUG]	[25865]  - 17:25:51.395/V: 当前周期内增加了：748 g 未达到冷却值: 1000',
-                  '2021-12-22 17:25:51,397 - [DEBUG]	[25865]  - 17:25:51.397/V: 获取到的倒计时时间：20',
-                  '2021-12-22 17:25:51,399 - [DEBUG]	[25865]  - 17:25:51.398/V: 倒计时：20 ',
-                ],
-                readIndex: 6000
-              }
-            })
-          }
-          return Promise.reject({})
+  // 直接浏览器调试时，mock js bridge方法
+  if (typeof $app === 'undefined') {
+    window.$app = {
+      invoke: (bridgeName, data, callback) => { },
+      receiveMessage: params => { },
+      registerFunction: (functionName, func) => { }
+    }
+    window.$nativeApi = {
+      request: (bridgeName, data) => {
+        if (bridgeName === 'loadLogs') {
+          return Promise.resolve({
+            // PC端测试用数据
+            readResult: {
+              total: 10000,
+              result: [
+                '2021-12-22 17:25:50,047 - [DEBUG]	[25865]  - 17:25:50.047/V: 当前包名：com.eg.android.AlipayGphone 对比包名: com.eg.android.AlipayGphone',
+                '2021-12-22 17:25:50,101 - [DEBUG]	[25865]  - 17:25:50.101/V: windowRoots size: 1',
+                '2021-12-22 17:25:50,104 - [DEBUG]	[25865]  - 17:25:50.103/V: 获取包名总耗时：55ms',
+                '2021-12-22 17:25:50,117 - [DEBUG]	[25865]  - 17:25:50.117/V: try to find one: 返回|关闭 timeout: 500ms',
+                '2021-12-22 17:25:50,630 - [DEBUG]	[25865]  - 17:25:50.627/V: cannot find any matches 返回|关闭 timeout:500',
+                '2021-12-22 17:25:50,634 - [WARN]	[25865]  - 17:25:50.632/W: timeout for finding 返回|关闭',
+                '2021-12-22 17:25:51,154 - [DEBUG]	[25865]  - 17:25:51.153/V: windowRoots size: 1',
+                '2021-12-22 17:25:51,155 - [DEBUG]	[25865]  - 17:25:51.155/V: 获取包名总耗时：17ms',
+                '2021-12-22 17:25:51,157 - [DEBUG]	[25865]  - 17:25:51.156/V: 当前包名：com.taobao.idlefishs.modify.opencv4 对比包名: com.eg.android.AlipayGphone',
+                '2021-12-22 17:25:51,181 - [DEBUG]	[25865]  - 17:25:51.180/V: windowRoots size: 1',
+                '2021-12-22 17:25:51,200 - [DEBUG]	[25865]  - 17:25:51.190/V: 获取包名总耗时：25ms',
+                '2021-12-22 17:25:51,228 - [DEBUG]	[25865]  - 17:25:51.228/V: windowRoots size: 1',
+                '2021-12-22 17:25:51,232 - [DEBUG]	[25865]  - 17:25:51.232/V: 获取包名总耗时：30ms',
+                '2021-12-22 17:25:51,240 - [DEBUG]	[25865]  - 17:25:51.233/V: 通话状态监听功能当前启用状态：true',
+                '2021-12-22 17:25:51,242 - [DEBUG]	[25865]  - 17:25:51.241/V: 移除phoneStateBroadcastReceiver',
+                '2021-12-22 17:25:51,245 - [DEBUG]	[25865]  - 17:25:51.244/V: 释放图片，总数：125',
+                '2021-12-22 17:25:51,362 - [DEBUG]	[25865]  - 17:25:51.361/D: 是否需要重新锁定屏幕：false',
+                '2021-12-22 17:25:51,364 - [DEBUG]	[25865]  - 17:25:51.363/V: 获取运行中任务信息：{"source":"/storage/emulated/0/脚本/energy_store/main.js","engineId":4,"timeout":1640165994575} 超时剩余时间：843秒',
+                '2021-12-22 17:25:51,366 - [DEBUG]	[25865]  - 17:25:51.365/V: 准备移除运行中任务',
+                '2021-12-22 17:25:51,377 - [DEBUG]	[25865]  - 17:25:51.376/V: 队列小于等于1 不需要去重:[]',
+                '2021-12-22 17:25:51,381 - [DEBUG]	[25865]  - 17:25:51.380/V: 无任务等待中',
+                '2021-12-22 17:25:51,384 - [DEBUG]	[25865]  - 17:25:51.383/V: 设置脚本状态为执行完毕',
+                '2021-12-22 17:25:51,387 - [DEBUG]	[25865]  - 17:25:51.387/V: 等待scanner线程池关闭, 结果: true',
+                '2021-12-22 17:25:51,389 - [DEBUG]	[25865]  - 17:25:51.389/V: 移除生命周期回调，id:6 index:5 desc: shutdown scanner thread pool',
+                '2021-12-22 17:25:51,392 - [DEBUG]	[25865]  - 17:25:51.392/V: 当前日志列表长度： 644',
+                '2021-12-22 17:25:51,393 - [DEBUG]	[25865]  - 17:25:51.393/D: ========本轮结束========',
+                '2021-12-22 17:25:51,396 - [DEBUG]	[25865]  - 17:25:51.395/V: 当前周期内增加了：748 g 未达到冷却值: 1000',
+                '2021-12-22 17:25:51,397 - [DEBUG]	[25865]  - 17:25:51.397/V: 获取到的倒计时时间：20',
+                '2021-12-22 17:25:51,399 - [DEBUG]	[25865]  - 17:25:51.398/V: 倒计时：20 ',
+              ],
+              readIndex: 6000
+            }
+          })
         }
+        return Promise.reject({})
       }
     }
+  }
   // }
 </script>
 <script type="text/javascript">
@@ -332,10 +346,21 @@
           { name: '脚本/', type: 'dir' },
           { name: 'logs/', type: 'dir' },
           { name: '脚本/', type: 'dir' },
-          { name: 'login.log', type: 'log' },
-          { name: 'log.txt', type: 'txt' },
-          { name: 'data', type: 'unknown' },
+          { name: 'login.log', type: 'log', fileSize: 123339 },
+          { name: 'log.txt', type: 'txt', fileSize: 111 },
+          { name: 'data', type: 'unknown', fileSize: 123339123339 },
         ]
+      }
+    },
+    filters: {
+      fileSizeStr: fileSize => {
+        if (!fileSize) {
+          return '0 B'
+        } else {
+          return fileSize < 1024 ? fileSize + ' B' :
+            fileSize < 1024 * 1024 ? (fileSize / 1024).toFixed(2) + ' KB' :
+              fileSize < 1024 * 1024 * 1024 ? (fileSize / 1024 / 1024).toFixed(2) + ' MB' : (fileSize / 1024 / 1024 / 1024).toFixed(2) + ' GB'
+        }
       }
     },
     computed: {
@@ -446,7 +471,7 @@
         let verboseLog = /(((\d{2}:){2}(\d{2}\.\d{0,3})) (\w+)) \[/
         // processId
         let pidRegex = /\[\w+\]\t\[(\d+)\]/
-        this.displayLogList = this.displayLogList.map((v,idx) => ({
+        this.displayLogList = this.displayLogList.map((v, idx) => ({
           origin: v,
           // 简化日志
           simplify: v.replace(/ - .* - ((\d{2}:){2}(\d{2}\.\d{0,3}))?/, ' '),

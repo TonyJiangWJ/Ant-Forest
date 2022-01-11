@@ -24,6 +24,7 @@ if (runningSize > 1) {
 }
 
 let { config, storage_name: _storage_name } = require('../config.js')(runtime, this)
+config._init_lifecycle_by_thread_pool = true
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
 let commonFunction = sRequire('CommonFunction')
 config.show_debug_log = true
@@ -35,9 +36,6 @@ let stop = false
 commonFunction.registerOnEngineRemoved(function () {
   runningQueueDispatcher.removeRunningTask()
   stop = true
-  canvasWindow.canvas.removeAllListeners()
-  canvasWindow.close()
-  sleep(100)
   console.verbose('回收图片')
   drawImage && drawImage.recycle()
   previewImage && previewImage.recycle()
@@ -58,7 +56,6 @@ threads.start(function () {
   originalImg = images.copy(captureImage)
   grayImg = images.grayscale(captureImage);
   drawImage = grayImg
-  captureImage.recycle()
 })
 
 
@@ -71,7 +68,7 @@ let cutMode = false
 
 var canvasWindow = floaty.rawWindow(
   <vertical>
-    <vertical id="vertical" bg="#aaaaaa" w="{{Math.floor(device_width*0.8)}}px" h="{{Math.floor(device_height*0.4)}}px" gravity="center">
+    <vertical id="vertical" bg="#aaaaaa" w="{{Math.floor(device_width*0.8)}}px" h="{{Math.floor(device_height*0.5)}}px" gravity="center">
       <horizontal id="horizontal" margin="5dp" w="*" gravity="center">
         <button id="cutOrPoint" layout_weight="1" text="裁切小图" />
         <button id="openFile" layout_weight="1" text="选择图片文件" />
@@ -150,24 +147,28 @@ canvasWindow.btnCapture.click(function () {
     canvasWindowCtrl.windowMoving(canvasMove);
     sleep(100);
     captureImage = captureScreen();
-    drawImage.recycle();
+    let oldDrawImage = drawImage
+    let oldOriginalImg = originalImg
     originalImg = images.copy(captureImage);
+    oldOriginalImg && oldOriginalImg.recycle()
     if (mode == 1) {
+      let oldGrayImg = grayImg
       grayImg = images.grayscale(originalImg)
       drawImage = grayImg
+      oldGrayImg && oldGrayImg.recycle()
     } else {
       drawImage = originalImg
     }
-    captureImage.recycle()
+    oldDrawImage && oldDrawImage.recycle()
     // 将悬浮窗回归
     canvasWindowCtrl.windowMoving({ from: canvasMove.to, to: canvasMove.from });
   });
 });
 
 canvasWindow.region_position_horiz.click(function () {
-  if (positions && positions.length >= 4) {
-    setClip(positions.join(','))
-    toastLog('复制成功：' + positions.join(','))
+  if (displayPositions) {
+    setClip(displayPositions)
+    toastLog('复制成功：' + displayPositions)
   }
 })
 
@@ -258,7 +259,9 @@ var data = {
 
 threads.start(function () {
   sleep(100);
-  canvasWindow.setPosition(device_width / 2 - canvasWindow.getWidth() / 2, device_height / 2 - canvasWindow.getHeight() / 2);
+  ui.post(() => {
+    canvasWindow.setPosition(device_width / 2 - canvasWindow.getWidth() / 2, device_height / 2 - canvasWindow.getHeight() / 2);
+  })
   sleep(100);
   data = {
     translate: {
@@ -314,6 +317,7 @@ canvasWindow.previewCanvas.on("draw", function (canvas) {
   // matrix.postTranslate(data.translate.x, data.translate.y);
   previewPaint.setARGB(255, 0, 0, 0);
   canvas.drawImage(forDrawImg, matrix, previewPaint);
+  forDrawImg.recycle()
 })
 
 positions = []
@@ -349,11 +353,14 @@ canvasWindow.canvas.on("draw", function (canvas) {
     paint.setARGB(255, 0, 0, 255);
     canvas.drawLine(w / 2, h / 2 + 50, w / 2, h / 2 + 100, paint);
     var S = 算坐标(w / 2, h / 2, data, forDrawImg);
+    forDrawImg.recycle()
     点色 = S;
     if (cutMode && positions && positions.length === 4) {
       paint.setARGB(255, 255, 255, 0);
       canvas.drawRect(convertArrayToRect(positions), paint)
-      canvasWindow.region_position_value.text(displayPositions || '')
+      ui.post(() => {
+        canvasWindow.region_position_value.text(displayPositions || '')
+      })
     }
   } catch (e) {
     console.error("canvas" + e);
@@ -447,7 +454,7 @@ function getRealRegion(positions, data, img) {
 
 function convertAndClip (positions, data, img) {
   let { left, right, top, bottom, width, height } = getRealRegion(positions, data, img)
-  displayPositions = [left, right, width, height].join(',')
+  displayPositions = [left, top, width, height].join(',')
   // console.log('截取范围：', left, right, top, bottom, displayPositions)
   if (width == 0 || height == 0) {
     return null
@@ -487,7 +494,9 @@ canvasWindow.canvas.setOnTouchListener(function (view, event) {
             cutEndX = event.getX(0);
             cutEndY = event.getY(0);
             positions = [cutStartX, cutStartY, cutEndX, cutEndY]
+            let oldPreviewImage = previewImage
             previewImage = convertAndClip(positions, data, drawImage)
+            oldPreviewImage && oldPreviewImage.recycle()
           } else {
             var id = event.getPointerId(0);
             var X = event.getX(0);
@@ -501,7 +510,9 @@ canvasWindow.canvas.setOnTouchListener(function (view, event) {
             data.scale = TouchData.scale * scaleRate;
             data.translate.x = X - Touch[id].X * scaleRate;
             data.translate.y = Y - Touch[id].Y * scaleRate;
+            let oldPreviewImage = previewImage
             previewImage = convertAndClip(positions, data, drawImage)
+            oldPreviewImage && oldPreviewImage.recycle()
           }
           break;
         case event.ACTION_UP:
@@ -784,7 +795,9 @@ function FloatyController (window, windowMoveId, isCanvasWinow) {
               this.eventMoving = true;
             };
             if (this.eventMoving && this.eventKeep) {
-              window.setPosition(this.windowStartX + sx, this.windowStartY + sy);
+              ui.post(() => {
+                window.setPosition(this.windowStartX + sx, this.windowStartY + sy);
+              })
             };
             break;
           case event.ACTION_UP:
@@ -863,9 +876,13 @@ function FloatyController (window, windowMoveId, isCanvasWinow) {
       x += X;
       y += Y;
       sleep(1);
-      window.setPosition(moveInfo.from.X + x, moveInfo.from.Y + y);
+      ui.post(() => {
+        window.setPosition(moveInfo.from.X + x, moveInfo.from.Y + y);
+      })
     };
-    window.setPosition(moveInfo.to.X, moveInfo.to.Y);
+    ui.post(() => {
+      window.setPosition(moveInfo.to.X, moveInfo.to.Y);
+    })
   };
   this.windowSetPosition = (x, y) => {
     window.setPosition(x, y);

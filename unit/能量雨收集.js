@@ -57,8 +57,10 @@ let window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
 );
 
-window.setSize(config.device_width, config.device_height)
-window.setTouchable(false)
+ui.post(() => {
+  window.setSize(config.device_width, config.device_height)
+  window.setTouchable(false)
+})
 
 let threadPool = new ThreadPoolExecutor(4, 4, 60,
   TimeUnit.SECONDS, new LinkedBlockingQueue(16),
@@ -230,7 +232,9 @@ clickButtonWindow.delayClose.setOnTouchListener(new android.view.View.OnTouchLis
           eventMoving = true;
         };
         if (eventMoving && eventKeep) {
-          clickButtonWindow.setPosition(windowStartX + sx, windowStartY + sy);
+          ui.post(() => {
+            clickButtonWindow.setPosition(windowStartX + sx, windowStartY + sy);
+          })
         };
         break;
       case event.ACTION_UP:
@@ -325,7 +329,9 @@ function checkAndStartCollect () {
       writeLock.lock()
       try {
         canStart = false
-        clickButtonWindow.setPosition(-cvt(150), config.device_height * 0.65)
+        ui.post(() => {
+          clickButtonWindow.setPosition(-cvt(150), config.device_height * 0.65)
+        })
         sleep(250)
         automator.clickCenter(startBtn)
         startTimestamp = new Date().getTime()
@@ -456,11 +462,13 @@ commonFunction.registerOnEngineRemoved(function () {
 // ---------------------
 function changeButtonInfo () {
   isWaiting = false
-  clickButtonWindow.changeStatus.setText(canStart ? '点我开始！' : '音量下停止点击')
-  clickButtonWindow.changeStatus.setBackgroundColor(canStart ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
-  if (canStart) {
-    clickButtonWindow.setPosition(config.device_width / 2 - ~~(clickButtonWindow.getWidth() / 2), config.device_height * 0.65)
-  }
+  ui.post(() => {
+    clickButtonWindow.changeStatus.setText(canStart ? '点我开始！' : '音量下停止点击')
+    clickButtonWindow.changeStatus.setBackgroundColor(canStart ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
+    if (canStart) {
+      clickButtonWindow.setPosition(config.device_width / 2 - ~~(clickButtonWindow.getWidth() / 2), config.device_height * 0.65)
+    }
+  })
 }
 
 function convertArrayToRect (a) {
