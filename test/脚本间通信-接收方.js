@@ -12,7 +12,7 @@
 //   }
 // }))
 
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let processShare = singletonRequire('ProcessShare')
 let waiting = true
 processShare.subscribe(function (str) {

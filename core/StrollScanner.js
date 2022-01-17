@@ -5,8 +5,8 @@
  * @Last Modified time: 2020-12-29 22:53:29
  * @Description: 逛一逛收集器
  */
-let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
@@ -164,6 +164,16 @@ StrollScanner.prototype.collectTargetFriend = function () {
   let count = 1
   ///sleep(1000)
   let alternativeFriendOrDone = 0
+  let start = new Date().getTime()
+  let windowRoots = runtime.getAccessibilityBridge().windowRoots()
+  for (let i = windowRoots.size() - 1; i >= 0; i++) {
+    let root = windowRoots.get(i)
+    if (root !== null && root.getPackageName()) {
+      root.refresh()
+      break
+    }
+  }
+  debugInfo(['刷新根控件成功: {}ms', (new Date().getTime() - start)])
   // 未找到好友首页控件 循环等待三次
   while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/)) !== 1) {
     // 找到了结束标志信息 停止逛一逛

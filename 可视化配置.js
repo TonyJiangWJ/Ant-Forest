@@ -12,7 +12,7 @@ importClass(android.view.WindowManager)
 
 // ---修改状态栏颜色 start--
 // clear FLAG_TRANSLUCENT_STATUS flag:
-activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
 // add FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS flag to the window
 activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
 activity.getWindow().setStatusBarColor(android.R.color.white)
@@ -20,8 +20,8 @@ activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LI
 // ---修改状态栏颜色 end--
 
 let dateFormat = require('./lib/DateUtil.js')
-let { config, default_config, storage_name } = require('./config.js')(runtime, this)
-let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
+let { config, default_config, storage_name } = require('./config.js')(runtime, global)
+let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, global)
 let FileUtils = singletonRequire('FileUtils')
 let commonFunctions = singletonRequire('CommonFunction')
 
@@ -33,8 +33,8 @@ if (config.device_width < 10 || config.device_height < 10) {
 
 ui.layout(
   <vertical>
-    <webview id="loadingWebview" margin="0 10" />
-    <webview id="webview" margin="0 10" />
+    <webview id="loadingWebview" margin="0 0" />
+    <webview id="webview" margin="0 0" />
   </vertical>
 )
 let mainScriptPath = FileUtils.getRealMainScriptPath(true)
@@ -85,6 +85,7 @@ postMessageToWebView = prepareWebView(ui.webview, {
     setTimeout(function () {
       ui.loadingWebview.setVisibility(View.GONE)
       ui.webview.setVisibility(View.VISIBLE)
+      activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
       log('切换webview')
       setTimeout(function () {
         console.log('loadingWebview height:', ui.loadingWebview.getHeight())

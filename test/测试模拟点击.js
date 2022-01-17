@@ -6,7 +6,7 @@
  * @Description: 
  */
 
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog } = singletonRequire('LogUtils')
 let _BaseScanner = require('../core/BaseScanner.js')
 let scanner = new _BaseScanner()

@@ -23,9 +23,9 @@ if (runningSize > 1) {
   })
 }
 
-let { config, storage_name: _storage_name } = require('../config.js')(runtime, this)
+let { config, storage_name: _storage_name } = require('../config.js')(runtime, global)
 config._init_lifecycle_by_thread_pool = true
-let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let commonFunction = sRequire('CommonFunction')
 config.show_debug_log = true
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
@@ -151,11 +151,11 @@ canvasWindow.btnCapture.click(function () {
     let oldOriginalImg = originalImg
     originalImg = images.copy(captureImage);
     oldOriginalImg && oldOriginalImg.recycle()
+    let oldGrayImg = grayImg
+    grayImg = images.grayscale(originalImg)
+    oldGrayImg && oldGrayImg.recycle()
     if (mode == 1) {
-      let oldGrayImg = grayImg
-      grayImg = images.grayscale(originalImg)
       drawImage = grayImg
-      oldGrayImg && oldGrayImg.recycle()
     } else {
       drawImage = originalImg
     }

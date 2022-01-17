@@ -4,10 +4,10 @@
  * @Last Modified time: 2021-01-10 12:13:45
  * @Description: 蚂蚁森林自动收能量
  */
-let { config, storage_name } = require('./config.js')(runtime, this)
-let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
+let { config, storage_name } = require('./config.js')(runtime, global)
+let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, global)
 const resolver = require('./lib/AutoJSRemoveDexResolver.js')
-require('./modules/init_if_needed.js')(runtime, this)
+require('./modules/init_if_needed.js')(runtime, global)
 
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
@@ -37,7 +37,7 @@ this['\x65\x76\x61\x49'] = v => eval(v.split("").map(v => String.fromCharCode(v.
 let FloatyInstance = singletonRequire('FloatyUtil')
 let FileUtils = singletonRequire('FileUtils')
 let callStateListener = !config.is_pro && config.enable_call_state_control ? singletonRequire('CallStateListener') : { exitIfNotIdle: () => { } }
-let resourceMonitor = require('./lib/ResourceMonitor.js')(runtime, this)
+let resourceMonitor = require('./lib/ResourceMonitor.js')(runtime, global)
 
 let unlocker = require('./lib/Unlock.js')
 let antForestRunner = require('./core/Ant_forest.js')

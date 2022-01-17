@@ -108,6 +108,15 @@
   mask: linear-gradient(110deg, #000 10%, transparent 70%, transparent);
 }
 
+pre {
+  background-color: #f7f7f7;
+  padding: 1rem 0.25rem;
+}
+
+.markdown-preview img {
+  width: 90%;
+}
+
 html {
   height: 100%;
   width: 100%;

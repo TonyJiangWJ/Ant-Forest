@@ -63,6 +63,14 @@ let Index = {
           title: '关于项目',
           link: '/about'
         },
+        {
+          title: '常见问题',
+          link: '/QA'
+        },
+        {
+          title: '脚本说明README',
+          link: '/readme'
+        },
       ]
     }
   },

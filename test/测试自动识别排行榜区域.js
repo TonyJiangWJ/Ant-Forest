@@ -5,8 +5,8 @@
  * @Last Modified time: 2020-12-30 20:59:47
  * @Description: 
  */
-let { config: _config } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config: _config } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let { debugInfo } = singletonRequire('LogUtils')
 requestScreenCapture(false)
 toastLog('两秒后开始识别')

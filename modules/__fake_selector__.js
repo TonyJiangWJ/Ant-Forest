@@ -1,4 +1,4 @@
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let FileUtils = singletonRequire('FileUtils')
 let { debugInfo, debugForDev } = singletonRequire('LogUtils')
 let workpath = FileUtils.getCurrentWorkPath()

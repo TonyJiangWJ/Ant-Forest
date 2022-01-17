@@ -6,9 +6,9 @@
  * @Description: 
  */
 
-let { config } = require('../config.js')(runtime, this)
+let { config } = require('../config.js')(runtime, global)
 let offset = config.bang_offset
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let { debugInfo, errorInfo, warnInfo, logInfo, infoLog } = singletonRequire('LogUtils')
 let WidgetUtil = singletonRequire('WidgetUtils')
 

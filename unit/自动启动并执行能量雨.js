@@ -1,5 +1,5 @@
-var { default_config, config, storage_name: _storage_name } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+var { default_config, config, storage_name: _storage_name } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 var configStorage = storages.create(_storage_name)
 let FileUtils = singletonRequire('FileUtils')
 let commonFunctions = singletonRequire('CommonFunction')

@@ -6,17 +6,17 @@
  * @Description: 
  */
 
-let { config } = require('../config.js')(runtime, this)
+let { config } = require('../config.js')(runtime, global)
 config.cutAndSaveTreeCollect = false
 config.show_debug_log = true
 config.async_save_log_file = false
 config.develop_mode = true
 config.capture_waiting_time = 3000
-let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
-let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let _BaseScanner = require('../core/BaseScanner.js')
 commonFunction.autoSetUpBangOffset()
 commonFunction.checkCaptureScreenPermission = checkCaptureScreenPermission

@@ -5,8 +5,8 @@
  * @Last Modified time: 2021-01-10 11:21:39
  * @Description: 
  */
-let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')

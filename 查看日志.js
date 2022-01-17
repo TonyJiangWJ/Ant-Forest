@@ -20,8 +20,8 @@ activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LI
 // ---修改状态栏颜色 end--
 
 let dateFormat = require('./lib/DateUtil.js')
-let { config, default_config, storage_name } = require('./config.js')(runtime, this)
-let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, this)
+let { config, default_config, storage_name } = require('./config.js')(runtime, global)
+let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, global)
 let FileUtils = singletonRequire('FileUtils')
 
 config.hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
@@ -32,7 +32,7 @@ if (config.device_width < 10 || config.device_height < 10) {
 
 ui.layout(
   <vertical>
-    <webview id="webview" margin="0 10" />
+    <webview id="webview" margin="0 0" />
   </vertical>
 )
 let mainScriptPath = FileUtils.getRealMainScriptPath(true)
@@ -45,7 +45,7 @@ let postMessageToWebView = () => { console.error('function not ready') }
 let bridgeHandlerBuilder = require('./lib/BridgeHandler.js')
 // let logPath = '/storage/emulated/0/脚本/.logs/autojs-log4j.txt'
 // let logPath = '/storage/emulated/0/脚本/energy_store/logs/for-read.log'
-let logPath = '/storage/emulated/0/脚本/energy_store/logs/log-verboses.log'
+let logPath = mainScriptPath + '/logs/log-verboses.log'
 function logHandler(BaseHandler) {
   // 扩展方法 
   console.verbose('注册方法 loadLogs')

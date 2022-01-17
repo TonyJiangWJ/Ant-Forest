@@ -5,7 +5,7 @@
  * @Last Modified time: 2019-12-19 14:19:45
  * @Description: 
  */
-let { config, default_config, storage_name: _storage_name } = require('../config.js')(runtime, this)
+let { config, default_config, storage_name: _storage_name } = require('../config.js')(runtime, global)
 let storageConfig = storages.create(_storage_name)
 let allSame = true
 

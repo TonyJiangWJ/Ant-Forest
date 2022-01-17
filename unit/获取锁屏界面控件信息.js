@@ -5,12 +5,12 @@
  * @Last Modified time: 2020-10-19 18:59:12
  * @Description: 
  */
-let { config } = require('../config.js')(runtime, this)
+let { config } = require('../config.js')(runtime, global)
 config.show_debug_log = true
 config.save_log_file = true
 config.back_size = 1024
 
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let widgetUtils = singletonRequire('WidgetUtils')
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')

@@ -7,7 +7,7 @@
  */
 requestScreenCapture()
 let DETECT_COLOR = '#10FF1F'
-let window = floaty.rawWindow(
+let window = floaty.window(
   <frame id="container" gravity="center" bg="#10FF1F">
     <horizontal margin="10 0" gravity="center">
       <text id="text" text="TEXT FLOATY" textSize="10sp" />
@@ -33,7 +33,7 @@ while (!offset && offset !== 0) {
       toastLog('find offset info:' + offset + "," + point.x)
       ui.run(function () {
         if (offset) {
-          window.text.setText('刘海偏移量为：' + offset + ' ' + limit + '秒后退出')
+          window.text.setText('刘海偏移量为：' + offset + ' ' + limit + '秒后退出; 代码方式获取：' + getStatusBarHeightCompat())
         }
       })
       setTimeout(() => {
@@ -41,4 +41,16 @@ while (!offset && offset !== 0) {
       }, limit * 1000)
     }
   }
+}
+
+function getStatusBarHeightCompat() {
+  let result = 0;
+  let resId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+  if (resId > 0) {
+      result = context.getResources().getDimensionPixelOffset(resId);
+  }
+  if (result <= 0) {
+      result = context.getResources().getDimensionPixelOffset(R.dimen.dimen_25dp);
+  }
+  return result;
 }

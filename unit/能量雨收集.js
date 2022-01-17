@@ -25,13 +25,13 @@ let args = engines.myEngine().execArgv
 let executeByStroll = args.executeByStroll
 let executeByTimeTask = args.executeByTimeTask
 let autoStartCollect = executeByStroll || executeByTimeTask
-let { config, storage_name: _storage_name } = require('../config.js')(runtime, this)
-let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config, storage_name: _storage_name } = require('../config.js')(runtime, global)
+let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
 let widgetUtils = sRequire('WidgetUtils')
-let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let FloatyInstance = sRequire('FloatyUtil')
 let processShare = sRequire('ProcessShare')
 let storage = storages.create(_storage_name)
@@ -143,9 +143,11 @@ let clickButtonWindow = floaty.rawWindow(
     </vertical>
   </horizontal>
 );
-let rainClickTop = config.rain_click_top
+let rainClickTop = config.rain_click_top || cvt(300)
 ui.run(function () {
   clickButtonWindow.zoomClick.setTranslationX(-(clickButtonWindow.zoomClick.getWidth() / 2) + 40)
+  clickButtonWindow.zoomClick.setProgress(rainClickTop)
+  clickButtonWindow.zoom.setProgress(clickGap)
 })
 clickButtonWindow.zoomClick.setOnSeekBarChangeListener({
   onProgressChanged: function (seekbar, p, fromUser) {
