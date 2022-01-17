@@ -60,6 +60,29 @@ let app = new Vue({
     },
     getDialogContainer: function () {
       return document.querySelector('html')
+    },
+    registerResizeWindow: function () {
+      $app.registerFunction('resizeWindow', ({ height, width }) => {
+        // console.log('resizeWindow currentHeight:', currentHeight, 'window height:', window.innerHeight, 'webview height', height)
+        // console.log('resizeWindow window width:', window.innerWidth, 'webview width', width)
+        // console.log('body client height:', document.body.getBoundingClientRect().height)
+        let newHeight = window.innerWidth / width * height
+        if (newHeight > currentHeight) {
+          currentHeight = newHeight
+          console.log('设置高度为：' + newHeight)
+          document.getElementById('app').style.height = currentHeight + 'px'
+        }
+      })
+    },
+    delayRegisterIfBridgeNotReady: function () {
+      if ($app.moke) {
+        console.log('bridge 未完成注册 等待')
+        let self = this
+        setTimeout(() =>{
+          self.delayRegisterIfBridgeNotReady()
+        }, 10)
+      }
+      this.registerResizeWindow()
     }
   },
   watch: {
@@ -81,16 +104,7 @@ let app = new Vue({
         document.getElementById('app').style.height = currentHeight + 'px'
       }
     }, 1200)
-    $app.registerFunction('resizeWindow', ({ height, width }) => {
-      console.log('resizeWindow currentHeight:', currentHeight, 'window height:', window.innerHeight, 'webview height', height)
-      console.log('resizeWindow window width:', window.innerWidth, 'webview width', width)
-      console.log('body client height:', document.body.getBoundingClientRect().height)
-      let newHeight = window.innerWidth / width * height
-      if (newHeight > currentHeight) {
-        currentHeight = newHeight
-        console.log('设置高度为：' + newHeight)
-        document.getElementById('app').style.height = currentHeight + 'px'
-      }
-    })
+    console.log('准备注册 resizeWindow ' + (typeof $app) + ' ' + (typeof $app.registerFunction) + ' is moke?' + $app.moke)
+    this.delayRegisterIfBridgeNotReady()
   }
 })
