@@ -5,8 +5,8 @@
  * @Last Modified time: 2020-08-25 18:37:48
  * @Description: 
  */
-let { config } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let WidgetUtils = singletonRequire('WidgetUtils')
 let commonFunctions = singletonRequire('CommonFunction')
 commonFunctions.requestScreenCaptureOrRestart(true)

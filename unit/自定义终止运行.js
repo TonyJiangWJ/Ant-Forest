@@ -5,6 +5,6 @@
  * @Last Modified time: 2020-07-01 16:50:56
  * @Description: 
  */ 
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let commonFunctions = singletonRequire('CommonFunction')
 commonFunctions.killRunningScript()

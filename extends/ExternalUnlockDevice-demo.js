@@ -1,4 +1,4 @@
-let { config: _config } = require('../config.js')(runtime, this)
+let { config: _config } = require('../config.js')(runtime, global)
 module.exports = function (obj) {
   this.__proto__ = obj
 

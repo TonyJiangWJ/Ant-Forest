@@ -19,15 +19,15 @@ activity.getWindow().setStatusBarColor(android.R.color.white)
 activity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
 // ---修改状态栏颜色 end--
 
-let singletonRequire = require('../../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../../lib/SingletonRequirer.js')(runtime, global)
 let FileUtils = singletonRequire('FileUtils')
-let { config } = require('../../config.js')(runtime, this)
+let { config } = require('../../config.js')(runtime, global)
 let _config = config
 config.develop_mode = true
 config.show_debug_log = true
 config.async_save_log_file = false
 let commonFunctions = singletonRequire('CommonFunction')
-let resourceMonitor = require('../../lib/ResourceMonitor.js')(runtime, this)
+let resourceMonitor = require('../../lib/ResourceMonitor.js')(runtime, global)
 let OpenCvUtil = require('../../lib/OpenCvUtil.js')
 config.hasRootPermission = files.exists("/sbin/su") || files.exists("/system/xbin/su") || files.exists("/system/bin/su")
 if (config.device_width < 10 || config.device_height < 10) {

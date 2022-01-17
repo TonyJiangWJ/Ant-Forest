@@ -5,8 +5,8 @@
  * @Last Modified time: 2020-12-25 21:51:08
  * @Description: 
  */
-let { config: _config, storage_name } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config: _config, storage_name } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let fileUtils = singletonRequire('FileUtils')
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev, developSaving } = singletonRequire('LogUtils')
 

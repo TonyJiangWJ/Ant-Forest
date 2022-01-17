@@ -31,7 +31,7 @@ if (runningSize > 1) {
     }
   })
 }
-let { config: _config } = require('../config.js')(runtime, this)
+let { config: _config } = require('../config.js')(runtime, global)
 _config.show_debug_log = true
 _config.develop_mode = true
 _config.save_log_file = false
@@ -40,11 +40,11 @@ _config.enable_visual_helper = true
 _config.useTesseracOcr = true
 _config.useOcr = false
 _config.help_friend = true
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _commonFunctions = singletonRequire('CommonFunction')
 let _tesserOcrUtil = singletonRequire('TesserOcrUtil')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
-let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let _ImgBasedFriendListScanner = require('../core/ImgBasedFriendListScanner.js')
 const _checkPoints = []
 for (let i = 0; i < 30 * _config.scaleRate; i++) {

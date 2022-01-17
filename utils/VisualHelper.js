@@ -6,8 +6,8 @@
  * @Description: 
  */
 
-let { config } = require('../config.js')(runtime, this)
-let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config } = require('../config.js')(runtime, global)
+let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
 let offset = config.bang_offset

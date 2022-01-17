@@ -5,7 +5,7 @@
  * @Last Modified time: 2020-04-28 09:19:20
  * @Description: 
  */
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let commonFunctions = singletonRequire('CommonFunction')
 let automator = singletonRequire('Automator')
 

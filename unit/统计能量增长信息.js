@@ -5,7 +5,7 @@
  * @Last Modified time: 2020-04-27 22:23:29
  * @Description: 
  */
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let FileUtils = singletonRequire('FileUtils')
 function isEmpty(val) {
   return val === null || typeof val === 'undefined' || val === ''

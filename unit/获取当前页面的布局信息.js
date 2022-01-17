@@ -5,8 +5,8 @@
  * @Last Modified time: 2020-10-19 17:52:05
  * @Description: 
  */
-let { config } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let widgetUtils = singletonRequire('WidgetUtils')
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')

@@ -7,6 +7,6 @@
 // provider.postInfo("hello world")
 // log('消息发送完毕！')
 
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let processShare = singletonRequire('ProcessShare')
 processShare.postInfo('hello world')

@@ -1,5 +1,5 @@
-let { config } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let { debugInfo } = singletonRequire('LogUtils')
 let commonFunctions = singletonRequire('CommonFunction')
 

@@ -1,5 +1,5 @@
-let { config: _config } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config: _config } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let original = './originImg.png'
 let template = './templateImg.png'

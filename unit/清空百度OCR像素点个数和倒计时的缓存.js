@@ -5,7 +5,7 @@
  * @Last Modified time: 2020-05-01 12:20:36
  * @Description: 
  */
-let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _logUtils = sRequire('LogUtils')
 let baiduOcrUtil = require('../lib/BaiduOcrUtil.js')
 _logUtils.logInfo('当前缓存的数据：')

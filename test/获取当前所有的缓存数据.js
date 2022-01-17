@@ -1,6 +1,6 @@
 
-let { config, storage_name: _storage_name } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config, storage_name: _storage_name } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let storageFactory = singletonRequire('StorageFactory')
 let RUNTIME_STORAGE = _storage_name + "_runtime"
 

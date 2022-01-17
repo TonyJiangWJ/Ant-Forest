@@ -6,7 +6,7 @@
  * @Description: 
  */
 let { config } = require('../config')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let commonFunctions = singletonRequire('CommonFunction')
 console.show()
 // log('=============总收集排序==============')

@@ -5,7 +5,7 @@
  * @Last Modified time: 2020-04-27 23:50:55
  * @Description: 
  */
-let { config: _config } = require('../config.js')(runtime, this)
+let { config: _config } = require('../config.js')(runtime, global)
 
 module.exports = function () {
   // MIUI 12 新控制中心

@@ -1,10 +1,10 @@
 
-let { config } = require('../config.js')(runtime, this)
-let sRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config } = require('../config.js')(runtime, global)
+let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')
 let commonFunction = sRequire('CommonFunction')
-let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, this)
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 
 config.show_debug_log = true
 requestScreenCapture(false)

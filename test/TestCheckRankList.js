@@ -6,7 +6,7 @@
  * @Description: 测试排行榜
  */
 importClass(java.lang.Thread)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let widgetUtils = singletonRequire('WidgetUtils')
 
 toastLog('thread:' + Thread.currentThread().getId())

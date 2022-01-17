@@ -1,5 +1,5 @@
-let { config: _config } = require('../config.js')(runtime, this)
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let { config: _config } = require('../config.js')(runtime, global)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let commonFunction = singletonRequire('CommonFunction')
 // 李跳跳 AutoJSPro
 // _config.other_accessisibility_services = 'com.whatsbug.litiaotiao/com.whatsbug.litiaotiao.MyAccessibilityService:org.autojs.autojspro:com.stardust.autojs.core.accessibility.AccessibilityService'

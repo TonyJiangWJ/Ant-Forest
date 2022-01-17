@@ -155,7 +155,7 @@ module.exports = function (obj) {
 - 扩展代码之后可以执行 `test/TestLockScreen.js` 来调试是否生效
 
 ```javascript
-  let { config: _config } = require('../config.js')(runtime, this)
+  let { config: _config } = require('../config.js')(runtime, global)
 
   module.exports = function () {
     // MIUI 12 偏右上角下拉新控制中心

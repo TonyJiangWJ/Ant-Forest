@@ -5,10 +5,10 @@
  * @Last Modified time: 2020-07-30 20:26:28
  * @Description: 
  */
-let { config: _config } = require('../config.js')(runtime, this)
+let { config: _config } = require('../config.js')(runtime, global)
 _config.bottom_check_succeed = false
 _config.show_debug_log = true
-let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, this)
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let { debugInfo } = singletonRequire('LogUtils')
 let widgetUtils = singletonRequire('WidgetUtils')
 requestScreenCapture(false)
