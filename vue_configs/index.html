@@ -97,6 +97,7 @@
   // 直接浏览器调试时，mock js bridge方法
   if (typeof $app === 'undefined') {
     window.$app = {
+      moke: true,
       invoke: (bridgeName, data, callback) => { },
       receiveMessage: params => { },
       registerFunction: (functionName, func) => { }
