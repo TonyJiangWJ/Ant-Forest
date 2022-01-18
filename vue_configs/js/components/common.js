@@ -921,3 +921,16 @@ function formatDate (date, fmt) {
   }
   return fmt
 }
+
+API = {
+  post: function (url, data) {
+    return axios.post(url, qs.stringify(data))
+    .then(resp => Promise.resolve(resp.data))
+    .catch(e => Promise.reject(e))
+  },
+  get: function (url, data) {
+    return axios.get(url, data)
+    .then(resp => Promise.resolve(resp.data))
+    .catch(e => Promise.reject(e))
+  }
+}

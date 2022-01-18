@@ -68,20 +68,14 @@ const QueryLimit = {
 
 }
 
-const QuestionAnswer = {
-  name: 'QuestionAnswer',
-  components: { MarkdownPreview, QueryLimit },
-  data() {
-    return {
-      pager: {
-        currentPage: 1,
-        size: 20
-      },
-      queryResult: [],
-      loading: true,
-      accessToken: '',
-      noAccessPerm: false,
-    }
+const QuestionPreview = {
+  name: 'QuestionPreview',
+  components: { MarkdownPreview },
+  props: {
+    title: String,
+    content: String,
+    htmlUrl: String,
+    createTime: String,
   },
   filters: {
     dateStr: function (value) {
@@ -90,26 +84,92 @@ const QuestionAnswer = {
     }
   },
   methods: {
-    doQuery: function () {
-      this.loading = false
-      let self = this
-      axios.get('https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/issues?state=all&sort=created&direction=desc&labels=question' + `&page=${this.pager.currentPage}&pre_page=${this.pager.size}&access_token=${this.accessToken}`)
-      .then(function (response) {
-        self.queryResult = response.data
-        self.loading = false
-        self.noAccessPerm = false
-      }).catch(e => {
-        console.error('请求失败', e)
-        self.noAccessPerm = true
-        self.loading = false
-        this.$toast('accessToken 无效 被限流啦')
-      })
-    },
     toLinkIssue: function (url) {
+      console.log('跳转目标URL:', url)
       $app.invoke('openUrl', { url: url })
     },
-    toReadme: function () {
-      this.$router.push('/readme')
+  },
+  template: `
+  <div>
+    <h4>{{title}}</h4>
+    <div style="display:inline">
+    <label>{{createTime | dateStr}}</label>
+    <img style="width: 1.5rem;height:1.5rem;float: right;" @click="toLinkIssue(htmlUrl)" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAABn0lEQVRoge2ZsUoDMRiAP8UncBbB5+igPfEFnO0DSBeLix1EEQenrk7SwcHdUZDqG7go0kVcHH0BoTpYscYmprk/+SPkg0CTu/z5P+6a3F2gUCgU/hNzHudUQAtYqjHOhlHvAyuefeeB0fj3HbATksAR8C5QTO4D49y4bG1UwP7frnngEmkly8Ifa74Ljk7LRv0Cx6WdkWNg0XKsAjYtx0aWdicDft6f7ZAgM9Ihwn8kNR2gF9o5FxGbxKVvgBxEbBJd4Mo3iLaIS+JklkCaImISoCciKgE6IuISkF4kigS4V3ZpQiRegYeJ+lPIwJIru23F3qsR0xspEVUJkBFRl4D6IllIQD0RKYm20X9gOzHG9BttinUhLaIiAbIiahIgtyBuM11i19IujtQVuQZejLYuiSRATmQINPmWSXI7TSL5rDUE1vkUOhWM64X0Q+PjuCRH+1VXjCKSG0UkN1yzlvnBuAG8RcxlGg2jHvQRu4/MJo9kOQsRWcsgcbOshogAHGaQ/Fc5cCXqsxnaBLb4vfGTimfgHLhVGr9QKBQi8AFKqQNQYvMMrgAAAABJRU5ErkJggg=="/>
+    </div>
+    <markdown-preview :text="content" />
+  </div>
+  `
+}
+
+const QuestionAnswer = {
+  name: 'QuestionAnswer',
+  components: { QueryLimit, QuestionPreview },
+  data() {
+    return {
+      pager: {
+        currentPage: 1,
+        size: 20
+      },
+      queryResult: [],
+      adbUseDoc: {
+        title: '',
+        content: '',
+        htmlUrl: '',
+        createTime: ''
+      },
+      loading: true,
+      contentFrom: '',
+      accessToken: '',
+      noAccessPerm: false,
+    }
+  },
+  methods: {
+    doQuery: function () {
+      this.loading = false
+      API.get('https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/issues?state=all&sort=created&direction=desc&labels=question' + `&page=${this.pager.currentPage}&pre_page=${this.pager.size}&access_token=${this.accessToken}`)
+      .then(resp => {
+        this.queryResult = resp
+        return Promise.resolve(true)
+      }).catch(e => {
+        console.error('请求失败', e)
+        return Promise.resolve(false)
+      }).then(success => {
+        if (success) {
+          this.loading = false
+          this.noAccessPerm = false
+          this.contentFrom = 'Gitee'
+        } else {
+          this.doQueryGithubIssue()
+        }
+      })
+    },
+    doQueryGithubIssue: function () {
+      API.get('https://api.github.com/repos/TonyJiangWJ/Ant-Forest/issues?labels=documentation').then(resp => {
+        this.queryResult = resp
+        this.contentFrom = 'Github'
+        return Promise.resolve(true)
+      }).catch(e => {
+        console.error('请求失败', e)
+        this.$toast('accessToken 无效 被限流啦')
+        return Promise.resolve(false)
+      }).then(success => {
+        this.noAccessPerm = !success
+        this.doGetAdbUseDoc()
+      })
+    },
+    doGetAdbUseDoc: function () {
+      API.get('https://api.github.com/repos/TonyJiangWJ/AutoScriptBase/contents/resources/doc/ADB%E6%8E%88%E6%9D%83%E8%84%9A%E6%9C%AC%E8%87%AA%E5%8A%A8%E5%BC%80%E5%90%AF%E6%97%A0%E9%9A%9C%E7%A2%8D%E6%9D%83%E9%99%90.md?ref=master')
+      .then(resp => {
+        this.adbUseDoc.title = 'ADB授权脚本自动开启无障碍权限'
+        this.adbUseDoc.content = Base64.decode(resp.content)
+        this.adbUseDoc.createTime = '2021-01-26T11:08:03Z'
+        this.adbUseDoc.htmlUrl = resp.html_url
+        return Promise.resolve(true)
+      }).catch(e => {
+        return Promise.resolve(false)
+      }).then(_ =>
+        this.loading = false
+      )
     },
     queryWithAccessToken: function (payload) {
       this.accessToken = payload.accessToken
@@ -122,14 +182,13 @@ const QuestionAnswer = {
   },
   template: `
     <div>
+      <div v-if="!loading && !noAccessPerm" style="padding: 2rem 2rem 0 2rem;font-size: 0.5rem;">来源：{{contentFrom}}</div>
       <query-limit v-if="noAccessPerm" @requery="queryWithAccessToken" target-url="https://gitee.com/TonyJiangWJ/Ant-Forest/issues?label_ids=63160213" />
       <div v-for="(issue,idx) in queryResult" :key="issue.title" style="padding: 2rem;">
-        <h4>{{issue.title}}</h4>
-        <div style="display:inline">
-        <label>{{issue.created_at | dateStr}}</label>
-        <img style="width: 1.5rem;height:1.5rem;float: right;" @click="toLinkIssue(issue.html_url)" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAABn0lEQVRoge2ZsUoDMRiAP8UncBbB5+igPfEFnO0DSBeLix1EEQenrk7SwcHdUZDqG7go0kVcHH0BoTpYscYmprk/+SPkg0CTu/z5P+6a3F2gUCgU/hNzHudUQAtYqjHOhlHvAyuefeeB0fj3HbATksAR8C5QTO4D49y4bG1UwP7frnngEmkly8Ifa74Ljk7LRv0Cx6WdkWNg0XKsAjYtx0aWdicDft6f7ZAgM9Ihwn8kNR2gF9o5FxGbxKVvgBxEbBJd4Mo3iLaIS+JklkCaImISoCciKgE6IuISkF4kigS4V3ZpQiRegYeJ+lPIwJIru23F3qsR0xspEVUJkBFRl4D6IllIQD0RKYm20X9gOzHG9BttinUhLaIiAbIiahIgtyBuM11i19IujtQVuQZejLYuiSRATmQINPmWSXI7TSL5rDUE1vkUOhWM64X0Q+PjuCRH+1VXjCKSG0UkN1yzlvnBuAG8RcxlGg2jHvQRu4/MJo9kOQsRWcsgcbOshogAHGaQ/Fc5cCXqsxnaBLb4vfGTimfgHLhVGr9QKBQi8AFKqQNQYvMMrgAAAABJRU5ErkJggg=="/>
-        </div>
-        <markdown-preview :text="issue.body" />
+        <question-preview :title="issue.title" :content="issue.body" :create-time="issue.created_at" :html-url="issue.html_url"/>
+      </div>
+      <div style="padding: 2rem" v-if="adbUseDoc.title">
+        <question-preview :title="adbUseDoc.title" :content="adbUseDoc.content" :create-time="adbUseDoc.createTime" :html-url="adbUseDoc.htmlUrl"/>
       </div>
       <van-overlay :show="loading" z-index="1000">
         <div class="wrapper">
@@ -149,6 +208,7 @@ const Readme = {
       accessToken: '',
       noAccessPerm: false,
       loading: true,
+      contentFrom: ''
     }
   },
   computed: {
@@ -163,17 +223,37 @@ const Readme = {
   methods: {
     getReadme: function () {
       this.loading = true
-      axios.get(`https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/readme?access_token=${this.accessToken}`).then(response => {
-        return Promise.resolve(response.data)
+      API.get(`https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/readme?access_token=${this.accessToken}`).then(resp => {
+        this.base64Content = resp.content
+        this.contentFrom = 'Gitee'
+        return Promise.resolve(true)
       }).catch(e => {
-        this.noAccessPerm = true
-        this.$toast('accessToken 无效 被限流啦')
-        this.loading = false
-        return Promise.reject('限流或请求失败')
-      }).then(resp => {
-        this.loading = false
+        return Promise.resolve(false)
+      }).then(success => {
+        if (success) {
+          this.loading = false
+          this.noAccessPerm = false
+        } else {
+          console.log('请求gitee失败，尝试请求github')
+          this.getGithubReadme()
+        }
+      })
+    },
+    getGithubReadme: function () {
+      API.get(`https://api.github.com/repos/TonyJiangWJ/Ant-Forest/contents/README.md?ref=master`)
+      .then(resp => {
         this.noAccessPerm = false
         this.base64Content = resp.content
+        this.contentFrom = 'Github'
+        return Promise.resolve({})
+      })
+      .catch(e => {
+        this.noAccessPerm = true
+        this.$toast('accessToken 无效 被限流啦')
+        return Promise.resolve({})
+      })
+      .then(r => {
+        this.loading = false
       })
     },
     queryWithAccessToken: function (payload) {
@@ -187,6 +267,7 @@ const Readme = {
   },
   template: `
   <div>
+    <div v-if="!loading && !noAccessPerm" style="padding: 2rem 2rem 0 2rem; font-size: 0.5rem">来源：{{contentFrom}}</div>
     <query-limit v-if="noAccessPerm" @requery="queryWithAccessToken"  target-url="https://gitee.com/TonyJiangWJ/Ant-Forest" />
     <div v-else style="padding: 2rem">
       <markdown-preview :text="markdownContent"/>
