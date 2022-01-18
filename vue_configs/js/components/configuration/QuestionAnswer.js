@@ -5,12 +5,12 @@ const MarkdownPreview = {
   },
   data() {
     return {
-      markdownHtml: Mdjs.md2html(this.text)
+      markdownHtml: ''
     }
   },
   watch: {
     text: function () {
-      this.markdownHtml = Mdjs.md2html(this.text)
+      this.markdownHtml = Mdjs.md2html(this.text).replace(/href="#[^"]+"/g, 'href="javascript:void(0);"')
     }
   },
   template: `
