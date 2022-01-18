@@ -125,7 +125,7 @@ const QuestionAnswer = {
   },
   methods: {
     doQuery: function () {
-      this.loading = false
+      this.loading = true
       API.get('https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/issues?state=all&sort=created&direction=desc&labels=question' + `&page=${this.pager.currentPage}&pre_page=${this.pager.size}&access_token=${this.accessToken}`)
       .then(resp => {
         this.queryResult = resp
@@ -138,13 +138,16 @@ const QuestionAnswer = {
           this.loading = false
           this.noAccessPerm = false
           this.contentFrom = 'Gitee'
+          return Promise.resolve(true)
         } else {
-          this.doQueryGithubIssue()
+          return this.doQueryGithubIssue()
         }
+      }).then(_ => {
+        this.doGetAdbUseDoc()
       })
     },
     doQueryGithubIssue: function () {
-      API.get('https://api.github.com/repos/TonyJiangWJ/Ant-Forest/issues?labels=documentation').then(resp => {
+      return API.get('https://api.github.com/repos/TonyJiangWJ/Ant-Forest/issues?labels=documentation').then(resp => {
         this.queryResult = resp
         this.contentFrom = 'Github'
         return Promise.resolve(true)
@@ -154,7 +157,7 @@ const QuestionAnswer = {
         return Promise.resolve(false)
       }).then(success => {
         this.noAccessPerm = !success
-        this.doGetAdbUseDoc()
+        return Promise.resolve(success)
       })
     },
     doGetAdbUseDoc: function () {
