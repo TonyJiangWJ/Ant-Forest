@@ -226,6 +226,8 @@ let default_config = {
   auto_start_rain: false,
   // 设置无障碍权限时开启其他的无障碍权限
   other_accessisibility_services: '',
+  // 不需要执行resolver
+  noneed_resolve_dex: false,
   // 更新后需要强制执行的标记
   updated_temp_flag_13549: true,
   updated_temp_flag_13510: true
