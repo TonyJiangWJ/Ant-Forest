@@ -63,9 +63,6 @@ let app = new Vue({
     },
     registerResizeWindow: function () {
       $app.registerFunction('resizeWindow', ({ height, width }) => {
-        // console.log('resizeWindow currentHeight:', currentHeight, 'window height:', window.innerHeight, 'webview height', height)
-        // console.log('resizeWindow window width:', window.innerWidth, 'webview width', width)
-        // console.log('body client height:', document.body.getBoundingClientRect().height)
         let newHeight = window.innerWidth / width * height
         if (newHeight > currentHeight) {
           currentHeight = newHeight
@@ -85,10 +82,17 @@ let app = new Vue({
       this.registerResizeWindow()
     }
   },
+  computed: {
+    menuTitle: function () {
+      return this.$store.getters.getTitle || '配置管理'
+    }
+  },
   watch: {
     '$route': function (to, from) {
       console.log('router changed from:', from.path, from.meta.index)
       console.log('router changed to:', to.path, to.meta.index)
+      this.$store.commit('setIndex', to.meta.index)
+      this.$store.commit('setTitle', to.meta.title)
       // this.transitionName = to.meta.index > from.meta.index ? 'view-push' : 'view-pop'
       this.transitionName = to.meta.index > from.meta.index ? 'slide-left' : 'slide-right'
       console.log('transitionName', this.transitionName)

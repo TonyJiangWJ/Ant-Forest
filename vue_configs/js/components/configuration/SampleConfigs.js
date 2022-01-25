@@ -26,7 +26,6 @@ const RainConfig = {
   template: `
   <div>
     <van-divider content-position="left">
-      能量雨设置
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="startRainCollect">启动能量雨</van-button>
     </van-divider>
     <van-cell-group>
@@ -141,7 +140,6 @@ const CollectConfig = {
   },
   template: `
     <div>
-      <van-divider content-position="left">收集配置</van-divider>
       <van-cell-group>
         <switch-cell title="是否循环" v-model="configs.is_cycle" />
         <number-field v-if="configs.is_cycle" v-model="configs.cycle_times" label="循环次数" placeholder="请输入单次运行循环次数" />
@@ -268,7 +266,6 @@ const LockConfig = {
   },
   template: `
   <div>
-  <van-divider content-position="left">锁屏相关</van-divider>
     <van-cell-group>
       <van-field v-model="configs.password" label="锁屏密码" type="password" placeholder="请输入锁屏密码" input-align="right" />
       <number-field v-model="configs.timeout_unlock" label="解锁超时时间" placeholder="请输入解锁超时时间">
@@ -334,7 +331,6 @@ const FloatyConfig = {
   },
   template: `
   <div>
-    <van-divider content-position="left">悬浮窗配置</van-divider>
     <van-cell-group>
       <swipe-color-input-field label="悬浮窗颜色" :error-message="validationError.min_floaty_color" v-model="configs.min_floaty_color" placeholder="悬浮窗颜色值 #FFFFFF"/>
       <number-field v-model="configs.min_floaty_text_size" label-width="8em" label="悬浮窗字体大小" placeholder="请输入悬浮窗字体大小" >
@@ -380,8 +376,7 @@ const LogConfig = {
   template: `
   <div>
     <van-divider content-position="left">
-    日志配置
-    <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="showLogs">查看日志</van-button>
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="showLogs">查看日志</van-button>
     </van-divider>
       <van-cell-group>
         <tip-block v-if="!configs.is_pro">控制台保留的日志行数，避免运行时间长后保留太多的无用日志，导致内存浪费</tip-block>

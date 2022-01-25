@@ -116,7 +116,10 @@ pre {
 .markdown-preview img {
   width: 90%;
 }
-
+.markdown-preview li::before {
+  content: '·';
+  font-weight: bold;
+}
 html {
   height: 100%;
   width: 100%;
