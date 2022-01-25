@@ -75,13 +75,14 @@ let Index = {
     }
   },
   methods: {
-    routerTo: function (path) {
-      this.$router.push(path)
+    routerTo: function (item) {
+      this.$router.push(item.link)
+      this.$store.commit('setTitle', item.title)
     }
   },
   template: `<div>
     <van-cell-group>
-      <van-cell :title="item.title" is-link v-for="item in menuItems" :key="item.link" @click="routerTo(item.link)"/>
+      <van-cell :title="item.title" is-link v-for="item in menuItems" :key="item.link" @click="routerTo(item)"/>
     </van-cell-group>
   </div>`
 }
