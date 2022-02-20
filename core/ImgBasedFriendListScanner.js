@@ -94,7 +94,6 @@ const ImgBasedFriendListScanner = function () {
     gap = gap || 100 * _config.scaleRate
     debugForDev(['reduce gap: {}', gap])
     let lastY = -gap - 1
-    let lastIsHelp = false
     let resultPoints = []
     if (points && points.length > 0) {
       points.sort((pd1, pd2) => {
@@ -112,19 +111,9 @@ const ImgBasedFriendListScanner = function () {
         if (point.y - lastY > gap) {
           resultPoints.push(pointData)
           lastY = point.y
-          lastIsHelp = pointData.isHelp
         } else {
-          if (lastIsHelp || !pointData.isHelp) {
-            // 距离过近的丢弃
-            debugInfo(['丢弃距离较上一个:{} 比较近的：{}', lastY, JSON.stringify(pointData)])
-          } else {
-            // 上一个点非帮助 且当前点为帮助点 丢弃上一个点
-            let dropLast = resultPoints.splice(resultPoints.length - 1)
-            debugInfo(['丢弃上一个距离比较近的非帮助点：{}', JSON.stringify(dropLast)])
-            resultPoints.push(pointData)
-            lastY = point.y
-            lastIsHelp = pointData.isHelp
-          }
+          // 距离过近的丢弃
+          debugInfo(['丢弃距离较上一个:{} 比较近的：{}', lastY, JSON.stringify(pointData)])
         }
       })
       debugInfo('重新分析后的点：' + JSON.stringify(resultPoints))
@@ -132,8 +121,8 @@ const ImgBasedFriendListScanner = function () {
     return resultPoints
   }
 
-  this.destory = function () {
-    this.baseDestory()
+  this.destroy = function () {
+    this.baseDestroy()
   }
 
   this.scrollUpIfNeeded = function (grayImg) {
@@ -243,7 +232,6 @@ const ImgBasedFriendListScanner = function () {
     let screen = null
     let grayScreen = null
     let intervalScreenForDetectCollect = null
-    let intervalScreenForDetectHelp = null
     // console.show()
     this.countingDownContainers = []
     // 列表中的滑动次数
@@ -255,28 +243,19 @@ const ImgBasedFriendListScanner = function () {
       screen = _commonFunctions.checkCaptureScreenPermission(5)
       // 重新复制一份
       grayScreen = images.copy(images.grayscale(images.copy(screen)), true)
-      intervalScreenForDetectCollect = images.medianBlur(images.interval(grayScreen, _config.can_collect_color_gray || '#828282', _config.color_offset), 5)
-      intervalScreenForDetectHelp = images.medianBlur(images.interval(images.copy(screen), _config.can_help_color || '#f99236', _config.color_offset), 5)
+      intervalScreenForDetectCollect = images.copy(images.inRange(screen, _config.can_collect_color_lower || '#12905F', _config.can_collect_color_upper || '#2EA178'), true)
       let countdown = new Countdown()
-      let waitForCheckPoints = this.getAllCheckPoints(intervalScreenForDetectHelp, intervalScreenForDetectCollect)
-      countdown.summary('获取可帮助和可能可收取的点')
-      if (waitForCheckPoints.length > 0) {
-        if (!_config.help_friend) {
-          waitForCheckPoints = waitForCheckPoints.filter(p => !p.isHelp)
-          debugInfo(['移除帮助收取的点之后：{}', JSON.stringify(waitForCheckPoints)])
-        }
-        countdown.restart()
-        let countdownLatch = new CountDownLatch(waitForCheckPoints.length)
-        let listWriteLock = threads.lock()
-        let countdownLock = threads.lock()
-        let imgResolveLock = threads.lock()
-        let collectOrHelpList = []
-        waitForCheckPoints.forEach(pointData => {
-          if (pointData.isHelp) {
-            this.threadPool.execute(function () {
-              self.solveHelpPoint(intervalScreenForDetectHelp, pointData, listWriteLock, countdownLatch, collectOrHelpList)
-            })
-          } else {
+      let waitForCheckPoints = this.getAllCheckPoints(intervalScreenForDetectCollect)
+      countdown.summary('获取可能可收取的点')
+      try {
+        if (waitForCheckPoints.length > 0) {
+          countdown.restart()
+          let countdownLatch = new CountDownLatch(waitForCheckPoints.length)
+          let listWriteLock = threads.lock()
+          let countdownLock = threads.lock()
+          let imgResolveLock = threads.lock()
+          let collectOrHelpList = []
+          waitForCheckPoints.forEach(pointData => {
             this.threadPool.execute(function () {
               let executeSuccess = false
               try {
@@ -314,27 +293,29 @@ const ImgBasedFriendListScanner = function () {
                 }
               }
             })
+          })
+          // 等待五秒
+          if (!countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)) {
+            let activeCount = this.threadPool.getActiveCount()
+            errorInfo('有线程执行失败 运行中的线程数：' + activeCount)
+            // if (activeCount > 0) {
+            debugInfo('将线程池关闭然后重建线程池')
+            this.threadPool.shutdown()
+            debugInfo(['等待imgBasedScanner线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
+            this.createNewThreadPool()
+            // }
           }
-        })
-        // 等待五秒
-        if (!countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)) {
-          let activeCount = this.threadPool.getActiveCount()
-          errorInfo('有线程执行失败 运行中的线程数：' + activeCount)
-          // if (activeCount > 0) {
-          debugInfo('将线程池关闭然后重建线程池')
-          this.threadPool.shutdown()
-          debugInfo(['等待imgBasedScanner线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
-          this.createNewThreadPool()
-          // }
+          countdown.summary('分析所有可帮助和可收取的点')
+          if (this.operateCollectIfNeeded(collectOrHelpList)) {
+            return EXECUTE_FAILED
+          }
         }
-        countdown.summary('分析所有可帮助和可收取的点')
-        if (this.operateCollectIfNeeded(collectOrHelpList)) {
+        this.visualHelper.displayAndClearAll()
+        if (this.checkBottomAndRecycle(grayScreen, ++count)) {
           return EXECUTE_FAILED
         }
-      }
-      this.visualHelper.displayAndClearAll()
-      if (this.checkBottomAndRecycle(grayScreen, ++count)) {
-        return EXECUTE_FAILED
+      } finally {
+        intervalScreenForDetectCollect && intervalScreenForDetectCollect.recycle()
       }
     } while (this.has_next)
     let poolWaitCount = 0
@@ -360,24 +341,10 @@ const ImgBasedFriendListScanner = function () {
   /**
    * 获取所有的待校验节点
    * 
-   * @param {*} intervalScreenForDetectHelp 
-   * @param {*} intervalScreenForDetectCollect 
+   * @param {*} intervalScreenForDetectCollect
    */
-  this.getAllCheckPoints = function (intervalScreenForDetectHelp, intervalScreenForDetectCollect) {
+  this.getAllCheckPoints = function (intervalScreenForDetectCollect) {
     let waitForCheckPoints = []
-
-    let helpPoints = this.detectHelp(intervalScreenForDetectHelp)
-    if (helpPoints && helpPoints.length > 0) {
-      waitForCheckPoints = waitForCheckPoints.concat(helpPoints.map(
-        helpPoint => {
-          return {
-            isHelp: true,
-            point: helpPoint
-          }
-        })
-      )
-    }
-
     let collectPoints = this.detectCollect(intervalScreenForDetectCollect)
     if (collectPoints && collectPoints.length > 0) {
       waitForCheckPoints = waitForCheckPoints.concat(collectPoints.map(
@@ -400,6 +367,7 @@ const ImgBasedFriendListScanner = function () {
    * @param {*} listWriteLock 
    * @param {*} countdownLatch 
    * @param {*} collectOrHelpList 
+   * @deprecated 帮收功能已移除
    */
   this.solveHelpPoint = function (intervalScreenForDetectHelp, pointData, listWriteLock, countdownLatch, collectOrHelpList) {
     let executeSuccess = false
@@ -643,19 +611,11 @@ const ImgBasedFriendListScanner = function () {
           return EXECUTE_FAILED
         }
       } else {
-        debugInfo('无可收取或帮助的内容')
+        debugInfo('无可收取的内容')
       }
     } else {
       debugInfo('只通过逛一逛收集，跳过排行榜中的收取，仅识别倒计时')
     }
-  }
-
-  this.detectHelp = function (img) {
-    let helpPoints = this.detectColors(img)
-    if (helpPoints && helpPoints.length > 0) {
-      debugInfo('可帮助的点：' + JSON.stringify(helpPoints))
-    }
-    return helpPoints
   }
 
   this.detectCollect = function (img) {
@@ -666,6 +626,11 @@ const ImgBasedFriendListScanner = function () {
     return collectPoints
   }
 
+  /**
+   * 
+   * @param {ImageWrapper} img 二值化后的图片
+   * @returns 
+   */
   this.detectColors = function (img) {
     let use_img = images.copy(img)
     let movingY = parseInt(180 * SCALE_RATE)
@@ -686,6 +651,7 @@ const ImgBasedFriendListScanner = function () {
       }
       regionWindow = [startX, runningY, movingX, movingY]
       debugForDev('检测区域：' + JSON.stringify(regionWindow))
+      // 二值化图片 寻找匹配的白色区域
       let point = images.findColor(use_img, '#FFFFFF', {
         region: regionWindow
       })

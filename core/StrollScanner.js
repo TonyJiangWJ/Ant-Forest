@@ -63,9 +63,9 @@ const StrollScanner = function () {
     return this.collecting()
   }
 
-  this.destory = function () {
+  this.destroy = function () {
     debugInfo('逛一逛结束')
-    this.baseDestory()
+    this.baseDestroy()
   }
 
   /**

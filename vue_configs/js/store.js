@@ -2,7 +2,8 @@ const store = new Vuex.Store({
   state: {
     configSaveCallbacks: [],
     currentIndex: 0,
-    currentTitle: '配置管理'
+    currentTitle: '配置管理',
+    titleMap: {}
   },
   getters: {
     getSaveCallbacks: state => {
@@ -10,6 +11,9 @@ const store = new Vuex.Store({
     },
     getTitle: state => {
       return state.currentTitle
+    },
+    getTitleByPath: state => {
+      return (path) => state.titleMap[path]
     }
   },
   mutations: {
@@ -17,7 +21,13 @@ const store = new Vuex.Store({
       state.index = index
     },
     setTitle: (state, title) => {
+      console.log('设置标题：', title)
       state.currentTitle = title
-    }
+    },
+    setTitleWithPath: (state, payload) => {
+      console.log('设置标题：', payload.title)
+      state.currentTitle = payload.title
+      state.titleMap[payload.path] = payload.title
+    },
   }
 })

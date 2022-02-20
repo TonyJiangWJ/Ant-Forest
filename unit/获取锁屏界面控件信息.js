@@ -126,9 +126,8 @@ function analyzeLayout (desc) {
   let uiObjectInfoList = null
   let start = new Date().getTime()
 
-  let any = widgetUtils.widgetGetOne(/.+/)
-  if (any) {
-    let root = getRootContainer(any)
+  let root = getActiveWindowRoot()
+  if (root) {
     let boundsInfo = root.bounds()
     let content = root.text() || root.desc()
     let id = root.id()
@@ -169,19 +168,6 @@ function analyzeLayout (desc) {
     return { content: content, total: logInfoList.length, cost: cost, desc: desc }
   }
   return { desc: desc, content: '', total: 0, cost: cost }
-}
-
-
-
-function getRootContainer (target) {
-  if (target === null) {
-    logUtils.errorInfo("target为null 无法获取root节点", true)
-  }
-  if (target.parent() !== null) {
-    return getRootContainer(target.parent())
-  } else {
-    return target
-  }
 }
 
 
@@ -311,4 +297,30 @@ function removeMinPrefix (list) {
     return l
   }).map(l => l.substring(minQueue.peek()))
   return result
+}
+
+function getActiveWindowRoot() {
+  let windows = runtime.accessibilityBridge.getService().getWindows()
+  if (windows != null && windows.size() > 0) {
+    logUtils.debugInfo('获取窗体数量：' + windows.size())
+    let activeRootNode = null
+    for (let i = 0; i < windows.size(); i++) {
+      let window = windows.get(i)
+      let root = window.getRoot()
+      if (window.isActive()) {
+        activeRootNode = root
+        logUtils.debugInfo('活动的目标窗口：' + root.getPackageName())
+      } else {
+        logUtils.debugInfo('非活动的窗口：' + (root != null ? root.getPackageName() : ''))
+      }
+    }
+    if (activeRootNode != null) {
+      let uiObjectRoot = com.stardust.automator.UiObject.Companion.createRoot(activeRootNode)
+      if (uiObjectRoot) {
+        logUtils.debugInfo('获取uiObjectRoot成功')
+        return uiObjectRoot
+      }
+    }
+  }
+  return null
 }

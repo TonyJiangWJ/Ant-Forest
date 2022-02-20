@@ -18,7 +18,7 @@ let app = new Vue({
       transitionName: 'view-pop',
       false: true,
       showBack: this.$route.path != '/',
-      showMenuDialog: false
+      showMenuDialog: false,
     }
   },
   methods: {
@@ -75,7 +75,7 @@ let app = new Vue({
       if ($app.moke) {
         console.log('bridge 未完成注册 等待')
         let self = this
-        setTimeout(() =>{
+        setTimeout(() => {
           self.delayRegisterIfBridgeNotReady()
         }, 10)
       }
@@ -92,12 +92,12 @@ let app = new Vue({
       console.log('router changed from:', from.path, from.meta.index)
       console.log('router changed to:', to.path, to.meta.index)
       this.$store.commit('setIndex', to.meta.index)
-      this.$store.commit('setTitle', to.meta.title)
+      this.$store.commit('setTitle', to.meta.title || this.$store.getters.getTitleByPath(to.path))
       // this.transitionName = to.meta.index > from.meta.index ? 'view-push' : 'view-pop'
       this.transitionName = to.meta.index > from.meta.index ? 'slide-left' : 'slide-right'
       console.log('transitionName', this.transitionName)
       this.showBack = to.meta.index > 0
-    }
+    },
   },
   mounted () {
     this.$store.commit('setIndex', 1)

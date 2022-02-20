@@ -24,11 +24,12 @@ if (runningSize > 1) {
 }
 
 let { config, storage_name: _storage_name } = require('../config.js')(runtime, global)
-config._init_lifecycle_by_thread_pool = true
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
-let commonFunction = sRequire('CommonFunction')
 config.show_debug_log = true
+config.async_save_log_file = false
+let commonFunction = sRequire('CommonFunction')
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
+let paddleOcrUtil = sRequire('PaddleOcrUtil')
 runningQueueDispatcher.addRunningTask()
 
 let stop = false
@@ -44,7 +45,7 @@ commonFunction.registerOnEngineRemoved(function () {
 })
 
 var captureImage, drawImage, originalImg, grayImg;
-var previewImage
+var previewImage = null
 var displayPositions = ''
 threads.start(function () {
   if (!commonFunction.requestScreenCaptureOrRestart(true)) {
@@ -71,6 +72,7 @@ var canvasWindow = floaty.rawWindow(
     <vertical id="vertical" bg="#aaaaaa" w="{{Math.floor(device_width*0.8)}}px" h="{{Math.floor(device_height*0.5)}}px" gravity="center">
       <horizontal id="horizontal" margin="5dp" w="*" gravity="center">
         <button id="cutOrPoint" layout_weight="1" text="裁切小图" />
+        <button id="recognizeText" layout_weight="1" text="识别文字" />
         <button id="openFile" layout_weight="1" text="选择图片文件" />
       </horizontal>
       <canvas id="canvas" margin="5dp" layout_weight="1" />
@@ -91,6 +93,10 @@ var canvasWindow = floaty.rawWindow(
         <text text="位置（点击复制）" />
         <text id="region_position_value" margin="1dp 0dp" w="*"/>
       </horizontal>
+      <horizontal bg="#ffffff">
+        <text text="识别文本：" />
+        <text id="recognize_text" margin="1dp 0dp" w="*"/>
+      </horizontal>
     </vertical>
   </vertical>
 );
@@ -105,7 +111,9 @@ var canvasWindowCtrl = new FloatyController(canvasWindow, canvasWindow.btnMove, 
 var miniWindowCtrl = new FloatyController(miniWindow, miniWindow.miniBtn);
 var canvasMove = canvasWindowCtrl.outScreen();
 var miniMove = miniWindowCtrl.outScreen();
-
+ui.run(function () {
+  canvasWindow.recognizeText.setVisibility(View.GONE)
+})
 threads.start(function () {
   sleep(100);
   // 将mini按钮移动到屏幕外
@@ -216,11 +224,45 @@ canvasWindow.cutOrPoint.on('click', () => {
     ui.run(function () {
       if (!cutMode) {
         canvasWindow.cutOrPoint.text('复制Base64')
+        canvasWindow.recognizeText.setVisibility(View.VISIBLE)
       } else {
         canvasWindow.cutOrPoint.text('裁切小图')
+        canvasWindow.recognizeText.setVisibility(View.GONE)
       }
       cutMode = !cutMode
     })
+  });
+})
+
+canvasWindow.recognizeText.on('click', () => {
+  threads.start(function () {
+    if (cutMode) {
+      if (!paddleOcrUtil.enabled) {
+        toastLog('paddleOcr未初始化成功 或当前版本AutoJS不支持paddleOcr')
+        ui.post(() => {
+          canvasWindow.recognize_text.text('paddleOcr未初始化成功\n或当前版本AutoJS不支持paddleOcr')
+        })
+        return
+      }
+
+      if (positions && positions.length === 4) {
+        let clipImg = convertAndClip(positions, data, drawImage)
+        if (clipImg === null) {
+          toastLog('未框选有效图片')
+          return
+        }
+        let result = paddleOcrUtil.recognize(clipImg)
+        clipImg.recycle()
+        log('识别文本:' + result)
+        setClip(result)
+        toastLog('识别文本已复制')
+        ui.post(() => {
+          canvasWindow.recognize_text.text(result || '')
+        })
+      } else {
+        toastLog('未框选小图')
+      }
+    }
   });
 })
 

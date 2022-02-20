@@ -64,7 +64,7 @@ const BaseScanner = function () {
     )
     // 注册生命周期结束后关闭线程池，防止脚本意外中断时未调用destroy导致线程池一直运行
     this.lifecycleCallbackId = _commonFunctions.registerOnEngineRemoved(function () {
-      self.baseDestory()
+      self.baseDestroy()
     }, 'shutdown scanner thread pool')
   }
 
@@ -77,7 +77,7 @@ const BaseScanner = function () {
     }
   }
 
-  this.baseDestory = function () {
+  this.baseDestroy = function () {
     if (this.threadPool !== null) {
       this.threadPool.shutdown()
       debugInfo(['等待scanner线程池关闭, 结果: {}', this.threadPool.awaitTermination(5, TimeUnit.SECONDS)])
@@ -102,8 +102,8 @@ const BaseScanner = function () {
     }
   }
 
-  this.destory = function () {
-    this.baseDestory()
+  this.destroy = function () {
+    this.baseDestroy()
   }
 
   /**
@@ -122,7 +122,7 @@ const BaseScanner = function () {
   }
 
   // 收取能量
-  this.collectEnergy = function (isHelp) {
+  this.collectEnergy = function () {
     this.checkAndCollectByHough()
   }
 
@@ -233,7 +233,7 @@ const BaseScanner = function () {
             collectableBall.ballImage = null
             if (!collectableBall.invalid) {
               clickPoints.push(collectableBall)
-              self.visualHelper.addCircle(collectableBall.isHelp ? '帮助能量球' : collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball)
+              self.visualHelper.addCircle(collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball)
             } else {
               self.visualHelper.addCircle('非有效能量球', collectableBall.ball)
               invalidPoints.push(collectableBall)
@@ -309,7 +309,7 @@ const BaseScanner = function () {
       let intervalForCollatableRecheck = images.inRange(ballImage, _config.valid_collectable_lower || '#77cc00', _config.valid_collectable_upper || '#ffff91')
       let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
       let collectableBall = {
-        ball: ball, isHelp: false, isOwn: this.is_own, avg: avgHsv,
+        ball: ball, isOwn: this.is_own, avg: avgHsv,
         mainAvg: avgForCollectable, recheckAvg: collectableRecheckAvg, avgBottom: avgBottom,
         ballImage: ballImage
       }
@@ -319,17 +319,13 @@ const BaseScanner = function () {
         // 浇水能量球
         collectableBall.isWatering = true
         recheck = this.is_own
-      } /* else if (!this.is_own && avgBottom > COLLECTING_THRESHOLD) {
-        // 判定为帮收
-        collectableBall.isHelp = true
-      } */ else if (avgForCollectable < COLLECTING_THRESHOLD) {
+      } else if (avgForCollectable < COLLECTING_THRESHOLD) {
         // 非帮助或可收取, 大于25的则是可收取的，否则为无效球
         collectableBall.invalid = true
       }
       // 排除非可收取的和好友页面中的浇水球
       if (collectableRecheckAvg < COLLECTING_THRESHOLD || !this.is_own && collectableBall.isWatering) {
         collectableBall.invalid = true
-        collectableBall.isHelp = false
       }
       return collectableBall
     } else {
@@ -347,22 +343,13 @@ const BaseScanner = function () {
         if (
           // 收取自身的好友浇水球
           this.is_own && point.isWatering && !_config.skip_own_watering_ball
-          // 非帮收球且非浇水直接收取
-          || !point.isHelp && !point.isWatering) {
+          // 非浇水直接收取
+          || !point.isWatering) {
           self.collect_operated = true
           self.collect_count++
           automator.click(b.x + this.getRandomOffset(b), b.y + this.getRandomOffset(b))
           if (idx < clickPoints.length - 1) {
             this.randomSleep(100)
-          }
-        } else if (point.isHelp && _config.help_friend) {
-          // 帮助收取
-          automator.click(b.x, b.y)
-          sleep(100)
-          let notifyButton = _widgetUtils.widgetGetOne(_config.help_and_notify || '知道了.*去提醒', 1000)
-          if (notifyButton) {
-            automator.clickCenter(notifyButton)
-            sleep(500)
           }
         }
       })
@@ -379,19 +366,6 @@ const BaseScanner = function () {
   this.randomSleep = function () {
     sleep(100 + Math.random() * (_config.random_sleep_time || 500))
   }
-
-  // 收取能量同时帮好友收取
-  this.collectAndHelp = function (needHelp) {
-    // 收取好友能量
-    this.collectEnergy(needHelp)
-    if (needHelp) {
-      // 因为无法判断剩余多少个能量球，当需要帮助之后返回true 重新进入，下次调用时传递needHelp为false即可
-      return true
-    } else {
-      return
-    }
-  }
-
 
   // 判断并记录保护罩
   this.recordProtected = function (toast, name) {
@@ -641,11 +615,7 @@ const BaseScanner = function () {
       _commonFunctions.printExceptionStack(e)
     }
     toastListenThread = toastListenThread || this.protectDetect(_package_name, obj.name)
-    if (_config.help_friend) {
-      rentery = this.collectAndHelp(obj.isHelp)
-    } else {
-      this.collectEnergy()
-    }
+    this.collectEnergy()
     if (this.isProtected) {
       debugInfo(['异步判定已使用了保护罩，跳过后续操作 name: {}', obj.name])
       return this.backToListIfNeeded(false, obj, toastListenThread)
@@ -662,9 +632,9 @@ const BaseScanner = function () {
     let friendGrowEnergy = postE - preE
     let collectEnergy = postGet - preGot
     debugInfo(['执行前，收集数据：{} 好友能量：{}; 执行后，收集数据：{} 好友能量：{}', preGot, preE, postGet, postE])
-    if (this.collect_operated && friendGrowEnergy === 0 && collectEnergy === 0 && !obj.isHelp && !obj.recheck) {
+    if (this.collect_operated && friendGrowEnergy === 0 && collectEnergy === 0 && !obj.recheck) {
       // 没有收集到能量，可能有保护罩，等待1.5秒
-      warnInfo(['非帮助收集，未收集到能量，可能当前能量值未刷新或者好友使用了保护罩，等待1.5秒'], true)
+      warnInfo(['未收集到能量，可能当前能量值未刷新或者好友使用了保护罩，等待1.5秒'], true)
       sleep(1500)
       try {
         // 1.5秒后重新获取能量值
@@ -747,7 +717,6 @@ const BaseScanner = function () {
     if (rentery) {
       debugInfo('好友能量收取完毕, 有帮助收取 重新校验是否有新能量球')
       sleep(500)
-      obj.isHelp = false
       obj.recheck = true
       return this.doCollectTargetFriend(obj)
     }

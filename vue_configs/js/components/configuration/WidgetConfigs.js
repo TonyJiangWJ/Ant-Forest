@@ -21,28 +21,9 @@ const WidgetConfigs = {
         friend_load_more_content: '点击展开好友动态',
         using_protect_content: '使用了保护罩',
         collectable_energy_ball_content: '收集能量\\d+克',
-        can_collect_color_gray: '#828282',
-        can_help_color: '#f99236',
-        help_and_notify: '知道了.*去提醒',
-        collectable_lower: '#a5c600',
-        collectable_upper: '#ffff5d',
-        helpable_lower: '#6f0028',
-        helpable_upper: '#ffb2b2',
-        valid_collectable_lower: '#77cc00',
-        valid_collectable_upper: '#ffff91',
         timeout_findOne: 1000,
         timeout_existing: 8000,
       },
-      validations: {
-        can_collect_color_gray: {
-          validate: (v) => /^#[\dabcdef]{6}$/i.test(v),
-          message: () => '颜色值格式不正确'
-        },
-        can_help_color: {
-          validate: (v) => /^#[\dabcdef]{6}$/i.test(v),
-          message: () => '颜色值格式不正确'
-        },
-      }
     }
   },
   methods: {
@@ -79,25 +60,13 @@ const WidgetConfigs = {
     <van-field v-model="configs.stroll_end_ui_content" label="逛一逛结束返回按钮" label-width="10em" type="text" placeholder="逛一逛结束返回按钮" input-align="right" />
     <van-field v-model="configs.friend_load_more_content" label="加载好友动态按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
     <van-field v-model="configs.using_protect_content" label="保护罩使用记录" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
-    <van-field v-model="configs.help_and_notify" label="帮助收取，提醒按钮" label-width="10em" type="text" placeholder="请输入提醒按钮控件文本" input-align="right" />
     <van-field v-model="configs.do_watering_button_content" label="确认浇水按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
-    <color-input-field label="列表中可收取的颜色灰度值" label-width="10em" 
-            placeholder="可收取颜色值 #FFFFFF" :error-message="validationError.can_collect_color_gray" v-model="configs.can_collect_color_gray"/>
-    <color-input-field label="列表中可帮助的颜色" label-width="10em" 
-            placeholder="可帮助颜色值 #FFFFFF" :error-message="validationError.can_help_color" v-model="configs.can_help_color"/>
     <number-field v-model="configs.timeout_findOne" label="查找控件超时时间" label-width="8em" placeholder="请输入超时时间">
       <template #right-icon><span>毫秒</span></template>
     </number-field>
     <number-field v-model="configs.timeout_existing" label="校验控件是否存在超时时间" label-width="12em" placeholder="请输入超时时间" >
       <template #right-icon><span>毫秒</span></template>
     </number-field>
-    <tip-block>以下配置为执行优化使用，尽量不要修改除非出问题了</tip-block>
-    <color-input-field label="可收取颜色值起始值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_lower"/>
-    <color-input-field label="可收取颜色值结束值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_upper"/>
-    <color-input-field label="可帮助颜色值起始值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_lower"/>
-    <color-input-field label="可帮助颜色值结束值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_upper"/>
-    <color-input-field label="有效球颜色值起始值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.valid_collectable_lower"/>
-    <color-input-field label="有效球颜色值结束值" label-width="10em" placeholder="颜色值 #FFFFFF" v-model="configs.valid_collectable_upper"/>
   </div>`
 }
 Vue.component('widget-configs', function (resolve, reject) {
