@@ -39,7 +39,6 @@ _config.enable_visual_helper = true
 // 启用或者禁用ocr 都禁用则使用默认
 _config.useTesseracOcr = true
 _config.useOcr = false
-_config.help_friend = true
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _commonFunctions = singletonRequire('CommonFunction')
 let _tesserOcrUtil = singletonRequire('TesserOcrUtil')
@@ -227,7 +226,7 @@ function exitAndClean () {
     window.close()
   }
   scannerThread.interrupt()
-  scanner.destory()
+  scanner.destroy()
   exit()
 }
 

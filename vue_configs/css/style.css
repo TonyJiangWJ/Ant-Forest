@@ -120,6 +120,36 @@ pre {
   content: '·';
   font-weight: bold;
 }
+
+.long-value {
+  flex: 2;
+}
+
+.base64-viewer {
+  display: flex;
+  height: 3rem;
+  align-items: center;
+  padding-left: 1rem;
+  color: #646566;
+  font-size: 14px;
+}
+.base64-viewer::after {
+  position: absolute;
+  box-sizing: border-box;
+  content: ' ';
+  pointer-events: none;
+  right: 16px;
+  bottom: 0;
+  left: 16px;
+  border-bottom: 1px solid #ebedf0;
+  -webkit-transform: scaleY(.5);
+  transform: scaleY(.5);
+}
+.base64-viewer .base64-img {
+  max-height:2.5rem;
+  margin-left: auto;
+  margin-right: 1rem;
+}
 html {
   height: 100%;
   width: 100%;

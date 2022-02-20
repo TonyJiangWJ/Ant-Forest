@@ -1,16 +1,24 @@
-const About = {
+
+/**
+ * 关于项目
+ */
+ const About = {
   data () {
     return {
       version: 'develop_version',
+      githubUrl: '',
+      giteeUrl: '',
+      qq_group: '',
     }
   },
   methods: {
     openGithubUrl: function () {
       console.log('点击url')
-      $app.invoke('openUrl', { url: 'https://github.com/TonyJiangWJ/Ant-Forest' })
+      $app.invoke('openUrl', { url: this.githubUrl })
     },
     openGiteeUrl: function () {
-      $app.invoke('openUrl', { url: 'https://gitee.com/TonyJiangWJ/Ant-Forest' })
+      console.log('点击url')
+      $app.invoke('openUrl', { url: this.giteeUrl })
     },
     openDevelopMode: function () {
       this.$router.push('/about/develop')
@@ -19,9 +27,28 @@ const About = {
       $app.invoke('downloadUpdate')
     },
   },
+  computed: {
+    githubShort: function () {
+      if (this.githubUrl) {
+        return this.githubUrl.replace(/https:\/\/(\w+\.)\w+\//, '')
+      }
+      return ''
+    },
+    giteeShort: function () {
+      if (this.giteeUrl) {
+        return this.giteeUrl.replace(/https:\/\/(\w+\.)\w+\//, '')
+      }
+      return ''
+    }
+  },
   mounted () {
     window.$nativeApi.request('getLocalVersion').then(r => {
       this.version = r.versionName
+    })
+    window.$nativeApi.request('loadConfigs').then(config => {
+      this.githubUrl = config.github_url
+      this.giteeUrl = config.gitee_url
+      this.qq_group = config.qq_group
     })
   },
   template: `
@@ -31,12 +58,12 @@ const About = {
       <van-cell title="检测更新" value="点击更新" @click="checkForUpdate"/>
       <van-cell title="作者" value="TonyJiangWJ"/>
       <van-cell title="Email" value="TonyJiangWJ@gmail.com"/>
-      <van-cell title="QQ交流群" value="524611323"/>
-      <van-cell title="Github" value="TonyJiangWJ/Ant-Forest" @click="openGithubUrl"/>
-      <van-cell title="Gitee" value="TonyJiangWJ/Ant-Forest" @click="openGiteeUrl"/>
+      <van-cell v-if="qq_group" title="QQ交流群" :value="qq_group"/>
+      <van-cell value-class="long-value" v-if="githubShort" title="Github" :value="githubShort" @click="openGithubUrl"/>
+      <van-cell value-class="long-value" v-if="giteeShort" title="Gitee" :value="giteeShort" @click="openGiteeUrl"/>
       <van-cell title="开发模式" @click="openDevelopMode" is-link />
     </van-cell-group>
-    <tip-block>本脚本免费使用，更新渠道只有Github和Gitee，请不要被其他引流渠道欺骗了</tip-block>
+    <tip-block>本脚本免费使用，更新渠道只有Github<template v-if="giteeShort">和Gitee</template>，请不要被其他引流渠道欺骗了</tip-block>
   </div>
   `
 }

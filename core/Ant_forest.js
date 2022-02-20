@@ -22,7 +22,7 @@ function Ant_forest () {
   let _base_scanner = new BaseScanner()
   _commonFunctions.registerOnEngineRemoved(function () {
     if (_base_scanner !== null) {
-      _base_scanner.destory()
+      _base_scanner.destroy()
       _base_scanner = null
     }
   }, 'release threadPool')
@@ -447,7 +447,7 @@ function Ant_forest () {
       _collect_any = executeResult.collectAny
       _friends_min_countdown = executeResult.minCountdown
     }
-    scanner.destory()
+    scanner.destroy()
     scanner = null
     return _lost_someone
   }
@@ -457,7 +457,7 @@ function Ant_forest () {
     let scanner = new StrollScanner()
     scanner.init({ currentTime: _current_time, increasedEnergy: _post_energy - _pre_energy })
     let runResult = scanner.start()
-    scanner.destory()
+    scanner.destroy()
     if (runResult) {
       let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
       automator.back()
@@ -689,6 +689,7 @@ function Ant_forest () {
       }
       unlocker.exec()
       _commonFunctions.showDialogAndWait(true)
+      _config._releasedScreenCapturer && _commonFunctions.requestScreenCaptureOrRestart()
       this.listenStopCollect()
       _commonFunctions.showEnergyInfo()
       if (_base_scanner === null) {
@@ -711,7 +712,7 @@ function Ant_forest () {
       flushAllLogs()
       _runningQueueDispatcher.removeRunningTask()
       if (_base_scanner !== null) {
-        _base_scanner.destory()
+        _base_scanner.destroy()
         _base_scanner = null
       }
       // 清除过长日志

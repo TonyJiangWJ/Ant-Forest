@@ -4,7 +4,6 @@ var configStorage = storages.create(_storage_name)
 let FileUtils = singletonRequire('FileUtils')
 let commonFunctions = singletonRequire('CommonFunction')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
-config._auto_start_with_current_engine = true
 config.not_lingering_float_window = true
 if (!commonFunctions.ensureAccessibilityEnabled()) {
   errorInfo('获取无障碍权限失败')

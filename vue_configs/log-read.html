@@ -12,6 +12,7 @@
   <script src="https://unpkg.com/vue-router@3.4.9/dist/vue-router.js"></script>
   <script src="https://unpkg.com/vuex@3.6.2/dist/vuex.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vant@2.10/lib/vant.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vconsole@3.11.2/dist/vconsole.min.js"></script>
 </head>
 <style>
   .wrapper {
@@ -212,6 +213,9 @@
           <van-cell center title="彩色显示">
             <van-switch v-model="colored" size="1.24rem" />
           </van-cell>
+          <van-cell center title="切换VConsole">
+            <van-switch v-model="showVConsole" size="1.24rem" />
+          </van-cell>
         </van-cell-group>
       </div>
     </van-dialog>
@@ -317,7 +321,8 @@
       return {
         readFilePath: null,
         currentSelectPath: null,
-        logFileMatcher: /\.(log|txt)(\.\d+)?$/,
+        logFileMatcher: '\.(log|txt)(\.\d+)?$',
+        showVConsole: false,
         colored: true,
         singleReadLine: 500,
         backHere: null,
@@ -554,7 +559,7 @@
         }
         this.loading = true
         console.log('准备加载日志内容')
-        $nativeApi.request('loadLogs', { start: this.readIndex, num: this.singleReadLine, logPath: this.readFilePath, logFileMatcher: this.logFileMatcher }).then(({ readResult }) => {
+        $nativeApi.request('loadLogs', { start: this.readIndex, num: this.singleReadLine, logPath: this.readFilePath }).then(({ readResult }) => {
           if (readResult) {
             if (this.logList.length > 0) {
               this.backHere = this.logList[0]
@@ -607,7 +612,7 @@
         this.listFiles(this.readFilePath)
       },
       listFiles: function (path) {
-        $nativeApi.request('listLogFiles', { filePath: path || this.currentSelectPath }).then(({ fileResult }) => {
+        $nativeApi.request('listLogFiles', { filePath: path || this.currentSelectPath, logFileMatcher: this.logFileMatcher }).then(({ fileResult }) => {
           if (fileResult.error) {
             $app.invoke('toastLog', { message: fileResult.error })
             return
@@ -638,7 +643,13 @@
       }
     },
     watch: {
-
+      showVConsole: function (newVal) {
+        if (newVal) {
+          window.vConsole = new VConsole()
+        } else {
+          window.vConsole && window.vConsole.destroy()
+        }
+      }
     },
     mounted() {
       console.log('触发mounted')

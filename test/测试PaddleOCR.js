@@ -1,0 +1,20 @@
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
+let paddleOcr = singletonRequire('PaddleOcrUtil')
+let base64 = 'iVBORw0KGgoAAAANSUhEUgAAAFEAAAArCAYAAAAANmSRAAABOGlDQ1BrQ0dDb2xvclNwYWNlQWRvYmVSR0IxOTk4AAAokWNgYFJILCjIYRJgYMjNKykKcndSiIiMUmB/xsDEwMYgyCDKYJKYXFzgGBDgwwAEMBoVfLvGwAiiL+uCzJpivO1cjMWGdoHpqRe3pXw2xVSPArhSUouTgfQfIM5OLigqYWBgzACylctLCkDsHiBbJCkbzF4AYhcBHQhkbwGx0yHsE2A1EPYdsJqQIGcg+wOQzZcEZjOB7OJLh7AFQGyovSAg6JiSn5SqAPK9hqGlpYUmATeTDEpSK0pAtHN+QWVRZnpGiYIjMKRSFTzzkvV0FIwMjIwYGEDhDlH9ORAcnoxiZxBiCIAQmyPBwOC/lIGB5Q9CzKSXgWGBDgMD/1SEmJohA4OAPgPDvjnJpUVlUGMYmYwZGAjxAa1AUpGDqTnaAAAAOGVYSWZNTQAqAAAACAABh2kABAAAAAEAAAAaAAAAAAACoAIABAAAAAEAAABRoAMABAAAAAEAAAArAAAAABuMdOgAAAOSSURBVGgF7ZhPKLxBGMe/K+VACsVRtC4OHBwkkpKrmwu7IYkDJylJHJALuSjiQIoSqZVyoVxIKX8SUXJTLpT8O4j97TO/3rd3/8xrh9lZ6pnaduY7z8w789ln3ueZ9QRDBVx+RCDlR6N5sCDAEDU4AkNkiBoIaJiCPZEhaiCgYQr2RIaogYCGKdgTGaIGAhqmYE9kiBoIaJgiKZ54cHCA4+PjqOXv7+9jd3c3Sv/tQmoyFri6uorr62sEAgH78R8fH+jv70dlZSVqampsnSr39/doamoK0+JtLC4uIjc3N17zb9kZgfjw8IDl5WV7gZ+fn7i6usLw8DCysrKEfnt7i7u7O7y+vmJqasq2bWxsRHp6OgYHB23NWRkaGkJBQQFaWlqcsl3PzMy064mqeEz8n0iAent7Y+7h6OgIOTk5yM/Pj9k/OTmJvLw80UfeSl5pFfoxyGu7u7vR0NBgyaC/SMn7PB6PrSWyYgSi2wbKysrQ2dmJ9vZ2NzPRRwDpuMdTTk9PkZaWFo/pj22MHGdrlYeHh1hYWLCaIM96eXnB5uYmTk5ObJ0qPp8PFRUVYZrVGB0dhdfrtZph32dnZxgZGQnTEt0wCpGO9c7OTpjXFRUVRe1xbm4OdXV1Ubol0JiSkhLRpHfl+/s7xsbGRPv5+dkyM/ZtFCLtit5/PT09rhtcX1937Xd2kicnuxiHSO+1yBQmEoIzeET2RbYpuKSkJCXdtZdiHCKlK7JIba1Kls5Y/c7vm5sbVFdXOyXjdeMQaYdVVVVaNko5JeWbHR0dWub77iTGIdI7rLy8/LvrFeNSU/8ve2ZmRrRLS0tBASUjI8M+2iaPuHGIdJzp2udWnImz046C0uXlpUiN6AY0OzuLvr4+bG9vi+jc2toKv98vbJzjEl03DpE2RNdAtyKLuBRw9vb2RK55cXEhjjFBe3x8xNPTE+bn58Wnvr5eXAOLi4vdHqOtzzhEAkSJtGoZGBjA2tqaGFZbW4vx8XEUFhaKdnZ2Nrq6utDc3IyVlRVMT09jY2MDbW1tXwYx1XXEtKe7s6kSupUEJyYmvnwc2ZCts5yfnwe3traCIa9zyjHrb29vwaWlpWAo6MTs1y0m/e4c85f9Y2Jys9Q/Bku2XIYoI6OgM0QFWDJThigjo6AzRAVYMlOGKCOjoDNEBVgyU4YoI6OgM0QFWDJThigjo6AzRAVYMlOGKCOjoDNEBVgy03/wdj3SCqQ0ygAAAABJRU5ErkJggg=='
+let img = images.fromBase64(base64)
+console.show()
+// 带位置信息
+let start = new Date()
+let result = paddleOcr.recognizeWithBounds(img)
+console.log('识别结果 带位置信息：', JSON.stringify(result))
+console.log('耗时', new Date() - start, 'ms')
+// 纯文本
+start = new Date()
+result = paddleOcr.recognize(img)
+console.log('识别结果 纯文本：', result)
+console.log('耗时', new Date() - start, 'ms')
+
+events.on('exit', () => {
+  img && img.recycle()
+})
+

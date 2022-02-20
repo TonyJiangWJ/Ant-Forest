@@ -7,6 +7,7 @@
  */
 
 const VALIDATOR = {
+  // 正整数
   P_INT: {
     validate: () => false,
     message: v => {
@@ -17,6 +18,16 @@ const VALIDATOR = {
       }
       return ''
     }
+  },
+  // 区域信息
+  REGION: {
+    validate: v => /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.test(v),
+    message: () => '区域格式不正确'
+  },
+  // 颜色信息
+  COLOR: {
+    validate: (v) => /^#[\dabcdef]{6}$/i.test(v),
+    message: () => '颜色值格式不正确'
   }
 }
 
@@ -70,7 +81,9 @@ let mixin_methods = {
 let mixin_common = {
   mixins: [mixin_methods],
   data: function () {
-    return {}
+    return {
+      configs: {}
+    }
   },
   methods: {
     routerTo: function (path) {
@@ -88,12 +101,24 @@ let mixin_common = {
         this.device.width = config.device_width
         this.device.height = config.device_height
         this.is_pro = config.is_pro
+        this.onConfigLoad(config)
       })
     },
+    onConfigLoad: function (config) {},
+    onSaveConfig: function () {},
     doSaveConfigs: function (deleteFields) {
       console.log('执行保存配置')
+      let newConfigs = this.filterErrorFields(this.configs)
+      if (deleteFields && deleteFields.length > 0) {
+        deleteFields.forEach(key => {
+          newConfigs[key] = ''
+        })
+      }
+      $app.invoke('saveConfigs', newConfigs)
+    },
+    filterErrorFields: function (configs) {
       let newConfigs = {}
-      Object.assign(newConfigs, this.configs)
+      Object.assign(newConfigs, configs)
       let errorFields = Object.keys(this.validationError)
       if (errorFields && errorFields.length > 0) {
         errorFields.forEach(key => {
@@ -102,12 +127,7 @@ let mixin_common = {
           }
         })
       }
-      if (deleteFields && deleteFields.length > 0) {
-        deleteFields.forEach(key => {
-          newConfigs[key] = ''
-        })
-      }
-      $app.invoke('saveConfigs', newConfigs)
+      return newConfigs
     }
   },
   computed: {
@@ -119,6 +139,8 @@ let mixin_common = {
           let { [key]: validation } = this.validations
           if (this.isNotEmpty(value) && !validation.validate(value)) {
             errors[key] = validation.message(value)
+          } else if (!this.isNotEmpty(value) && validation.required) {
+            errors[key] = '此项必填'
           } else {
             errors[key] = ''
           }
@@ -456,6 +478,9 @@ Vue.component('region-input-field', function (resolve, reject) {
     },
     watch: {
       innerValue: function (v) {
+        if (!/^(\d+,){3}\d+$/.test(this.innerValue)) {
+          return
+        }
         if (this.arrayValue && this.isNotEmpty(v)) {
           this.$emit('change', v.split(',').map(v => parseInt(v)))
         } else {
@@ -863,9 +888,9 @@ Vue.component('base64-image-viewer', resolve => {
     template: `
     <div>
       <van-swipe-cell stop-propagation>
-        <div style="display:flex; height: 3rem;align-items: center; padding-left:1rem;">
+        <div class="base64-viewer">
           <label>{{title}}:</label>
-          <img :src="base64Data" style="max-height:2.5rem;"/>
+          <img :src="base64Data" class="base64-img"/>
         </div>
         <template #right>
           <van-button square type="primary" text="修改Base64" @click="showBase64Inputer=true" />

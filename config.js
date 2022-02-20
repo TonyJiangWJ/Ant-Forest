@@ -17,13 +17,13 @@ let default_config = {
   // 是否显示状态栏的悬浮窗，避免遮挡，悬浮窗位置可以通过后两项配置修改 min_floaty_x[y]
   show_small_floaty: true,
   not_lingering_float_window: false,
+  release_screen_capture_when_waiting: false,
   not_setup_auto_start: false,
   disable_all_auto_start: false,
   min_floaty_x: 150,
   min_floaty_y: 20,
   min_floaty_color: '#00ff00',
   min_floaty_text_size: 8,
-  help_friend: false,
   is_cycle: false,
   cycle_times: 10,
   never_stop: false,
@@ -38,6 +38,8 @@ let default_config = {
   max_collect_wait_time: 60,
   show_debug_log: true,
   show_engine_id: false,
+  // 日志保留天数
+  log_saved_days: 3,
   develop_mode: false,
   develop_saving_mode: false,
   check_device_posture: false,
@@ -150,10 +152,9 @@ let default_config = {
   friend_load_more_content: '点击展开好友动态',
   using_protect_content: '使用了保护罩',
   collectable_energy_ball_content: '收集能量\\d+克',
-  help_and_notify: '知道了.*去提醒',
+  can_collect_color_lower: '#12905F',
+  can_collect_color_upper: '#2EA178',
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
-  can_collect_color_gray: '#828282',
-  can_help_color: '#f99236',
   collectable_lower: '#00c600',
   collectable_upper: '#ffff29',
   helpable_lower: '#6f0028',
@@ -211,6 +212,9 @@ let default_config = {
   thread_name_prefix: 'antforest_',
   package_name: 'com.eg.android.AlipayGphone',
   auto_check_update: true,
+  github_url: 'https://github.com/TonyJiangWJ/Ant-Forest',
+  gitee_url: 'https://gitee.com/TonyJiangWJ/Ant-Forest',
+  qq_group: '524611323',
   github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   gitee_relase_url: 'https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   history_tag_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/tags',
@@ -228,6 +232,8 @@ let default_config = {
   other_accessisibility_services: '',
   // 不需要执行resolver
   noneed_resolve_dex: false,
+  // 标记是否清除webview缓存
+  clear_webview_cache: false,
   // 更新后需要强制执行的标记
   updated_temp_flag_13549: true,
   updated_temp_flag_13510: true
@@ -241,13 +247,19 @@ let auto_generate_config = {
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token']
+let securityFields = ['password', 'alipay_lock_password']
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
 let config = {}
 let storageConfig = storages.create(CONFIG_STORAGE_NAME)
+let AesUtil = require('./lib/AesUtil.js')
+let aesKey = device.getAndroidId()
 Object.keys(default_config).forEach(key => {
   let storedVal = storageConfig.get(key)
   if (typeof storedVal !== 'undefined' && no_cache_configs.indexOf(key) < 0) {
+    if (securityFields.indexOf(key) > -1) {
+      storedVal = AesUtil.decrypt(storedVal, aesKey) || storedVal
+    }
     config[key] = storedVal
   } else {
     config[key] = default_config[key]
@@ -291,6 +303,30 @@ config.scaleRate = (() => {
   }
 })()
 
+// 覆写配置信息
+config.overwrite = (key, value) => {
+  let storage_name = CONFIG_STORAGE_NAME
+  let config_key = key
+  if (key.indexOf('.') > -1) {
+    let keyPair = key.split('.')
+    storage_name = CONFIG_STORAGE_NAME + '_' + keyPair[0]
+    key = keyPair[1]
+    config_key = keyPair[0] + '_config'
+    if (!config.hasOwnProperty(config_key) || !config[config_key].hasOwnProperty(key)) {
+      return
+    }
+    config[config_key][key] = value
+  } else {
+    if (!config.hasOwnProperty(config_key)) {
+      return
+    }
+    config[config_key] = value
+  }
+  console.verbose('覆写配置', storage_name, key)
+  storages.create(storage_name).put(key, value)
+}
+
+
 resetConfigsIfNeeded()
 if (!isRunningMode) {
   if (!currentEngine.endsWith('/config.js')) {
@@ -315,6 +351,7 @@ if (!isRunningMode) {
         config: config,
         default_config: default_config,
         storage_name: CONFIG_STORAGE_NAME,
+        securityFields: securityFields,
         project_name: PROJECT_NAME
       }
       if (currentEngine.endsWith('/main.js') || scope.subscribe_config_change) {
@@ -358,8 +395,6 @@ function resetConfigsIfNeeded () {
   let resetFields = [
     // 新版模拟滑动会有问题。默认关闭改用自带的scrollDown
     'useCustomScrollDown',
-    // 默认关闭帮助收取，帮收还得发通知，容易影响到别人
-    'help_friend',
     // 修改逛一逛结束标志
     'stroll_end_ui_content',
     // 自动设置ocr阈值
@@ -381,4 +416,13 @@ function resetConfigsIfNeeded () {
     // 服务器到期 自动关闭OCR
     storageConfig.put('useTesseracOcr', false)
   }
+}
+
+function convertDefaultData(default_config, config_storage_name) {
+  let config_storage = storages.create(config_storage_name)
+  let configData = {}
+  Object.keys(default_config).forEach(key => {
+    configData[key] = config_storage.get(key, default_config[key])
+  })
+  return configData
 }

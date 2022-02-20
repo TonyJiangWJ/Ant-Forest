@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang=en>
+
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+</head>
+<style>
+  .text-magic {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(2.4);
+    font-size: 36px;
+    font-family: Raleway, Verdana, Arial;
+    color: #fff;
+  }
+  .text-tip {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translate(-50%, 0) scale(0.75);
+    font-size: 1rem;
+    font-family: Raleway, Verdana, Arial;
+    color: #fff;
+    width: 80%;
+  }
+
+  .white {
+    position: absolute;
+    left: -10px;
+    width: 100%;
+    height: 3px;
+    background: #000;
+    z-index: 4;
+    animation: whiteMove 3s ease-out infinite;
+  }
+
+  .white-tip {
+    position: absolute;
+    left: -10px;
+    width: 100%;
+    height: 3px;
+    background: #000;
+    z-index: 4;
+    animation: whiteMove 3.5s ease-out infinite;
+  }
+
+  .text-tip::before,
+  .text-magic::before {
+    content: attr(data-word);
+    position: absolute;
+    top: 0;
+    left: 0.5px;
+    height: 0px;
+    color: rgba(255, 255, 255, 0.9);
+    overflow: hidden;
+    z-index: 2;
+    animation: redShadow 1s ease-in infinite;
+    filter: contrast(200%);
+    text-shadow: 1px 0 0 red;
+  }
+
+  .text-tip::after,
+  .text-magic::after {
+    content: attr(data-word);
+    position: absolute;
+    top: 0;
+    left: -3px;
+    height: 36px;
+    color: rgba(255, 255, 255, 0.8);
+    overflow: hidden;
+    z-index: 3;
+    background: rgba(0, 0, 0, 0.9);
+    animation: redHeight 1.5s ease-out infinite;
+    filter: contrast(200%);
+    text-shadow: -1px 0 0 cyan;
+    mix-blend-mode: darken;
+  }
+
+  @keyframes redShadow {
+    20% {
+      height: 32px;
+    }
+
+    60% {
+      height: 6px;
+    }
+
+    100% {
+      height: 42px;
+    }
+  }
+
+  @keyframes redHeight {
+    20% {
+      height: 42px;
+    }
+
+    35% {
+      height: 12px;
+    }
+
+    50% {
+      height: 40px;
+    }
+
+    60% {
+      height: 20px;
+    }
+
+    70% {
+      height: 34px;
+    }
+
+    80% {
+      height: 22px;
+    }
+
+    100% {
+      height: 0px;
+    }
+  }
+
+  @keyframes whiteMove {
+    8% {
+      top: 38px;
+    }
+
+    14% {
+      top: 8px;
+    }
+
+    20% {
+      top: 42px;
+    }
+
+    32% {
+      top: 2px;
+    }
+
+    99% {
+      top: 30px;
+    }
+  }
+
+  body {
+    margin: 0;
+  }
+</style>
+
+<body>
+  <div class="loading-page" id="errorPage" style="min-height:755px;background: #000;">
+    <div class="text-magic" data-word="加载失败">
+      加载失败
+      <div class="white"></div>
+    </div>
+    <div class="text-tip" data-word="可能某个网络资源加载异常，请重新打开，开发者正在尝试修复此问题">
+      可能某个网络资源加载异常，请重新打开，开发者正在尝试修复此问题
+      <div class="white"></div>
+    </div>
+  </div>
+</body>
+<script>
+  window.onload = () => {
+    if (window.innerHeight > 0) {
+      document.getElementById('errorPage').style.height = window.innerHeight + 'px'
+    }
+  }
+</script>
+</html>

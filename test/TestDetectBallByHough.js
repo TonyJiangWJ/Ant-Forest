@@ -99,7 +99,7 @@ function exitAndClean () {
 commonFunction.registerOnEngineRemoved(function () {
   resourceMonitor.releaseAll()
   if (scanner !== null) {
-    scanner.destory()
+    scanner.destroy()
   }
 })
 

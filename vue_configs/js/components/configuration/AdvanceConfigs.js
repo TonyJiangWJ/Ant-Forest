@@ -266,144 +266,6 @@ const ProtectedListConfig = {
 }
 
 /**
- * 高级设置
- */
-const AdvanceCommonConfig = {
-  mixins: [mixin_common],
-  data() {
-    return {
-      configs: {
-        single_script: true,
-        auto_restart_when_crashed: true,
-        useCustomScrollDown: true,
-        scrollDownSpeed: null,
-        bottomHeight: null,
-        other_accessisibility_services: '',
-        // 截图相关
-        async_waiting_capture: true,
-        capture_waiting_time: 500,
-        request_capture_permission: true,
-        capture_permission_button: 'START NOW|立即开始|允许',
-        is_pro: false,
-        enable_call_state_control: true,
-      }
-    }
-  },
-  methods: {
-    doAuthADB: function () {
-      $app.invoke('doAuthADB', {})
-    }
-  },
-  template: `
-  <div>
-    <van-cell-group>
-      <tip-block>当需要使用多个脚本时不要勾选（如同时使用我写的蚂蚁庄园脚本），避免抢占前台</tip-block>
-      <switch-cell title="是否单脚本运行" v-model="configs.single_script" />
-      <tip-block>AutoJS有时候会莫名其妙的崩溃，但是授权了自启动权限之后又会自动启动。开启该选项之后会创建一个广播事件的定时任务，
-        当脚本执行过程中AutoJS崩溃自启，将重新开始执行脚本。如果脚本执行完毕，则不会触发执行</tip-block>
-      <switch-cell title="AutoJS崩溃自启后重启脚本" title-style="flex:2;" v-model="configs.auto_restart_when_crashed" />
-      <tip-block>拥有ADB权限时，授权AutoJS无障碍权限的同时授权其他应用无障碍服务权限 多个服务用:分隔
-        <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="doAuthADB">触发授权</van-button>
-      </tip-block>
-      <van-field v-model="configs.other_accessisibility_services" label="无障碍服务service" label-width="10em" type="text" placeholder="请输入" input-align="right" stop-propagation />
-      <switch-cell title="是否使用模拟滑动" v-model="configs.useCustomScrollDown" />
-      <template v-if="configs.useCustomScrollDown">
-        <number-field v-model="configs.scrollDownSpeed" label="模拟滑动速度" label-width="8em" />
-        <number-field v-model="configs.bottomHeight" label="模拟底部起始高度" label-width="8em" />
-      </template>
-      <switch-cell title="是否自动授权截图权限" v-model="configs.request_capture_permission" />
-      <van-field v-if="configs.request_capture_permission" v-model="configs.capture_permission_button" label="确定按钮文本" type="text" placeholder="请输入确定按钮文本" input-align="right" />
-      <tip-block>偶尔通过captureScreen获取截图需要等待很久，或者一直阻塞无法进行下一步操作，建议开启异步等待，然后设置截图等待时间</tip-block>
-      <switch-cell title="是否异步等待截图" v-model="configs.async_waiting_capture" />
-      <number-field v-if="configs.async_waiting_capture" v-model="configs.capture_waiting_time" label="获取截图超时时间" label-width="8em" placeholder="请输入超时时间" >
-        <template #right-icon><span>毫秒</span></template>
-      </number-field>
-      <switch-cell v-if="!configs.is_pro" title="是否通话时暂停脚本" title-style="width: 10em;flex:2;" label="需要授权AutoJS获取通话状态，Pro版暂时无法使用" v-model="configs.enable_call_state_control" />
-    </van-cell-group>
-  </div>`
-}
-/**
- * 前台应用白名单
- */
-const SkipPackageConfig = {
-  mixins: [mixin_common],
-  data() {
-    return {
-      newSkipRunningPackage: '',
-      newSkipRunningAppName: '',
-      showAddSkipRunningDialog: false,
-      configs: {
-        warn_skipped_ignore_package: true,
-        warn_skipped_too_much: true,
-        skip_running_packages: [{ packageName: 'com.tony.test', appName: 'test' }, { packageName: 'com.tony.test2', appName: 'test2' }],
-      }
-    }
-  },
-  methods: {
-    addSkipPackage: function () {
-      this.newSkipRunningPackage = ''
-      this.newSkipRunningAppName = ''
-      this.showAddSkipRunningDialog = true
-    },
-    doAddSkipPackage: function () {
-      if (!this.isNotEmpty(this.newSkipRunningAppName)) {
-        vant.Toast('请输入应用名称')
-        return
-      }
-      if (!this.isNotEmpty(this.newSkipRunningPackage)) {
-        vant.Toast('请输入应用包名')
-        return
-      }
-      if (this.addedSkipPackageNames.indexOf(this.newSkipRunningPackage) < 0) {
-        this.configs.skip_running_packages.push({ packageName: this.newSkipRunningPackage, appName: this.newSkipRunningAppName })
-      }
-    },
-    deleteSkipPackage: function (idx) {
-      this.$dialog.confirm({
-        message: '确认要删除' + this.configs.skip_running_packages[idx].packageName + '吗？'
-      }).then(() => {
-        this.configs.skip_running_packages.splice(idx, 1)
-      }).catch(() => { })
-    },
-    handlePackageChange: function (payload) {
-      this.newSkipRunningAppName = payload.appName
-      this.newSkipRunningPackage = payload.packageName
-    },
-  },
-  computed: {
-    addedSkipPackageNames: function () {
-      return this.configs.skip_running_packages.map(v => v.packageName)
-    }
-  },
-  template: `
-  <div>
-    <van-divider content-position="left">
-      前台应用白名单设置
-      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addSkipPackage">增加</van-button>
-    </van-divider>
-    <van-cell-group>
-      <switch-cell title="当前台白名单跳过次数过多时提醒" label="当白名单跳过3次之后会toast提醒，按音量下可以直接执行" title-style="width: 12em;flex:2;" v-model="configs.warn_skipped_too_much" />
-      <switch-cell v-if="configs.warn_skipped_too_much" title="是否无视前台包名" title-style="width: 10em;flex:2;" label="默认情况下包名相同且重复多次时才提醒，开启后连续白名单跳过三次即提醒" v-model="configs.warn_skipped_ignore_package" />
-      <div style="min-height:10rem;overflow:scroll;padding:1rem;background:#f1f1f1;">
-        <van-swipe-cell v-for="(skip,idx) in configs.skip_running_packages" :key="skip.packageName" stop-propagation>
-          <van-cell :title="skip.appName" :label="skip.packageName" />
-          <template #right>
-            <van-button square type="danger" text="删除" @click="deleteSkipPackage(idx)" style="height: 100%"/>
-          </template>
-        </van-swipe-cell>
-      </div>
-    </van-cell-group>
-    <van-dialog v-model="showAddSkipRunningDialog" show-cancel-button @confirm="doAddSkipPackage" :get-container="getContainer">
-      <template #title>
-        <installed-package-selector @value-change="handlePackageChange" :added-package-names="addedSkipPackageNames"/>
-      </template>
-      <van-field v-model="newSkipRunningAppName" placeholder="请输入应用名称" label="应用名称" />
-      <van-field v-model="newSkipRunningPackage" placeholder="请输入应用包名" label="应用包名" />
-    </van-dialog>
-  </div>`
-}
-
-/**
  * 区域信息配置以及图像识别相关配置
  */
 const RegionConfig = {
@@ -449,28 +311,30 @@ const RegionConfig = {
         hough_min_radius: null,
         hough_max_radius: null,
         hough_min_dst: null,
+        // 取色识别配置
+        can_collect_color_lower: '#12905F',
+        can_collect_color_upper: '#2EA178',
+        collectable_lower: '#a5c600',
+        collectable_upper: '#ffff5d',
+        helpable_lower: '#6f0028',
+        helpable_upper: '#ffb2b2',
+        valid_collectable_lower: '#77cc00',
+        valid_collectable_upper: '#ffff91',
       },
       validations: {
-        stroll_button_region: {
-          validate: v => /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.test(v),
-          message: () => '区域格式不正确'
-        },
-        rank_check_region: {
-          validate: v => /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.test(v),
-          message: () => '区域格式不正确'
-        },
-        bottom_check_region: {
-          validate: v => /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.test(v),
-          message: () => '区域格式不正确'
-        },
-        tree_collect_region: {
-          validate: v => /^(([^0](\d+)|(\d)\s*)\s*,){3}([^0](\d+)|(\d)\s*)\s*$/.test(v),
-          message: () => '区域格式不正确'
-        },
-        bottom_check_gray_color: {
-          validate: (v) => /^#[\dabcdef]{6}$/i.test(v),
-          message: () => '颜色值格式不正确'
-        },
+        stroll_button_region: VALIDATOR.REGION,
+        rank_check_region: VALIDATOR.REGION,
+        bottom_check_region: VALIDATOR.REGION,
+        tree_collect_region: VALIDATOR.REGION,
+        bottom_check_gray_color: VALIDATOR.COLOR,
+        can_collect_color_lower: VALIDATOR.COLOR,
+        can_collect_color_upper: VALIDATOR.COLOR,
+        collectable_lower: VALIDATOR.COLOR,
+        collectable_upper: VALIDATOR.COLOR,
+        helpable_lower: VALIDATOR.COLOR,
+        helpable_upper: VALIDATOR.COLOR,
+        valid_collectable_lower: VALIDATOR.COLOR,
+        valid_collectable_upper: VALIDATOR.COLOR,
       }
     }
   },
@@ -633,6 +497,17 @@ const RegionConfig = {
         <tip-block>排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像判断无效只能如此</tip-block>
         <van-field v-model="configs.friendListScrollTime" label="排行榜下拉次数" label-width="10em" type="text" placeholder="请输入排行榜下拉次数" input-align="right" />
       </template>
+      <color-input-field label="列表中可收取的颜色起始值" label-width="12em"
+            placeholder="可收取颜色值 #FFFFFF" :error-message="validationError.can_collect_color_lower" v-model="configs.can_collect_color_lower"/>
+      <color-input-field label="列表中可收取的颜色结束值" label-width="12em"
+            placeholder="可帮助颜色值 #FFFFFF" :error-message="validationError.can_collect_color_upper" v-model="configs.can_collect_color_upper"/>
+            <tip-block>以下配置为执行优化使用，尽量不要修改除非出问题了</tip-block>
+      <color-input-field label="可收取颜色值起始值" label-width="10em" :error-message="validationError.collectable_lower" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_lower"/>
+      <color-input-field label="可收取颜色值结束值" label-width="10em" :error-message="validationError.collectable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_upper"/>
+      <color-input-field label="可帮助颜色值起始值" label-width="10em" :error-message="validationError.helpable_lower" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_lower"/>
+      <color-input-field label="可帮助颜色值结束值" label-width="10em" :error-message="validationError.helpable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_upper"/>
+      <color-input-field label="有效球颜色值起始值" label-width="10em" :error-message="validationError.valid_collectable_lower" placeholder="颜色值 #FFFFFF" v-model="configs.valid_collectable_lower"/>
+      <color-input-field label="有效球颜色值结束值" label-width="10em" :error-message="validationError.valid_collectable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.valid_collectable_upper"/>
       <van-cell title="ocr配置" is-link @click="routerTo('/advance/region/ocr')" />
       <van-cell title="线程池配置" is-link @click="routerTo('/advance/region/threadPool')" />
     </van-cell-group>

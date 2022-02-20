@@ -1,5 +1,5 @@
 {
-    "name": "Custom Ant Forest autoscript",
+    "name": "Ant Forest",
     "main": "main.js",
     "ignore": [
         "build"

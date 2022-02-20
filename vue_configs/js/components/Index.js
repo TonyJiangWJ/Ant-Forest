@@ -20,6 +20,10 @@ let Index = {
           link: '/advance/region'
         },
         {
+          title: '控件文本设置',
+          link: '/content_widget_config'
+        },
+        {
           title: '好友保护罩使用记录',
           link: '/advance/protect'
         },
@@ -47,18 +51,6 @@ let Index = {
           title: '高级设置',
           link: '/advance/common'
         },
-        // {
-        //   title: '基础设置',
-        //   link: '/basic_config'
-        // },
-        // {
-        //   title: '进阶设置',
-        //   link: '/advance_config'
-        // },
-        {
-          title: '控件文本设置',
-          link: '/content_widget_config'
-        },
         {
           title: '关于项目',
           link: '/about'
@@ -77,7 +69,7 @@ let Index = {
   methods: {
     routerTo: function (item) {
       this.$router.push(item.link)
-      this.$store.commit('setTitle', item.title)
+      this.$store.commit('setTitleWithPath', { title: item.title, path: item.link })
     }
   },
   template: `<div>
