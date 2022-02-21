@@ -1,17 +1,15 @@
 
 # 简介
 
-[本项目](https://github.com/TonyJiangWJ/Ant-Forest) 由 [https://github.com/Nick-Hopps/Ant-Forest-autoscript](https://github.com/Nick-Hopps/Ant-Forest-autoscript) fork 而来，但是经过了各种改动，和原版功能差异较大 现在已经单独复制不再作为fork分支开发。
+基于 Autojs 的蚂蚁森林自动收能量脚本，采用 [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk)  版本开发。解锁模块参考自：[https://github.com/e1399579/autojs](https://github.com/e1399579/autojs)
 
-基于 Autojs 的蚂蚁森林自动收能量脚本，采用 4.1.1 Alpha2 版本开发。解锁模块参考自：[https://github.com/e1399579/autojs](https://github.com/e1399579/autojs)
-
-- 脚本执行依赖于：AutoJs 4.1.1 alpha2 or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 若无法访问请百度搜索一下
+- 脚本执行依赖于：AutoJs 4.1.1 alpha2（非完全兼容） 或者 [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk)  建议下载该版本，4.1.1原作者完全不会再维护了，存在较多内存泄露等问题，且不支持Android12 脚本中部分特性也不支持，如本地OCR 多分辨率找图 等等
+- 本项目原始版本 [https://github.com/Nick-Hopps/Ant-Forest-autoscript](https://github.com/Nick-Hopps/Ant-Forest-autoscript) ，原作者已不再维护。虽然目前版本和原始版本代码已经完全不一样，但是还是非常感谢 [Nick-Hoops](https://github.com/Nick-Hopps)
 - 设备系统要求
 
   - 具有 ROOT 权限的安卓 5.0 及以上版本
   - 没有 ROOT 权限的安卓 7.0 及以上版本
   - 因为图色识别的原因不支持护眼模式、暗色模式等。
-
 - 觉得本项目好用的话请给个star吧~
 
 ## 其他脚本
@@ -22,10 +20,10 @@
 
 ## 使用
 
-- 下载安装 AutoJs 4.1.1 alpha2 or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 main 即可。
+- 下载安装 AutoJs 4.1.1 alpha2 or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 `main.js` 即可。
 - 给与软件必要权限 `后台弹出界面`、`显示悬浮窗`、`自启动`、`电量无限制`，并将软件保持后台运行
 - 定时启动脚本，点击 `main.js` 的菜单，选择 `更多` `定时任务` 即可配置定时启动
-- 如果运行提示有任务正在队列中，请运行配置 `可视化配置.js` 然后进到 `进阶配置` 中勾选 `单脚本运行`，该功能是用于多个脚本同时运行时的任务队列 相当于一个调度程序，避免多个脚本抢占前台导致出错
+- 如果运行提示有任务正在队列中，请运行配置 `可视化配置.js` 然后进到 `高级设置` 中勾选 `单脚本运行`，该功能是用于多个脚本同时运行时的任务队列 相当于一个调度程序，避免多个脚本抢占前台导致出错
 - 默认配置下已开启基于图像识别的方式来执行，当前因为森林更新基于控件方式基本不再可用，后续会直接移除相关代码。更多配置信息见[配置小节](#配置)
 - 运行有问题请查看[#常见问题小节](#常见问题)
 - 不同手机的解锁方法不同可能不适配，需要自行编写解锁方法，具体见[#添加解锁设备](#添加解锁设备)小节
@@ -33,11 +31,11 @@
 
 ## 配置
 
-运行 可视化配置.js 后可以看到如下配置：
+运行 `可视化配置.js` 后可以看到如下配置：
 
-- 常用配置都在基本配置中，可以设置悬浮窗颜色 位置等
+- 常用配置按不同类别进行分组，按实际内容进入对应菜单项目即可
 - 运行配置后右上角菜单可以重置所有配置信息为默认值
-- 配置导出导入功能，点击右上角菜单即可导出当前配置到local_config.cfg中，默认已加密加密密码为device.getAndriodId() 如果需要在免费版和付费版AutoJS之间同步 需要自行输入密码
+- 配置导出导入功能，点击右上角菜单即可导出当前配置到local_config.cfg中，默认已加密加密密码为device.getAndriodId() 如果需要在免费版和付费版AutoJS之间同步 需要自行输入该密码
 - 运行时数据导出导入功能同上所述
 - **重要** 基于图像分析模式必须按如下配置，否则脚本无法正常执行
 - 好友首页的能量球无法通过控件识别，请进行如下配置：
@@ -45,12 +43,12 @@
 - 图像识别区域信息可以在运行可视化配置.js之后进入 `图像识别相关配置` 直接点击 `实时查看可视化配置信息` 按钮来刷新配置并显示当前的框选区域。也可以在配置完之后可以运行`test/全局悬浮窗显示-配置信息.js` 查看配置生效状况，可在 `resources` 目录下截图保存 `region_check.jpg` ，然后可以悬浮窗显示半透明信息，方便在运行 `可视化配置.js` 时拖动进度条快速调整具体区域
 - 区域信息输入框可以左滑，以显示可拖动控件
 - 请确保框选区域符合如下样例
-- ~~排行榜区域框选如下所示~~ 排行榜识别区域现在可以运行时自动设置，该配置为自定义优化保留
+- ~~排行榜区域框选如下所示~~ 排行榜识别区域现在可以运行时自动设置，该配置为自定义优化保留 框选区域可以运行 `unit/灰度取色.js` 进行获取
 ![rank_check](./resources/rank_region.jpg)
 - ~~底部区域框选住 `了` 的上半部分；或者选择其他区域，并配置相应的颜色值，比如 `邀请` 按钮~~ 当前可以在运行时自动设置，该配置为自定义优化保留
 ![bottom_check](./resources/bottom_region.jpg)
 
-- 其他配置信息请运行 `可视化配置.js`
+- 更多其他配置信息请运行 `可视化配置.js` 后自行摸索
 
 ## 功能
 
@@ -108,8 +106,9 @@
 
 ## 常见问题
 
-- 可视化配置.js 执行异常，运行 `unit/功能测试-重置默认配置.js` 依旧有问题，尝试重启AutoJS，并检查AutoJS的版本是否为 `4.1.1 Alpah2` 或者 `较新版本的AutoJS Pro`
-- 如果报错 `Function importClass must be called with a class;...` 直接强制关闭AutoJS软件，然后再打开即可。一般只在跨版本更新后才会出现这个问题，最新版脚本已解决这个问题
+- 可视化配置.js 执行异常，运行 `unit/功能测试-重置默认配置.js` 依旧有问题，尝试重启AutoJS，并检查AutoJS的版本是否为 `4.1.1 Alpah2` 或者 [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 或 `AutoJS Pro7` ，`AutoJS Pro8/9` 由于限制了支付宝控件，暂不能完全支持。
+- 可视化配置 运行后显示白屏或者显示 加载失败 大概是因为某个网络资源加载失败了，请退出重新打开，多试几次即可。
+- 如果报错 `Function importClass must be called with a class;...` 直接强制关闭AutoJS软件，然后再打开即可。一般只在跨版本更新后才会出现这个问题，最新版脚本已解决这个问题，建议安装 [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 
 - 另外如果不断的运行异常，强制关闭AutoJS软件后重新执行脚本。同时建议定期强制关闭AutoJS软件，避免内存不断增长导致卡顿
 - 图像分析模式 如果识别有遗漏，尝试将 `颜色相似度` 调低 当前默认值已改为20，或者检查一下是否开启了护眼模式或者暗色模式。
 - 软件的定时任务，点击main.js的 三个点菜单->更多->定时任务 然后设置相应的时间即可
