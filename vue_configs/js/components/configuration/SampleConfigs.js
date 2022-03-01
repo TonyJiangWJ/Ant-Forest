@@ -10,6 +10,7 @@ const RainConfig = {
         rain_start_content: '再来一次|立即开启',
         rain_end_content: '.*去蚂蚁森林看看.*',
         rain_press_duration: 7,
+        rain_collect_duration: 18,
         send_chance_to_friend: '',
         rain_click_top: 300,
       },
@@ -20,6 +21,7 @@ const RainConfig = {
   },
   methods: {
     startRainCollect: function () {
+      this.saveConfigs()
       $app.invoke('startRainCollect', {})
     },
   },
@@ -33,10 +35,14 @@ const RainConfig = {
       <van-field v-model="configs.rain_end_content" label="无能量雨机会文本" label-width="10em" type="text" placeholder="请输入无能量雨机会文本" input-align="right" />
       <tip-block>在执行一次之后自动判断是否可以赠送好友机会，配置后自动送给对应好友一次机会，不配置则不会赠送，脚本只执行一轮。</tip-block>
       <van-field v-model="configs.send_chance_to_friend" label="赠送好友" label-width="10em" type="text" placeholder="请输入需要赠送机会的好友" input-align="right" />
+      <tip-block>设置能量雨点击的持续时间 默认为18秒(3+15)，使用限时能量雨时有可能需要改为21，请按实际情况修改</tip-block>
+      <number-field v-model="configs.rain_collect_duration" :error-message="validationError.rain_collect_duration" error-message-align="right" label="持续点击时间" type="text" placeholder="请输入持续时间" input-align="right" >
+        <template #right-icon><span>秒</span></template>
+      </number-field>
       <tip-block>如果运行比较卡可以调高press时间，但是不建议高于35ms</tip-block>
       <number-field v-model="configs.rain_press_duration" :error-message="validationError.rain_press_duration" error-message-align="right" label="press时间" type="text" placeholder="请输入press时间" input-align="right" >
-         <template #right-icon><span>毫秒</span></template>
-       </number-field>
+        <template #right-icon><span>毫秒</span></template>
+      </number-field>
       <number-field v-model="configs.rain_click_top" label="距离顶部的点击高度" label-width="10em" type="text" placeholder="请输入距离顶部的点击高度" input-align="right" />
     </van-cell-group>
   </div>
