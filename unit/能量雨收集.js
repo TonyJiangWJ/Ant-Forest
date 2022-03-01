@@ -88,7 +88,7 @@ let clickGap = config.rain_click_gap || cvt(195)
 let middlePoint = config.device_width / 2
 // 暴力点击的区域
 let violentClickPoints = [middlePoint - 2 * clickGap, middlePoint - clickGap, middlePoint, middlePoint + clickGap, middlePoint + 2 * clickGap].map(v => [v, config.rain_click_top || cvt(300)])
-let VIOLENT_CLICK_TIME = config.rain_collect_debug_mode ? 13 : 18
+let VIOLENT_CLICK_TIME = config.rain_collect_debug_mode ? 13 : (config.rain_collect_duration || 18)
 
 let startTimestamp = new Date().getTime()
 let passedTime = 0
