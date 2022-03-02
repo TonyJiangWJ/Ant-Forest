@@ -128,6 +128,11 @@ canvasWindowCtrl.setClick(function () {
     // 将canvas移动到屏幕外
     canvasMove = canvasWindowCtrl.outScreen();
     canvasWindowCtrl.windowMoving(canvasMove);
+    ui.post(function () {
+      // 将CANVAS设为不可见 修改版中可以节省CPU占用
+      canvasWindow.canvas.setVisibility(View.GONE);
+      canvasWindow.previewCanvas.setVisibility(View.GONE);
+    })
     // 将mini按钮移动到屏幕外再贴边
     miniWindowCtrl.windowMoving({ from: canvasMove.to, to: { X: canvasMove.to.X + 100, Y: canvasMove.to.Y + canvasWindow.getHeight() / 2 } })
     miniWindowCtrl.windowMoving(miniWindowCtrl.toScreenEdge());
@@ -141,6 +146,10 @@ miniWindowCtrl.setClick(function () {
     miniMove = miniWindowCtrl.outScreen();
     miniWindowCtrl.windowMoving(miniMove);
     // 将canvas移动回屏幕内
+    ui.post(function () {
+      canvasWindow.canvas.setVisibility(View.VISIBLE);
+      canvasWindow.previewCanvas.setVisibility(View.VISIBLE);
+    })
     // canvasWindowCtrl.windowMoving({ from: canvasMove.to, to: canvasWindowCtrl.centerXY(miniWindowCtrl.centerXY(miniMove.from).from).to });
     canvasWindowCtrl.windowMoving({ from: { X: miniMove.to.X, Y: canvasMove.to.Y }, to: canvasMove.from });
     canvasWindowCtrl.windowMoving(canvasWindowCtrl.intoScreen());
@@ -225,9 +234,12 @@ canvasWindow.cutOrPoint.on('click', () => {
       if (!cutMode) {
         canvasWindow.cutOrPoint.text('复制Base64')
         canvasWindow.recognizeText.setVisibility(View.VISIBLE)
+        canvasWindow.previewCanvas.setVisibility(View.VISIBLE)
       } else {
         canvasWindow.cutOrPoint.text('裁切小图')
         canvasWindow.recognizeText.setVisibility(View.GONE)
+        canvasWindow.previewCanvas.setVisibility(View.GONE)
+        canvasWindow.previewVertical.setVisibility(View.GONE)
       }
       cutMode = !cutMode
     })
@@ -250,6 +262,12 @@ canvasWindow.recognizeText.on('click', () => {
         if (clipImg === null) {
           toastLog('未框选有效图片')
           return
+        }
+        if (clipImg.getHeight() < 80) {
+          let scale = 80 / clipImg.getHeight()
+          let size = [clipImg.getWidth() * scale, 80]
+          clipImg = images.resize(clipImg, size)
+          log('缩放图片大小：' + clipImg.getWidth() + ',' + clipImg.getHeight())
         }
         let result = paddleOcrUtil.recognize(clipImg)
         clipImg.recycle()
@@ -951,7 +969,7 @@ function FloatyController (window, windowMoveId, isCanvasWinow) {
     // 中心点位置
     var centerX = window.getX() + window.getWidth() / 2
     // 左侧贴坐标，右侧贴右边
-    var cx = centerX < this.width / 2 ? 0 : (this.width - window.getWidth() + 72);
+    var cx = centerX < this.width / 2 ? -window.getWidth() / 3 : (this.width - window.getWidth() / 2);
     return convertArrayToReadable([
       [x, y],
       [cx, y]

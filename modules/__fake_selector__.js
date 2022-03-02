@@ -9,8 +9,6 @@ module.exports = function (__runtime__, scope) {
   var skipMethod = ['click']
   var __evil_selector__ = new MyUiSelector(__runtime__.getAccessibilityBridge());
   var __obj__ = new java.lang.Object();
-  // 替换selector的实现
-  __runtime__.selector = () => new MyUiSelector(__runtime__.getAccessibilityBridge());
 
   for (var method in __evil_selector__) {
     if (!(method in __obj__) && skipMethod.indexOf(method) < 0) {

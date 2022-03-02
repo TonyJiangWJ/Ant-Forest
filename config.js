@@ -227,6 +227,7 @@ let default_config = {
   watering_cooperation_threshold: '',
   // 能量雨设置
   rain_collect_debug_mode: false,
+  rain_collect_duration: 18,
   auto_start_rain: false,
   // 设置无障碍权限时开启其他的无障碍权限
   other_accessisibility_services: '',
