@@ -10,9 +10,9 @@ let commonFunctions = singletonRequire('CommonFunction')
 let automator = singletonRequire('Automator')
 
 // 关闭运行中森林脚本
-commonFunctions.killRunningScript()
+commonFunctions.killRunningScript(true)
 // 取消自动设置的定时任务
-commonFunctions.cancelAllTimedTasks()
+commonFunctions.cancelAllTimedTasks(true)
 
 
 let _km = context.getSystemService(context.KEYGUARD_SERVICE)

@@ -37,11 +37,11 @@ _config.develop_mode = true
 _config.save_log_file = false
 _config.enable_visual_helper = true
 // 启用或者禁用ocr 都禁用则使用默认
-_config.useTesseracOcr = true
+_config.useTesseracOcr = false
 _config.useOcr = false
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _commonFunctions = singletonRequire('CommonFunction')
-let _tesserOcrUtil = singletonRequire('TesserOcrUtil')
+let _paddleOcrUtil = singletonRequire('PaddleOcrUtil')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let _ImgBasedFriendListScanner = require('../core/ImgBasedFriendListScanner.js')
@@ -82,10 +82,13 @@ const MockFriendListScanner = function () {
   }
 
   this.doRecognizeIfPossiable = function () {
-    if (!_tesserOcrUtil.enabled) {
+    console.warn('准备识别好友名称')
+    if (!_paddleOcrUtil.enabled) {
+      console.error('当前版本不支持paddleOcr无法识别好友名称')
       return
     }
     if (this.collectOrHelpList && this.collectOrHelpList.length > 0) {
+      console.warn('可收取数量：{}', this.collectOrHelpList.length)
       let image = captureScreen()
       if (image) {
         image = images.copy(image, true)
@@ -95,12 +98,14 @@ const MockFriendListScanner = function () {
           if (point.top + 300 >= _config.device_height) {
             return
           }
-          let text = _tesserOcrUtil.recognize(images.clip(image, 280, point.top, 300, 120))
+          let text = _paddleOcrUtil.recognize(images.clip(image, 280, point.top, 300, 120))
           pointData.text = text
           logInfo(['识别文字：[280,{}] {}', point.top, pointData.text])
         })
         image.recycle()
       }
+    } else {
+      console.warn('可收取数量为零 跳过识别')
     }
   }
 }

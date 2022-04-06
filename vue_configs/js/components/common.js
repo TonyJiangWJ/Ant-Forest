@@ -896,8 +896,14 @@ Vue.component('base64-image-viewer', resolve => {
           <van-button square type="primary" text="修改Base64" @click="showBase64Inputer=true" />
         </template>
       </van-swipe-cell>
-      <van-popup v-model="showBase64Inputer" position="bottom" :style="{ height: '30%', display: 'flex', alignItems: 'center' }" :get-container="getContainer">
-        <van-field v-model="innerValue" label="图片base64" type="textarea" placeholder="请输入base64" input-align="right" rows="6"/>
+      <van-popup v-model="showBase64Inputer" position="bottom" :style="{ height: '30%', alignItems: 'center' }" :get-container="getContainer">
+        <tip-block>左滑可清空数据</tip-block>
+        <van-swipe-cell stop-propagation style="width:100%">
+          <van-field v-model="innerValue" label="图片base64" type="textarea" placeholder="请输入base64" input-align="right" rows="6" />
+          <template #right>
+            <van-button square type="primary" text="清空" @click="innerValue=''" style="height:100%" />
+          </template>
+        </van-swipe-cell>
       </van-popup>
     </div>
     `
