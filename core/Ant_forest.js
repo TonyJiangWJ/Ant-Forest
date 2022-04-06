@@ -12,6 +12,7 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
+let AntForestDao = singletonRequire('AntForestDao')
 let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
 let StrollScanner = require('./StrollScanner.js')
@@ -363,6 +364,7 @@ function Ant_forest () {
       _pre_energy = currentEnergy
       _commonFunctions.persistHistoryEnergy(currentEnergy)
       logInfo('当前能量：' + currentEnergy)
+      AntForestDao.saveMyEnergy(currentEnergy)
     }
     // 初始化，避免关闭收取自己时统计成负值
     _post_energy = currentEnergy
@@ -390,6 +392,7 @@ function Ant_forest () {
     sleep(500)
     _post_energy = getCurrentEnergy()
     logInfo('当前能量：' + _post_energy)
+    AntForestDao.saveMyEnergy(_post_energy)
     _commonFunctions.showEnergyInfo()
     let energyInfo = _commonFunctions.getTodaysRuntimeStorage('energy')
     if (!_has_next) {
@@ -503,6 +506,25 @@ function Ant_forest () {
       }
     }
   }
+
+  const checkIfDbClickUsed = function () {
+    let dbClickCountDown = _widgetUtils.widgetGetOne(/^\d{2}:\d{2}$/, 1000, true)
+    if (dbClickCountDown) {
+      debugInfo(['发现双击卡倒计时组件，当前倒计时：{}', dbClickCountDown.content])
+      _config.double_click_card_used = true
+    }
+  }
+
+  const signUpForMagicSpecies = function () {
+    let find = _widgetUtils.widgetGetOne(_config.magic_species_text || '点击发现', 1000)
+    if (find) {
+      automator.clickCenter(find)
+      sleep(1000)
+      automator.back()
+      sleep(1000)
+    }
+  }
+
   /***********************
    * 主要函数
    ***********************/
@@ -541,6 +563,10 @@ function Ant_forest () {
     // 自动识别能量球区域
     autoDetectTreeCollectRegion()
     clearPopup()
+    // 校验是否使用了双击卡
+    checkIfDbClickUsed()
+    // 神奇物种签到
+    signUpForMagicSpecies()
     // 执行合种浇水
     _widgetUtils.enterCooperationPlantAndDoWatering()
     if (!_widgetUtils.homePageWaiting()) {

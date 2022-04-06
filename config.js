@@ -191,7 +191,7 @@ let default_config = {
   hough_max_radius: null,
   hough_min_dst: null,
   // 使用双击卡
-  use_double_click_card: false,
+  double_click_card_used: false,
   // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
   is_pro: is_pro,
   // 尝试先逛一逛进行能量收取
@@ -326,7 +326,15 @@ config.overwrite = (key, value) => {
   console.verbose('覆写配置', storage_name, key)
   storages.create(storage_name).put(key, value)
 }
+// 扩展配置
+let workpath = getCurrentWorkPath()
+let configDataPath = workpath + '/config_data/'
+let default_image_config = {
+  reward_for_plant: files.read(configDataPath + 'reward_for_plant.data'),
+}
 
+default_config.image_config = default_image_config
+config.image_config = convertDefaultData(default_image_config, CONFIG_STORAGE_NAME + '_image')
 
 resetConfigsIfNeeded()
 if (!isRunningMode) {
@@ -426,4 +434,20 @@ function convertDefaultData(default_config, config_storage_name) {
     configData[key] = config_storage.get(key, default_config[key])
   })
   return configData
+}
+
+function getCurrentWorkPath() {
+  let currentPath = files.cwd()
+  if (files.exists(currentPath + '/main.js')) {
+    return currentPath
+  }
+  let paths = currentPath.split('/')
+
+  do {
+    paths = paths.slice(0, paths.length - 1)
+    currentPath = paths.reduce((a, b) => a += '/' + b)
+  } while (!files.exists(currentPath + '/main.js') && paths.length > 0)
+  if (paths.length > 0) {
+    return currentPath
+  }
 }

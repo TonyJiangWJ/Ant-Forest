@@ -12,6 +12,7 @@ const router = new VueRouter({
     { path: '/basic/rain', component: RainConfig, meta: { index: 1, title: '能量雨设置' } },
     { path: '/basic/collect', component: CollectConfig, meta: { index: 1, title: '收集设置' } },
     { path: '/advance/region', component: RegionConfig, meta: { index: 1, title: '图像识别相关设置' } },
+    { path: '/advance/imageConfig', component: ImageConfig, meta: { index: 1, title: '查找图片设置' } },
     { path: '/advance/region/ocr', component: OcrConfig, meta: { index: 2, title: 'OCR设置' } },
     { path: '/advance/region/threadPool', component: ThreadPoolConfig, meta: { index: 2, title: '线程池配置' } },
     { path: '/advance/protect', component: ProtectedListConfig, meta: { index: 1, title: '好友保护罩使用记录' } },
@@ -27,6 +28,8 @@ const router = new VueRouter({
     { path: '/about/develop', component: DevelopConfig, meta: { index: 2, title: '开发模式' } },
     { path: '/QA', component: QuestionAnswer, meta: { index: 1, title: '常见问题' } },
     { path: '/readme', component: Readme, meta: { index: 1, title: '脚本说明README' } },
+    { path: '/view/collectSummary', component: CollectSummary, meta: { index: 1, title: '收集统计' } },
+    { path: '/view/collectChart', component: CollectChart, meta: { index: 2, title: '统计图表' } },
   ]
 })
 

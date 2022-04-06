@@ -75,7 +75,7 @@ const CollectConfig = {
         not_collect_self: true,
         try_collect_by_stroll: true,
         recheck_rank_list: true,
-        use_double_click_card: true,
+        double_click_card_used: true,
         merge_countdown_by_gaps: true,
         limit_runnable_time_range: true,
         disable_image_based_collect: true,
@@ -197,7 +197,7 @@ const CollectConfig = {
         </template>
         <switch-cell v-if="!configs.not_collect_self" title="只收自己的能量" v-model="configs.collect_self_only" />
         <switch-cell v-if="!configs.collect_self_only" title="不收自己的能量" v-model="configs.not_collect_self" />
-        <switch-cell title="是否二次校验能量球" v-model="configs.use_double_click_card" />
+        <switch-cell title="是否二次校验能量球" v-model="configs.double_click_card_used" />
         <switch-cell title="是否通过逛一逛收集能量" v-model="configs.try_collect_by_stroll" />
         <template v-if="configs.try_collect_by_stroll">
           <tip-block>开启仅仅执行逛一逛后将只通过逛一逛执行，此时将不从排行榜识别倒计时数据，会影响后续定时任务的设置，仅循环模式有效</tip-block>
