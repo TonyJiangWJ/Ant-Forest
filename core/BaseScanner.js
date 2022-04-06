@@ -17,6 +17,7 @@ let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
+let AntForestDao = singletonRequire('AntForestDao')
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev, developSaving } = singletonRequire('LogUtils')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let ENGINE_ID = engines.myEngine().id
@@ -202,7 +203,7 @@ const BaseScanner = function () {
       // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次 || 使用了双击卡，且点击过球
       repeat = this.recheck && this.is_own && --recheckLimit > 0
         || !haveValidBalls && haveBalls && --recheckLimit >= 2
-        || _config.use_double_click_card && haveValidBalls && --recheckLimit > 0
+        || _config.double_click_card_used && haveValidBalls && --recheckLimit > 0
       if (repeat) {
         debugInfo(['需要二次校验，等待{}ms', this.is_own ? 200 : 500])
         sleep(this.is_own ? 200 : 500)
@@ -602,6 +603,11 @@ const BaseScanner = function () {
 
   this.doCollectTargetFriend = function (obj, toastListenThread) {
     debugInfo(['准备开始收取好友：「{}」', obj.name])
+    let regetFriendName = this.getFriendName()
+    if (regetFriendName != obj.name) {
+      warnInfo(['重新通过控件获取好友名称为：{} 和旧值「{}」不符，重置好友名称', regetFriendName, obj.name])
+      obj.name = regetFriendName
+    }
     let preGot, postGet, preE, postE, rentery = false
     let screen = null
     if (_config.cutAndSaveTreeCollect) {
@@ -671,6 +677,7 @@ const BaseScanner = function () {
         "收取好友:{} 能量 {}g {}",
         obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (_config.targetWateringAmount || 0) + 'g' : '')
       ])
+      AntForestDao.saveFriendCollect(obj.name, postE, gotEnergyAfterWater, needWaterback ? _config.targetWateringAmount : null)
       this.showCollectSummaryFloaty(gotEnergyAfterWater)
       if (_config.cutAndSaveTreeCollect && screen) {
         let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
@@ -679,6 +686,13 @@ const BaseScanner = function () {
         images.save(screen, savePath)
         debugForDev(['保存可收取能量球图片：「{}」', savePath])
       }
+    } else {
+      warnInfo(['未收取能量，可能有森林赠礼，延迟等待动画'], true)
+      sleep(1500)
+    }
+    // 校验是否有森林赠礼
+    if (this.checkForPlantReward()) {
+      infoLog(['好友「{}」有森林赠礼，已领取', obj.name])
     }
 
     if (friendGrowEnergy > 0) {
@@ -739,6 +753,24 @@ const BaseScanner = function () {
       lostReason: this.lost_reason,
       collectAny: this.collect_any
     }
+  }
+
+  /**
+   * 校验是否有种树奖励
+   * 
+   * @returns 
+   */
+  this.checkForPlantReward = function () {
+    let screen = _commonFunctions.checkCaptureScreenPermission()
+    if (screen && _config.image_config.reward_for_plant) {
+      let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.reward_for_plant))
+      if (collect) {
+        debugInfo('截图找到了目标, 获取森林赠礼')
+        automator.click(collect.centerX(), collect.centerY())
+        return true
+      }
+    }
+    return false
   }
 }
 module.exports = BaseScanner

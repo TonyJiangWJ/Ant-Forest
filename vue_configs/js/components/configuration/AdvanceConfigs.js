@@ -288,6 +288,7 @@ const RegionConfig = {
         tree_collect_height: null,
         // 底部校验区域
         checkBottomBaseImg: true,
+        friendListScrollTime: 15,
         bottom_check_left: 200,
         bottom_check_top: 200,
         bottom_check_width: 20,

@@ -7,4 +7,4 @@
  */ 
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let commonFunctions = singletonRequire('CommonFunction')
-commonFunctions.killRunningScript()
+commonFunctions.killRunningScript(true)

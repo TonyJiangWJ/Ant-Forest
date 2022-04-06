@@ -16,8 +16,16 @@ let Index = {
           link: '/basic/collect'
         },
         {
+          title: '收集统计',
+          link: '/view/collectSummary'
+        },
+        {
           title: '图像识别相关设置',
           link: '/advance/region'
+        },
+        {
+          title: '查找图片设置',
+          link: '/advance/imageConfig'
         },
         {
           title: '控件文本设置',

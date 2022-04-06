@@ -6,12 +6,15 @@ const loadJsList = [
   'https://cdn.jsdelivr.net/npm/js-base64@3.7.2/base64.min.js',
   './js/mdjs.min.js',
   './js/components/configuration/About.js',
+  './js/components/configuration/ImageConfig.js',
   './js/components/configuration/DevelopConfig.js',
   './js/components/configuration/CommonConfigs.js',
   './js/components/configuration/AdvanceConfigs.js',
   './js/components/configuration/QuestionAnswer.js',
   './js/components/configuration/SampleConfigs.js',
   './js/components/configuration/WidgetConfigs.js',
+  './js/components/view/CollectSummary.js',
+  './js/components/view/CollectChart.js',
   './js/components/Index.js',
 ]
 /**
