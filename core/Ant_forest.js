@@ -13,6 +13,7 @@ let _commonFunctions = singletonRequire('CommonFunction')
 let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
 let AntForestDao = singletonRequire('AntForestDao')
+let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
 let StrollScanner = require('./StrollScanner.js')
@@ -392,6 +393,8 @@ function Ant_forest () {
     sleep(500)
     _post_energy = getCurrentEnergy()
     logInfo('当前能量：' + _post_energy)
+    // 领取奖励
+    getSignReward()
     AntForestDao.saveMyEnergy(_post_energy)
     _commonFunctions.showEnergyInfo()
     let energyInfo = _commonFunctions.getTodaysRuntimeStorage('energy')
@@ -522,6 +525,37 @@ function Ant_forest () {
       sleep(1000)
       automator.back()
       sleep(1000)
+    }
+  }
+
+  const getSignReward = function() {
+    if (_commonFunctions.checkRewardCollected()) {
+      debugInfo('今日已经领取过奖励 跳过领取')
+      return
+    }
+    let screen = _commonFunctions.checkCaptureScreenPermission()
+    if (screen && _config.image_config.sign_reward_icon) {
+      let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.sign_reward_icon))
+      if (collect) {
+        debugInfo('截图找到了 奖励')
+        automator.click(collect.centerX(), collect.centerY())
+        sleep(1000)
+        let getRewards = _widgetUtils.widgetGetAll('立即领取')
+        if (getRewards && getRewards.length > 0) {
+          debugInfo(['找到可领取的奖励数量：{}', getRewards.length])
+          getRewards.forEach(getReward => {
+            getReward.click()
+            sleep(500)
+          })
+        } else {
+          debugInfo(['未找到可领取的奖励'])
+        }
+        _commonFunctions.setRewardCollected()
+        automator.click(_config.device_width * 0.2, _config.device_width * 0.3)
+        sleep(200)
+      } else {
+        warnInfo('未找到奖励')
+      }
     }
   }
 
