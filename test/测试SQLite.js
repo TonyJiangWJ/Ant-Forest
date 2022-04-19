@@ -73,7 +73,7 @@ let fullColumnConverter = new SQLiteHelper.ModelFromCursorConverter({
   }
 })
 
-let sqliteHelper = new SQLiteHelper(filePath, Arrays.asList(TEST_TABLE.tableCreate), 1)
+let sqliteHelper = new SQLiteHelper(filePath, Arrays.asList(TEST_TABLE.tableCreate), null, 1, context)
 let id = sqliteHelper.insert(TEST_TABLE.tableName, convertJSONToMap({
   custName: '客户1',
   age: 18,

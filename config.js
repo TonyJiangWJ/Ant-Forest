@@ -331,6 +331,8 @@ let workpath = getCurrentWorkPath()
 let configDataPath = workpath + '/config_data/'
 let default_image_config = {
   reward_for_plant: files.read(configDataPath + 'reward_for_plant.data'),
+  backpack_icon: files.read(configDataPath + 'backpack_icon.data'),
+  sign_reward_icon: files.read(configDataPath + 'sign_reward_icon.data'),
 }
 
 default_config.image_config = default_image_config

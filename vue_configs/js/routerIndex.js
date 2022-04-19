@@ -28,7 +28,7 @@ const router = new VueRouter({
     { path: '/about/develop', component: DevelopConfig, meta: { index: 2, title: '开发模式' } },
     { path: '/QA', component: QuestionAnswer, meta: { index: 1, title: '常见问题' } },
     { path: '/readme', component: Readme, meta: { index: 1, title: '脚本说明README' } },
-    { path: '/view/collectSummary', component: CollectSummary, meta: { index: 1, title: '收集统计' } },
+    { path: '/view/collectSummary', component: CollectSummary, meta: { index: 1, title: '收集统计', keepAlive: true } },
     { path: '/view/collectChart', component: CollectChart, meta: { index: 2, title: '统计图表' } },
   ]
 })
