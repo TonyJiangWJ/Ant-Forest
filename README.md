@@ -237,3 +237,4 @@ module.exports = function (obj) {
 - J*k
 - *🍅
 - *🧸
+- F*sW

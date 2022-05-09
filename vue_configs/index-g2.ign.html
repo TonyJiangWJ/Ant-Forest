@@ -1,0 +1,338 @@
+<!--
+ * @Author: TonyJiangWJ
+ * @Date: 2020-11-29 13:17:06
+ * @Last Modified by: TonyJiangWJ
+ * @Last Modified time: 2020-12-29 23:44:48
+ * @Description: 
+-->
+<!DOCTYPE html>
+<html lang=en>
+
+<head>
+  <meta charset=utf-8>
+  <meta http-equiv=X-UA-Compatible content="IE=edge">
+  <meta name=viewport content="width=device-width,initial-scale=1">
+  <title>配置工具</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@2.10/lib/index.css" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
+  <script src="https://unpkg.com/vue-router@3.4.9/dist/vue-router.js"></script>
+  <script src="https://unpkg.com/vuex@3.6.2/dist/vuex.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vant@2.10/lib/vant.min.js"></script>
+  <script src="https://gw.alipayobjects.com/os/lib/antv/g2/4.1.35/dist/g2.min.js"></script>
+</head>
+
+<body>
+  <noscript><strong>We're sorry but this doesn't work properly without JavaScript enabled. Please enable
+      it to continue.</strong></noscript>
+  <div id=app class="root-container" >
+    <div id="container"></div>
+  </div>
+</body>
+<script type="text/javascript">
+  let currentHeight = 0
+  /**
+   * 禁用长按菜单，复制等 
+   **/
+  window.addEventListener('contextmenu', function (e) {
+    e.preventDefault()
+  })
+  window.addEventListener('resize', function (e) {
+    console.log('页面高度:' + window.innerHeight)
+    if (window.innerHeight > currentHeight) {
+      currentHeight = window.innerHeight
+      document.getElementById('app').style.height = window.innerHeight + 'px'
+    }
+  }, false);
+
+  // const data = [
+  //   { year: '1951 年', sales: 38 },
+  //   { year: '1952 年', sales: 52 },
+  //   { year: '1956 年', sales: 61 },
+  //   { year: '1957 年', sales: 145 },
+  //   { year: '1958 年', sales: 48 },
+  //   { year: '1959 年', sales: 38 },
+  //   { year: '1960 年', sales: 38 },
+  //   { year: '1962 年', sales: 38 },
+  // ];
+  let data = [
+{time: '2021-12-29 22:35:26.978', friendName: '谈世成', collect: 2, water:  0 }, 
+{time: '2021-12-30 00:07:21.666', friendName: '超级的玛俐', collect: 1, water:  0 }, 
+{time: '2021-12-30 00:07:27.249', friendName: '连新', collect: 6, water:  0 }, 
+{time: '2021-12-30 00:07:31.308', friendName: '瑜', collect: 2, water:  0 }, 
+{time: '2021-12-30 00:07:36.933', friendName: '我还是喜欢六花', collect: 15, water:  0 }, 
+{time: '2021-12-30 00:07:40.877', friendName: 'jlymax', collect: 4, water:  0 }, 
+{time: '2021-12-30 00:07:46.147', friendName: '文彬', collect: 11, water:  0 }, 
+{time: '2021-12-30 00:07:50.50', friendName: '玲伟', collect: 1, water:  0 }, 
+{time: '2021-12-30 00:07:53.940', friendName: '凯迪', collect: 5, water:  0 }, 
+{time: '2021-12-30 00:07:59.254', friendName: 'rentsl', collect: 7, water:  0 }, 
+{time: '2021-12-30 00:08:03.142', friendName: '巧玲', collect: 1, water:  0 }, 
+{time: '2021-12-30 00:08:09.184', friendName: '菊琴', collect: 37, water: 10 },
+{time: '2021-12-30 00:08:13.157', friendName: '蕊娟', collect: 1, water:  0 }, 
+{time: '2021-12-30 00:08:17.0', friendName: '漫漫人生路', collect: 2, water:  0 }, 
+{time: '2021-12-30 00:08:22.74', friendName: '泽', collect: 12, water:  0 }, 
+{time: '2021-12-30 07:00:30.853', friendName: '朱金珊', collect: 8, water:  0 }, 
+{time: '2021-12-30 07:01:15.860', friendName: '转角', collect: 31, water:  0 }, 
+{time: '2021-12-30 07:01:19.433', friendName: '陈浩', collect: 20, water:  0 }, 
+{time: '2021-12-30 07:01:22.959', friendName: '菊琴', collect: 15, water:  0 }, 
+{time: '2021-12-30 07:01:26.987', friendName: '我还是喜欢六花', collect: 16, water:  0 }, 
+{time: '2021-12-30 07:01:42.699', friendName: '旭峰', collect: 21, water:  0 }, 
+{time: '2021-12-30 07:01:48.110', friendName: '阿妍', collect: 26, water:  0 }, 
+{time: '2021-12-30 07:05:14.880', friendName: '陆勤伟', collect: 3, water:  0 }, 
+{time: '2021-12-30 07:05:18.715', friendName: '丹丹', collect: 6, water:  0 }, 
+{time: '2021-12-30 07:05:22.510', friendName: '凯迪', collect: 1, water:  0 }, 
+{time: '2021-12-30 07:05:26.527', friendName: '蒋清泽', collect: 5, water:  0 }, 
+{time: '2021-12-30 07:05:30.446', friendName: '超级的玛俐', collect: 14, water:  0 }, 
+{time: '2021-12-30 07:05:34.381', friendName: 'desert', collect: 11, water:  0 }, 
+{time: '2021-12-30 07:05:42.76', friendName: '漫漫人生路', collect: 2, water:  0 }, 
+{time: '2021-12-30 07:05:57.185', friendName: '巧玲', collect: 13, water:  0 }, 
+{time: '2021-12-30 07:07:14.927', friendName: '黄忠龙', collect: 3, water:  0 }, 
+{time: '2021-12-30 07:07:18.605', friendName: '彤彤', collect: 22, water:  0 }, 
+{time: '2021-12-30 07:07:22.754', friendName: '文杰二号', collect: 6, water:  0 }, 
+{time: '2021-12-30 07:07:26.783', friendName: '薛xk', collect: 11, water:  0 }, 
+{time: '2021-12-30 07:07:30.596', friendName: '照煦', collect: 14, water:  0 }, 
+{time: '2021-12-30 07:09:17.503', friendName: '文彬', collect: 6, water:  0 }, 
+{time: '2021-12-30 07:09:21.0', friendName: '俞亚亚', collect: 30, water:  0 }, 
+{time: '2021-12-30 07:09:24.802', friendName: '连新', collect: 12, water:  0 }, 
+{time: '2021-12-30 07:09:28.661', friendName: '语琦', collect: 9, water:  0 }, 
+{time: '2021-12-30 07:09:32.743', friendName: '青丝', collect: 4, water:  0 }, 
+{time: '2021-12-30 07:10:14.433', friendName: '四二久', collect: 9, water:  0 }, 
+{time: '2021-12-30 07:10:26.980', friendName: 'Mr.Socrates', collect: 2, water:  0 }, 
+{time: '2021-12-30 07:11:14.654', friendName: '燕燕', collect: 15, water:  0 }, 
+{time: '2021-12-30 07:11:18.78', friendName: '罗书路', collect: 9, water:  0 }, 
+{time: '2021-12-30 07:11:25.176', friendName: '士章', collect: 28, water:  0 }, 
+{time: '2021-12-30 07:11:29.180', friendName: '小乙', collect: 10, water:  0 }, 
+{time: '2021-12-30 07:11:33.223', friendName: '妮儿', collect: 6, water:  0 }, 
+{time: '2021-12-30 07:11:37.208', friendName: '彬彬', collect: 39, water:  0 }, 
+{time: '2021-12-30 07:15:14.942', friendName: '梦', collect: 10, water:  0 }, 
+{time: '2021-12-30 07:15:18.668', friendName: '卢鑫垚', collect: 1, water:  0 }, 
+{time: '2021-12-30 07:15:22.279', friendName: '不知春', collect: 5, water:  0 }, 
+{time: '2021-12-30 07:15:26.395', friendName: '泽', collect: 2, water:  0 }, 
+{time: '2021-12-30 07:16:14.664', friendName: '金江', collect: 10, water:  0 }, 
+{time: '2021-12-30 07:16:18.456', friendName: '瑜', collect: 2, water:  0 }, 
+{time: '2021-12-30 07:16:21.896', friendName: '毛巾', collect: 1, water:  0 }, 
+{time: '2021-12-30 07:17:14.586', friendName: '秦博文', collect: 2, water:  0 }, 
+{time: '2021-12-30 07:17:21.674', friendName: '海胖子', collect: 5, water:  0 }, 
+{time: '2021-12-30 07:17:25.691', friendName: '楠', collect: 23, water:  0 }, 
+{time: '2021-12-30 07:17:39.904', friendName: '腾', collect: 11, water:  0 }, 
+{time: '2021-12-30 07:19:14.973', friendName: '谈世成', collect: 2, water:  0 }, 
+{time: '2021-12-30 07:19:22.130', friendName: '俸伊', collect: 1, water:  0 }, 
+{time: '2021-12-30 07:19:33.70', friendName: '摘星种树', collect: 17, water:  0 }, 
+{time: '2021-12-30 07:21:14.871', friendName: '文杰一号', collect: 3, water:  0 }, 
+{time: '2021-12-30 07:22:14.563', friendName: '咏卫', collect: 21, water:  0 }, 
+{time: '2021-12-30 07:22:21.881', friendName: '张鹏', collect: 17, water:  0 }, 
+{time: '2021-12-30 07:22:25.969', friendName: '亮亮', collect: 2, water:  0 }, 
+{time: '2021-12-30 07:22:29.935', friendName: '玲伟', collect: 16, water:  0 }, 
+{time: '2021-12-30 07:23:14.429', friendName: '落雁沙', collect: 6, water:  0 }, 
+{time: '2021-12-30 07:24:15.35', friendName: 'rentsl', collect: 12, water:  0 }, 
+{time: '2021-12-30 07:24:18.532', friendName: '杜鹏', collect: 9, water:  0 }, 
+{time: '2021-12-30 07:29:21.468', friendName: '泡泡', collect: 2, water:  0 }, 
+{time: '2021-12-30 07:29:24.905', friendName: '栋', collect: 5, water:  0 }, 
+{time: '2021-12-30 07:29:28.731', friendName: '鼎', collect: 1, water:  0 }, 
+{time: '2021-12-30 07:29:32.740', friendName: '蕊娟', collect: 38, water:  0 }, 
+{time: '2021-12-30 07:29:36.512', friendName: '宇烨', collect: 13, water:  0 }, 
+{time: '2021-12-30 07:42:14.883', friendName: '小乙', collect: 1, water:  0 }, 
+{time: '2021-12-30 08:20:28.373', friendName: '林志博', collect: 2, water:  0 }, 
+{time: '2021-12-30 08:20:31.818', friendName: '文彬', collect: 8, water:  0 }, 
+{time: '2021-12-30 08:20:35.644', friendName: '楠', collect: 13, water:  0 }, 
+{time: '2021-12-30 09:07:19.307', friendName: '卢鑫垚', collect: 13, water:  0 }, 
+{time: '2021-12-30 09:13:18.703', friendName: '金江', collect: 3, water:  0 }, 
+{time: '2021-12-30 09:27:17.450', friendName: '陈浩', collect: 1, water:  0 }, 
+{time: '2021-12-30 09:52:16.713', friendName: '俞亚亚', collect: 4, water:  0 }, 
+{time: '2021-12-30 10:06:17.78', friendName: '吕靖SAMA', collect: 9, water:  0 }, 
+{time: '2021-12-30 10:06:20.880', friendName: '薛xk', collect: 2, water:  0 }, 
+{time: '2021-12-30 10:25:22.130', friendName: '超级的玛俐', collect: 11, water:  0 }, 
+{time: '2021-12-30 11:15:22.602', friendName: '俞亚亚', collect: -1, water: 10 },
+{time: '2021-12-30 13:32:53.862', friendName: '小乙', collect: 1, water:  0 }, 
+{time: '2021-12-30 13:32:59.866', friendName: '杜鹏', collect: 1, water:  0 }, 
+{time: '2021-12-30 13:33:11.295', friendName: '燕燕', collect: 1, water:  0 }, 
+{time: '2021-12-30 13:54:17.749', friendName: '落雁沙', collect: 1, water:  0 }, 
+{time: '2021-12-30 13:54:21.841', friendName: '俞亚亚', collect: 2, water:  0 }, 
+{time: '2021-12-30 15:37:19.599', friendName: '孙扬帆', collect: 2, water:  0 }, 
+{time: '2021-12-30 16:51:17.509', friendName: '燕燕', collect: 1, water:  0 }, 
+{time: '2021-12-30 16:51:20.955', friendName: '照煦', collect: 5, water:  0 }, 
+{time: '2021-12-30 17:12:17.200', friendName: '孙扬帆', collect: 2, water:  0 }, 
+{time: '2021-12-30 17:12:21.557', friendName: '徐佩清', collect: 2, water:  0 }, 
+{time: '2021-12-30 17:12:25.420', friendName: '卢鑫垚', collect: 13, water:  0 }, 
+{time: '2021-12-30 17:19:18.177', friendName: '巧玲', collect: 1, water:  0 }, 
+{time: '2021-12-30 17:20:17.200', friendName: '徐佩清', collect: 2, water:  0 }, 
+{time: '2021-12-30 17:20:21.23', friendName: '巧玲', collect: 1, water:  0 }, 
+{time: '2021-12-30 17:55:26.295', friendName: '林志博', collect: 2, water:  0 }, 
+{time: '2021-12-30 17:55:29.999', friendName: '超级的玛俐', collect: 1, water:  0 }, 
+{time: '2021-12-30 18:18:21.303', friendName: '泽', collect: 2, water:  0 }, 
+{time: '2021-12-30 18:22:17.378', friendName: '士章', collect: 2, water:  0 }, 
+{time: '2021-12-30 18:25:39.600', friendName: '咏卫', collect: 2, water:  0 }, 
+{time: '2021-12-30 18:35:16.353', friendName: '俞亚亚', collect: 2, water:  0 }, 
+{time: '2021-12-30 18:35:20.153', friendName: '阿妍', collect: 1, water:  0 }, 
+{time: '2021-12-30 18:41:19.466', friendName: '楠', collect: 4, water: 10 },
+{time: '2021-12-30 18:43:27.317', friendName: '摘星种树', collect: 1, water:  0 }, 
+{time: '2021-12-30 19:13:16.635', friendName: '俞亚亚', collect: 9, water:  0 }, 
+{time: '2021-12-30 19:13:21.888', friendName: '谈世成', collect: 1, water:  0 }, 
+{time: '2021-12-30 19:13:25.847', friendName: '摘星种树', collect: 2, water:  0 }, 
+{time: '2021-12-30 19:13:30.938', friendName: '阿妍', collect: 3, water:  0 }, 
+{time: '2021-12-30 19:57:17.341', friendName: '秦博文', collect: 34, water:  0 }, 
+{time: '2021-12-30 21:15:17.118', friendName: 'desert', collect: 1, water:  0 }, 
+{time: '2021-12-30 21:15:22.274', friendName: '蒋清泽', collect: 6, water:  0 }, 
+{time: '2021-12-30 21:15:27.345', friendName: '青丝', collect: 4, water:  0 }, 
+{time: '2021-12-30 21:15:33.198', friendName: '凯迪', collect: 27, water: 10 },
+{time: '2021-12-30 21:15:37.992', friendName: '漫漫人生路', collect: 9, water:  0 }, 
+{time: '2021-12-30 22:27:23.16', friendName: '蕊娟', collect: 1, water:  0 }, 
+{time: '2021-12-30 22:27:26.392', friendName: '秦博文', collect: 2, water:  0 }, 
+{time: '2021-12-30 22:27:30.130', friendName: 'jlymax', collect: 20, water:  0 }, 
+{time: '2021-12-30 23:10:24.963', friendName: '测评小铺', collect: 1, water:  0 }, 
+{time: '2021-12-30 23:13:17.310', friendName: '测评小铺', collect: 2, water:  0 }, 
+{time: '2021-12-30 23:14:16.222', friendName: '测评小铺', collect: 2, water:  0 }, 
+{time: '2021-12-31 00:02:28.361', friendName: '秦博文', collect: 5, water:  0 }, 
+{time: '2021-12-31 00:02:32.154', friendName: 'jlymax', collect: 18, water:  0 }, 
+{time: '2021-12-31 00:02:37.761', friendName: '我还是喜欢六花', collect: 19, water:  0 }, 
+{time: '2021-12-31 00:02:41.444', friendName: '文杰一号', collect: 5, water:  0 }, 
+{time: '2021-12-31 00:02:46.225', friendName: '文彬', collect: 6, water:  0 }, 
+{time: '2021-12-31 00:02:50.41', friendName: '亮亮', collect: 1, water:  0 }, 
+{time: '2021-12-31 00:02:53.882', friendName: '玲伟', collect: 2, water:  0 }, 
+{time: '2021-12-31 00:02:57.699', friendName: '栋', collect: 2, water:  0 }, 
+{time: '2021-12-31 00:03:01.459', friendName: '漫漫人生路', collect: 1, water:  0 }, 
+{time: '2021-12-31 00:03:05.89', friendName: '黄忠龙', collect: 2, water:  0 }, 
+{time: '2021-12-31 00:03:12.36', friendName: '菊琴', collect: 35, water: 10 },
+{time: '2021-12-31 00:03:15.724', friendName: '文杰二号', collect: 3, water:  0 }, 
+{time: '2021-12-31 00:03:20.495', friendName: '连新', collect: 16, water:  0 }, 
+{time: '2021-12-31 00:03:24.196', friendName: '吕靖SAMA', collect: 19, water:  0 }, 
+{time: '2021-12-31 00:03:27.999', friendName: '凯迪', collect: 5, water:  0 }, 
+{time: '2021-12-31 00:03:31.735', friendName: '燕燕', collect: 1, water:  0 }, 
+{time: '2021-12-31 00:03:36.799', friendName: 'rentsl', collect: 7, water:  0 }, 
+{time: '2021-12-31 00:03:40.495', friendName: '丹丹', collect: 7, water:  0 }, 
+{time: '2021-12-31 06:55:15.961', friendName: '余涵超', collect: 1, water:  0 }, 
+{time: '2021-12-31 07:02:12.417', friendName: '旭峰', collect: 8, water:  0 }, 
+{time: '2021-12-31 07:02:15.843', friendName: '转角', collect: 2, water:  0 }, 
+{time: '2021-12-31 07:02:19.553', friendName: '我还是喜欢六花', collect: 6, water:  0 }, 
+{time: '2021-12-31 07:04:15.509', friendName: '丹丹', collect: 14, water:  0 }, 
+{time: '2021-12-31 07:04:19.151', friendName: '凯迪', collect: 9, water:  0 }, 
+{time: '2021-12-31 07:04:26.323', friendName: '超级的玛俐', collect: 27, water:  0 }, 
+{time: '2021-12-31 07:05:12.649', friendName: '陆勤伟', collect: 10, water:  0 }, 
+{time: '2021-12-31 07:05:16.453', friendName: 'desert', collect: 2, water:  0 }, 
+{time: '2021-12-31 07:06:11.976', friendName: '巧玲', collect: 5, water:  0 }, 
+{time: '2021-12-31 07:06:15.556', friendName: '漫漫人生路', collect: 7, water:  0 }, 
+{time: '2021-12-31 07:06:33.408', friendName: '照煦', collect: 6, water:  0 }, 
+{time: '2021-12-31 07:07:12.550', friendName: '薛xk', collect: 24, water:  0 }, 
+{time: '2021-12-31 07:07:15.959', friendName: '文杰二号', collect: 6, water:  0 }, 
+{time: '2021-12-31 07:07:19.649', friendName: '彤彤', collect: 23, water:  0 }, 
+{time: '2021-12-31 07:08:23.944', friendName: '徐佩清', collect: 6, water:  0 }, 
+{time: '2021-12-31 07:09:11.877', friendName: '连新', collect: 3, water:  0 }, 
+{time: '2021-12-31 07:09:15.616', friendName: '语琦', collect: 7, water:  0 }, 
+{time: '2021-12-31 07:09:19.216', friendName: '俞亚亚', collect: 7, water:  0 }, 
+{time: '2021-12-31 07:09:22.725', friendName: '任翔宇', collect: 21, water:  0 }, 
+{time: '2021-12-31 07:09:39.393', friendName: '青丝', collect: 6, water:  0 }, 
+{time: '2021-12-31 07:10:15.466', friendName: '四二久', collect: 19, water:  0 }, 
+{time: '2021-12-31 07:10:19.224', friendName: 'Mr.Socrates', collect: 6, water:  0 }, 
+{time: '2021-12-31 07:11:15.856', friendName: '小乙', collect: 3, water:  0 }, 
+{time: '2021-12-31 07:11:19.196', friendName: '妮儿', collect: 3, water:  0 }, 
+{time: '2021-12-31 07:11:22.812', friendName: '罗书路', collect: 6, water:  0 }, 
+{time: '2021-12-31 07:11:26.867', friendName: '燕燕', collect: 3, water:  0 }, 
+{time: '2021-12-31 07:11:31.113', friendName: '士章', collect: 27, water:  0 }, 
+{time: '2021-12-31 07:14:11.991', friendName: '卢鑫垚', collect: 1, water:  0 }, 
+{time: '2021-12-31 07:14:15.772', friendName: '梦', collect: 15, water:  0 }, 
+{time: '2021-12-31 07:14:32.540', friendName: '泽', collect: 8, water:  0 }, 
+{time: '2021-12-31 07:16:11.896', friendName: '毛巾', collect: 8, water:  0 }, 
+{time: '2021-12-31 07:16:15.633', friendName: '瑜', collect: 13, water:  0 }, 
+{time: '2021-12-31 07:16:19.374', friendName: '金江', collect: 17, water:  0 }, 
+{time: '2021-12-31 07:16:23.126', friendName: '测评小铺', collect: 4, water:  0 }, 
+{time: '2021-12-31 07:17:18.458', friendName: '秦博文', collect: 1, water:  0 }, 
+{time: '2021-12-31 07:17:22.260', friendName: '海胖子', collect: 5, water:  0 }, 
+{time: '2021-12-31 07:17:29.511', friendName: '楠', collect: 25, water:  0 }, 
+{time: '2021-12-31 07:17:38.749', friendName: '腾', collect: 5, water:  0 }, 
+{time: '2021-12-31 07:19:14.835', friendName: '俸伊', collect: 1, water:  0 }, 
+{time: '2021-12-31 07:19:18.531', friendName: '谈世成', collect: 26, water:  0 }, 
+{time: '2021-12-31 07:19:32.809', friendName: '摘星种树', collect: 24, water:  0 }, 
+{time: '2021-12-31 07:21:14.79', friendName: '文杰一号', collect: 1, water:  0 }, 
+{time: '2021-12-31 07:22:14.780', friendName: '张鹏', collect: 3, water:  0 }, 
+{time: '2021-12-31 07:22:18.645', friendName: '咏卫', collect: 7, water:  0 }, 
+{time: '2021-12-31 07:22:22.544', friendName: '毛毛', collect: 2, water:  0 }, 
+{time: '2021-12-31 07:23:14.244', friendName: '落雁沙', collect: 13, water:  0 }, 
+{time: '2021-12-31 07:26:14.59', friendName: 'rentsl', collect: 13, water:  0 }, 
+{time: '2021-12-31 07:26:17.520', friendName: '杜鹏', collect: 3, water:  0 }, 
+{time: '2021-12-31 07:26:25.32', friendName: '栋', collect: 6, water:  0 }, 
+{time: '2021-12-31 07:29:14.258', friendName: '鼎', collect: 1, water:  0 }, 
+{time: '2021-12-31 07:29:17.997', friendName: '蕊娟', collect: 2, water:  0 }, 
+{time: '2021-12-31 07:57:17.946', friendName: '俞亚亚', collect: 1, water:  0 }, 
+{time: '2021-12-31 08:26:13.788', friendName: '楠', collect: 12, water:  0 }, 
+{time: '2021-12-31 08:29:12.726', friendName: '毛巾', collect: 2, water:  0 }, 
+{time: '2021-12-31 08:45:18.84', friendName: '我还是喜欢六花', collect: 1, water:  0 }, 
+{time: '2021-12-31 08:45:22.550', friendName: '超级的玛俐', collect: 2, water:  0 }, 
+{time: '2021-12-31 09:07:38.986', friendName: '旭峰', collect: 1, water:  0 }, 
+{time: '2021-12-31 09:07:42.578', friendName: '瑜', collect: 5, water:  0 }, 
+{time: '2021-12-31 09:07:46.458', friendName: '我还是喜欢六花', collect: 11, water:  0 }, 
+{time: '2021-12-31 09:07:50.307', friendName: 'rentsl', collect: 10, water:  0 }, 
+{time: '2021-12-31 09:07:54.141', friendName: '卢鑫垚', collect: 6, water:  0 }, 
+{time: '2021-12-31 09:07:58.57', friendName: '陈振民', collect: 2, water:  0 }, 
+{time: '2021-12-31 09:19:10.888', friendName: 'jlymax', collect: 1, water:  0 }, 
+{time: '2021-12-31 09:28:20.168', friendName: '小乙', collect: 1, water:  0 }, 
+{time: '2021-12-31 09:31:19.652', friendName: '陈浩', collect: 2, water:  0 }, 
+{time: '2021-12-31 09:31:23.628', friendName: '殷', collect: 2, water:  0 }, 
+{time: '2021-12-31 10:25:22.819', friendName: '照煦', collect: 4, water:  0 }, 
+{time: '2021-12-31 10:25:26.740', friendName: '许凯峰', collect: 2, water:  0 }, 
+{time: '2021-12-31 10:25:30.778', friendName: '沈金番', collect: 2, water:  0 }, 
+{time: '2021-12-31 10:30:17.907', friendName: '测评小铺', collect: 2, water:  0 }, 
+{time: '2021-12-31 10:30:21.762', friendName: '李畅', collect: 2, water:  0 }, 
+{time: '2021-12-31 11:22:26.240', friendName: '沈金番', collect: 11, water:  0 }, 
+{time: '2021-12-31 11:54:22.935', friendName: '凡凡', collect: 2, water:  0 }, 
+{time: '2021-12-31 11:54:26.850', friendName: '我还是喜欢六花', collect: 2, water:  0 }, 
+{time: '2021-12-31 11:54:31.511', friendName: '沈金番', collect: 2, water:  0 }, 
+{time: '2021-12-31 11:55:19.276', friendName: '士章', collect: 1, water:  0 }, 
+{time: '2021-12-31 13:25:31.117', friendName: '薛xk', collect: 1, water:  0 }, 
+{time: '2021-12-31 13:25:35.719', friendName: '子瑄', collect: 2, water:  0 }, 
+{time: '2021-12-31 13:25:39.553', friendName: '黄忠龙', collect: 5, water:  0 }, 
+{time: '2021-12-31 13:25:44.931', friendName: '徐佩清', collect: 4, water:  0 }, 
+{time: '2021-12-31 13:32:20.179', friendName: '谈世成', collect: 1, water:  0 }, 
+{time: '2021-12-31 13:36:28.833', friendName: '海胖子', collect: 1, water:  0 }, 
+{time: '2021-12-31 14:33:08.731', friendName: '秦博文', collect: 3, water:  0 }, 
+{time: '2021-12-31 15:23:27.362', friendName: '毛毛', collect: 4, water:  0 }, 
+{time: '2021-12-31 16:16:22.457', friendName: '毛毛', collect: 6, water:  0 }, 
+{time: '2021-12-31 16:56:41.824', friendName: '卢鑫垚', collect: 16, water:  0 }, 
+].map(v => {
+  v.timeByHour = v.time.substring(0, 16)
+  return v
+}).filter(v => v.time.startsWith('2021-12-30')).reduce((a, b) => {
+  if (typeof a[b.timeByHour] != "undefined") {
+    a[b.timeByHour] += b.collect + b.water
+  } else {
+    a[b.timeByHour] = b.collect + b.water
+  }
+  return a
+}, {})
+
+let drawData = Object.keys(data).map(key => {
+  return {
+    time: key.substring(10),
+    collect: data[key]
+  }
+}).sort((a,b)=> {
+  return a.time > b.time ? 1:-1
+})
+
+  const chart = new G2.Chart({
+    container: 'container',
+    autoFit: true,
+    height: 500,
+  });
+
+  chart.data(drawData);
+  // chart.scale('sales', {
+  chart.scale('collect', {
+    nice: true,
+  });
+
+  chart.tooltip({
+    showMarkers: false
+  });
+  chart.option('slider', {})
+  chart.interaction('active-region');
+
+  // chart.interval().position('year*sales');
+  // chart.interval().position('time*collect');
+  // chart.line().position('time*collect').label('collect');
+  chart.interval().position('time*collect').label('collect');
+  // chart.point().position('time*collect');
+
+  chart.render();
+</script>
+</html>

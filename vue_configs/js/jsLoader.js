@@ -13,6 +13,7 @@ const loadJsList = [
   './js/components/configuration/QuestionAnswer.js',
   './js/components/configuration/SampleConfigs.js',
   './js/components/configuration/WidgetConfigs.js',
+  './js/components/configuration/AccountManage.js',
   './js/components/view/CollectSummary.js',
   './js/components/view/CollectChart.js',
   './js/components/Index.js',

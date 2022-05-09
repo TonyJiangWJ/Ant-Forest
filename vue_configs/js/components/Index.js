@@ -16,6 +16,10 @@ let Index = {
           link: '/basic/collect'
         },
         {
+          title: '多账号管理',
+          link: '/advance/accounts'
+        },
+        {
           title: '收集统计',
           link: '/view/collectSummary'
         },
