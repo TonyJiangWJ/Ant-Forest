@@ -184,7 +184,8 @@ StrollScanner.prototype.collectTargetFriend = function () {
     if (_widgetUtils.widgetCheck(_config.rain_start_content || '开始拯救绿色能量|再来一次|立即开启', 500)) {
       debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
       let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
-      engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByStroll: true } })
+      runningQueueDispatcher.doAddRunningTask({source: source})
+      engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByStroll: true, executorSource: engines.myEngine().getSource() + '' } })
       _commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
       this.showCollectSummaryFloaty()
       return false

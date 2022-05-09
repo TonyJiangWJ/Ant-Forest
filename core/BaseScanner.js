@@ -767,6 +767,12 @@ const BaseScanner = function () {
       if (collect) {
         debugInfo('截图找到了目标, 获取森林赠礼')
         automator.click(collect.centerX(), collect.centerY())
+        let gotItBtn = _widgetUtils.widgetGetOne('知道了', 1000)
+        if (gotItBtn) {
+          debugInfo('大礼盒需要点击知道了')
+          automator.clickCenter(gotItBtn)
+          sleep(300)
+        }
         return true
       }
     }

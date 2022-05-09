@@ -105,6 +105,9 @@
     window.$nativeApi = {
       request: (bridgeName, data) => { return Promise.reject({}) }
     }
+    setTimeout(() => {
+      window.$app.moke = false
+    }, 5000)
   }
 </script>
 <script src="./js/jsLoader.js"></script>

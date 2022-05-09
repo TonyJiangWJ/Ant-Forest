@@ -215,6 +215,7 @@ let default_config = {
   github_url: 'https://github.com/TonyJiangWJ/Ant-Forest',
   gitee_url: 'https://gitee.com/TonyJiangWJ/Ant-Forest',
   qq_group: '524611323',
+  qq_group_url: 'https://jq.qq.com/?_wv=1027&k=uYq7S3hr',
   github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   gitee_relase_url: 'https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   history_tag_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/tags',
@@ -237,7 +238,11 @@ let default_config = {
   clear_webview_cache: false,
   // 更新后需要强制执行的标记
   updated_temp_flag_13549: true,
-  updated_temp_flag_13510: true
+  updated_temp_flag_13510: true,
+  // 多账号管理
+  accounts: [],
+  main_account: '',
+  enable_multi_account: false,
 }
 // 自动生成的配置数据 
 let auto_generate_config = {
@@ -329,12 +334,8 @@ config.overwrite = (key, value) => {
 // 扩展配置
 let workpath = getCurrentWorkPath()
 let configDataPath = workpath + '/config_data/'
-let default_image_config = {
-  reward_for_plant: files.read(configDataPath + 'reward_for_plant.data'),
-  backpack_icon: files.read(configDataPath + 'backpack_icon.data'),
-  sign_reward_icon: files.read(configDataPath + 'sign_reward_icon.data'),
-}
-
+let default_image_config = {};
+['reward_for_plant', 'backpack_icon', 'sign_reward_icon'].forEach(key => default_image_config[key] = files.read(configDataPath + key + '.data'))
 default_config.image_config = default_image_config
 config.image_config = convertDefaultData(default_image_config, CONFIG_STORAGE_NAME + '_image')
 

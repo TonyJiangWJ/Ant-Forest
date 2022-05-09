@@ -9,6 +9,7 @@
       githubUrl: '',
       giteeUrl: '',
       qq_group: '',
+      qq_group_url: '',
     }
   },
   methods: {
@@ -26,6 +27,11 @@
     checkForUpdate: function () {
       $app.invoke('downloadUpdate')
     },
+    openQQGroup: function () {
+      if (this.qq_group_url) {
+        $app.invoke('openUrl', { url: this.qq_group_url })
+      }
+    }
   },
   computed: {
     githubShort: function () {
@@ -49,6 +55,7 @@
       this.githubUrl = config.github_url
       this.giteeUrl = config.gitee_url
       this.qq_group = config.qq_group
+      this.qq_group_url = config.qq_group_url
     })
   },
   template: `
@@ -58,7 +65,7 @@
       <van-cell title="检测更新" value="点击更新" @click="checkForUpdate"/>
       <van-cell title="作者" value="TonyJiangWJ"/>
       <van-cell title="Email" value="TonyJiangWJ@gmail.com"/>
-      <van-cell v-if="qq_group" title="QQ交流群" :value="qq_group"/>
+      <van-cell v-if="qq_group" title="QQ交流群" :value="qq_group" @click="openQQGroup"/>
       <van-cell value-class="long-value" v-if="githubShort" title="Github" :value="githubShort" @click="openGithubUrl"/>
       <van-cell value-class="long-value" v-if="giteeShort" title="Gitee" :value="giteeShort" @click="openGiteeUrl"/>
       <van-cell title="开发模式" @click="openDevelopMode" is-link />

@@ -22,9 +22,12 @@ if (runningSize > 1) {
 }
 
 let args = engines.myEngine().execArgv
+console.log('来源参数：' + JSON.stringify(args))
 let executeByStroll = args.executeByStroll
 let executeByTimeTask = args.executeByTimeTask
-let autoStartCollect = executeByStroll || executeByTimeTask
+let executeByAccountChanger = args.executeByAccountChanger
+let targetSendName = args.targetSendName
+let autoStartCollect = executeByStroll || executeByTimeTask || executeByAccountChanger
 let { config, storage_name: _storage_name } = require('../config.js')(runtime, global)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let automator = sRequire('Automator')
@@ -257,15 +260,15 @@ clickButtonWindow.delayClose.setOnTouchListener(new android.view.View.OnTouchLis
 
 function checkAndSendChance () {
   setDisplayText('正在校验是否存在 “更多好友”，请稍等')
-  let showMoreFriend = widgetUtils.widgetGetOne('更多好友', 1000)
-  if (showMoreFriend && config.send_chance_to_friend) {
+  let showMoreFriend = widgetUtils.widgetGetById('J_moreGrant', 1000)
+  if (showMoreFriend && (targetSendName || config.send_chance_to_friend)) {
     threadPool.execute(function () {
       automator.clickCenter(showMoreFriend)
       infoLog(['点击了更多好友'])
       setDisplayText('点击了更多好友，校验是否存在目标好友', showMoreFriend.bounds().centerX(), showMoreFriend.bounds().centerY())
       sleep(2000)
       setDisplayText('查找目标好友中')
-      let targetFriends = widgetUtils.widgetGetAll(config.send_chance_to_friend, 3000)
+      let targetFriends = widgetUtils.widgetGetAll(targetSendName || config.send_chance_to_friend, 3000)
       if (targetFriends) {
         let matched = false
         // 从尾部开始 避开默认显示的值
@@ -319,7 +322,7 @@ function checkAndSendChance () {
 }
 
 function checkAndStartCollect () {
-  let startBtn = widgetUtils.widgetGetOne(config.rain_start_content || '开始拯救绿色能量|再来一次|立即开启', 1000)
+  let startBtn = widgetUtils.widgetGetOne(config.rain_start_content || '开始拯救绿色能量|再来一次|立即开启|开始能量.*', 1000)
   if (startBtn) {
     let ended = widgetUtils.widgetGetOne(config.rain_end_content || '.*去蚂蚁森林看看.*', 1000)
     if (ended) {
@@ -355,6 +358,7 @@ ui.run(function () {
 })
 
 executeByTimeTask && openRainPage()
+executeByAccountChanger && openRainPage()
 executeByStroll && checkAndStartCollect()
 
 window.canvas.on("draw", function (canvas) {
@@ -432,14 +436,17 @@ function exitAndClean () {
 
   if (executeByTimeTask) {
     commonFunction.minimize()
-    if (config.auto_lock && args.needRelock) {
+    if (config.auto_lock && (args.needRelock == true)) {
       debugInfo('重新锁定屏幕')
       automator.lockScreen()
     }
-  } else if (executeByStroll) {
+  } else if (executeByStroll || executeByAccountChanger) {
     // 发送消息，能量雨执行完毕
     debugInfo('发送消息，能量雨执行完毕', true)
     processShare.postInfo('能量雨执行完毕')
+    if (args.executorSource) {
+      runningQueueDispatcher.doAddRunningTask({ source: args.executorSource })
+    }
   }
   isRunning = false
   if (window !== null) {
@@ -523,7 +530,10 @@ function openRainPage () {
   if (confirm) {
     automator.clickCenter(confirm)
   }
-  widgetUtils.widgetWaiting('.*返回蚂蚁森林.*') && executeByTimeTask && checkAndStartCollect()
+  widgetUtils.widgetWaiting('.*返回蚂蚁森林.*')
+  if (executeByTimeTask || executeByAccountChanger) {
+    checkAndStartCollect()
+  }
   ui.run(function () {
     clickButtonWindow.openRainPage.setText('打开能量雨界面')
   })
