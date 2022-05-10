@@ -110,8 +110,8 @@ const AlipayAccountManage = {
       </van-cell>
     </van-cell-group>
     <tip-block>一键操作，或者对相应文件设置每日定时任务</tip-block>
-    <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeRain">执行</van-button>unit/循环切换小号并收集能量.js{{timedUnit1|displayTime}}</tip-block>
-    <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeCollect">执行</van-button>unit/循环切换小号并执行能量雨收集.js{{timedUnit2|displayTime}}</tip-block>
+    <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeCollect">执行</van-button>unit/循环切换小号并收集能量.js{{timedUnit1|displayTime}}</tip-block>
+    <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeRain">执行</van-button>unit/循环切换小号并执行能量雨收集.js{{timedUnit2|displayTime}}</tip-block>
     <van-divider content-position="left">
       管理账号
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addAccount">增加</van-button>
