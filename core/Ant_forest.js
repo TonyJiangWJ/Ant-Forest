@@ -13,6 +13,7 @@ let _commonFunctions = singletonRequire('CommonFunction')
 let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
 let AntForestDao = singletonRequire('AntForestDao')
+let FloatyInstance = singletonRequire('FloatyUtil')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
@@ -53,6 +54,11 @@ function Ant_forest () {
       data: 'alipays://platformapi/startapp?appId=60000002',
       packageName: _config.package_name
     })
+    FloatyInstance.setFloatyInfo({x: _config.device_width /2 , y: _config.device_height/2}, "查找是否有'打开'对话框")
+    let confirm = _widgetUtils.widgetGetOne(/^打开$/, 1000)
+    if (confirm) {
+      automator.clickCenter(confirm)
+    }
     _commonFunctions.readyForAlipayWidgets()
     if (_config.is_alipay_locked) {
       sleep(1000)
@@ -662,7 +668,7 @@ function Ant_forest () {
         return false
       }
     }
-    if (!(_config.disable_image_based_collect && _config.is_cycle && _config.try_collect_by_stroll)) {
+    if (!((_config.disable_image_based_collect && _config.is_cycle || _config.force_disable_image_based_collect) && _config.try_collect_by_stroll)) {
       _widgetUtils.enterFriendList()
       let enterFlag = _widgetUtils.friendListWaiting()
       if (!enterFlag) {
@@ -830,7 +836,7 @@ function Ant_forest () {
           }
           if (runSuccess) {
             generateNext()
-            getPostEnergy(!_config.collect_self_only && !_config.disable_image_based_collect)
+            getPostEnergy(!_config.collect_self_only && !(_config.disable_image_based_collect || _config.force_disable_image_based_collect))
           }
         } catch (e) {
           errorInfo('发生异常 [' + e + ']')

@@ -2,7 +2,7 @@
 /**
  * 关于项目
  */
- const About = {
+const About = {
   data () {
     return {
       version: 'develop_version',

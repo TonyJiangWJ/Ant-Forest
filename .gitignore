@@ -1,7 +1,7 @@
 .DS_Store
 *.zip
 *.log
-*.ign.js
+*.ign.*
 LockScreen.js
 ExternalUnlockDevice.js
 能量雨收集-phone.js
