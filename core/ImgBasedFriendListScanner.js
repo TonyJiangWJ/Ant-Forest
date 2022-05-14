@@ -14,6 +14,7 @@ let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
+let FileUtils = singletonRequire('FileUtils')
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
 let TesseracOcrUtil = require('../lib/TesseracOcrUtil.js')
 let aesUtil = require('../lib/AesUtil.js')
@@ -243,6 +244,9 @@ const ImgBasedFriendListScanner = function () {
       screen = _commonFunctions.checkCaptureScreenPermission(5)
       // 重新复制一份
       grayScreen = images.copy(images.grayscale(images.copy(screen)), true)
+      if (_config.cutAndSaveRankList && screen) {
+        images.save(screen, FileUtils.getCurrentWorkPath() + '/resources/rank_list/' + (Math.random() * 899 + 100).toFixed(0) + '.png')
+      }
       intervalScreenForDetectCollect = images.copy(images.inRange(screen, _config.can_collect_color_lower || '#12905F', _config.can_collect_color_upper || '#2EA178'), true)
       let countdown = new Countdown()
       let waitForCheckPoints = this.getAllCheckPoints(intervalScreenForDetectCollect)

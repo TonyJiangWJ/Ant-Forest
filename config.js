@@ -197,9 +197,14 @@ let default_config = {
   // 尝试先逛一逛进行能量收取
   try_collect_by_stroll: true,
   disable_image_based_collect: false,
+  force_disable_image_based_collect: false,
   stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$',
   collect_by_stroll_only: false,
   stroll_button_regenerate: true,
+  stroll_button_left: null,
+  stroll_button_top: null,
+  stroll_button_width: null,
+  stroll_button_height: null,
   auto_set_bang_offset: true,
   bang_offset: 0,
   limit_runnable_time_range: true,
@@ -244,13 +249,6 @@ let default_config = {
   main_account: '',
   enable_multi_account: false,
 }
-// 自动生成的配置数据 
-let auto_generate_config = {
-  stroll_button_left: null,
-  stroll_button_top: null,
-  stroll_button_width: null,
-  stroll_button_height: null,
-}
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token']
 let securityFields = ['password', 'alipay_lock_password']
@@ -269,12 +267,6 @@ Object.keys(default_config).forEach(key => {
     config[key] = storedVal
   } else {
     config[key] = default_config[key]
-  }
-})
-Object.keys(auto_generate_config).forEach(key => {
-  let storedVal = storageConfig.get(key)
-  if (typeof storedVal !== 'undefined') {
-    config[key] = storedVal
   }
 })
 if (typeof config.collectable_energy_ball_content !== 'string') {

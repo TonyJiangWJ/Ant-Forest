@@ -64,9 +64,9 @@ const CollectConfig = {
         max_collect_wait_time: 60,
         delayStartTime: 5,
         enable_watering_cooperation: true,
-        watering_cooperation_name: '',
-        watering_cooperation_amount: '',
-        watering_cooperation_threshold: '',
+        watering_cooperation_name: 'test',
+        watering_cooperation_amount: '100',
+        watering_cooperation_threshold: '100',
         // 执行冷却
         cool_down_if_collect_too_much: true,
         cool_down_per_increase: 1000,
@@ -79,7 +79,11 @@ const CollectConfig = {
         merge_countdown_by_gaps: true,
         limit_runnable_time_range: true,
         disable_image_based_collect: true,
+        force_disable_image_based_collect: true,
         collect_by_stroll_only: true,
+        useCustomScrollDown: true,
+        bottomHeight: 200,
+        countdown_gaps: 30,
       },
       currentInCoolDown: false,
       validations: {
@@ -200,11 +204,18 @@ const CollectConfig = {
         <switch-cell title="是否二次校验能量球" v-model="configs.double_click_card_used" />
         <switch-cell title="是否通过逛一逛收集能量" v-model="configs.try_collect_by_stroll" />
         <template v-if="configs.try_collect_by_stroll">
-          <tip-block>开启仅仅执行逛一逛后将只通过逛一逛执行，此时将不从排行榜识别倒计时数据，会影响后续定时任务的设置，仅循环模式有效</tip-block>
-          <switch-cell title="仅仅执行逛一逛" v-model="configs.disable_image_based_collect" />
+          <tip-block>开启仅执行逛一逛后将只通过逛一逛执行，仅循环模式有效</tip-block>
+          <switch-cell title="循环模式仅执行逛一逛" v-model="configs.disable_image_based_collect" />
+          <tip-block>开启此项将仅通过逛一逛执行不去排行榜获取任何信息，此时无法从排行榜识别倒计时数据，会影响后续定时任务的设置，可以配合永不停止达到自动设置随机的定时任务，但不建议开启此项</tip-block>
+          <switch-cell title="所有模式强制仅执行逛一逛" v-model="configs.force_disable_image_based_collect" />
           <tip-block>开启仅识别倒计时可以仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，能够避免重复进入白名单或者保护罩好友页面，
             但是也有一定几率会漏收倒计时刚刚结束的能量，请酌情选择是否开启</tip-block>
           <switch-cell title="排行榜中仅识别倒计时" v-model="configs.collect_by_stroll_only" />
+        </template>
+        <tip-block>有时候排行榜中无法使用scrollDown函数下滑，需启用模拟滑动</tip-block>
+        <switch-cell title="是否使用模拟滑动" v-model="configs.useCustomScrollDown" />
+        <template v-if="configs.useCustomScrollDown">
+          <number-field v-model="configs.bottomHeight" label="模拟底部起始高度" label-width="8em" />
         </template>
         <switch-cell title="是否在收集或帮助后重新检查排行榜" title-style="flex:2;" v-model="configs.recheck_rank_list" />
         <switch-cell title="是否限制0:30-6:50不可运行" title-style="flex:2;" v-model="configs.limit_runnable_time_range" />

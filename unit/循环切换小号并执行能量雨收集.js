@@ -12,7 +12,7 @@ runningQueueDispatcher.addRunningTask()
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
   if (config.auto_lock && unlocker.needRelock() === true) {
-    debugInfo('重新锁定屏幕')
+    logUtils.debugInfo('重新锁定屏幕')
     automator.lockScreen()
   }
   // 移除运行中任务
@@ -35,6 +35,7 @@ if (!floatyInstance.init()) {
   toast('创建悬浮窗失败')
   exit()
 }
+floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('循环执行小号能量雨')
 
 if (config.accounts && config.accounts.length > 1) {

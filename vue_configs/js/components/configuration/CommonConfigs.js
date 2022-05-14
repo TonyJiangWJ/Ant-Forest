@@ -157,7 +157,7 @@ const LogConfig = {
         save_log_file: true,
         // 日志保留天数
         log_saved_days: 3,
-        back_size: '',
+        back_size: '1024',
         async_save_log_file: true,
         console_log_maximum_size: 1500,
       }
@@ -202,7 +202,6 @@ const AdvanceCommonConfig = {
         single_script: true,
         auto_restart_when_crashed: true,
         useCustomScrollDown: true,
-        scrollDownSpeed: null,
         bottomHeight: null,
         other_accessisibility_services: '',
         // 截图相关
@@ -234,7 +233,6 @@ const AdvanceCommonConfig = {
       <van-field v-model="configs.other_accessisibility_services" label="无障碍服务service" label-width="10em" type="text" placeholder="请输入" input-align="right" stop-propagation />
       <switch-cell title="是否使用模拟滑动" v-model="configs.useCustomScrollDown" />
       <template v-if="configs.useCustomScrollDown">
-        <number-field v-model="configs.scrollDownSpeed" label="模拟滑动速度" label-width="8em" />
         <number-field v-model="configs.bottomHeight" label="模拟底部起始高度" label-width="8em" />
       </template>
       <switch-cell title="是否自动授权截图权限" v-model="configs.request_capture_permission" />

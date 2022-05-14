@@ -260,6 +260,9 @@ clickButtonWindow.delayClose.setOnTouchListener(new android.view.View.OnTouchLis
 
 function checkAndSendChance () {
   setDisplayText('正在校验是否存在 “更多好友”，请稍等')
+  // 设置至少十秒的查找时间
+  let endDateForCheck = new Date().getTime() + 10 * 60
+  targetEndTime = endDateForCheck > targetEndTime ? endDateForCheck : targetEndTime
   let showMoreFriend = widgetUtils.widgetGetById('J_moreGrant', 1000)
   if (showMoreFriend && (targetSendName || config.send_chance_to_friend)) {
     threadPool.execute(function () {

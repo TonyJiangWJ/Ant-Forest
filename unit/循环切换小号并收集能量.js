@@ -10,12 +10,13 @@ let fileUtils = singletonRequire('FileUtils')
 let unlocker = require('../lib/Unlock.js')
 let _BaseScanner = require('../core/BaseScanner.js')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
+let OpenCvUtil = require('../lib/OpenCvUtil.js')
 config.not_lingering_float_window = true
 runningQueueDispatcher.addRunningTask()
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
   if (config.auto_lock && unlocker.needRelock() === true) {
-    debugInfo('重新锁定屏幕')
+    logUtils.debugInfo('重新锁定屏幕')
     automator.lockScreen()
   }
   // 移除运行中任务
@@ -38,6 +39,7 @@ if (!floatyInstance.init()) {
   toast('创建悬浮窗失败')
   exit()
 }
+floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('循环执行小号并收集能量')
 
 if (config.accounts && config.accounts.length > 1) {
@@ -54,6 +56,7 @@ if (config.accounts && config.accounts.length > 1) {
     floatyInstance.setFloatyText('开始执行收取能量')
     try {
       doCollectSelf()
+      getSignReward()
       floatyInstance.setFloatyText('切换下一个账号')
       sleep(500)
     } catch (e) {
@@ -94,6 +97,11 @@ function startApp () {
     data: 'alipays://platformapi/startapp?appId=60000002',
     packageName: config.package_name
   })
+  floatyInstance.setFloatyInfo({x: config.device_width /2 , y: config.device_height/2}, "查找是否有'打开'对话框")
+  let confirm = widgetUtils.widgetGetOne(/^打开$/, 1000)
+  if (confirm) {
+    automator.clickCenter(confirm)
+  }
 }
 function openAndWaitForPersonalHome () {
   let restartCount = 0
@@ -133,4 +141,34 @@ function getCurrentEnergy () {
   }
   logUtils.debugInfo(['getCurrentEnergy 获取能量值: {}', currentEnergy])
   return currentEnergy
+}
+
+// 每日签到奖励
+function getSignReward () {
+  floatyInstance.setFloatyText('准备校验是否有奖励')
+  let screen = commonFunctions.checkCaptureScreenPermission()
+  if (screen && config.image_config.sign_reward_icon) {
+    let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(config.image_config.sign_reward_icon))
+    if (collect) {
+      floatyInstance.setFloatyInfo({x: collect.centerX(), y: collect.centerY()}, '点击奖励按钮')
+      automator.click(collect.centerX(), collect.centerY())
+      sleep(1000)
+      let getRewards = widgetUtils.widgetGetAll('立即领取')
+      if (getRewards && getRewards.length > 0) {
+        floatyInstance.setFloatyText('找到可领取的奖励数量：' + getRewards.length)
+        getRewards.forEach(getReward => {
+          getReward.click()
+          sleep(500)
+        })
+      } else {
+        floatyInstance.setFloatyText('未找到可领取的奖励')
+      }
+      commonFunctions.setRewardCollected()
+      automator.click(config.device_width * 0.2, config.device_width * 0.3)
+      sleep(200)
+    } else {
+      floatyInstance.setFloatyText('未找到奖励按钮')
+    }
+    sleep(500)
+  }
 }
