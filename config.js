@@ -155,12 +155,10 @@ let default_config = {
   can_collect_color_lower: '#12905F',
   can_collect_color_upper: '#2EA178',
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
-  collectable_lower: '#00c600',
-  collectable_upper: '#ffff29',
-  helpable_lower: '#6f0028',
-  helpable_upper: '#ffb2b2',
-  valid_collectable_lower: '#77cc00',
-  valid_collectable_upper: '#ffff91',
+  collectable_lower: '#89d600',
+  collectable_upper: '#ffff14',
+  water_lower: '#caa50e',
+  water_upper: '#ffede2',
   // 排行榜校验区域
   rank_check_left: 190,
   rank_check_top: 170,
@@ -196,6 +194,8 @@ let default_config = {
   is_pro: is_pro,
   // 尝试先逛一逛进行能量收取
   try_collect_by_stroll: true,
+  // 逛一逛结束是否进行能量雨收集
+  collect_rain_when_stroll: true,
   disable_image_based_collect: false,
   force_disable_image_based_collect: false,
   stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$',
@@ -225,7 +225,7 @@ let default_config = {
   gitee_relase_url: 'https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   history_tag_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/tags',
   gitee_package_prefix: 'Ant-Forest-',
-  gitee_package_url: 'https://gitee.com/TonyJiangWJ/for-ant-update/raw/master/',
+  gitee_package_url: 'https://gitee.com/TonyJiangWJ/Ant-Forest/raw/release_pkgs/',
   release_access_token: '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',
   enable_watering_cooperation: false,
   watering_cooperation_name: '',
@@ -244,14 +244,26 @@ let default_config = {
   // 更新后需要强制执行的标记
   updated_temp_flag_13549: true,
   updated_temp_flag_13510: true,
+  updated_temp_flag_13654: true,
   // 多账号管理
   accounts: [],
   main_account: '',
+  main_userid: '',
+  main_account_username: '',
+  watering_main_account: true,
+  to_main_by_user_id: true,
   enable_multi_account: false,
+  // 刷步数
+  walking_accounts: [],
+  pushplus_token: '',
+  pushplus_walking_data: true,
+  // 配置界面webview打印日志
+  webview_loging: false
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token']
-let securityFields = ['password', 'alipay_lock_password']
+let securityFields = ['password', 'alipay_lock_password', 'walking_accounts']
+let objFields = ['walking_accounts']
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
 let config = {}
@@ -261,10 +273,7 @@ let aesKey = device.getAndroidId()
 Object.keys(default_config).forEach(key => {
   let storedVal = storageConfig.get(key)
   if (typeof storedVal !== 'undefined' && no_cache_configs.indexOf(key) < 0) {
-    if (securityFields.indexOf(key) > -1) {
-      storedVal = AesUtil.decrypt(storedVal, aesKey) || storedVal
-    }
-    config[key] = storedVal
+    config[key] = getConfigValue(storedVal, key)
   } else {
     config[key] = default_config[key]
   }
@@ -368,7 +377,7 @@ if (!isRunningMode) {
             try {
               newConfigInfos = JSON.parse(newConfigInfos)
               Object.keys(newConfigInfos).forEach(key => {
-                scope.config_instance.config[key] = newConfigInfos[key]
+                scope.config_instance.config[key] = getConfigValue(newConfigInfos[key], key)
               })
               if (scope.subscribe_callback) {
                 scope.subscribe_callback(scope.config_instance.config)
@@ -397,21 +406,18 @@ function resetConfigsIfNeeded () {
     storageConfig.put('friend_home_check_regex', default_config.friend_home_check_regex)
   }
   let resetFields = [
-    // 新版模拟滑动会有问题。默认关闭改用自带的scrollDown
-    'useCustomScrollDown',
-    // 修改逛一逛结束标志
-    'stroll_end_ui_content',
-    // 自动设置ocr阈值
-    'autoSetThreshold',
-    // 阈值
-    'ocrThreshold',
+    'collectable_lower',
+    'collectable_upper',
+    'water_lower',
+    'water_upper',
+    'gitee_package_url',
   ]
-  if (config.updated_temp_flag_13510) {
+  if (config.updated_temp_flag_13654) {
     resetFields.forEach(key => {
       config[key] = default_config[key]
       storageConfig.put(key, default_config[key])
     })
-    storageConfig.put('updated_temp_flag_13510', false)
+    storageConfig.put('updated_temp_flag_13654', false)
     if (!config.auto_lock) {
       config.auto_lock = default_config.auto_lock
     }
@@ -422,7 +428,7 @@ function resetConfigsIfNeeded () {
   }
 }
 
-function convertDefaultData(default_config, config_storage_name) {
+function convertDefaultData (default_config, config_storage_name) {
   let config_storage = storages.create(config_storage_name)
   let configData = {}
   Object.keys(default_config).forEach(key => {
@@ -431,7 +437,7 @@ function convertDefaultData(default_config, config_storage_name) {
   return configData
 }
 
-function getCurrentWorkPath() {
+function getCurrentWorkPath () {
   let currentPath = files.cwd()
   if (files.exists(currentPath + '/main.js')) {
     return currentPath
@@ -445,4 +451,18 @@ function getCurrentWorkPath() {
   if (paths.length > 0) {
     return currentPath
   }
+}
+
+function getConfigValue(configValue, key) {
+  if (securityFields.indexOf(key) > -1) {
+    try {
+      configValue = AesUtil.decrypt(configValue, aesKey) || configValue
+      if (objFields.indexOf(key) > -1) {
+        configValue = JSON.parse(configValue)
+      }
+    } catch (e) {
+      console.error('解密字段失败：', key)
+    }
+  }
+  return configValue
 }

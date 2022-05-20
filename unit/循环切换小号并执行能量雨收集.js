@@ -6,6 +6,7 @@ let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let fileUtils = singletonRequire('FileUtils')
+let automator = singletonRequire('Automator')
 let unlocker = require('../lib/Unlock.js')
 config.not_lingering_float_window = true
 runningQueueDispatcher.addRunningTask()

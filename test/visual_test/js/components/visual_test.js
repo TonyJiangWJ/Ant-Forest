@@ -6,6 +6,101 @@
  * @Description: 开发测试时使用的组件
  */
 
+let ImageSelectDialog = {
+  mixins: [mixin_methods],
+  props: {
+    showDialog: {
+      type: Boolean,
+      default: false,
+    },
+    rootPath: {
+      type: String,
+      default: ''
+    }
+  },
+  model: {
+    prop: 'showDialog',
+    event: 'change'
+  },
+  data: function () {
+    return {
+      innerShowDialog: this.showDialog,
+      files: [],
+      selectedPath: null,
+    }
+  },
+  filters: {
+    fileSizeStr: fileSize => {
+      if (!fileSize) {
+        return '0 B'
+      } else {
+        return fileSize < 1024 ? fileSize + ' B' :
+          fileSize < 1024 * 1024 ? (fileSize / 1024).toFixed(2) + ' KB' :
+            fileSize < 1024 * 1024 * 1024 ? (fileSize / 1024 / 1024).toFixed(2) + ' MB' : (fileSize / 1024 / 1024 / 1024).toFixed(2) + ' GB'
+      }
+    }
+  },
+  watch: {
+    innerShowDialog: function (newVal, oldVal) {
+      this.$emit('change', newVal)
+    },
+    showDialog: function (newVal) {
+      this.innerShowDialog = newVal
+    }
+  },
+  methods: {
+    listFiles: function (path) {
+      $nativeApi.request('listImageFiles', { filePath: path || this.rootPath }).then(({ fileResult }) => {
+        if (fileResult.error) {
+          return
+        }
+        this.files = [{ name: '..', type: 'parent' }].concat(fileResult.resultList || [])
+        this.rootPath = fileResult.path
+      })
+    },
+    selectFile: function (file) {
+      let selectedFilePath = this.rootPath + '/' + file.name
+      if (file.isDir) {
+        this.listFiles(selectedFilePath)
+      } else {
+        if (file.name === '..') {
+          this.listFiles(this.rootPath.substring(0, this.rootPath.lastIndexOf('/')))
+          return
+        }
+        this.$dialog.confirm({
+          message: '是否加载该文件？'
+        }).then(() => {
+          this.selectedPath = selectedFilePath
+          this.$emit('on-chose', selectedFilePath)
+          this.innerShowDialog = false
+        }).catch(() => { })
+      }
+    }
+  },
+  mounted() {
+    this.listFiles(this.rootPath)
+  },
+  template: `
+  <van-dialog v-model="innerShowDialog" title="选择图片文件" :show-confirm-button="false" close-on-click-overlay get-container="#app">
+    <div style="width: 100%;height: 400px;overflow: scroll;">
+      <van-cell-group>
+        <van-cell v-for="file in files" :key="file.name" class="file-cell" @click="selectFile(file)">
+          <template #title>
+            <div class="van-cell__title file-container">
+              <img v-if="file.type==='parent'" class="up-dir">
+              <img v-else-if="file.type==='dir'" class="folder">
+              <img v-else class="unknown">
+              <span>{{file.name}}</span>
+              <span v-if="file.type !== 'dir' && file.type !== 'parent'" class="file-size">{{file.fileSize | fileSizeStr}}</span>
+            </div>
+          </template>
+        </van-cell>
+      </van-cell-group>
+    </div>
+  </van-dialog>
+  `
+}
+
 let ImageViewer = {
   mixins: [mixin_methods],
   props: {
@@ -397,43 +492,43 @@ let ColorRangeSlider = {
     this.$set(this.intervalRangeBlue, 0, lowerRangeColor & 0xFF)
     this.$set(this.intervalRangeBlue, 1, upperRangeColor & 0xFF)
   },
-  template: '<div>\
-    <van-divider content-position="left">\
-      <label>灰度</label><van-switch v-model="intervalByGray" size="0.8rem" /> 二值化区间&nbsp;&nbsp;<span :style="innerLowerRange | styleTextColor">{{innerLowerRange}}</span>\
-      &nbsp;&nbsp;-&nbsp;&nbsp;<span :style="innerUpperRange | styleTextColor">{{innerUpperRange}}</span>\
-      <van-button @click="showSlider=true" size="mini">修改</van-button>\
-    </van-divider>\
-    <van-popup v-model="showSlider" position="bottom" :style="{ height: intervalByGray ? \'15%\' : \'30%\' }" :get-container="getContainer">\
-      <div style="padding: 2rem 2rem;">\
-        <van-row>\
-          <van-col @click="editRange(\'intervalRangeRed\')">{{intervalByGray?"FULL":"RED"}}: {{intervalRangeRed[0] | hexDisplay}},{{intervalRangeRed[1] | hexDisplay}}</van-col>\
-        </van-row>\
-        <van-row>\
-          <van-col :span="24">\
-            <van-slider @drag-start="handleDragStart" @drag-end="handleDragEnd" style="margin: 1rem 0" v-model="intervalRangeRed" range :min="0" :max="255"/>\
-          </van-col>\
-        </van-row>\
-        <template v-if="!intervalByGray">\
-          <van-row>\
-            <van-col @click="editRange(\'intervalRangeGreen\')">GREEN: {{intervalRangeGreen[0] | hexDisplay}},{{intervalRangeGreen[1] | hexDisplay}}</van-col>\
-          </van-row>\
-          <van-row>\
-            <van-col :span="24"><van-slider @drag-start="handleDragStart" @drag-end="handleDragEnd" style="margin: 1rem 0" v-model="intervalRangeGreen" range :min="0" :max="255"/></van-col>\
-          </van-row>\
-          <van-row>\
-            <van-col @click="editRange(\'intervalRangeBlue\')">BLUE: {{intervalRangeBlue[0] | hexDisplay}},{{intervalRangeBlue[1] | hexDisplay}}</van-col>\
-          </van-row>\
-          <van-row>\
-            <van-col :span="24"><van-slider @drag-start="handleDragStart" @drag-end="handleDragEnd" style="margin: 1rem 0" v-model="intervalRangeBlue" range :min="0" :max="255"/></van-col>\
-          </van-row>\
-        </template>\
-      </div>\
-    </van-popup>\
-    <van-dialog v-model="showEditDialog" title="手动输入" show-cancel-button @confirm="doConfirmRangeEdit" :get-container="getContainer">\
-      <van-field v-model="newLowerRange" type="number" placeholder="请输入低阈值" label="低阈值" />\
-      <van-field v-model="newUpperRange" type="number" placeholder="请输入高阈值" label="高阈值" />\
-    </van-dialog>\
-  </div>'
+  template: `<div>
+    <van-divider content-position="left">
+      <label>灰度</label><van-switch v-model="intervalByGray" size="0.8rem" /> 二值化区间&nbsp;&nbsp;<span :style="innerLowerRange | styleTextColor">{{innerLowerRange}}</span>
+      &nbsp;&nbsp;-&nbsp;&nbsp;<span :style="innerUpperRange | styleTextColor">{{innerUpperRange}}</span>
+      <van-button @click="showSlider=true" size="mini">修改</van-button>
+    </van-divider>
+    <van-popup v-model="showSlider" position="bottom" :style="{ height: intervalByGray ? \'15%\' : \'30%\' }" :get-container="getContainer">
+      <div style="padding: 2rem 2rem;">
+        <van-row>
+          <van-col @click="editRange(\'intervalRangeRed\')">{{intervalByGray?"FULL":"RED"}}: {{intervalRangeRed[0] | hexDisplay}},{{intervalRangeRed[1] | hexDisplay}}</van-col>
+        </van-row>
+        <van-row>
+          <van-col :span="24">
+            <van-slider @drag-start="handleDragStart" @drag-end="handleDragEnd" style="margin: 1rem 0" v-model="intervalRangeRed" range :min="0" :max="255"/>
+          </van-col>
+        </van-row>
+        <template v-if="!intervalByGray">
+          <van-row>
+            <van-col @click="editRange(\'intervalRangeGreen\')">GREEN: {{intervalRangeGreen[0] | hexDisplay}},{{intervalRangeGreen[1] | hexDisplay}}</van-col>
+          </van-row>
+          <van-row>
+            <van-col :span="24"><van-slider @drag-start="handleDragStart" @drag-end="handleDragEnd" style="margin: 1rem 0" v-model="intervalRangeGreen" range :min="0" :max="255"/></van-col>
+          </van-row>
+          <van-row>
+            <van-col @click="editRange(\'intervalRangeBlue\')">BLUE: {{intervalRangeBlue[0] | hexDisplay}},{{intervalRangeBlue[1] | hexDisplay}}</van-col>
+          </van-row>
+          <van-row>
+            <van-col :span="24"><van-slider @drag-start="handleDragStart" @drag-end="handleDragEnd" style="margin: 1rem 0" v-model="intervalRangeBlue" range :min="0" :max="255"/></van-col>
+          </van-row>
+        </template>
+      </div>
+    </van-popup>
+    <van-dialog v-model="showEditDialog" title="手动输入" show-cancel-button @confirm="doConfirmRangeEdit" :get-container="getContainer">
+      <van-field v-model="newLowerRange" type="number" placeholder="请输入低阈值" label="低阈值" />
+      <van-field v-model="newUpperRange" type="number" placeholder="请输入高阈值" label="高阈值" />
+    </van-dialog>
+  </div>`
 }
 
 let BallImageDataVisualTest = {
@@ -536,76 +631,76 @@ let BallImageDataVisualTest = {
       this.upperRange = resp.upper
     })
   },
-  template: '<div style="background: #ffffff;">\
-      <van-divider content-position="left">\
-        测试图片 offset: {{offset}} currentLength: {{this.imageList.length}} {{loading}}\
-      </van-divider>\
-      <van-divider content-position="left">\
-      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas(0)">重新开始加载</van-button>\
-      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas()">加载后20个</van-button>\
-      </van-divider>\
-      <van-row type="flex" justify="left">\
-        <van-col offset="1">\
-          <van-radio-group v-model="filter" direction="horizontal" icon-size="15">\
-            <van-radio style="margin-top: 5px;" shape="square" name="">全部</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="validOnly">有效</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="invalidOnly">无效</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="helpOnly">帮收</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="collectedOnly">可收</van-radio>\
-          </van-radio-group>\
-        </van-col>\
-      </van-row>\
-      <color-range-slider :lower-range="lowerRange" :upper-range="upperRange" \
-        @interval-by-gray="handleIntervalByGray"\
-        @lower-range-change="handleLowerRange"\
-        @upper-range-change="handleUpperRange"/>\
-      <van-row type="flex" justify="left">\
-        <van-col offset="1">\
-          <van-radio-group v-model="filterRange2" direction="horizontal" icon-size="15">\
-            <van-radio style="margin-top: 5px;" shape="square" name="">全部</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="ownOnly">自身</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="notOwn">非自身</van-radio>\
-          </van-radio-group>\
-        </van-col>\
-      </van-row>\
-      <van-row type="flex" justify="left">\
-        <van-col offset="1">\
-          <van-radio-group v-model="filterRange3" direction="horizontal" icon-size="15">\
-            <van-radio style="margin-top: 5px;" shape="square" name="">全部</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="dayOnly">白天</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="nightOnly">夜间</van-radio>\
-          </van-radio-group>\
-        </van-col>\
-      </van-row>\
-      <van-row type="flex" justify="left">\
-        <van-col offset="1">\
-          <van-radio-group v-model="targetDefaultImage" direction="horizontal" icon-size="15">\
-          <van-radio style="margin-top: 5px;" shape="square" name="0">二值化</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="1">灰度</van-radio>\
-            <van-radio style="margin-top: 5px;" shape="square" name="2">原图</van-radio>\
-          </van-radio-group>\
-        </van-col>\
-      </van-row>\
-      <van-row type="flex" justify="center" v-for="image in imageList" style="padding: 0.5rem;">\
-        <van-col span="4" :style="{ color: image.invalid ? \'gray\' : image.isHelp ? \'orange\' : \'green\'}">\
-        {{image.invalid ? \'无效球\' : \'有效球\'}}\
-        </van-col>\
-        <van-col span="6">\
-          <ImageViewer :image="image" :default-image="targetDefaultImage" />\
-        </van-col>\
-        <van-col span="14">\
-        avg:{{image.avg | toFixed2}} mainAvg:{{image.mainAvg | toFixed2}} avgBottom:{{image.avgBottom | toFixed2}} recheckAvg:{{image.recheckAvg | toFixed2}}\
-        createTime:{{image.createTime}}\
-        </van-col>\
-      </van-row>\
-      <van-divider content-position="left">\
-      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas(offset - 100)">offset往前100</van-button>\
-      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas()">加载后20个</van-button>\
-      </van-divider>\
-      <van-overlay :show="loading">\
-        <van-loading type="spinner" class="wrapper" />\
-      </van-overlay>\
-    </div>'
+  template: `<div style="background: #ffffff;">
+      <van-divider content-position="left">
+        测试图片 offset: {{offset}} currentLength: {{this.imageList.length}} {{loading}}
+      </van-divider>
+      <van-divider content-position="left">
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas(0)">重新开始加载</van-button>
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas()">加载后20个</van-button>
+      </van-divider>
+      <van-row type="flex" justify="left">
+        <van-col offset="1">
+          <van-radio-group v-model="filter" direction="horizontal" icon-size="15">
+            <van-radio style="margin-top: 5px;" shape="square" name="">全部</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="validOnly">有效</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="invalidOnly">无效</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="helpOnly">帮收</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="collectedOnly">可收</van-radio>
+          </van-radio-group>
+        </van-col>
+      </van-row>
+      <color-range-slider :lower-range="lowerRange" :upper-range="upperRange"
+        @interval-by-gray="handleIntervalByGray"
+        @lower-range-change="handleLowerRange"
+        @upper-range-change="handleUpperRange"/>
+      <van-row type="flex" justify="left">
+        <van-col offset="1">
+          <van-radio-group v-model="filterRange2" direction="horizontal" icon-size="15">
+            <van-radio style="margin-top: 5px;" shape="square" name="">全部</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="ownOnly">自身</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="notOwn">非自身</van-radio>
+          </van-radio-group>
+        </van-col>
+      </van-row>
+      <van-row type="flex" justify="left">
+        <van-col offset="1">
+          <van-radio-group v-model="filterRange3" direction="horizontal" icon-size="15">
+            <van-radio style="margin-top: 5px;" shape="square" name="">全部</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="dayOnly">白天</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="nightOnly">夜间</van-radio>
+          </van-radio-group>
+        </van-col>
+      </van-row>
+      <van-row type="flex" justify="left">
+        <van-col offset="1">
+          <van-radio-group v-model="targetDefaultImage" direction="horizontal" icon-size="15">
+          <van-radio style="margin-top: 5px;" shape="square" name="0">二值化</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="1">灰度</van-radio>
+            <van-radio style="margin-top: 5px;" shape="square" name="2">原图</van-radio>
+          </van-radio-group>
+        </van-col>
+      </van-row>
+      <van-row type="flex" justify="center" v-for="image in imageList" style="padding: 0.5rem;">
+        <van-col span="4" :style="{ color: image.invalid ? \'gray\' : image.isHelp ? \'orange\' : \'green\'}">
+        {{image.invalid ? \'无效球\' : \'有效球\'}}
+        </van-col>
+        <van-col span="6">
+          <ImageViewer :image="image" :default-image="targetDefaultImage" />
+        </van-col>
+        <van-col span="14">
+        avg:{{image.avg | toFixed2}} mainAvg:{{image.mainAvg | toFixed2}} avgBottom:{{image.avgBottom | toFixed2}} recheckAvg:{{image.recheckAvg | toFixed2}}
+        createTime:{{image.createTime}}
+        </van-col>
+      </van-row>
+      <van-divider content-position="left">
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas(offset - 100)">offset往前100</van-button>
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="loadMoreImageDatas()">加载后20个</van-button>
+      </van-divider>
+      <van-overlay :show="loading">
+        <van-loading type="spinner" class="wrapper" />
+      </van-overlay>
+    </div>`
 }
 
 let BallDetectVisualTest = {
@@ -663,22 +758,22 @@ let BallDetectVisualTest = {
   mounted () {
     this.doDetectBalls()
   },
-  template: '<div>\
-    <tip-block>请保存需要调试的图片到 {{ballImagePath}} 路径下</tip-block>\
-    <van-divider content-position="left">\
-      测试图片&nbsp;&nbsp;&nbsp;<van-button v-if="fileIndex >= 2"size="mini" @click="loadLast">加载上一张</van-button><van-button size="mini" @click="doDetectBalls">加载下一张</van-button>\
-    </van-divider>\
-    <BallDetectCanvasViewer :image="image" image-style="width:100%;" />\
-    <van-overlay :show="loading">\
-      <van-loading type="spinner" class="wrapper" />\
-    </van-overlay>\
-  </div>'
+  template: `<div>
+    <tip-block>请保存需要调试的图片到 {{ballImagePath}} 路径下</tip-block>
+    <van-divider content-position="left">
+      测试图片&nbsp;&nbsp;&nbsp;<van-button v-if="fileIndex >= 2"size="mini" @click="loadLast">加载上一张</van-button><van-button size="mini" @click="doDetectBalls">加载下一张</van-button>
+    </van-divider>
+    <BallDetectCanvasViewer :image="image" image-style="width:100%;" />
+    <van-overlay :show="loading">
+      <van-loading type="spinner" class="wrapper" />
+    </van-overlay>
+  </div>`
 }
 
 let CommonImageTest = {
   mixins: [mixin_methods],
   components: {
-    ColorRangeSlider, CanvasViewer
+    ColorRangeSlider, CanvasViewer, ImageSelectDialog
   },
   data: function () {
     return {
@@ -688,6 +783,9 @@ let CommonImageTest = {
       dragingTimeout: null,
       intervalByGray: false,
       intervalBase64Only: false,
+      showSelectDialog: false,
+      rootPath: 'test/visual_test/',
+      currentImagePath: '',
       targetDefaultImage: '0',
       lowerRange: '#ad8500',
       upperRange: '#f4ddff',
@@ -762,6 +860,13 @@ let CommonImageTest = {
     handlePointColor: function (payload) {
       this.pointColor.rgbColor = payload.rgbColor
       this.pointColor.grayColor = payload.grayColor
+    },
+    selectImageFile: function () {
+      this.showSelectDialog = true
+    },
+    choseImage: function (image) {
+      this.currentImagePath = image
+      this.doLoadImage(true)
     }
   },
   computed: {
@@ -770,7 +875,8 @@ let CommonImageTest = {
         intervalByGray: this.intervalByGray,
         lowerRange: this.lowerRange,
         upperRange: this.upperRange,
-        intervalBase64Only: this.intervalBase64Only
+        intervalBase64Only: this.intervalBase64Only,
+        imagePath: this.currentImagePath
       }
     }
   },
@@ -778,6 +884,9 @@ let CommonImageTest = {
     filterOption: {
       deep: true,
       handler: function () {
+        if (this.loading) {
+          return
+        }
         console.log('filterOption changed')
         if (this.timeout != null || this.draging) {
           clearTimeout(this.timeout)
@@ -791,41 +900,45 @@ let CommonImageTest = {
           }, 100)
         }
       }
+    },
+    lowerRange: function (v) {
+      localStorage.setItem('lowerRange', v)
+    },
+    upperRange: function (v) {
+      localStorage.setItem('upperRange', v)
     }
   },
-  mounted () {
-    this.doLoadImage()
-    $nativeApi.request('loadDefaultHelpRange', {}).then(resp => {
-      this.lowerRange = resp.lower
-      this.upperRange = resp.upper
-    })
+  mounted() {
+    this.lowerRange = localStorage.getItem('lowerRange') || this.lowerRange
+    this.upperRange = localStorage.getItem('upperRange') || this.upperRange
   },
-  template: '<div>\
-    <tip-block>请保存需要调试的图片到 test/visual_test/测试用图片.png 路径下</tip-block>\
-    <van-divider content-position="left">\
-      测试图片&nbsp;&nbsp;&nbsp;<van-button size="mini" @click="doLoadImage(true)">加载图片</van-button>\
-    </van-divider>\
-    <van-row type="flex" justify="left">\
-      <van-col offset="1">\
-        <van-radio-group v-model="targetDefaultImage" direction="horizontal" icon-size="15">\
-        <van-radio style="margin-top: 5px;" shape="square" name="0">二值化</van-radio>\
-          <van-radio style="margin-top: 5px;" shape="square" name="1">灰度</van-radio>\
-          <van-radio style="margin-top: 5px;" shape="square" name="2">原图</van-radio>\
-        </van-radio-group>\
-      </van-col>\
-    </van-row>\
-    <van-divider content-position="left">\
-      颜色值：{{pointColor.rgbColor}} 灰度值：{{pointColor.grayColor}}\
-    </van-divider>\
-    <position-input-field v-model="colorPoint" label="图片取色位置" />\
-    <color-range-slider :lower-range="lowerRange" :upper-range="upperRange" \
-        @drag-start="draging=true" @drag-end="handleDragingEnd" \
-        @interval-by-gray="handleIntervalByGray"\
-        @lower-range-change="handleLowerRange"\
-        @upper-range-change="handleUpperRange"/>\
-    <CanvasViewer :image="image" image-style="width:100%;" :default-image="targetDefaultImage" :draw-point="colorPoint" @get-point-color="handlePointColor" />\
-    <van-overlay :show="loading">\
-      <van-loading type="spinner" class="wrapper" />\
-    </van-overlay>\
-  </div>'
+  template: `<div>
+    <tip-block>请保存需要调试的图片到 test/visual_test/ 路径下</tip-block>
+    <van-divider content-position="left">
+      测试图片&nbsp;&nbsp;&nbsp;<van-button @click="selectImageFile" size="mini">选择图片</van-button>
+    </van-divider>
+    <van-row type="flex" justify="left">
+      <van-col offset="1">
+        <van-radio-group v-model="targetDefaultImage" direction="horizontal" icon-size="15">
+        <van-radio style="margin-top: 5px;" shape="square" name="0">二值化</van-radio>
+          <van-radio style="margin-top: 5px;" shape="square" name="1">灰度</van-radio>
+          <van-radio style="margin-top: 5px;" shape="square" name="2">原图</van-radio>
+        </van-radio-group>
+      </van-col>
+    </van-row>
+    <van-divider content-position="left">
+      颜色值：{{pointColor.rgbColor}} 灰度值：{{pointColor.grayColor}}
+    </van-divider>
+    <position-input-field v-model="colorPoint" label="图片取色位置" />
+    <color-range-slider :lower-range="lowerRange" :upper-range="upperRange" 
+        @drag-start="draging=true" @drag-end="handleDragingEnd" 
+        @interval-by-gray="handleIntervalByGray"
+        @lower-range-change="handleLowerRange"
+        @upper-range-change="handleUpperRange"/>
+    <CanvasViewer :image="image" image-style="width:100%;" :default-image="targetDefaultImage" :draw-point="colorPoint" @get-point-color="handlePointColor" />
+    <van-overlay :show="loading">
+      <van-loading type="spinner" class="wrapper" />
+    </van-overlay>
+    <ImageSelectDialog v-model="showSelectDialog" @on-chose="choseImage" :root-path="rootPath"/>
+  </div>`
 }

@@ -182,13 +182,8 @@ StrollScanner.prototype.collectTargetFriend = function () {
       debugInfo('逛一逛啥也没有，不再瞎逛')
       ended = true
     }
-    if (_widgetUtils.widgetCheck(_config.rain_start_content || '开始拯救绿色能量|再来一次|立即开启', 500)) {
-      debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
-      let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
-      runningQueueDispatcher.doAddRunningTask({source: source})
-      engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByStroll: true, executorSource: engines.myEngine().getSource() + '' } })
-      _commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
-      this.showCollectSummaryFloaty()
+    if (this.checkAndCollectRain()) {
+      ended = true
     }
     if (ended) {
       return false
@@ -212,6 +207,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
     obj.name = name
     debugInfo(['进入好友[{}]首页成功', obj.name])
   } else {
+    this.checkAndCollectRain()
     return false
   }
   let skip = false
@@ -237,6 +233,23 @@ StrollScanner.prototype.collectTargetFriend = function () {
   }
   this.saveButtonRegionIfNeeded()
   return this.doCollectTargetFriend(obj)
+}
+
+StrollScanner.prototype.checkAndCollectRain = function () {
+  if (_widgetUtils.widgetCheck(_config.rain_start_content || '开始拯救绿色能量|再来一次|立即开启', 500)) {
+    if (!_config.collect_rain_when_stroll) {
+      debugInfo('找到能量雨开始标志，但是不需要执行能量雨')
+      return true
+    }
+    debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
+    let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
+    runningQueueDispatcher.doAddRunningTask({source: source})
+    engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByStroll: true, executorSource: engines.myEngine().getSource() + '' } })
+    _commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
+    this.showCollectSummaryFloaty()
+    return true
+  }
+  return false
 }
 
 StrollScanner.prototype.saveButtonRegionIfNeeded = function () {

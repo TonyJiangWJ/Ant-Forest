@@ -39,6 +39,7 @@ ui.layout(
     <webview id="webview" margin="0 10" />
   </vertical>
 )
+ui.webview.clearCache(true)
 let mainScriptPath = FileUtils.getRealMainScriptPath(true)
 let indexFilePath = "file://" + mainScriptPath + "/test/visual_test/index.html"
 let postMessageToWebView = () => { console.error('function not ready') }
@@ -65,9 +66,16 @@ let bridgeHandler = {
   },
   loadImageInfo: (data, callbackId) => {
     threads.start(function () {
-      if (files.exists(testImagePath)) {
+      let readPath = testImagePath
+      if (data.imagePath) {
+        readPath = data.imagePath
+        if (!readPath.startsWith('/storage')) {
+          readPath = mainScriptPath + '/' + readPath
+        }
+      }
+      if (files.exists(readPath)) {
         let countdown = new Countdown()
-        let imageInfo = images.read(testImagePath)
+        let imageInfo = images.read(readPath)
         let grayImageInfo = images.grayscale(imageInfo)
         let intervalImageInfo = images.inRange(data.intervalByGray ? grayImageInfo : imageInfo
           , data.lowerRange || '#000000', data.upperRange || '#FFFFFF')
@@ -81,12 +89,25 @@ let bridgeHandler = {
           image.grayImageData = BASE64_PREFIX + images.toBase64(grayImageInfo)
         }
         countdown.summary('图片数据转Base64')
+        console.verbose('图片base64:', image.intervalImageData)
         postMessageToWebView({ callbackId: callbackId, data: { success: true, image: image } })
       } else {
         toastLog('图片数据不存在，无法执行')
         postMessageToWebView({ callbackId: callbackId, data: { success: false } })
       }
     })
+  },
+  listImageFiles: (data, callbackId) => {
+    let imageFileMatcher = new RegExp(data.imageFileMatcher || /\.(png|jpg|jpeg)$/)
+    let readPath = data.filePath || ''
+    if (!readPath.startsWith('/storage')) {
+      readPath = mainScriptPath + '/' + readPath
+    }
+    let fileResult = FileUtils.listDirs(readPath, (file) => {
+      return file.isDirectory() || imageFileMatcher.test(file.getName())
+    })
+    console.verbose('加载文件列表：' + JSON.stringify(fileResult))
+    postMessageToWebView({ callbackId: callbackId, data: { fileResult: fileResult, currentPath: data.filePath } })
   },
   loadMoreImageDatas: (data, callbackId) => {
     let fd = files.open(imageDataPath, 'r')

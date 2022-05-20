@@ -71,7 +71,9 @@ const CollectChart = {
       })
         .catch(e => this.loading = false)
       $nativeApi.request('getMyEnergyByDate', this.query.collectDate).then(result => {
-        this.energyList = result
+        let avg = result.map(v => v.energy).reduce((a,b) => a+=b) / result.length
+        // 过滤远低于平均值的数据
+        this.energyList = result.filter(v => Math.abs(v.energy - avg) < avg / 2)
         this.renderEnergyChart()
       })
     },

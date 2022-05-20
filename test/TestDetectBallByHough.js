@@ -9,6 +9,7 @@
 let { config } = require('../config.js')(runtime, global)
 config.cutAndSaveTreeCollect = false
 config.show_debug_log = true
+config.save_log_file = false
 config.async_save_log_file = false
 config.develop_mode = true
 config.capture_waiting_time = 3000
@@ -144,6 +145,7 @@ window.canvas.on("draw", function (canvas) {
 
     //******* */
     if (clickPoints && clickPoints.length > 0) {
+      debugInfo(['所有可点击的点：{}', JSON.stringify(clickPoints)])
       drawText("可点击数: " + clickPoints.length, { x: 100, y: 450 }, canvas, paint)
       drawText("不可点击数: " + (invalidPoints && invalidPoints.length > 0 ? invalidPoints.length : 0), { x: 100, y: 500 }, canvas, paint)
       clickPoints.forEach((s) => {

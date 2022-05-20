@@ -13,12 +13,12 @@
   <meta http-equiv=X-UA-Compatible content="IE=edge">
   <meta name=viewport content="width=device-width,initial-scale=1">
   <title>可视化测试工具</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@2.10/lib/index.css" />
-  <link rel="stylesheet" href="/vue_configs/css/style.css" />
-  <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script> -->
-  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-  <script src="https://unpkg.com/vue-router@3.4.9/dist/vue-router.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vant@2.10/lib/vant.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/vant/2.12.47/index.min.css" />
+  <link rel="stylesheet" href="../../vue_configs/css/style.css" />
+  <!-- <script src="https://fastly.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script> -->
+  <script src="https://cdn.bootcdn.net/ajax/libs/vue/2.6.9/vue.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/vue-router/3.5.3/vue-router.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/vant/2.12.47/vant.js"></script>
 </head>
 
 <body>
@@ -36,8 +36,23 @@
   window.addEventListener('contextmenu', function (e) {
     e.preventDefault()
   })
+  // 直接浏览器调试时，mock js bridge方法
+  if (typeof $app === 'undefined') {
+    window.$app = {
+      moke: true,
+      invoke: (bridgeName, data, callback) => { },
+      receiveMessage: params => { },
+      registerFunction: (functionName, func) => { }
+    }
+    window.$nativeApi = {
+      request: (bridgeName, data) => { return Promise.resolve({}) }
+    }
+    setTimeout(() => {
+      window.$app.moke = false
+    }, 5000)
+  }
 </script>
-<script src="/vue_configs/js/components/common.js"></script>
+<script src="../../vue_configs/js/components/common.js"></script>
 <script src="./js/components/visual_test.js"></script>
 <script src="./js/components/index.js"></script>
 <script src="./js/index.js"></script>

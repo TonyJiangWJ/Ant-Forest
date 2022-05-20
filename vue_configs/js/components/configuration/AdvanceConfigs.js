@@ -315,12 +315,10 @@ const RegionConfig = {
         // 取色识别配置
         can_collect_color_lower: '#12905F',
         can_collect_color_upper: '#2EA178',
-        collectable_lower: '#a5c600',
-        collectable_upper: '#ffff5d',
-        helpable_lower: '#6f0028',
-        helpable_upper: '#ffb2b2',
-        valid_collectable_lower: '#77cc00',
-        valid_collectable_upper: '#ffff91',
+        collectable_lower: '#89d600',
+        collectable_upper: '#ffff14',
+        water_lower: '#caa50e',
+        water_upper: '#ffede2',
       },
       validations: {
         stroll_button_region: VALIDATOR.REGION,
@@ -334,8 +332,6 @@ const RegionConfig = {
         collectable_upper: VALIDATOR.COLOR,
         helpable_lower: VALIDATOR.COLOR,
         helpable_upper: VALIDATOR.COLOR,
-        valid_collectable_lower: VALIDATOR.COLOR,
-        valid_collectable_upper: VALIDATOR.COLOR,
       }
     }
   },
@@ -505,10 +501,8 @@ const RegionConfig = {
             <tip-block>以下配置为执行优化使用，尽量不要修改除非出问题了</tip-block>
       <color-input-field label="可收取颜色值起始值" label-width="10em" :error-message="validationError.collectable_lower" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_lower"/>
       <color-input-field label="可收取颜色值结束值" label-width="10em" :error-message="validationError.collectable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_upper"/>
-      <color-input-field label="可帮助颜色值起始值" label-width="10em" :error-message="validationError.helpable_lower" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_lower"/>
-      <color-input-field label="可帮助颜色值结束值" label-width="10em" :error-message="validationError.helpable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_upper"/>
-      <color-input-field label="有效球颜色值起始值" label-width="10em" :error-message="validationError.valid_collectable_lower" placeholder="颜色值 #FFFFFF" v-model="configs.valid_collectable_lower"/>
-      <color-input-field label="有效球颜色值结束值" label-width="10em" :error-message="validationError.valid_collectable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.valid_collectable_upper"/>
+      <color-input-field label="浇水球颜色值起始值" label-width="10em" :error-message="validationError.water_lower" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_lower"/>
+      <color-input-field label="浇水球颜色值结束值" label-width="10em" :error-message="validationError.water_upper" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_upper"/>
       <van-cell title="ocr配置" is-link @click="routerTo('/advance/region/ocr')" />
       <van-cell title="线程池配置" is-link @click="routerTo('/advance/region/threadPool')" />
     </van-cell-group>
