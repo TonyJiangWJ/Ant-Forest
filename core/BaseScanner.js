@@ -297,21 +297,15 @@ const BaseScanner = function () {
       }
       let ballImage = images.clip(rgbImg, ball.x - radius, ball.y - radius, radius * 2, 2.6 * radius)
       // 用于判定是否可收取
-      let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#a5c600', _config.collectable_upper || '#ffff5d')
+      let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#89d600', _config.collectable_upper || '#ffff14')
       let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
-      // 用于判定是否帮助收取
-      let intervalForHelpCheck = images.inRange(ballImage, _config.helpable_lower || '#6f0028', _config.helpable_upper || '#ffb2b2')
-      // 识别底部是否有白色
-      let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
-      let avgBottom = OpenCvUtil.getHistAverage(bottomImg)
+      // 用于判定是否浇水球
+      let intervalForHelpCheck = images.inRange(ballImage, _config.water_lower || '#caa50e', _config.water_upper || '#ffede2')
       // 判定是否为浇水球
       let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
-      // 判定是不是真实的能量球，包括倒计时中的，因为帮收和倒计时中的颜色特征有几率一模一样
-      let intervalForCollatableRecheck = images.inRange(ballImage, _config.valid_collectable_lower || '#77cc00', _config.valid_collectable_upper || '#ffff91')
-      let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
       let collectableBall = {
         ball: ball, isOwn: this.is_own, avg: avgHsv,
-        mainAvg: avgForCollectable, recheckAvg: collectableRecheckAvg, avgBottom: avgBottom,
+        mainAvg: avgForCollectable,
         ballImage: ballImage
       }
 
@@ -325,7 +319,7 @@ const BaseScanner = function () {
         collectableBall.invalid = true
       }
       // 排除非可收取的和好友页面中的浇水球
-      if (collectableRecheckAvg < COLLECTING_THRESHOLD || !this.is_own && collectableBall.isWatering) {
+      if (!this.is_own && collectableBall.isWatering) {
         collectableBall.invalid = true
       }
       return collectableBall
@@ -339,6 +333,7 @@ const BaseScanner = function () {
     let clickStart = new Date().getTime()
     debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
     if (findPointCallback === EMPTY_FUNC) {
+      let shouldWaitForWatering = false
       clickPoints.forEach((point, idx) => {
         let b = point.ball
         if (
@@ -349,12 +344,22 @@ const BaseScanner = function () {
           self.collect_operated = true
           self.collect_count++
           automator.click(b.x + this.getRandomOffset(b), b.y + this.getRandomOffset(b))
+          if (point.isWatering && !_config.skip_own_watering_ball) {
+            debugInfo(['浇水球，双击一下 并等待1秒'])
+            sleep(50)
+            automator.click(b.x + this.getRandomOffset(b), b.y + this.getRandomOffset(b))
+            shouldWaitForWatering = true
+          }
           if (idx < clickPoints.length - 1) {
             this.randomSleep(100)
           }
         }
       })
       debugInfo(['点击能量球耗时：{}ms', new Date().getTime() - clickStart])
+      if (shouldWaitForWatering) {
+        debugInfo('有浇水球 等待动画1秒')
+        sleep(1000)
+      }
     } else {
       findPointCallback(clickPoints)
     }

@@ -99,6 +99,11 @@ function findAndEnterWalkingDonate() {
     floatyInstance.setFloatyInfo(convertPosition(donate), '找到了行走捐')
     automator.clickCenter(donate)
     sleep(1000)
+    donate = widgetUtils.widgetGetOne('行走捐', 500)
+    if (donate) {
+      automator.clickCenter(donate)
+      sleep(1000)
+    }
     return true
   } else {
     floatyInstance.setFloatyText('未找到行走捐')

@@ -20,6 +20,10 @@ let Index = {
           link: '/advance/accounts'
         },
         {
+          title: '刷步数',
+          link: '/advance/walkingData'
+        },
+        {
           title: '收集统计',
           link: '/view/collectSummary'
         },

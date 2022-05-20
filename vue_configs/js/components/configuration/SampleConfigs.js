@@ -13,6 +13,7 @@ const RainConfig = {
         rain_collect_duration: 18,
         send_chance_to_friend: '',
         rain_click_top: 300,
+        collect_rain_when_stroll: true,
       },
       validations: {
         rain_press_duration: VALIDATOR.P_INT,
@@ -31,6 +32,8 @@ const RainConfig = {
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="startRainCollect">启动能量雨</van-button>
     </van-divider>
     <van-cell-group>
+      <tip-block>如果已配置多账号且设置了每日能量雨定时任务，建议关闭逛一逛结束的能量雨</tip-block>
+      <switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />
       <van-field v-model="configs.rain_start_content" label="启动按钮文本" label-width="10em" type="text" placeholder="请输入启动按钮文本" input-align="right" />
       <van-field v-model="configs.rain_end_content" label="无能量雨机会文本" label-width="10em" type="text" placeholder="请输入无能量雨机会文本" input-align="right" />
       <tip-block>在执行一次之后自动判断是否可以赠送好友机会，配置后自动送给对应好友一次机会，不配置则不会赠送，脚本只执行一轮。</tip-block>
@@ -74,6 +77,7 @@ const CollectConfig = {
         collect_self_only: true,
         not_collect_self: true,
         try_collect_by_stroll: true,
+        collect_rain_when_stroll: true,
         recheck_rank_list: true,
         double_click_card_used: true,
         merge_countdown_by_gaps: true,
@@ -204,6 +208,7 @@ const CollectConfig = {
         <switch-cell title="是否二次校验能量球" v-model="configs.double_click_card_used" />
         <switch-cell title="是否通过逛一逛收集能量" v-model="configs.try_collect_by_stroll" />
         <template v-if="configs.try_collect_by_stroll">
+          <switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />
           <tip-block>开启仅执行逛一逛后将只通过逛一逛执行，仅循环模式有效</tip-block>
           <switch-cell title="循环模式仅执行逛一逛" v-model="configs.disable_image_based_collect" />
           <tip-block>开启此项将仅通过逛一逛执行不去排行榜获取任何信息，此时无法从排行榜识别倒计时数据，会影响后续定时任务的设置，可以配合永不停止达到自动设置随机的定时任务，但不建议开启此项</tip-block>
