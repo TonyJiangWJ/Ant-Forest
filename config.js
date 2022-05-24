@@ -250,6 +250,7 @@ let default_config = {
   main_account: '',
   main_userid: '',
   main_account_username: '',
+  watering_main_at: 'collect',
   watering_main_account: true,
   to_main_by_user_id: true,
   enable_multi_account: false,

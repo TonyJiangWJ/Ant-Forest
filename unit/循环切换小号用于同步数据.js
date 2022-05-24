@@ -39,7 +39,7 @@ if (!floatyInstance.init()) {
 }
 floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('同步小号行走步数')
-
+commonFunctions.listenDelayStart()
 if (config.accounts && config.accounts.length > 1) {
   config.accounts.forEach(({account}) => {
     floatyInstance.setFloatyText('准备切换账号为：' + account)
@@ -62,6 +62,7 @@ if (config.accounts && config.accounts.length > 1) {
   logUtils.errorInfo(['当前未配置多账号或账号只有一个，进行切换'], true)
 }
 commonFunctions.minimize()
+exit()
 
 function convertPosition(target) {
   return {x: target.bounds().centerX(), y: target.bounds().centerY()}
@@ -120,10 +121,28 @@ function checkWalkingData() {
       floatyInstance.setFloatyInfo(convertPosition(walkingData.target), '当前步数：' + content)
       logUtils.infoLog(['当前步数：{}', content])
       sleep(2000)
+      donate()
     }
   } else {
     if (findAndEnterWalkingDonate()) {
       checkWalkingData()
     }
+  }
+}
+
+function donate() {
+  floatyInstance.setFloatyText('查找是否存在立即捐步')
+  let donateBtn = widgetUtils.widgetGetOne('立即捐步')
+  if (donateBtn) {
+    floatyInstance.setFloatyInfo(convertPosition(donateBtn), '立即捐步')
+    sleep(1000)
+    automator.clickCenter(donateBtn)
+    sleep(1000)
+    let okBtn = widgetUtils.widgetGetOne('知道了')
+    automator.clickCenter(okBtn)
+    sleep(1000)
+  } else {
+    floatyInstance.setFloatyText('未找到立即捐步按钮')
+    sleep(500)
   }
 }

@@ -2,6 +2,8 @@ let { config } = require('../config.js')(runtime, global)
 let fakeWalkData = require('../lib/FakeWalkDataUtil.js')
 let pushClient = require('../lib/PushPlusUtil.js')
 let formatDate = require('../lib/DateUtil.js')
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
+let commonFunctions = singletonRequire('CommonFunction')
 
 /**
  * 下载小米运动APP 现在名字叫 Zepp Life
@@ -41,10 +43,14 @@ if (total <= 0) {
 }
 let generateResult = []
 accounts.forEach((config, idx) => {
+  let existsData = commonFunctions.getTodaysWalkingData(config.userName)
+  console.verbose('获取缓存中当前账号', config.userName, '的历史刷新步数', existsData)
+  config.min = Math.max(existsData, config.min)
   let resultStep = generateFakeWalkStep(config)
   if (resultStep == false) {
     generateResult.push({ userName: config.userName, result: '修改步数失败，请查看日志' })
   } else {
+    commonFunctions.updateFakeWalkingData(config.userName, resultStep)
     generateResult.push({ userName: config.userName, result: '修改步数成功，随机步数：' + resultStep })
   }
   if (idx < total - 1) {
