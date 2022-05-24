@@ -7,12 +7,13 @@ const AlipayAccountManage = {
     return {
       configs: {
         enable_multi_account: false,
-        main_account: '',
-        main_account_username: '',
+        main_account: 'a',
+        main_account_username: '小A',
         accounts: [{ account: 'a', accountName: '小A' }],
         main_userid: '',
         to_main_by_user_id: true,
         watering_main_account: true,
+        watering_main_at: 'rain',
       },
       showAddAccountDialog: false,
       isEdit: false,
@@ -23,6 +24,12 @@ const AlipayAccountManage = {
       timedUnit1: 'test',
       timedUnit2: '',
       timedUnit3: '',
+      timedUnit4: '',
+      waterAtOptions: [
+        { text: '能量雨', value: 'rain' },
+        { text: '收集能量', value: 'collect' },
+        { text: '独立浇水', value: 'standalone' },
+      ],
     }
   },
   methods: {
@@ -85,21 +92,44 @@ const AlipayAccountManage = {
       this.configs.main_account_username = this.configs.accounts[idx].accountName
     },
     changeAccount: function () {
+      this.doSaveConfigs()
       $app.invoke('changeAlipayAccount', { account: this.configs.main_account })
     },
     executeCollect: function () {
+      this.doSaveConfigs()
       $app.invoke('executeTargetScript', '/unit/循环切换小号并收集能量.js')
     },
     executeRain: function () {
+      this.doSaveConfigs()
       $app.invoke('executeTargetScript', '/unit/循环切换小号并执行能量雨收集.js')
     },
     executeWalking: function () {
+      this.doSaveConfigs()
       $app.invoke('executeTargetScript', '/unit/循环切换小号用于同步数据.js')
+    },
+    executeWatering: function () {
+      this.doSaveConfigs()
+      $app.invoke('executeTargetScript', '/unit/循环切换小号并大号浇水.js')
+    },
+    waterAtChanged: function () {
+      let desc = ''
+      switch (this.configs.watering_main_at) {
+        case 'rain':
+          desc = '将在执行能量雨时进行浇水'
+          break
+        case 'collect':
+          desc = '将在执行小号能量收集时浇水'
+          break
+        case 'standalone':
+          desc = '只通过独立脚本浇水'
+          break
+      }
+      this.$toast(desc)
     }
   },
   filters: {
     displayTime: value => {
-      if (value) {
+      if (value && value.length > 0) {
         return `[${value}]`
       }
       return ''
@@ -109,6 +139,7 @@ const AlipayAccountManage = {
     $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/循环切换小号并收集能量.js' }).then(r => this.timedUnit1 = r)
     $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/循环切换小号并执行能量雨收集.js' }).then(r => this.timedUnit2 = r)
     $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/循环切换小号用于同步数据.js' }).then(r => this.timedUnit3 = r)
+    $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/循环切换小号并大号浇水.js' }).then(r => this.timedUnit4 = r)
   },
   template: `
   <div>
@@ -126,12 +157,20 @@ const AlipayAccountManage = {
           <tip-block>使用神秘代码直接跳转大号界面，需要获取大号的USER_ID，为2088开头的字符串，可以登录网页版支付宝，然后进入个人首页，右键查看网页源代码，搜索2088即可找到。关闭或者为空则会使用控件方式直接查找大号</tip-block>
           <van-field v-model="configs.main_userid" label="主账号USERID" label-width="10em" placeholder="输入2088开头的userId" type="text" input-align="right" />
         </template>
+        <van-cell title="大号浇水时机">
+          <template #right-icon>
+            <van-dropdown-menu active-color="#1989fa" class="cell-dropdown">
+              <van-dropdown-item v-model="configs.watering_main_at" :options="waterAtOptions" @change="waterAtChanged"/>
+            </van-dropdown-menu>
+          </template>
+        </van-cell>
       </template>
     </van-cell-group>
     <van-divider content-position="left">
       工具脚本
     </van-divider>
     <tip-block>一键操作，或者对相应文件设置每日定时任务</tip-block>
+    <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeWatering">执行</van-button>unit/循环切换小号并大号浇水.js{{timedUnit4|displayTime}}</tip-block>
     <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeCollect">执行</van-button>unit/循环切换小号并收集能量.js{{timedUnit1|displayTime}}</tip-block>
     <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeRain">执行</van-button>unit/循环切换小号并执行能量雨收集.js{{timedUnit2|displayTime}}</tip-block>
     <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeWalking">执行</van-button>unit/循环切换小号用于同步数据.js{{timedUnit3|displayTime}}</tip-block>
@@ -139,7 +178,7 @@ const AlipayAccountManage = {
       管理账号
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addAccount">增加</van-button>
     </van-divider>
-    <tip-block>多账号管理，用于自动执行小号收集、浇水[暂不支持]、能量雨等</tip-block>
+    <tip-block>多账号管理，用于自动执行小号收集、浇水、能量雨、同步设备步数等</tip-block>
     <tip-block>配置账号切换界面的脱敏账号和昵称并勾选一个主账号</tip-block>
     <van-radio-group v-model="configs.main_account">
       <van-cell-group>
@@ -184,6 +223,7 @@ const WalkingData = {
       randomRange: '18000-25000',
       editIdx: '',
       timedUnit1: 'test',
+      timedUnit2: '',
     }
   },
   methods: {
@@ -238,6 +278,9 @@ const WalkingData = {
     executeWalkingData: function () {
       $app.invoke('executeTargetScript', '/unit/小米运动刷步数.js')
     },
+    executeSync: function () {
+      $app.invoke('executeTargetScript', '/unit/循环切换小号用于同步数据.js')
+    },
   },
   filters: {
     displayTime: value => {
@@ -249,6 +292,7 @@ const WalkingData = {
   },
   mounted () {
     $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/小米运动刷步数.js' }).then(r => this.timedUnit1 = r)
+    $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/循环切换小号用于同步数据.js' }).then(r => this.timedUnit2 = r)
   },
   template: `
   <div>
@@ -264,6 +308,8 @@ const WalkingData = {
     </van-divider>
     <tip-block>一键操作，或者对相应文件设置每日定时任务</tip-block>
     <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeWalkingData">执行</van-button>unit/小米运动刷步数.js{{timedUnit1|displayTime}}</tip-block>
+    <tip-block>设置定时任务需要，先执行刷步数，再执行同步捐步数</tip-block>
+    <tip-block><van-button plain hairline type="primary" size="mini" style="margin-right: 0.3rem;" @click="executeSync">执行</van-button>unit/循环切换小号用于同步数据.js{{timedUnit2|displayTime}}</tip-block>
     <van-divider content-position="left">
       管理账号
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addAccount">增加</van-button>

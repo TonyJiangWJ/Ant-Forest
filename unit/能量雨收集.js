@@ -448,7 +448,10 @@ function exitAndClean () {
     debugInfo('发送消息，能量雨执行完毕', true)
     processShare.postInfo('能量雨执行完毕')
     if (args.executorSource) {
-      runningQueueDispatcher.doAddRunningTask({ source: args.executorSource })
+      let find = engines.all().filter(engine => engine.getSource() + '' == args.executorSource)
+      if (find.length > 1) {
+        runningQueueDispatcher.doAddRunningTask({ source: args.executorSource })
+      }
     }
   }
   isRunning = false

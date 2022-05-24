@@ -183,7 +183,6 @@ const CollectConfig = {
         <switch-cell title="执行冷却" label="为了避免被支付宝检测为异常，设置一个阈值，达到该值后暂停收集一段时间" title-style="flex:3.5;" v-model="configs.cool_down_if_collect_too_much" />
         <template v-if="configs.cool_down_if_collect_too_much">
           <tip-block>当一个脚本活动周期内累计收取了这个值之后，将暂停收集配置的时间。默认收集1000克后冷却60分钟
-          <van-button v-if="currentInCoolDown" style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="cancelCurrentCoolDown">撤销当前冷却</van-button>
           </tip-block>
           <number-field v-model="configs.cool_down_per_increase" :error-message="validationError.cool_down_per_increase" error-message-align="right" label="收集阈值" type="text" placeholder="请输入收集阈值" input-align="right" >
             <template #right-icon><span>克</span></template>

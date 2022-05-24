@@ -369,7 +369,7 @@ function Ant_forest () {
     let currentEnergy = getCurrentEnergy()
     if (_fisrt_running && _has_next) {
       _pre_energy = currentEnergy
-      _commonFunctions.persistHistoryEnergy(currentEnergy)
+      // _commonFunctions.persistHistoryEnergy(currentEnergy)
       logInfo('当前能量：' + currentEnergy)
       AntForestDao.saveMyEnergy(currentEnergy)
     }
