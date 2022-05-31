@@ -44,7 +44,7 @@ function openAndWaitForPersonalHome () {
     // 解锁并启动
     unlocker.exec()
     startApp(false)
-    logUtils.sleep(startWait)
+    sleep(startWait)
   }
   if (!waitFlag && restartCount >= 5) {
     logUtils.logInfo('执行失败')

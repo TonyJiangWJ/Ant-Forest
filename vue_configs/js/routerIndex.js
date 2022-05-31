@@ -32,6 +32,7 @@ const router = new VueRouter({
     { path: '/readme', component: Readme, meta: { index: 1, title: '脚本说明README' } },
     { path: '/view/collectSummary', component: CollectSummary, meta: { index: 1, title: '收集统计', keepAlive: true } },
     { path: '/view/collectChart', component: CollectChart, meta: { index: 2, title: '统计图表' } },
+    { path: '/view/dailyChart', component: DailyChart, meta: { index: 2, title: '按日统计图表' } },
   ]
 })
 

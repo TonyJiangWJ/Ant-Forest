@@ -169,7 +169,7 @@ const CollectChart = {
         <van-loading size="4rem" vertical>加载中...</van-loading>
       </div>
     </van-overlay>
-    <tip-block>
+    <tip-block style="padding: 0.5rem 0;margin-bottom:0.3rem;border-bottom: 1px solid rgb(248 249 250);">
       能量收集数据 日期：<van-button type='default' size="small" @click="showDatePicker=true">{{query.collectDate}}</van-button>
     </tip-block>
     <van-divider content-position="left">好友能量收集数据</van-divider>

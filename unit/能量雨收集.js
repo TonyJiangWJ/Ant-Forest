@@ -261,7 +261,7 @@ clickButtonWindow.delayClose.setOnTouchListener(new android.view.View.OnTouchLis
 function checkAndSendChance () {
   setDisplayText('正在校验是否存在 “更多好友”，请稍等')
   // 设置至少十秒的查找时间
-  let endDateForCheck = new Date().getTime() + 10 * 60
+  let endDateForCheck = new Date().getTime() + 10000 + (config.timeout_rain_find_friend || 3000)
   targetEndTime = endDateForCheck > targetEndTime ? endDateForCheck : targetEndTime
   let showMoreFriend = widgetUtils.widgetGetById('J_moreGrant', 1000)
   if (showMoreFriend && (targetSendName || config.send_chance_to_friend)) {
@@ -271,7 +271,7 @@ function checkAndSendChance () {
       setDisplayText('点击了更多好友，校验是否存在目标好友', showMoreFriend.bounds().centerX(), showMoreFriend.bounds().centerY())
       sleep(2000)
       setDisplayText('查找目标好友中')
-      let targetFriends = widgetUtils.widgetGetAll(targetSendName || config.send_chance_to_friend, 3000)
+      let targetFriends = widgetUtils.widgetGetAll(targetSendName || config.send_chance_to_friend, config.timeout_rain_find_friend || 3000)
       if (targetFriends) {
         let matched = false
         // 从尾部开始 避开默认显示的值
@@ -291,7 +291,7 @@ function checkAndSendChance () {
             send.click()
             infoLog(['点击了送ta机会'])
             setDisplayText('点击了送ta机会')
-            let newEnd = new Date().getTime() + 25 * 60
+            let newEnd = new Date().getTime() + 25000
             targetEndTime = newEnd > targetEndTime ? newEnd : targetEndTime
             sleep(1000)
             // 点击空白区域 触发关闭蒙层

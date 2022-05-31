@@ -14,6 +14,7 @@ const RainConfig = {
         send_chance_to_friend: '',
         rain_click_top: 300,
         collect_rain_when_stroll: true,
+        timeout_rain_find_friend: 3000,
       },
       validations: {
         rain_press_duration: VALIDATOR.P_INT,
@@ -38,6 +39,9 @@ const RainConfig = {
       <van-field v-model="configs.rain_end_content" label="无能量雨机会文本" label-width="10em" type="text" placeholder="请输入无能量雨机会文本" input-align="right" />
       <tip-block>在执行一次之后自动判断是否可以赠送好友机会，配置后自动送给对应好友一次机会，不配置则不会赠送，脚本只执行一轮。</tip-block>
       <van-field v-model="configs.send_chance_to_friend" label="赠送好友" label-width="10em" type="text" placeholder="请输入需要赠送机会的好友" input-align="right" />
+      <number-field v-model="configs.timeout_rain_find_friend" label="查找赠送好友超时时间" label-width="12em" placeholder="请输入超时时间">
+        <template #right-icon><span>毫秒</span></template>
+      </number-field>
       <tip-block>设置能量雨点击的持续时间 默认为18秒(3+15)，使用限时能量雨时有可能需要改为21，请按实际情况修改</tip-block>
       <number-field v-model="configs.rain_collect_duration" :error-message="validationError.rain_collect_duration" error-message-align="right" label="持续点击时间" type="text" placeholder="请输入持续时间" input-align="right" >
         <template #right-icon><span>秒</span></template>

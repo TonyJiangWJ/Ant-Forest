@@ -152,6 +152,7 @@ const AlipayAccountManage = {
       </van-cell>
       <switch-cell title="小号收集完成后对大号浇水" v-model="configs.watering_main_account" />
       <template v-if="configs.watering_main_account">
+       <tip-block>默认使用大号昵称查找大号入口，如果小号首页无法找到大号则无法进行浇水，请自行获取userId以确保百分百跳转大号</tip-block>
         <switch-cell title="使用userid跳转大号" v-model="configs.to_main_by_user_id" />
         <template v-if="configs.to_main_by_user_id">
           <tip-block>使用神秘代码直接跳转大号界面，需要获取大号的USER_ID，为2088开头的字符串，可以登录网页版支付宝，然后进入个人首页，右键查看网页源代码，搜索2088即可找到。关闭或者为空则会使用控件方式直接查找大号</tip-block>
