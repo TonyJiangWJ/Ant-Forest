@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-29 22:53:29
+ * @Last Modified time: 2022-05-30 11:08:52
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -232,7 +232,12 @@ StrollScanner.prototype.collectTargetFriend = function () {
     this.isProtectDetectDone = true
   }
   this.saveButtonRegionIfNeeded()
-  return this.doCollectTargetFriend(obj)
+  let result = this.doCollectTargetFriend(obj)
+  if (!this.collect_any) {
+    // 未收取任何能量，可能发生了异常或者识别出错 将其放入重复队列
+    this.duplicateChecker.pushIntoDuplicated(obj)
+  }
+  return result
 }
 
 StrollScanner.prototype.checkAndCollectRain = function () {

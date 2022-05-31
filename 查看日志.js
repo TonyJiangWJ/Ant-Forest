@@ -32,7 +32,7 @@ if (config.device_width < 10 || config.device_height < 10) {
 
 ui.layout(
   <vertical>
-    <webview id="webview" margin="0 0" />
+    <webview id="webview" margin="0 0" h="*" w="*" />
   </vertical>
 )
 let mainScriptPath = FileUtils.getRealMainScriptPath(true)
@@ -66,6 +66,7 @@ function logHandler(BaseHandler) {
 
 /**/
 postMessageToWebView = prepareWebView(ui.webview, {
+  enable_log: true,
   mainScriptPath: mainScriptPath,
   indexFilePath: indexFilePath,
   // 延迟注册

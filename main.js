@@ -24,6 +24,7 @@ if (config.single_script) {
 logInfo('======尝试加入任务队列，并关闭重复运行的脚本=======')
 // 加入任务队列
 runningQueueDispatcher.addRunningTask()
+commonFunctions.markExtendSuccess()
 commonFunctions.killDuplicateScript()
 logInfo('======加入任务队列成功=======')
 

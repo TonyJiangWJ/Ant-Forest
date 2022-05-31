@@ -37,7 +37,8 @@ const CollectSummary = {
         current: 0,
         total: 0,
         collectDate: '',
-        orderBy: ''
+        orderBy: '',
+        groupByFriend: false,
       },
       orderBy: ''
     }
@@ -55,6 +56,9 @@ const CollectSummary = {
     },
     orderBy: function (newVal) {
       this.query.orderBy = newVal
+      this.pageCollectInfo()
+    },
+    "query.groupByFriend": function () {
       this.pageCollectInfo()
     }
   },
@@ -82,8 +86,13 @@ const CollectSummary = {
       this.$router.push({
         path: '/view/collectChart',
         query: {
-          collectDate: this.query.collectDate
+          collectDate: this.query.collectDate,
         }
+      })
+    },
+    toDailyChart: function () {
+      this.$router.push({
+        path: '/view/dailyChart',
       })
     }
   },
@@ -100,26 +109,40 @@ const CollectSummary = {
       </div>
     </van-overlay>
     <van-cell-group>
-      <tip-block>
+      <tip-block style="padding: 0.5rem 0;margin-bottom:0.3rem;border-bottom: 1px solid rgb(248 249 250);">
         <van-row type="flex" justify="center">
-          <van-col :span="16" style="display: flex; align-items: center;">
+          <van-col :span="14" style="display: flex; align-items: center;">
             能量收集数据 日期：<van-button type='default' size="small" @click="showDatePicker=true">{{query.collectDate}}</van-button>
           </van-col>
-          <van-col :span="8">
-            <van-dropdown-menu active-color="#1989fa">
+          <van-col :span="5" style="display: flex;align-items: center;justify-content: center;">
+            <van-dropdown-menu active-color="#1989fa" class="cell-dropdown">
               <van-dropdown-item v-model="orderBy" :options="orderByOptions" />
+            </van-dropdown-menu>
+          </van-col>
+          <van-col :span="5" style="display: flex;align-items: center;justify-content: center;">
+            <van-dropdown-menu active-color="#1989fa" class="cell-dropdown">
+              <van-dropdown-item title="筛选" ref="item">
+                <van-cell center title="按好友名分组">
+                  <template #right-icon>
+                    <van-switch v-model="query.groupByFriend" size="16" />
+                  </template>
+                </van-cell>
+              </van-dropdown-item>
             </van-dropdown-menu>
           </van-col>
         </van-row>
       </tip-block>
-      <tip-block>总收取次数：{{query.total}} 总收集能量：{{totalCollect}} 总浇水：{{totalWater}}</tip-block>
+      <tip-block>总收取次数：{{query.total}} 总收集好友能量：{{totalCollect}} 总浇水：{{totalWater}}</tip-block>
       <tip-block>当日能量值增长量：{{totalIncreased}}</tip-block>
-      <tip-block>数据可能不准确 仅供参考：<van-button type='default' size="small" @click="toChart">查看图表</van-button></tip-block>
+      <tip-block style="padding-bottom:0.5rem;border-bottom: 1px solid rgb(248 249 250);">数据可能不准确 仅供参考：
+        <van-button type='default' size="small" @click="toChart">当日数据</van-button>
+        <van-button type='default' size="small" @click="toDailyChart">每日统计</van-button>
+      </tip-block>
       <van-cell v-for="(item,idx) in friendCollectList"
         :key="item.friendName+item.createTime"
         class="van-clearfix"
         :border="true"
-        :label="item.createTime">
+        :label="query.groupByFriend ? item.collectDate : item.createTime">
         <template #title>
           <span>{{item.friendName}}</span>
           <span style="color: gray;">{{item.friendEnergy}}</span>

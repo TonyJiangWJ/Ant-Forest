@@ -31,8 +31,8 @@ if (config.device_width < 10 || config.device_height < 10) {
 
 ui.layout(
   <vertical>
-    <webview id="loadingWebview" margin="0 0" />
-    <webview id="webview" margin="0 0" />
+    <webview id="loadingWebview" margin="0 0" h="*" w="*" />
+    <webview id="webview" margin="0 0" h="*" w="*" />
   </vertical>
 )
 let mainScriptPath = FileUtils.getRealMainScriptPath(true)

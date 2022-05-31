@@ -16,6 +16,7 @@ const loadJsList = [
   './js/components/configuration/AccountManage.js',
   './js/components/view/CollectSummary.js',
   './js/components/view/CollectChart.js',
+  './js/components/view/DailyChart.js',
   './js/components/Index.js',
 ]
 /**
