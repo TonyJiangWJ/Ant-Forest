@@ -18,7 +18,17 @@ const RainConfig = {
       },
       validations: {
         rain_press_duration: VALIDATOR.P_INT,
+      },
+      timedUnit1: '',
+      timedUnit2: '',
+    }
+  },
+  filters: {
+    displayTime: value => {
+      if (value && value.length > 0) {
+        return `[${value}]`
       }
+      return ''
     }
   },
   methods: {
@@ -27,14 +37,20 @@ const RainConfig = {
       $app.invoke('startRainCollect', {})
     },
   },
+  mounted () {
+    $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/循环切换小号并执行能量雨收集.js' }).then(r => this.timedUnit1 = r)
+    $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/自动启动并执行能量雨.js' }).then(r => this.timedUnit2 = r)
+  },
   template: `
   <div>
     <van-divider content-position="left">
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="startRainCollect">启动能量雨</van-button>
     </van-divider>
     <van-cell-group>
-      <tip-block>如果已配置多账号且设置了每日能量雨定时任务，建议关闭逛一逛结束的能量雨</tip-block>
-      <switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />
+      <tip-block>最新版支付宝已经无法在逛一逛中直接触发能量雨，请设置以下任一脚本的定时任务进行触发:</tip-block>
+      <tip-block>unit/循环切换小号并执行能量雨收集.js{{timedUnit1|displayTime}}</tip-block>
+      <tip-block>unit/自动启动并执行能量雨.js{{timedUnit2|displayTime}}</tip-block>
+      <!--<switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />-->
       <van-field v-model="configs.rain_start_content" label="启动按钮文本" label-width="10em" type="text" placeholder="请输入启动按钮文本" input-align="right" />
       <van-field v-model="configs.rain_end_content" label="无能量雨机会文本" label-width="10em" type="text" placeholder="请输入无能量雨机会文本" input-align="right" />
       <tip-block>在执行一次之后自动判断是否可以赠送好友机会，配置后自动送给对应好友一次机会，不配置则不会赠送，脚本只执行一轮。</tip-block>

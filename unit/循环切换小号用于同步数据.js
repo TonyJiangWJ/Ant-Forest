@@ -40,7 +40,7 @@ if (!floatyInstance.init()) {
 floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('同步小号行走步数')
 commonFunctions.listenDelayStart()
-if (config.accounts && config.accounts.length > 1) {
+if (config.accounts && config.accounts.length >= 1) {
   config.accounts.forEach(({account}) => {
     floatyInstance.setFloatyText('准备切换账号为：' + account)
     sleep(1000)
@@ -59,7 +59,7 @@ if (config.accounts && config.accounts.length > 1) {
   floatyInstance.setFloatyText('切换完毕，再见')
   sleep(500)
 } else {
-  logUtils.errorInfo(['当前未配置多账号或账号只有一个，进行切换'], true)
+  logUtils.errorInfo(['当前未配置多账号不进行切换'], true)
 }
 commonFunctions.minimize()
 exit()
