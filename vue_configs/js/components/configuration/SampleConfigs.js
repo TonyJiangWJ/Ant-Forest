@@ -92,8 +92,9 @@ const CollectConfig = {
         watering_cooperation_threshold: '100',
         // 执行冷却
         cool_down_if_collect_too_much: true,
-        cool_down_per_increase: 1000,
-        cool_down_minutes: 60,
+        cool_down_per_increase: 600,
+        cool_down_minutes: 30,
+        cool_down_time: 10,
         collect_self_only: true,
         not_collect_self: true,
         try_collect_by_stroll: true,
@@ -110,6 +111,8 @@ const CollectConfig = {
         countdown_gaps: 30,
       },
       currentInCoolDown: false,
+      currentCollected: 0,
+      energyIncreased: 0,
       validations: {
         reactive_time: {
           validate: () => false,
@@ -139,6 +142,7 @@ const CollectConfig = {
         },
         cool_down_per_increase: VALIDATOR.P_INT,
         cool_down_minutes: VALIDATOR.P_INT,
+        cool_down_time: VALIDATOR.P_INT,
         countdown_gaps: VALIDATOR.P_INT,
       }
     }
@@ -166,6 +170,10 @@ const CollectConfig = {
   mounted () {
     $nativeApi.request('checkIfInCooldown', {}).then(resp => {
       this.currentInCoolDown = resp.coolDownInfo.coolDown
+    })
+    $nativeApi.request('getCurrentIncreased', {}).then(resp => {
+      this.currentCollected = resp.collected
+      this.energyIncreased = resp.energyIncreased
     })
     if (this.configs.not_collect_self && this.configs.collect_self_only) {
       this.configs.not_collect_self = false
@@ -202,8 +210,8 @@ const CollectConfig = {
         </number-field>
         <switch-cell title="执行冷却" label="为了避免被支付宝检测为异常，设置一个阈值，达到该值后暂停收集一段时间" title-style="flex:3.5;" v-model="configs.cool_down_if_collect_too_much" />
         <template v-if="configs.cool_down_if_collect_too_much">
-          <tip-block>当一个脚本活动周期内累计收取了这个值之后，将暂停收集配置的时间。默认收集1000克后冷却60分钟
-          </tip-block>
+          <tip-block>当最近一小时内累计收取了这个值之后，将暂停收集配置的时间。默认收集600克（包含收集自身的能量）后冷却30分钟，请结合自身情况自行调整</tip-block>
+          <tip-block>最近一小时内收集好友能量: {{currentCollected}}g 自身能量增量: {{energyIncreased}}g 是否冷却: {{currentInCoolDown ? '是' : '否' }}</tip-block>
           <number-field v-model="configs.cool_down_per_increase" :error-message="validationError.cool_down_per_increase" error-message-align="right" label="收集阈值" type="text" placeholder="请输入收集阈值" input-align="right" >
             <template #right-icon><span>克</span></template>
           </number-field>
@@ -211,6 +219,10 @@ const CollectConfig = {
             <template #right-icon><span>分</span></template>
           </number-field>
         </template>
+        <number-field v-model="configs.cool_down_time" :error-message="validationError.cool_down_time" error-message-align="right" label="被动冷却时间，检测到行为异常toast之后自动延迟执行"
+          label-width="20em" type="text" placeholder="请输入冷却时间" input-align="right" >
+          <template #right-icon><span>分</span></template>
+        </number-field>
         <switch-cell title="是否启用合种浇水" title-style="width: 10em;flex:2;" v-model="configs.enable_watering_cooperation" />
         <template v-if="configs.enable_watering_cooperation">
           <van-field v-model="configs.watering_cooperation_name" label="合种名称" placeholder="请输入合种名称" input-align="right" />

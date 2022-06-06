@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-10 11:21:39
+ * @Last Modified time: 2022-06-05 09:01:50
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -705,6 +705,23 @@ function Ant_forest () {
       this.eventSettingThread = threads.start(function () {
         events.setMaxListeners(0)
         events.observeToast()
+        // 监控 toast
+        events.onToast(function (toast) {
+          if (
+            toast &&
+            toast.getPackageName() &&
+            toast.getPackageName().indexOf(_config.package_name) >= 0
+          ) {
+            let text = toast.getText()
+            if (/.*近期.*存在异常.*/.test(text)) {
+              warnInfo(['被检测到异常 延迟{}分钟后执行 toast:{}', _config.cool_down_time || 10, text], true)
+              _commonFunctions.setUpAutoStart(_config.cool_down_time || 10)
+              exit()
+            } else {
+              debugInfo(['获取到toast信息：{}', text])
+            }
+          }
+        })
       })
     }
 

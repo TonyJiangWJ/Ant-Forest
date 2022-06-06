@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-08 00:39:41
+ * @Last Modified time: 2022-06-05 09:35:56
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -47,8 +47,9 @@ let default_config = {
   posture_threshold_z: 6,
   // 执行冷却
   cool_down_if_collect_too_much: true,
-  cool_down_per_increase: 1000,
-  cool_down_minutes: 60,
+  cool_down_per_increase: 600,
+  cool_down_minutes: 30,
+  cool_down_time: 10,
   // 电量保护，低于该值延迟60分钟执行脚本
   battery_keep_threshold: 20,
   // 开发用开关，截图并保存一些图片
