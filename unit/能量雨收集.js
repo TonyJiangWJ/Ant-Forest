@@ -449,7 +449,8 @@ function exitAndClean () {
     processShare.postInfo('能量雨执行完毕')
     if (args.executorSource) {
       let find = engines.all().filter(engine => engine.getSource() + '' == args.executorSource)
-      if (find.length > 1) {
+      if (find.length >= 1) {
+        debugInfo(['将脚本[{}]设置为执行中', args.executorSource])
         runningQueueDispatcher.doAddRunningTask({ source: args.executorSource })
       }
     }
