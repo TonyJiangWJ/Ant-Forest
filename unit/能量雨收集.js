@@ -79,7 +79,8 @@ let startTime = new Date().getTime()
 // 两分钟后自动关闭
 let targetEndTime = startTime + (autoStartCollect ? 30000 : 120000)
 let passwindow = 0
-let canStart = true
+// 是否点击中
+let clickRunning = false
 let onFloatDisplay = false
 let isRunning = true
 let displayInfoZone = [config.device_width * 0.05, config.device_height * 0.65, config.device_width * 0.9, 150 * config.scaleRate]
@@ -108,14 +109,14 @@ threadPool.execute(function () {
     } finally {
       writeLock.unlock()
     }
-    if (!canStart) {
+    if (clickRunning) {
       // 暴力点击方式执行
       if (passedTime <= VIOLENT_CLICK_TIME) {
         violentClickPoints.forEach(p => press(p[0], p[1], pressDuration))
         sleep(sleepTime)
       } else {
         infoLog('暴力点击完毕')
-        canStart = true
+        clickRunning = false
         changeButtonInfo()
         sleep(1000)
         checkAndStartCollect()
@@ -185,11 +186,11 @@ clickButtonWindow.changeStatus.click(function () {
   if (onFloatDisplay) {
     return
   }
-  if (canStart) {
+  if (!clickRunning) {
     saveClickGap(clickGap)
     checkAndStartCollect()
   } else {
-    canStart = true
+    clickRunning = false
   }
   changeButtonInfo()
 })
@@ -336,13 +337,13 @@ function checkAndStartCollect () {
     threadPool.execute(function () {
       writeLock.lock()
       try {
-        canStart = false
         ui.post(() => {
           clickButtonWindow.setPosition(-cvt(150), config.device_height * 0.65)
         })
         sleep(250)
         automator.clickCenter(startBtn)
         startTimestamp = new Date().getTime()
+        clickRunning = true
         ballsComplete.signal()
         changeButtonInfo()
         targetEndTime = targetEndTime > new Date().getTime() + 30000 ? targetEndTime : new Date().getTime() + 30000
@@ -391,7 +392,7 @@ window.canvas.on("draw", function (canvas) {
 
     passwindow = new Date().getTime() - startTime
 
-    if (canStart) {
+    if (!clickRunning) {
       let displayBallPoint = clickPoint
       if (displayBallPoint) {
         let radius = cvt(60)
@@ -419,7 +420,7 @@ threads.start(function () {
       // 设置最低间隔200毫秒，避免修改太快
       if (new Date().getTime() - lastChangedTime > 200) {
         lastChangedTime = new Date().getTime()
-        canStart = !canStart
+        clickRunning = !clickRunning
         changeButtonInfo()
       }
     }
@@ -477,11 +478,10 @@ commonFunction.registerOnEngineRemoved(function () {
 
 // ---------------------
 function changeButtonInfo () {
-  isWaiting = false
   ui.post(() => {
-    clickButtonWindow.changeStatus.setText(canStart ? '点我开始！' : '音量下停止点击')
-    clickButtonWindow.changeStatus.setBackgroundColor(canStart ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
-    if (canStart) {
+    clickButtonWindow.changeStatus.setText(!clickRunning ? '点我开始！' : '音量下停止点击')
+    clickButtonWindow.changeStatus.setBackgroundColor(!clickRunning ? colors.parseColor('#9ed900') : colors.parseColor('#f36838'))
+    if (!clickRunning) {
       clickButtonWindow.setPosition(config.device_width / 2 - ~~(clickButtonWindow.getWidth() / 2), config.device_height * 0.65)
     }
   })

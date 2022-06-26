@@ -367,7 +367,10 @@ canvasWindow.previewCanvas.on("draw", function (canvas) {
     })
   }
   // 复制一份 避免闪退
-  let forDrawImg = images.copy(previewImage)
+  let forDrawImg = tryCopy(previewImage)
+  if (!forDrawImg) {
+    return
+  }
   canvas.drawARGB(255, 0, 0, 0);
   let scaleH = canvas.getHeight() / forDrawImg.getHeight()
   let scaleW = canvas.getWidth() / forDrawImg.getWidth()
@@ -392,7 +395,10 @@ canvasWindow.canvas.on("draw", function (canvas) {
     };
 
     // 复制一份 避免闪退
-    var forDrawImg = images.copy(drawImage)
+    var forDrawImg = tryCopy(drawImage)
+    if (!forDrawImg) {
+      return
+    }
     var w = canvas.getWidth();
     var h = canvas.getHeight();
     paint.setStrokeWidth(5);
@@ -456,6 +462,14 @@ function printExceptionStack (e) {
         console.verbose(func_name)
       }
     }
+  }
+}
+
+function tryCopy(src) {
+  try {
+    return images.copy(src)
+  } catch (e) {
+    return null
   }
 }
 

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-10 14:03:25
+ * @Last Modified time: 2022-06-23 15:36:27
  * @Description: 
  */
 "ui";
@@ -46,7 +46,7 @@ let postMessageToWebView = () => { console.error('function not ready') }
 // 图片数据
 let imageDataPath = FileUtils.getCurrentWorkPath() + '/logs/ball_image.data'
 let testImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/测试用图片.png'
-let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/'
+let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/图片/'
 // let testBallImagePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
 let BASE64_PREFIX = 'data:image/png;base64,'
 let bridgeHandler = {
@@ -172,21 +172,35 @@ let bridgeHandler = {
       }
     })
   },
+  loadTestImageByIndex: function (data, callbackId) {
+    if (files.exists(testBallImagePath)) {
+      let imageFiles = files.listDir(testBallImagePath, function (fileName) { return fileName.endsWith('.png') })
+      if (!imageFiles || imageFiles.length === 0) {
+        toastLog('图片数据不存在，无法执行')
+        postMessageToWebView({ callbackId: callbackId, data: { success: false, path: testBallImagePath } })
+        return
+      }
+      let index = data.fileIndex || 0
+      let targetFilePath = testBallImagePath + imageFiles[index % imageFiles.length]
+      postMessageToWebView({
+        callbackId: callbackId,
+        data: {
+          success: true,
+          filePath: targetFilePath
+        }
+      })
+    } else {
+      console.error('图片路径不存在：', testBallImagePath)
+    }
+  },
   doDetectBalls: (data, callbackId) => {
     threads.start(function () {
-      if (files.exists(testBallImagePath)) {
-        let imageFiles = files.listDir(testBallImagePath, function (fileName) { return fileName.endsWith('.png') })
-        if (!imageFiles || imageFiles.length === 0) {
-          toastLog('图片数据不存在，无法执行')
-          postMessageToWebView({ callbackId: callbackId, data: { success: false, path: testBallImagePath } })
-          return
-        }
-        let index = data.fileIndex || 0
-        let targetFilePath = testBallImagePath + imageFiles[index % imageFiles.length]
+      // if (files.exists(testBallImagePath)) {
+        let targetFilePath = data.filePath
         let imageInfo = images.read(targetFilePath)
         if (!imageInfo) {
           toastLog('读取图片失败，path: ' + targetFilePath)
-          postMessageToWebView({ callbackId: callbackId, data: { success: false, path: testBallImagePath } })
+          postMessageToWebView({ callbackId: callbackId, data: { success: false, path: targetFilePath } })
           return
         }
         // let SCALE_RATE = imageInfo.width / 1080
@@ -219,60 +233,52 @@ let bridgeHandler = {
           let dayOrNightImg = images.clip(imageInfo, config.tree_collect_left, config.tree_collect_top, 40, 40)
           let result = OpenCvUtil.getMedian(dayOrNightImg)
           let isNight = result < 100
-          let isOwn = false
-          findBalls.forEach(b => {
+          let isOwn = true
+          findBalls.forEach(ball => {
             /**
              * 能量球多维度采样，通过不同的数值来判断是否可收取、帮助、浇水球
              */
             let startForColorValue = new Date().getTime()
-            let radius = parseInt(b.radius)
+            let radius = parseInt(ball.radius)
             if (
               // 可能是左上角的活动图标 或者 识别到了其他范围的球
-              b.y < config.tree_collect_top - (isOwn ? cvt(80) : 0) || b.y > config.tree_collect_top + config.tree_collect_height
-              || b.x < config.tree_collect_left || b.x > config.tree_collect_left + config.tree_collect_width
+              ball.y < _config.tree_collect_top - (this.is_own ? cvt(80) : 0) || ball.y > _config.tree_collect_top + _config.tree_collect_height
+              || ball.x < _config.tree_collect_left || ball.x > _config.tree_collect_left + _config.tree_collect_width
               // 取值范围就不正确的无效球，避免后续报错，理论上不会进来，除非配置有误
-              || b.x - radius <= 0 || b.x + radius >= config.device_width || b.y - radius <= 0 || b.y + 1.57 * radius >= config.device_height) {
+              || ball.x - radius <= 0 || ball.x + radius >= _config.device_width || ball.y - radius <= 0 || ball.y + 1.6 * radius >= _config.device_height) {
               return
             }
-            let ballRegion = [b.x - radius, b.y - radius, radius * 2, 2.57 * radius]
+            let ballRegion = [ball.x - radius, ball.y - radius, radius * 2, 2.57 * radius]
             let ballImage = images.clip(imageInfo, ballRegion[0], ballRegion[1], ballRegion[2], ballRegion[3])
             // 用于判定是否可收取
-            let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#a5c600', _config.collectable_upper || '#ffff5d')
+            // let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#89d600', _config.collectable_upper || '#ffff14')
+            let intervalForCollectCheck = images.inRange(ballImage, '#89d600', '#ffff14')
             let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
-            // 用于判定是否帮助收取
-            let intervalForHelpCheck = images.inRange(ballImage, _config.helpable_lower || '#6f0028', _config.helpable_upper || '#ffb2b2')
-            // intervalForHelpCheck = com.stardust.autojs.core.image.ImageWrapper.ofBitmap(intervalForHelpCheck.getBitmap())
-            let bottomRegion = [b.x + 0 - radius, b.y + radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius]
-            let bottomImg = images.clip(intervalForHelpCheck, 0, 2 * radius, intervalForHelpCheck.width, intervalForHelpCheck.height - 2 * radius)
-            let avgBottom = OpenCvUtil.getHistAverage(bottomImg)
+            // 用于判定是否浇水球
+            // let intervalForHelpCheck = images.inRange(ballImage, _config.water_lower || '#e8cb3a', _config.water_upper || '#ffed8e')
+            let intervalForHelpCheck = images.inRange(ballImage, '#e8cb3a', '#ffed8e')
             // 判定是否为浇水球
             let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
-            // 判定是不是真实的能量球，包括倒计时中的，因为帮收和倒计时中的颜色特征有几率一模一样
-            let intervalForCollatableRecheck = images.inRange(ballImage, _config.valid_collectable_lower || '#77cc00', _config.valid_collectable_upper || '#ffff91')
-            let collectableRecheckAvg = OpenCvUtil.getHistAverage(intervalForCollatableRecheck)
-            let collectableBall = { ball: b, isHelp: false, isNight: isNight, isOwn: isOwn, avg: avgHsv, avgBottom: avgBottom, recheckAvg: collectableRecheckAvg, mainAvg: avgForCollectable }
+            let collectableBall = {
+              ball: ball, isOwn: isOwn, avg: avgHsv,
+              mainAvg: avgForCollectable, isNight: isNight
+            }
             console.verbose('取色耗时：' + (new Date().getTime() - startForColorValue) + 'ms')
-            let threshold = 25
-            if (avgHsv >= threshold) {
+            let COLLECTING_THRESHOLD = 25
+            if (avgHsv >= COLLECTING_THRESHOLD) {
               // 浇水能量球
               collectableBall.isWatering = true
               recheck = isOwn
-            } else if (!isOwn && avgBottom > threshold) {
-              // 判定为帮收
-              collectableBall.isHelp = true
-            } else if (avgForCollectable < threshold) {
-              // 非帮助或可收取, 大于25的则是 可收取的
+            } else if (avgForCollectable < COLLECTING_THRESHOLD) {
+              // 非帮助或可收取, 大于25的则是可收取的，否则为无效球
               collectableBall.invalid = true
             }
             // 排除非可收取的和好友页面中的浇水球
-            if (collectableRecheckAvg < threshold || !isOwn && collectableBall.isWatering) {
+            if (!isOwn && collectableBall.isWatering) {
               collectableBall.invalid = true
-              collectableBall.isHelp = false
             }
             collectableBall.ballRegion = ballRegion
-            collectableBall.bottomRegion = bottomRegion
             collectableBall.base64 = BASE64_PREFIX + images.toBase64(intervalForCollectCheck)
-            collectableBall.bottomBase64 = BASE64_PREFIX + images.toBase64(bottomImg)
             ballInfos.push(collectableBall)
           })
         }
@@ -289,15 +295,16 @@ let bridgeHandler = {
             originImageData: BASE64_PREFIX + images.toBase64(imageInfo)
           }
         })
-      } else {
-        toastLog('图片数据不存在，无法执行')
-        postMessageToWebView({ callbackId: callbackId, data: { success: false } })
-      }
+      // } else {
+      //   toastLog('图片数据不存在，无法执行')
+      //   postMessageToWebView({ callbackId: callbackId, data: { success: false } })
+      // }
     })
-  }
+  },
 }
 let handlerBuilder = () => bridgeHandler
 postMessageToWebView = prepareWebView(ui.webview, {
+  enable_log: true,
   indexFilePath: indexFilePath,
   mainScriptPath: mainScriptPath,
   bridgeHandler: handlerBuilder

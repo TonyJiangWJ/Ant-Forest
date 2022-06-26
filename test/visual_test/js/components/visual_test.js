@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-12-22 21:30:51
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-10 14:04:26
+ * @Last Modified time: 2022-06-22 14:49:56
  * @Description: 开发测试时使用的组件
  */
 
@@ -55,11 +55,10 @@ let ImageSelectDialog = {
           return
         }
         this.files = [{ name: '..', type: 'parent' }].concat(fileResult.resultList || [])
-        this.rootPath = fileResult.path
       })
     },
     selectFile: function (file) {
-      let selectedFilePath = this.rootPath + '/' + file.name
+      let selectedFilePath = file.fullPath
       if (file.isDir) {
         this.listFiles(selectedFilePath)
       } else {
@@ -344,18 +343,14 @@ let BallDetectCanvasViewer = {
                 ctx.arc(ball.x, ball.y, parseInt(ball.radius), 0, 2 * Math.PI)
                 ctx.stroke()
                 ctx.strokeRect(ballInfo.ballRegion[0], ballInfo.ballRegion[1], ballInfo.ballRegion[2], ballInfo.ballRegion[3])
-                ctx.strokeRect(ballInfo.bottomRegion[0], ballInfo.bottomRegion[1], ballInfo.bottomRegion[2], ballInfo.bottomRegion[3])
 
                 ctx.strokeStyle = 'red'
                 ctx.lineWidth = 2
                 ctx.font = "20px sans-serif"
                 // 判断是否可收取
-                ctx.strokeText(parseInt(ballInfo.mainAvg), ball.x - 30, ball.y)
-                // 校验是否正常的能量球
-                ctx.strokeText(parseInt(ballInfo.recheckAvg), ball.x, ball.y)
-                ctx.strokeStyle = '#FF9800'
-                // 判断是否帮助收取
-                ctx.strokeText(parseInt(ballInfo.avgBottom), ball.x, ball.y + ball.radius + 20)
+                ctx.strokeText(parseInt(ballInfo.mainAvg), ball.x, ball.y)
+                // 校验是否浇水的能量球
+                ctx.strokeText(parseInt(ballInfo.avg), ball.x, ball.y + 30)
               }
 
             })
@@ -706,7 +701,7 @@ let BallImageDataVisualTest = {
 let BallDetectVisualTest = {
   mixins: [mixin_methods],
   components: {
-    BallDetectCanvasViewer
+    BallDetectCanvasViewer, ImageSelectDialog, ColorRangeSlider
   },
   data: function () {
     return {
@@ -718,7 +713,10 @@ let BallDetectVisualTest = {
         ballInfos: []
       },
       fileIndex: 0,
-      ballImagePath: 'test/tree_collect'
+      ballImagePath: 'test/visual_test/图片/',
+      showSelectDialog: false,
+      rootPath: 'test/visual_test/图片/',
+      currentImagePath: '',
     }
   },
   methods: {
@@ -726,47 +724,80 @@ let BallDetectVisualTest = {
       if (this.loading) {
         return
       }
-      this.fileIndex -= 2
-      this.doDetectBalls()
+      this.fileIndex -= 1
+      $nativeApi.request('loadTestImageByIndex', { fileIndex: this.fileIndex })
+      .then(resp => {
+        if (resp.success) {
+          this.currentImagePath = resp.filePath
+          this.doDetectBalls()
+        } else {
+          console.log('加载失败：', JSON.stringify(resp))
+        }
+      })
+    },
+    loadNext: function () {
+      if (this.loading) {
+        return
+      }
+      this.fileIndex += 1
+      $nativeApi.request('loadTestImageByIndex', { fileIndex: this.fileIndex })
+      .then(resp => {
+        if (resp.success) {
+          this.currentImagePath = resp.filePath
+          this.doDetectBalls()
+        } else {
+          console.log('加载失败：', JSON.stringify(resp))
+        }
+      })
     },
     doDetectBalls: function () {
+      console.log('准备识别球 path:', this.currentImagePath)
       if (this.loading) {
         return
       }
       this.loading = true
-      $nativeApi.request('doDetectBalls', { fileIndex: this.fileIndex++ })
+      $nativeApi.request('doDetectBalls', { filePath: this.currentImagePath })
         .then(resp => {
-          this.ballImagePath = resp.path
           if (resp.success) {
             console.log('get result success, imageData: ' + resp.originImageData.substring(0, 40))
             this.image.originImageData = resp.originImageData
             this.image.width = resp.size.width
             this.image.height = resp.size.height
             this.image.ballInfos = resp.ballInfos
-            console.log('get balls:' + JSON.stringify(resp.ballInfos.map(ballInfo => {
-              return {
-                ball: ballInfo.ball, isHelp: ballInfo.isHelp,
-                isNight: ballInfo.isNight, isOwn: ballInfo.isOwn, avg: ballInfo.avgH,
-                avgBottom: ballInfo.avgBottom, recheckAvg: ballInfo.recheckAvg, mainAvg: ballInfo.mainAvg
-              }
-            })))
+            console.log('get balls:' + JSON.stringify(resp.ballInfos))
           }
           this.loading = false
         })
     },
+    selectImageFile: function () {
+      this.showSelectDialog = true
+    },
+    choseImage: function (image) {
+      this.currentImagePath = image
+      this.doDetectBalls()
+    },
   },
   mounted () {
-    this.doDetectBalls()
+    $nativeApi.request('loadTestImageByIndex', { fileIndex: this.fileIndex })
+    .then(resp => {
+      if (resp.success) {
+        this.currentImagePath = resp.filePath
+        this.doDetectBalls()
+      }
+    })
   },
   template: `<div>
     <tip-block>请保存需要调试的图片到 {{ballImagePath}} 路径下</tip-block>
     <van-divider content-position="left">
-      测试图片&nbsp;&nbsp;&nbsp;<van-button v-if="fileIndex >= 2"size="mini" @click="loadLast">加载上一张</van-button><van-button size="mini" @click="doDetectBalls">加载下一张</van-button>
+      测试图片&nbsp;&nbsp;&nbsp;<van-button v-if="fileIndex >= 2" size="mini" @click="loadLast">加载上一张</van-button>
+      <van-button size="mini" @click="loadNext">加载下一张</van-button>
+      <van-button @click="selectImageFile" size="mini">选择图片</van-button>
     </van-divider>
     <BallDetectCanvasViewer :image="image" image-style="width:100%;" />
     <van-overlay :show="loading">
       <van-loading type="spinner" class="wrapper" />
     </van-overlay>
+    <ImageSelectDialog v-model="showSelectDialog" @on-chose="choseImage" :root-path="rootPath"/>
   </div>`
 }
 
@@ -784,7 +815,7 @@ let CommonImageTest = {
       intervalByGray: false,
       intervalBase64Only: false,
       showSelectDialog: false,
-      rootPath: 'test/visual_test/',
+      rootPath: 'test/visual_test/图片/',
       currentImagePath: '',
       targetDefaultImage: '0',
       lowerRange: '#ad8500',
@@ -913,7 +944,7 @@ let CommonImageTest = {
     this.upperRange = localStorage.getItem('upperRange') || this.upperRange
   },
   template: `<div>
-    <tip-block>请保存需要调试的图片到 test/visual_test/ 路径下</tip-block>
+    <tip-block>请保存需要调试的图片到 {{rootPath}} 路径下</tip-block>
     <van-divider content-position="left">
       测试图片&nbsp;&nbsp;&nbsp;<van-button @click="selectImageFile" size="mini">选择图片</van-button>
     </van-divider>

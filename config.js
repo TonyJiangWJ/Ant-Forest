@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-06-05 09:35:56
+ * @Last Modified time: 2022-06-23 15:38:48
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -159,8 +159,8 @@ let default_config = {
   // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
   collectable_lower: '#89d600',
   collectable_upper: '#ffff14',
-  water_lower: '#caa50e',
-  water_upper: '#ffede2',
+  water_lower: '#e8cb3a',
+  water_upper: '#ffed8e',
   // 排行榜校验区域
   rank_check_left: 190,
   rank_check_top: 170,
@@ -244,9 +244,7 @@ let default_config = {
   // 标记是否清除webview缓存
   clear_webview_cache: false,
   // 更新后需要强制执行的标记
-  updated_temp_flag_13549: true,
-  updated_temp_flag_13510: true,
-  updated_temp_flag_13654: true,
+  updated_temp_flag_13672: true,
   // 多账号管理
   accounts: [],
   main_account: '',
@@ -415,12 +413,12 @@ function resetConfigsIfNeeded () {
     'water_upper',
     'gitee_package_url',
   ]
-  if (config.updated_temp_flag_13654) {
+  if (config.updated_temp_flag_13672) {
     resetFields.forEach(key => {
       config[key] = default_config[key]
       storageConfig.put(key, default_config[key])
     })
-    storageConfig.put('updated_temp_flag_13654', false)
+    storageConfig.put('updated_temp_flag_13672', false)
     if (!config.auto_lock) {
       config.auto_lock = default_config.auto_lock
     }
