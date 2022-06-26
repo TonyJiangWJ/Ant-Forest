@@ -89,7 +89,7 @@ function VisualHelper () {
     }
   }
 
-  this.addRectangle = function (text, rectRegion) {
+  this.addRectangle = function (text, rectRegion, color) {
     if (!config.enable_visual_helper) {
       return
     }
@@ -98,12 +98,13 @@ function VisualHelper () {
       self.toDrawList.push({
         type: 'rect',
         text: text,
-        rect: rectRegion
+        rect: rectRegion,
+        color: color,
       })
     })
   }
 
-  this.addCircle = function (text, circleInfo) {
+  this.addCircle = function (text, circleInfo, color) {
     if (!config.enable_visual_helper) {
       return
     }
@@ -112,12 +113,13 @@ function VisualHelper () {
       self.toDrawList.push({
         type: 'circle',
         text: text,
-        circle: circleInfo
+        circle: circleInfo,
+        color: color,
       })
     })
   }
 
-  this.addText = function (text, position) {
+  this.addText = function (text, position, color) {
     if (!config.enable_visual_helper) {
       return
     }
@@ -126,7 +128,8 @@ function VisualHelper () {
       self.toDrawList.push({
         type: 'text',
         text: text,
-        position: position
+        position: position,
+        color: color,
       })
     })
   }
@@ -157,9 +160,9 @@ function drawRectAndText (desc, position, colorStr, canvas, paint) {
   paint.setStrokeWidth(1)
   paint.setStyle(Paint.Style.STROKE)
   // 反色
-  paint.setARGB(255, 255 - (color >> 16 & 0xff), 255 - (color >> 8 & 0xff), 255 - (color & 0xff))
-  canvas.drawRect(convertArrayToRect(position), paint)
   paint.setARGB(255, color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff)
+  canvas.drawRect(convertArrayToRect(position), paint)
+  paint.setARGB(255, 255 - (color >> 16 & 0xff), 255 - (color >> 8 & 0xff), 255 - (color & 0xff))
   paint.setStrokeWidth(1)
   paint.setTextSize(20)
   paint.setStyle(Paint.Style.FILL)
@@ -173,12 +176,12 @@ function drawRectAndText (desc, position, colorStr, canvas, paint) {
 
 function drawCircleAndText (desc, circleInfo, colorStr, canvas, paint) {
   let color = colors.parseColor(colorStr)
-  paint.setARGB(255, color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff)
+  // 文字反色
+  paint.setARGB(255, 255 - (color >> 16 & 0xff), 255 - (color >> 8 & 0xff), 255 - (color & 0xff))
   drawText(desc, { x: circleInfo.x, y: circleInfo.y }, canvas, paint)
   paint.setStrokeWidth(3)
   paint.setStyle(Paint.Style.STROKE)
-  // 反色
-  paint.setARGB(255, 255 - (color >> 16 & 0xff), 255 - (color >> 8 & 0xff), 255 - (color & 0xff))
+  paint.setARGB(255, color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff)
   canvas.drawCircle(circleInfo.x, circleInfo.y + offset, circleInfo.radius, paint)
 }
 

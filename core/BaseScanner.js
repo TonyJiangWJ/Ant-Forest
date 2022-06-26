@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-08 00:40:13
+ * @Last Modified time: 2022-06-26 10:56:12
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -234,7 +234,7 @@ const BaseScanner = function () {
             collectableBall.ballImage = null
             if (!collectableBall.invalid) {
               clickPoints.push(collectableBall)
-              self.visualHelper.addCircle(collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball)
+              self.visualHelper.addCircle(collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball, '#00ff00')
             } else {
               self.visualHelper.addCircle('非有效能量球', collectableBall.ball)
               invalidPoints.push(collectableBall)
@@ -300,7 +300,7 @@ const BaseScanner = function () {
       let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#89d600', _config.collectable_upper || '#ffff14')
       let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
       // 用于判定是否浇水球
-      let intervalForHelpCheck = images.inRange(ballImage, _config.water_lower || '#caa50e', _config.water_upper || '#ffede2')
+      let intervalForHelpCheck = images.inRange(ballImage, _config.water_lower || '#e8cb3a', _config.water_upper || '#ffed8e')
       // 判定是否为浇水球
       let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
       let collectableBall = {
@@ -313,7 +313,7 @@ const BaseScanner = function () {
       if (avgHsv >= COLLECTING_THRESHOLD) {
         // 浇水能量球
         collectableBall.isWatering = true
-        recheck = this.is_own
+        this.recheck = this.is_own
       } else if (avgForCollectable < COLLECTING_THRESHOLD) {
         // 非帮助或可收取, 大于25的则是可收取的，否则为无效球
         collectableBall.invalid = true
@@ -527,7 +527,7 @@ const BaseScanner = function () {
     if (_config.cutAndSaveTreeCollect && this.temp_img) {
       try {
         let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect_not_found/'
-          + 'unknow_not_found_' + (Math.random() * 9999 + 100).toFixed(0) + '.png'
+          + 'unknow_not_found_' + (new Date().getMonth() + 1 + '-' + new Date().getDate() + '_')+ (Math.random() * 9999 + 100).toFixed(0) + '.png'
         files.ensureDir(savePath)
         images.save(this.temp_img, savePath)
         debugForDev(['保存未识别能量球图片：「{}」', savePath])
