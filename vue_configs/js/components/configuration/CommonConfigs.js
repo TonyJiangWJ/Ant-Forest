@@ -21,6 +21,7 @@ const LockConfig = {
         lock_x: 150,
         lock_y: 970,
         timeout_unlock: 1000,
+        buddha_like_mode: false,
       },
       device: {
         pos_x: 0,
@@ -63,9 +64,13 @@ const LockConfig = {
       <number-field v-model="configs.timeout_unlock" label="解锁超时时间" placeholder="请输入解锁超时时间">
         <template #right-icon><span>毫秒</span></template>
       </number-field>
+      <tip-block>仅限在支付宝账号管理-登录设置-开启可信设备自动登录后才有效，否则需要密码登录，无法使用此功能自动登录</tip-block>
+      <switch-cell title="多设备自动登录" v-model="configs.multi_device_login" />
       <switch-cell title="支付宝是否锁定" v-model="configs.is_alipay_locked" />
       <van-field v-if="configs.is_alipay_locked" v-model="configs.alipay_lock_password" label="手势密码" placeholder="请输入手势密码对应的九宫格数字" type="password" input-align="right" />
       <switch-cell title="锁屏启动设置最低亮度" v-model="configs.auto_set_brightness" />
+      <tip-block>启用佛系模式之后，如果屏幕未锁定，则认定手机正在使用中，自动延迟五分钟，等待下次运行时状态为已锁屏才继续运行。由其他脚本触发的不受此模式限制</tip-block>
+      <switch-cell title="启用佛系模式" v-model="configs.buddha_like_mode" />
       <switch-cell title="锁屏启动关闭弹窗提示" v-model="configs.dismiss_dialog_if_locked" />
       <switch-cell title="锁屏启动时检测设备传感器" label="检测是否在裤兜内，防止误触" v-model="configs.check_device_posture" />
       <template  v-if="configs.check_device_posture">
@@ -166,26 +171,31 @@ const LogConfig = {
   methods: {
     showLogs: function () {
       $app.invoke('showLogs', {})
+    },
+    showAutoJSLogs: function () {
+      $app.invoke('openConsole', {})
     }
   },
   template: `
   <div>
-    <van-divider content-position="left">
-      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="showLogs">查看日志</van-button>
-    </van-divider>
-      <van-cell-group>
-        <tip-block v-if="!configs.is_pro">控制台保留的日志行数，避免运行时间长后保留太多的无用日志，导致内存浪费</tip-block>
-        <number-field v-if="!configs.is_pro" v-model="configs.console_log_maximum_size" label="控制台日志最大保留行数" label-width="12em" />
-        <switch-cell title="是否显示debug日志" v-model="configs.show_debug_log" />
-        <switch-cell title="是否显示脚本引擎id" v-model="configs.show_engine_id" />
-        <switch-cell title="是否保存日志到文件" v-model="configs.save_log_file" />
-        <number-field v-if="configs.save_log_file" v-model="configs.back_size" label="日志文件滚动大小" label-width="8em" placeholder="请输入单个文件最大大小" >
-          <template #right-icon><span>KB</span></template>
-        </number-field>
-        <number-field v-if="configs.save_log_file" v-model="configs.log_saved_days" label="日志文件保留天数" label-width="8em" placeholder="请输入日志文件保留天数" >
-          <template #right-icon><span>天</span></template>
-        </number-field>
-        <switch-cell title="是否异步保存日志到文件" v-model="configs.async_save_log_file" />
+    <tip-block>
+      <van-button style="margin-left: 0.4rem;margin-right:0.4rem" plain hairline type="primary" size="mini" @click="showLogs">查看脚本日志</van-button>
+      仅提供脚本所维护的日志信息，如遇报错请查看AutoJS软件自带日志
+      <van-button style="margin-left: 0.4rem;margin-right:0.4rem" plain hairline type="primary" size="mini" @click="showAutoJSLogs">查看AutoJS日志</van-button>
+    </tip-block>
+    <van-cell-group>
+      <tip-block v-if="!configs.is_pro">控制台保留的日志行数，避免运行时间长后保留太多的无用日志，导致内存浪费</tip-block>
+      <number-field v-if="!configs.is_pro" v-model="configs.console_log_maximum_size" label="控制台日志最大保留行数" label-width="12em" />
+      <switch-cell title="是否显示debug日志" v-model="configs.show_debug_log" />
+      <switch-cell title="是否显示脚本引擎id" v-model="configs.show_engine_id" />
+      <switch-cell title="是否保存日志到文件" v-model="configs.save_log_file" />
+      <number-field v-if="configs.save_log_file" v-model="configs.back_size" label="日志文件滚动大小" label-width="8em" placeholder="请输入单个文件最大大小" >
+        <template #right-icon><span>KB</span></template>
+      </number-field>
+      <number-field v-if="configs.save_log_file" v-model="configs.log_saved_days" label="日志文件保留天数" label-width="8em" placeholder="请输入日志文件保留天数" >
+        <template #right-icon><span>天</span></template>
+      </number-field>
+      <switch-cell title="是否异步保存日志到文件" v-model="configs.async_save_log_file" />
     </van-cell-group>
   </div>`
 }

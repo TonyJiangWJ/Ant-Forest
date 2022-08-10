@@ -21,6 +21,7 @@ const WidgetConfigs = {
         friend_load_more_content: '点击展开好友动态',
         using_protect_content: '使用了保护罩',
         collectable_energy_ball_content: '收集能量\\d+克',
+        magic_species_text: '点击发现|抽取今日',
         timeout_findOne: 1000,
         timeout_existing: 8000,
       },
@@ -53,6 +54,7 @@ const WidgetConfigs = {
     <tip-block>配置在支付码界面时延迟5分钟执行，避免打断日常支付操作</tip-block>
     <van-field v-model="configs.delay_start_pay_code_content" label="支付码界面文本" label-width="10em" type="text" placeholder="请输入支付码界面文本" input-align="right" />
     <van-field v-model="configs.home_ui_content" label="个人首页" type="text" placeholder="请输入个人首页控件文本" input-align="right" />
+    <van-field v-model="configs.magic_species_text" label="神奇物种文本" type="text" placeholder="请输入神奇物种控件文本" input-align="right" />
     <van-field v-model="configs.friend_home_check_regex" label="判断是否好友首页" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
     <van-field v-model="configs.friend_name_getting_regex" label="好友名称正则表达式" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
     <van-field v-model="configs.enter_friend_list_ui_content" label="查看更多好友按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />

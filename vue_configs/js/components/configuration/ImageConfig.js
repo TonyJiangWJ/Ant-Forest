@@ -8,6 +8,9 @@ const ImageConfig = {
         reward_for_plant: '',
         backpack_icon: '',
         sign_reward_icon: '',
+        water_icon: '',
+        stroll_icon: '',
+        watering_cooperation: '',
       },
     }
   },
@@ -32,5 +35,8 @@ const ImageConfig = {
     <base64-image-viewer title="校验‘森林赠礼’按钮" v-model="configs.reward_for_plant"/>
     <base64-image-viewer title="校验‘背包’按钮" v-model="configs.backpack_icon"/>
     <base64-image-viewer title="校验‘奖励’按钮" v-model="configs.sign_reward_icon"/>
+    <base64-image-viewer title="校验‘浇水’按钮" v-model="configs.water_icon"/>
+    <base64-image-viewer title="校验‘逛一逛’按钮" v-model="configs.stroll_icon"/>
+    <base64-image-viewer title="校验‘合种’按钮" v-model="configs.watering_cooperation"/>
   </div>`
 }

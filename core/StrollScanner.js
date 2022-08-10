@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-05-30 11:08:52
+ * @Last Modified time: 2022-08-10 19:47:03
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -11,6 +11,7 @@ let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let fileUtils = singletonRequire('FileUtils')
+let OpenCvUtil = require('../lib/OpenCvUtil.js')
 
 let BaseScanner = require('./BaseScanner.js')
 
@@ -80,12 +81,14 @@ const StrollScanner = function () {
     if (_config.stroll_button_left && !_config.stroll_button_regenerate) {
       region = [_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height]
     } else {
-      let jTreeWarp = _widgetUtils.widgetGetById('J_tree_dialog_wrap')
-      if (jTreeWarp) {
-        let warpBounds = jTreeWarp.bounds()
+      let imagePoint = OpenCvUtil.findByGrayBase64(screen, imgBase64)
+      if (!imagePoint) {
+        imagePoint = OpenCvUtil.findBySIFTGrayBase64(screen, imgBase64) 
+      }
+      if (imagePoint) {
         region = [
-          Math.floor(warpBounds.right - 0.3 * warpBounds.width()), Math.floor(warpBounds.bottom - 0.098 * warpBounds.height()),
-          Math.floor(0.3 * warpBounds.width()), Math.floor(0.085 * warpBounds.height())
+          imagePoint.left, imagePoint.top,
+          imagePoint.width(), imagePoint.height()
         ]
         _config.stroll_button_left = region[0]
         _config.stroll_button_top = region[1]
@@ -97,7 +100,7 @@ const StrollScanner = function () {
         this.visualHelper.displayAndClearAll()
         _commonFunctions.ensureRegionInScreen(region)
       } else {
-        warnInfo('自动识别逛一逛按钮失败', true)
+        warnInfo('自动识别逛一逛按钮失败，请主动配置区域或者图片信息', true)
         hasNext = false
       }
     }

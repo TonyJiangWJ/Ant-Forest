@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-06-05 09:01:50
+ * @Last Modified time: 2022-08-09 09:23:54
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -48,7 +48,7 @@ function Ant_forest () {
    ***********************/
 
   // 进入蚂蚁森林主页
-  const startApp = function () {
+  const startApp = function (reopen) {
     app.startActivity({
       action: 'VIEW',
       data: 'alipays://platformapi/startapp?appId=60000002',
@@ -60,9 +60,27 @@ function Ant_forest () {
       automator.clickCenter(confirm)
     }
     _commonFunctions.readyForAlipayWidgets()
+    if (openAlipayMultiLogin(reopen)) {
+      return
+    }
     if (_config.is_alipay_locked) {
       sleep(1000)
       alipayUnlocker.unlockAlipay()
+    }
+  }
+
+  function openAlipayMultiLogin(reopen) {
+    if (config.multi_device_login && !reopen) {
+      debugInfo(['已开启多设备自动登录检测，检查是否有 进入支付宝 按钮'])
+      let entryBtn = _widgetUtils.widgetGetOne(/^进入支付宝$/, 1000)
+      if (entryBtn) {
+        automator.clickCenter(entryBtn)
+        sleep(1000)
+        startApp()
+        return true
+      } else {
+        debugInfo(['未找到 进入支付宝 按钮'])
+      }
     }
   }
 
@@ -525,10 +543,10 @@ function Ant_forest () {
   }
 
   const signUpForMagicSpecies = function () {
-    let find = _widgetUtils.widgetGetOne(_config.magic_species_text || '点击发现', 1000)
+    let find = _widgetUtils.widgetGetOne(_config.magic_species_text || '点击发现|抽取今日', 1000)
     if (find) {
       automator.clickCenter(find)
-      sleep(1000)
+      sleep(5000)
       automator.back()
       sleep(1000)
     }

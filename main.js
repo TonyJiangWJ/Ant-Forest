@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-10 12:13:45
+ * @Last Modified time: 2022-07-14 09:12:38
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, global)
@@ -24,7 +24,6 @@ if (config.single_script) {
 logInfo('======尝试加入任务队列，并关闭重复运行的脚本=======')
 // 加入任务队列
 runningQueueDispatcher.addRunningTask()
-commonFunctions.markExtendSuccess()
 commonFunctions.killDuplicateScript()
 logInfo('======加入任务队列成功=======')
 
@@ -76,6 +75,7 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
   errorInfo('获取无障碍权限失败')
   exit()
 }
+commonFunctions.markExtendSuccess()
 logInfo('---前置校验完成;启动系统--->>>>')
 // 打印运行环境信息
 if (files.exists('version.json')) {
