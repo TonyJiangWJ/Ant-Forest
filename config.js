@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-06-23 15:38:48
+ * @Last Modified time: 2022-08-10 16:46:31
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -64,6 +64,10 @@ let default_config = {
   auto_set_brightness: false,
   // 锁屏启动关闭提示框
   dismiss_dialog_if_locked: true,
+  // 佛系模式
+  buddha_like_mode: false,
+  // 多设备可信登录
+  multi_device_login: false,
   request_capture_permission: true,
   capture_permission_button: 'START NOW|立即开始|允许',
   // 是否保存日志文件，如果设置为保存，则日志文件会按时间分片备份在logback/文件夹下
@@ -141,6 +145,7 @@ let default_config = {
   home_ui_content: '查看更多动态.*',
   friend_home_check_regex: '你收取TA|TA收取你',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
+  magic_species_text: '点击发现|抽取今日',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
   // 用于判断是否在好友排行榜
@@ -337,7 +342,10 @@ config.overwrite = (key, value) => {
 let workpath = getCurrentWorkPath()
 let configDataPath = workpath + '/config_data/'
 let default_image_config = {};
-['reward_for_plant', 'backpack_icon', 'sign_reward_icon'].forEach(key => default_image_config[key] = files.read(configDataPath + key + '.data'))
+[
+  'reward_for_plant', 'backpack_icon', 'sign_reward_icon', 'water_icon',
+  'stroll_icon', 'watering_cooperation',
+].forEach(key => default_image_config[key] = files.read(configDataPath + key + '.data'))
 default_config.image_config = default_image_config
 config.image_config = convertDefaultData(default_image_config, CONFIG_STORAGE_NAME + '_image')
 
