@@ -460,6 +460,7 @@ const RegionConfig = {
       :error-message="validationError.stroll_button_region"
       v-model="configs.stroll_button_region" label="逛一逛按钮区域" label-width="10em" />
     <van-field :readonly="true" v-else value="下次运行时重新识别" label="逛一逛按钮区域" label-width="10em" type="text" input-align="right" />
+    <tip-block v-if="configs.stroll_button_regenerate">重新识别逛一逛按钮需要基于图片查找，默认图片为1080P，其他分辨率请自行在【查找图片设置】中修改逛一逛按钮的图片</tip-block>
     <switch-cell title="下次运行时重新识别" v-model="configs.stroll_button_regenerate" />
     <van-cell-group>
       <switch-cell title="跳过好友浇水能量球" label="开启后自己手动收取" v-model="configs.skip_own_watering_ball" />

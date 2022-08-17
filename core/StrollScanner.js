@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-08-10 19:47:03
+ * @Last Modified time: 2022-08-17 15:23:34
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -81,9 +81,14 @@ const StrollScanner = function () {
     if (_config.stroll_button_left && !_config.stroll_button_regenerate) {
       region = [_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height]
     } else {
-      let imagePoint = OpenCvUtil.findByGrayBase64(screen, imgBase64)
+      if (!_config.image_config.stroll_icon) {
+        warnInfo(['请配置逛一逛按钮图片或者手动指定逛一逛按钮区域'], true)
+        return this.getCollectResult()
+      }
+      let screen = _commonFunctions.checkCaptureScreenPermission()
+      let imagePoint = OpenCvUtil.findByGrayBase64(screen, _config.image_config.stroll_icon)
       if (!imagePoint) {
-        imagePoint = OpenCvUtil.findBySIFTGrayBase64(screen, imgBase64) 
+        imagePoint = OpenCvUtil.findBySIFTGrayBase64(screen, _config.image_config.stroll_icon) 
       }
       if (imagePoint) {
         region = [

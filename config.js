@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-08-10 16:46:31
+ * @Last Modified time: 2022-08-17 15:30:37
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -249,7 +249,7 @@ let default_config = {
   // 标记是否清除webview缓存
   clear_webview_cache: false,
   // 更新后需要强制执行的标记
-  updated_temp_flag_13672: true,
+  updated_temp_flag_13682: true,
   // 多账号管理
   accounts: [],
   main_account: '',
@@ -415,18 +415,14 @@ function resetConfigsIfNeeded () {
     storageConfig.put('friend_home_check_regex', default_config.friend_home_check_regex)
   }
   let resetFields = [
-    'collectable_lower',
-    'collectable_upper',
-    'water_lower',
-    'water_upper',
-    'gitee_package_url',
+    'stroll_button_regenerate',
   ]
-  if (config.updated_temp_flag_13672) {
+  if (config.updated_temp_flag_13682) {
     resetFields.forEach(key => {
       config[key] = default_config[key]
       storageConfig.put(key, default_config[key])
     })
-    storageConfig.put('updated_temp_flag_13672', false)
+    storageConfig.put('updated_temp_flag_13682', false)
     if (!config.auto_lock) {
       config.auto_lock = default_config.auto_lock
     }
