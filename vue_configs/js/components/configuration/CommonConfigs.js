@@ -9,6 +9,7 @@ const LockConfig = {
       configs: {
         password: '',
         is_alipay_locked: true,
+        multi_device_login: false,
         alipay_lock_password: '',
         auto_set_brightness: true,
         dismiss_dialog_if_locked: true,
