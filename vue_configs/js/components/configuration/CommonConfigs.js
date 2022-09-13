@@ -209,6 +209,8 @@ const AdvanceCommonConfig = {
   mixins: [mixin_common],
   data () {
     return {
+      activeNames: [],
+      enabledServices: 'com.taobao.idlefishs.modify.opencv4/org.autojs.autojs.timing.work.AlarmManagerProvider:com.taobao.idlefishs.modify.opencv4/org.autojs.autojs.timing.work.AlarmManagerProvider:com.taobao.idlefishs.modify.opencv4/org.autojs.autojs.timing.work.AlarmManagerProvider',
       configs: {
         single_script: true,
         auto_restart_when_crashed: true,
@@ -225,10 +227,40 @@ const AdvanceCommonConfig = {
       }
     }
   },
+  computed: {
+    accessibilityServices: function () {
+      if (!this.configs.other_accessisibility_services || this.configs.other_accessisibility_services.length == 0) {
+        return []
+      }
+      return this.configs.other_accessisibility_services.split(':')
+    },
+    enabledAccessibilityServices: function () {
+      if (!this.enabledServices || this.enabledServices.length == 0) {
+        return []
+      }
+      return this.enabledServices.split(':')
+    },
+  },
   methods: {
     doAuthADB: function () {
       $app.invoke('doAuthADB', {})
+      let _this = this
+      setTimeout(() => {
+        _this.getEnabledServices()
+      }, 2000)
     },
+    copyText: function (text) {
+      console.log('复制文本：', text)
+      $app.invoke('copyText', { text })
+    },
+    getEnabledServices: function () {
+      $nativeApi.request('getEnabledServices', {}).then(resp => {
+        this.enabledServices = resp.enabledServices
+      })
+    }
+  },
+  mounted() {
+    this.getEnabledServices()
   },
   template: `
   <div>
@@ -242,6 +274,20 @@ const AdvanceCommonConfig = {
         <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="doAuthADB">触发授权</van-button>
       </tip-block>
       <van-field v-model="configs.other_accessisibility_services" label="无障碍服务service" label-width="10em" type="text" placeholder="请输入" input-align="right" stop-propagation />
+      <van-collapse v-model="activeNames">
+        <van-collapse-item title="查看无障碍服务列表" name="1">
+          <van-divider content-position="left">当前设置的无障碍服务</van-divider>
+          <van-cell v-if="accessibilityServices.length==0" title="无"/>
+          <van-cell v-else v-for="service in accessibilityServices" :title="service" :key="service" style="overflow:auto;" />
+          <van-divider content-position="left">当前已启用的无障碍服务</van-divider>
+          <van-cell v-if="enabledAccessibilityServices.length==0" title="无"/>
+          <van-cell v-else v-for="service in enabledAccessibilityServices" :title="service" :key="service" style="overflow:auto;">
+            <template #right-icon>
+              <van-button plain hairline type="primary" size="mini" style="margin-left: 0.3rem;width: 2rem;" @click="copyText(service)">复制</van-button>
+            </template>
+          </van-cell>
+        </van-collapse-item>
+      </van-collapse>
       <switch-cell title="是否使用模拟滑动" v-model="configs.useCustomScrollDown" />
       <template v-if="configs.useCustomScrollDown">
         <number-field v-model="configs.bottomHeight" label="模拟底部起始高度" label-width="8em" />

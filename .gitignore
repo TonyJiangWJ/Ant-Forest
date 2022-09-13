@@ -8,4 +8,5 @@ ExternalUnlockDevice.js
 .lhignore
 .lh/
 *.txt
+*.txt.*
 *.db

@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-08-09 09:23:54
+ * @Last Modified time: 2022-09-08 10:11:27
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -54,7 +54,7 @@ function Ant_forest () {
       data: 'alipays://platformapi/startapp?appId=60000002',
       packageName: _config.package_name
     })
-    FloatyInstance.setFloatyInfo({x: _config.device_width /2 , y: _config.device_height/2}, "查找是否有'打开'对话框")
+    FloatyInstance.setFloatyInfo({ x: _config.device_width / 2, y: _config.device_height / 2 }, "查找是否有'打开'对话框")
     let confirm = _widgetUtils.widgetGetOne(/^打开$/, 1000)
     if (confirm) {
       automator.clickCenter(confirm)
@@ -69,7 +69,7 @@ function Ant_forest () {
     }
   }
 
-  function openAlipayMultiLogin(reopen) {
+  function openAlipayMultiLogin (reopen) {
     if (config.multi_device_login && !reopen) {
       debugInfo(['已开启多设备自动登录检测，检查是否有 进入支付宝 按钮'])
       let entryBtn = _widgetUtils.widgetGetOne(/^进入支付宝$/, 1000)
@@ -276,11 +276,14 @@ function Ant_forest () {
     }
 
     toasts.forEach(function (toast) {
-      let countdown = toast.match(/\d+/g)
-      if (countdown !== null && countdown.length >= 2) {
-        temp.push(countdown[0] * 60 - -countdown[1])
+      let regex = /\D*((\d+)小时)?((\d+)分钟)?后/
+      let countdown = regex.exec(toast)
+      if (countdown !== null) {
+        let hours = !!countdown[2] ? +countdown[2] : 0
+        let minutes = !!countdown[4] ? +countdown[4] : 0
+        temp.push(hours * 60 + minutes)
       } else {
-        errorInfo('获取倒计时错误：' + countdown)
+        errorInfo(['未匹配倒计时数据：{}', toast])
       }
     })
     _min_countdown = Math.min.apply(null, temp)
@@ -552,7 +555,7 @@ function Ant_forest () {
     }
   }
 
-  const getSignReward = function() {
+  const getSignReward = function () {
     if (_commonFunctions.checkRewardCollected()) {
       debugInfo('今日已经领取过奖励 跳过领取')
       return

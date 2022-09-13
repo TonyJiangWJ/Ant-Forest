@@ -157,7 +157,7 @@ const CollectChart = {
     this.query.collectDate = collectDate || formatDate(this.pickDate, 'yyyy-MM-dd')
     this.pageCollectInfo()
     this.initChart()
-    if ($app.moke) {
+    if ($app.mock) {
       this.renderCollectChart()
       this.renderEnergyChart()
     }

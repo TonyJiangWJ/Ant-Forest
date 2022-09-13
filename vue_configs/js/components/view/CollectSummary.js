@@ -9,22 +9,7 @@ const CollectSummary = {
       currentDate: new Date(),
       pickDate: new Date(),
       loading: false,
-      friendCollectList: [
-        {
-          friendName: 'Haly',
-          friendEnergy: 9999,
-          collectEnergy: 100,
-          waterEnergy: 10,
-          createTime: '2022-04-06 15:12:11'
-        },
-        {
-          friendName: 'Jame',
-          friendEnergy: 8888,
-          collectEnergy: 49,
-          waterEnergy: 10,
-          createTime: '2022-04-06 16:12:11'
-        }
-      ],
+      friendCollectList: [],
       orderByOptions: [
         { text: '默认排序', value: '' },
         { text: '收集数量', value: 'COLLECT_ENERGY DESC,CREATE_TIME ASC' },
@@ -72,6 +57,24 @@ const CollectSummary = {
         this.friendCollectList = resp.result
         this.loading = false
       }).catch(e => this.loading = false)
+      if ($app.mock) {
+        this.friendCollectList = [
+          {
+            friendName: 'Haly',
+            friendEnergy: 9999,
+            collectEnergy: 100,
+            waterEnergy: 10,
+            createTime: '2022-04-06 15:12:11'
+          },
+          {
+            friendName: 'Jame',
+            friendEnergy: 8888,
+            collectEnergy: 49,
+            waterEnergy: 10,
+            createTime: '2022-04-06 16:12:11'
+          }
+        ]
+      }
     },
     getCollectSummary: function() {
       $nativeApi.request('getCollectSummary', this.query).then(resp => {

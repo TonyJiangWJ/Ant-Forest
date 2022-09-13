@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:24:38
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-02 23:38:01
+ * @Last Modified time: 2022-09-07 13:56:05
  * @Description: 
  */
 
@@ -72,7 +72,7 @@ let app = new Vue({
       })
     },
     delayRegisterIfBridgeNotReady: function () {
-      if ($app.moke) {
+      if ($app.mock && !$app.delay_off) {
         console.log('bridge 未完成注册 等待')
         let self = this
         setTimeout(() => {
@@ -108,7 +108,7 @@ let app = new Vue({
         document.getElementById('app').style.height = currentHeight + 'px'
       }
     }, 1200)
-    console.log('准备注册 resizeWindow ' + (typeof $app) + ' ' + (typeof $app.registerFunction) + ' is moke?' + $app.moke)
+    console.log('准备注册 resizeWindow ' + (typeof $app) + ' ' + (typeof $app.registerFunction) + ' is mock?' + $app.mock)
     this.delayRegisterIfBridgeNotReady()
   }
 })
