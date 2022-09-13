@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2022-05-29 18:05:35
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-05-30 11:14:03
+ * @Last Modified time: 2022-09-05 11:25:48
  * @Description: 
  */
 const DailyChart = {
@@ -163,7 +163,7 @@ const DailyChart = {
     this.pickEndDate = new Date()
     this.pageCollectInfo()
     this.initChart()
-    if ($app.moke) {
+    if ($app.mock) {
       this.renderCollectChart()
       this.renderEnergyChart()
     }

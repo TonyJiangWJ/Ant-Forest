@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:17:06
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-29 23:44:48
+ * @Last Modified time: 2022-09-05 13:32:12
  * @Description: 
 -->
 <!DOCTYPE html>
@@ -97,7 +97,7 @@
   // 直接浏览器调试时，mock js bridge方法
   if (typeof $app === 'undefined') {
     window.$app = {
-      moke: true,
+      mock: true,
       invoke: (bridgeName, data, callback) => { },
       receiveMessage: params => { },
       registerFunction: (functionName, func) => { }
@@ -106,7 +106,7 @@
       request: (bridgeName, data) => { return Promise.reject({}) }
     }
     setTimeout(() => {
-      window.$app.moke = false
+      window.$app.delay_off = true
     }, 5000)
   }
 </script>
