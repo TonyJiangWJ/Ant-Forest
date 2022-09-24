@@ -28,7 +28,11 @@ config.show_debug_log = true
 config.async_save_log_file = false
 let commonFunction = sRequire('CommonFunction')
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
-let paddleOcrUtil = sRequire('PaddleOcrUtil')
+// 默认以优先级加载mlkit插件 无插件时使用paddleOcr
+let localOcr = require('../lib/LocalOcrUtil.js')
+console.info('当前本地ocr类型为：', localOcr.type, '启用状态：', localOcr.enabled)
+// 强制指定为paddleOcr
+// localOcr = sRequire('PaddleOcrUtil')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 runningQueueDispatcher.addRunningTask()
 
@@ -47,12 +51,12 @@ var captureImage, drawImage, originalImg, grayImg
 var previewImage = null
 var displayPositions = ''
 threads.start(function () {
-  if (!commonFunction.requestScreenCaptureOrRestart(true)) {
+  if (!requestScreenCapture()) {
     toast("请求截图失败")
     exit()
   }
 
-  captureImage = commonFunction.checkCaptureScreenPermission()
+  captureImage = captureScreen()
   originalImg = images.copy(captureImage, true)
   grayImg = images.copy(images.grayscale(captureImage), true)
   drawImage = grayImg
@@ -242,10 +246,10 @@ canvasWindow.cutOrPoint.on('click', () => {
 canvasWindow.recognizeText.on('click', () => {
   threads.start(function () {
     if (cutMode) {
-      if (!paddleOcrUtil.enabled) {
-        toastLog('paddleOcr未初始化成功 或当前版本AutoJS不支持paddleOcr')
+      if (localOcr == null || !localOcr.enabled) {
+        toastLog('当前版本AutoJS不支持本地OCR')
         ui.post(() => {
-          canvasWindow.recognize_text.text('paddleOcr未初始化成功\n或当前版本AutoJS不支持paddleOcr')
+          canvasWindow.recognize_text.text('当前版本AutoJS不支持本地Ocr')
         })
         return
       }
@@ -262,7 +266,7 @@ canvasWindow.recognizeText.on('click', () => {
           clipImg = images.resize(clipImg, size)
           log('缩放图片大小：' + clipImg.getWidth() + ',' + clipImg.getHeight())
         }
-        let result = paddleOcrUtil.recognize(clipImg)
+        let result = localOcr.recognize(clipImg)
         log('识别文本:' + result)
         setClip(result)
         toastLog('识别文本已复制')

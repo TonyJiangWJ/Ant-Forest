@@ -7,7 +7,8 @@ let commonFunctions = singletonRequire('CommonFunction')
 let widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
-let paddleOcrUtil = singletonRequire('PaddleOcrUtil')
+let ocrUtil = require('../lib/LocalOcrUtil.js')
+infoLog(['当前使用的OCR类型为：{} 是否启用：{}', ocrUtil.type, ocrUtil.enabled])
 let unlocker = require('../lib/Unlock.js')
 // 回收图像资源
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
@@ -37,16 +38,16 @@ commonFunctions.registerOnEngineRemoved(function () {
   )
 }, 'main')
 
-commonFunctions.showCommonDialogAndWait('神奇海洋收垃圾')
-commonFunctions.listenDelayStart()
 if (!commonFunctions.ensureAccessibilityEnabled()) {
   errorInfo('获取无障碍权限失败')
   exit()
 }
 
-commonFunctions.requestScreenCaptureOrRestart()
-
 unlocker.exec()
+
+commonFunctions.showCommonDialogAndWait('神奇海洋收垃圾')
+commonFunctions.listenDelayStart()
+commonFunctions.requestScreenCaptureOrRestart()
 
 openMiracleOcean()
 checkNext()
@@ -67,10 +68,16 @@ function openMiracleOcean () {
     automator.clickCenter(confirm)
   }
   sleep(1000)
+  if (widgetUtils.idWaiting('ocean-fish-cnt-percent', '神奇海洋')) {
+    debugInfo(['打开神奇海洋成功'])
+  } else {
+    warnInfo(['打开神奇海洋检测超时'])
+  }
+  sleep(1000)
 }
 
-function findTrashs () {
-  sleep(3000)
+function findTrashs (delay) {
+  sleep(delay || 3000)
   let screen = commonFunctions.checkCaptureScreenPermission()
   if (screen) {
     this.temp_img = images.copy(screen, true)
@@ -101,16 +108,24 @@ function findTrashs () {
       let collect = widgetUtils.widgetGetOne('.*(清理|收下).*')
       if (collect) {
         automator.clickCenter(collect)
+        // 二次校验
+        findTrashs(1500)
       }
     }
   }
 }
 
 function checkNext() {
-
+  if (!ocrUtil.enabled) {
+    if (new Date().getHours() < 21) {
+      warnInfo('当前版本AutoJS不支持本地OCR，直接设置两小时后的定时任务，此方式并不准确请手动设置实际定时时间，每天间隔两小时的定时任务 并注释下面自动设置定时任务的代码')
+      commonFunctions.setUpAutoStart(120)
+    }
+    return
+  }
   let screen = commonFunctions.checkCaptureScreenPermission()
   if (screen) {
-    let text = paddleOcrUtil.recognize(screen, [0, 1800, 370, 240])
+    let text = ocrUtil.recognize(screen, [0, 1800, 370, 240])
     if (text) {
       text = text.replace(/\n/g, '')
       let regex = /下次清理时间(\d+)分((\d+)秒)/

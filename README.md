@@ -28,6 +28,8 @@
 - 运行有问题请查看[#常见问题小节](#常见问题)
 - 不同手机的解锁方法不同可能不适配，需要自行编写解锁方法，具体见[#添加解锁设备](#添加解锁设备)小节
 - 首次使用时，脚本需要自动识别图色信息，会在排行榜底部来回上下滚动多次，属于正常现象，请耐心等待脚本自动完成第一轮收集。如果存在其他异常报错，欢迎提交issue。
+- ocr优先使用mlkit，不支持时尝试paddleocr，最后使用百度（需要配置API KEY，而且每天有500次的次数限制），推荐下载ocr插件[mlkit-ocr插件下载](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/mlkit-ocr-plugin-latest.apk)
+- 关于本地OCR的说明，mlkit-ocr速度非常快，但是缺点是识别准确性不佳，目前基本能满足所需要的识别功能。PaddleOCR识别准确性很高但是缺点是速度慢，而且必须给AutoJS设置电量无限制权限否则容易闪退，另外就是必须安装[我的修改的AutoJS](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk)才能使用PaddleOCR。
 
 ## 配置
 
@@ -85,7 +87,7 @@
 - 可以将配置数据以及运行时数据进行导入和导出，内容通过AES加密，默认密码是 `device.getAndroidId()`，因此仅本机可用。如果需要跨设备或者免费版和Pro版之间备份，自行获取 `device.getAndroidId()` 然后根据提示输入即可
 - 通话状态监听，当通话中或者来电时自动延迟五分钟执行，需要授予AutoJS软件获取通话状态的权限[该功能暂不可靠，且Pro版无法使用]
 - 可以配置在锁屏状态下判断设备姿势，防止在裤兜内误触（基于重力加速度传感器）
-- 提供模拟的OCR识别服务，用于识别倒计时数字，如果觉得准确率欠佳可以选择申请百度OCR接口权限
+- 提供模拟的OCR识别服务，用于识别倒计时数字，如果觉得准确率欠佳可以选择申请百度OCR接口权限，如果安装MlKitOcr插件后将自动启用mlkit方式识别OCR [mlkit-ocr插件下载](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/mlkit-ocr-plugin-latest.apk)
 - 基于图像分析收取时，排行榜倒计时无法直接获取，默认使用模拟OCR，如果识别不准请申请百度识图API。或者通过永不停止模式来定时轮询。另外注意永不停止模式不要全天运行，1-6点执行无意义且可能封号。
 - 基于百度文字识别的API接口 来识别倒计时数据
   - [通用文字识别](https://ai.baidu.com/tech/ocr/general)

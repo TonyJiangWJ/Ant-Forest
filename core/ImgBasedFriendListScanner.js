@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-13 16:00:23
+ * @Last Modified time: 2022-09-24 17:41:38
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -16,14 +16,35 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
-let TesseracOcrUtil = require('../lib/TesseracOcrUtil.js')
+let localOcrUtil = require('../lib/LocalOcrUtil.js')
 let aesUtil = require('../lib/AesUtil.js')
-let OcrUtil = _config.useTesseracOcr ? TesseracOcrUtil : BaiduOcrUtil
+let OcrUtil = null
+if (localOcrUtil.enabled) {
+  OcrUtil = wrapLocalOcrUtil(localOcrUtil)
+} else if (_config.useBaiduOcr) {
+  OcrUtil = BaiduOcrUtil
+}
 let useMockOcr = false
-if (!_config.useTesseracOcr && !_config.useOcr) {
+if (!OcrUtil) {
   OcrUtil = require('../lib/MockNumberOcrUtil.js')
   useMockOcr = true
 }
+
+function wrapLocalOcrUtil(localOcr) {
+  return {
+    getImageNumber: function (base64String) {
+      let img = images.fromBase64(base64String)
+      let recognizedText = (localOcr.recognize(img) || '').replace(/\n/g, '')
+      let regex = /(\d+)/
+      let result = regex.exec(recognizedText)
+      if (result && result.length > 1) {
+        return parseInt(result[1])
+      }
+      return null
+    }
+  }
+}
+
 let BaseScanner = require('./BaseScanner.js')
 
 let SCRIPT_LOGGER = new ScriptLogger({
@@ -499,6 +520,7 @@ const ImgBasedFriendListScanner = function () {
             countdownLock.lock()
             try {
               debugInfo('获取倒计时数据为：' + countdown)
+              this.visualHelper.addText(countdown, { x: point.left, y: point.top - height / 2 })
               if (countdown < this.min_countdown) {
                 debugInfo('设置最小倒计时：' + countdown)
                 this.min_countdown = countdown
