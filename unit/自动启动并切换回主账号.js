@@ -23,7 +23,7 @@ commonFunctions.registerOnEngineRemoved(function () {
   config.resetBrightness && config.resetBrightness()
   debugInfo('校验并移除已加载的dex')
   // 移除运行中任务
-  runningQueueDispatcher.removeRunningTask(true, true,
+  runningQueueDispatcher.removeRunningTask(true, false,
     () => {
       // 保存是否需要重新锁屏
       unlocker.saveNeedRelock()

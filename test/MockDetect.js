@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-05 23:01:02
+ * @Last Modified time: 2022-09-24 17:43:37
  * @Description: 
  */
 let resolver = require('../lib/AutoJSRemoveDexResolver.js')
@@ -33,15 +33,18 @@ if (runningSize > 1) {
 }
 let { config: _config } = require('../config.js')(runtime, global)
 _config.show_debug_log = true
-_config.develop_mode = true
+_config.develop_mode = false
 _config.save_log_file = false
 _config.enable_visual_helper = true
 // 启用或者禁用ocr 都禁用则使用默认
 _config.useTesseracOcr = false
-_config.useOcr = false
+_config.useBaiduOcr = false
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _commonFunctions = singletonRequire('CommonFunction')
 let _paddleOcrUtil = singletonRequire('PaddleOcrUtil')
+let _mlkitOcrUtil = singletonRequire('MlkitOcrUtil')
+// 优先使用mlKit
+let localOcr = _mlkitOcrUtil.enabled ? _mlkitOcrUtil : _paddleOcrUtil.enabled ? _paddleOcrUtil : null
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile } = singletonRequire('LogUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let _ImgBasedFriendListScanner = require('../core/ImgBasedFriendListScanner.js')
@@ -83,12 +86,12 @@ const MockFriendListScanner = function () {
 
   this.doRecognizeIfPossiable = function () {
     console.warn('准备识别好友名称')
-    if (!_paddleOcrUtil.enabled) {
-      console.error('当前版本不支持paddleOcr无法识别好友名称')
+    if (localOcr == null || !localOcr.enabled) {
+      console.error('当前版本不支持本地Ocr无法识别好友名称')
       return
     }
     if (this.collectOrHelpList && this.collectOrHelpList.length > 0) {
-      console.warn('可收取数量：{}', this.collectOrHelpList.length)
+      console.warn('可收取数量：', this.collectOrHelpList.length)
       let image = captureScreen()
       if (image) {
         image = images.copy(image, true)
@@ -98,9 +101,14 @@ const MockFriendListScanner = function () {
           if (point.top + 300 >= _config.device_height) {
             return
           }
-          let text = _paddleOcrUtil.recognize(images.clip(image, 280, point.top, 300, 120))
+          let height = point.bottom - point.top
+          let x = _config.device_width * 0.25, y = point.top + height / 2, w = _config.device_width * 0.3, h = height
+          let clipImg = images.clip(image, x, y, w, h)
+          let base64 = images.toBase64(clipImg)
+          let text = localOcr.recognize(clipImg)
           pointData.text = text
-          logInfo(['识别文字：[280,{}] {}', point.top, pointData.text])
+          debugInfo(['base64: data:image/jpeg;base64,{}', base64])
+          logInfo(['识别文字：[{},{}] text:{}', point.left, point.top, pointData.text])
         })
         image.recycle()
       }

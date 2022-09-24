@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-08-17 15:30:37
+ * @Last Modified time: 2022-09-24 18:17:46
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -119,9 +119,9 @@ let default_config = {
   // 延迟启动时延 5秒 悬浮窗中进行的倒计时时间
   delayStartTime: 5,
   // 是否使用百度的ocr识别倒计时
-  useOcr: false,
-  // 使用自建tesserac_ocr服务
-  useTesseracOcr: false,
+  useBaiduOcr: false,
+  // 本地ocr优先级
+  local_ocr_priority: 'auto',
   // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
   ocrThreshold: 2600,
   autoSetThreshold: false,
@@ -166,6 +166,11 @@ let default_config = {
   collectable_upper: '#ffff14',
   water_lower: '#e8cb3a',
   water_upper: '#ffed8e',
+  // 神奇海洋识别区域
+  sea_ocr_left: 10,
+  sea_ocr_top: 1800,
+  sea_ocr_width: 370,
+  sea_ocr_height: 240,
   // 排行榜校验区域
   rank_check_left: 190,
   rank_check_top: 170,
@@ -426,10 +431,6 @@ function resetConfigsIfNeeded () {
     if (!config.auto_lock) {
       config.auto_lock = default_config.auto_lock
     }
-  }
-  if (config.useTesseracOcr && new Date().getTime() >= new Date('2021/12/09').getTime()) {
-    // 服务器到期 自动关闭OCR
-    storageConfig.put('useTesseracOcr', false)
   }
 }
 

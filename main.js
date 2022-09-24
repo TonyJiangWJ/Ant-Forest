@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-07-14 09:12:38
+ * @Last Modified time: 2022-09-24 15:43:37
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, global)
@@ -94,7 +94,7 @@ logInfo(['运行模式：{}{} {} {} 排行榜可收取判定方式：{} {}',
   config.develop_mode ? '开发模式 ' : '',
   config.single_script ? '单脚本运行无视运行队列' : '多脚本调度运行',
   config.is_cycle ? '循环' + config.cycle_times + '次' : (config.never_stop ? '永不停止，重新激活时间：' + config.reactive_time : '计时模式，超时时间：' + config.max_collect_wait_time),
-  '基于图像分析' + (config.useOcr || config.useTesseracOcr ? '-使用OCR识别倒计时 ' : ''),
+  '基于图像分析' + (config.useBaiduOcr ? '-使用OCR识别倒计时 ' : ''),
   config.check_finger_by_pixels_amount ? '基于像素点个数判断是否可收取，阈值<=' + config.finger_img_pixels : '自动判断是否可收取',
   config.useCustomScrollDown ? '使用模拟滑动, 底部高度：' + config.bottomHeight : ''
 ])

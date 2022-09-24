@@ -275,6 +275,11 @@ const RegionConfig = {
       mounted: false,
       hough_config: false,
       configs: {
+        // 神奇海洋识别区域
+        sea_ocr_left: 10,
+        sea_ocr_top: 1800,
+        sea_ocr_width: 370,
+        sea_ocr_height: 240,
         // 排行榜校验区域
         rank_check_left: null,
         rank_check_top: null,
@@ -305,6 +310,7 @@ const RegionConfig = {
         rank_check_region: '',
         bottom_check_region: '',
         tree_collect_region: '',
+        sea_ocr_region: '',
         // 能量球识别配置
         skip_own_watering_ball: true,
         hough_param1: null,
@@ -322,6 +328,7 @@ const RegionConfig = {
       },
       validations: {
         stroll_button_region: VALIDATOR.REGION,
+        sea_ocr_region: VALIDATOR.REGION,
         rank_check_region: VALIDATOR.REGION,
         bottom_check_region: VALIDATOR.REGION,
         tree_collect_region: VALIDATOR.REGION,
@@ -342,6 +349,7 @@ const RegionConfig = {
       this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
       this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
       this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
+      this.configs.sea_ocr_region = this.configs.sea_ocr_left + ',' + this.configs.sea_ocr_top + ',' + this.configs.sea_ocr_width + ',' + this.configs.sea_ocr_height
 
       $app.invoke('loadConfigs', {}, config => {
         Object.keys(this.configs).forEach(key => {
@@ -352,7 +360,7 @@ const RegionConfig = {
         this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
         this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
         this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
-
+        this.configs.sea_ocr_region = this.configs.sea_ocr_left + ',' + this.configs.sea_ocr_top + ',' + this.configs.sea_ocr_width + ',' + this.configs.sea_ocr_height
         this.mounted = true
       })
     },
@@ -375,6 +383,9 @@ const RegionConfig = {
     },
     treeCollectRegion: function () {
       return this.configs.tree_collect_region
+    },
+    seaOcrRegion: function () {
+      return this.configs.sea_ocr_region
     },
     visualConfigs: function () {
       return {
@@ -438,6 +449,15 @@ const RegionConfig = {
         this.configs.tree_collect_height = parseInt(match[4])
       }
     },
+    seaOcrRegion: function () {
+      if (this.mounted && this.validations.sea_ocr_region.validate(this.seaOcrRegion)) {
+        let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.seaOcrRegion)
+        this.configs.sea_ocr_left = parseInt(match[1])
+        this.configs.sea_ocr_top = parseInt(match[2])
+        this.configs.sea_ocr_width = parseInt(match[3])
+        this.configs.sea_ocr_height = parseInt(match[4])
+      }
+    },
     // 变更区域信息，用于实时展示
     visualConfigs: {
       handler: function (v) {
@@ -495,6 +515,10 @@ const RegionConfig = {
         <tip-block>排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像判断无效只能如此</tip-block>
         <van-field v-model="configs.friendListScrollTime" label="排行榜下拉次数" label-width="10em" type="text" placeholder="请输入排行榜下拉次数" input-align="right" />
       </template>
+      <region-input-field
+          :device-height="device.height" :device-width="device.width"
+          :error-message="validationError.sea_ocr_region"
+          v-model="configs.sea_ocr_region" label="神奇海洋OCR识别区域" label-width="12em" />
       <color-input-field label="列表中可收取的颜色起始值" label-width="12em"
             placeholder="可收取颜色值 #FFFFFF" :error-message="validationError.can_collect_color_lower" v-model="configs.can_collect_color_lower"/>
       <color-input-field label="列表中可收取的颜色结束值" label-width="12em"
@@ -502,8 +526,8 @@ const RegionConfig = {
             <tip-block>以下配置为执行优化使用，尽量不要修改除非出问题了</tip-block>
       <color-input-field label="可收取颜色值起始值" label-width="10em" :error-message="validationError.collectable_lower" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_lower"/>
       <color-input-field label="可收取颜色值结束值" label-width="10em" :error-message="validationError.collectable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_upper"/>
-      <color-input-field label="浇水球颜色值起始值" label-width="10em" :error-message="validationError.water_lower" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_lower"/>
-      <color-input-field label="浇水球颜色值结束值" label-width="10em" :error-message="validationError.water_upper" placeholder="颜色值 #FFFFFF" v-model="configs.helpable_upper"/>
+      <color-input-field label="浇水球颜色值起始值" label-width="10em" :error-message="validationError.water_lower" placeholder="颜色值 #FFFFFF" v-model="configs.water_lower"/>
+      <color-input-field label="浇水球颜色值结束值" label-width="10em" :error-message="validationError.water_upper" placeholder="颜色值 #FFFFFF" v-model="configs.water_upper"/>
       <van-cell title="ocr配置" is-link @click="routerTo('/advance/region/ocr')" />
       <van-cell title="线程池配置" is-link @click="routerTo('/advance/region/threadPool')" />
     </van-cell-group>
@@ -516,9 +540,14 @@ const OcrConfig = {
   data() {
     return {
       ocr_invoke_count: '已使用10次剩余490次',
+      ocrPriorityOptions: [
+        { text: '自动', value: 'auto' },
+        { text: 'mlkit优先', value: 'mlkit' },
+        { text: 'paddle优先', value: 'paddle' },
+      ],
       configs: {
         // ocr相关
-        useOcr: true,
+        useBaiduOcr: true,
         ocrThreshold: null,
         autoSetThreshold: true,
         apiKey: '',
@@ -526,6 +555,7 @@ const OcrConfig = {
         // 排行榜识别配置
         check_finger_by_pixels_amount: true,
         finger_img_pixels: 1800,
+        local_ocr_priority: 'auto',
       }
     }
   },
@@ -540,15 +570,23 @@ const OcrConfig = {
       <tip-block>默认使用多点找色方式识别列表中的小手，失效后请打开基于像素点个数判断是否可收取，这是一个阈值当像素点个数小于给定的值之后就判定为可收取</tip-block>
       <switch-cell title="基于像素点个数判断是否可收取" title-style="flex:2;" v-model="configs.check_finger_by_pixels_amount" />
       <number-field v-if="configs.check_finger_by_pixels_amount" v-model="configs.finger_img_pixels" label="小手像素点个数" placeholder="小手像素点个数" label-width="8em" />
-      <tip-block>当不启用百度OCR的时候会使用多点找色方式模拟识别倒计时，如果模拟识别不准确时可以看情况选择百度OCR方式</tip-block>
-      <tip-block v-if="configs.useOcr">{{ocr_invoke_count}}</tip-block>
-      <switch-cell title="是否启用百度OCR倒计时" v-model="configs.useOcr" />
-      <template v-if="configs.useOcr">
+      <tip-block>当前获取倒计时的机制是 如果已安装mlkitOcr插件则自动使用mlkit，未安装则尝试PaddleOCR（需要修改版AutoJS支持），AutoJS不支持则根据如下规则：</tip-block>
+      <tip-block>当不启用百度OCR的时候会使用多点找色方式模拟识别倒计时，如果模拟识别不准确时可以看情况选择百度OCR方式，需要注意默认每天的免费次数是500次</tip-block>
+      <tip-block v-if="configs.useBaiduOcr">{{ocr_invoke_count}}</tip-block>
+      <van-cell title="本地OCR优先级">
+          <template #right-icon>
+            <van-dropdown-menu active-color="#1989fa" class="cell-dropdown">
+              <van-dropdown-item v-model="configs.local_ocr_priority" :options="ocrPriorityOptions" />
+            </van-dropdown-menu>
+          </template>
+        </van-cell>
+      <switch-cell title="是否启用百度OCR倒计时" v-model="configs.useBaiduOcr" />
+      <template v-if="configs.useBaiduOcr">
         <tip-block>请填写百度AI平台申请的API_KEY和SECRET_KEY</tip-block>
         <van-field v-model="configs.apiKey" label="" placeholder="apiKey" label-width="8em" type="text" input-align="right" />
         <van-field v-model="configs.secretKey" label="" placeholder="secretKey" label-width="8em" type="password" input-align="right" />
       </template>
-      <template v-if="configs.useOcr">
+      <template v-if="configs.useBaiduOcr">
         <tip-block>通过图片中非白色的像素点阈值筛选当前图片是否进行OCR请求 理论上像素点越多数值越小 越有必要进行OCR识别 从而节省识别次数</tip-block>
         <switch-cell title="是否自动判断OCR像素阈值" v-model="configs.autoSetThreshold"/>
         <number-field v-model="configs.ocrThreshold" label="OCR像素阈值" placeholder="留空使用默认配置" label-width="8em" />
