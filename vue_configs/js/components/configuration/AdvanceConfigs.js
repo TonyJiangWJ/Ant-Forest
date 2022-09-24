@@ -548,6 +548,8 @@ const OcrConfig = {
       configs: {
         // ocr相关
         useBaiduOcr: true,
+        // 倒计时使用模拟OCR
+        countdown_mock_ocr: true,
         ocrThreshold: null,
         autoSetThreshold: true,
         apiKey: '',
@@ -570,17 +572,21 @@ const OcrConfig = {
       <tip-block>默认使用多点找色方式识别列表中的小手，失效后请打开基于像素点个数判断是否可收取，这是一个阈值当像素点个数小于给定的值之后就判定为可收取</tip-block>
       <switch-cell title="基于像素点个数判断是否可收取" title-style="flex:2;" v-model="configs.check_finger_by_pixels_amount" />
       <number-field v-if="configs.check_finger_by_pixels_amount" v-model="configs.finger_img_pixels" label="小手像素点个数" placeholder="小手像素点个数" label-width="8em" />
-      <tip-block>当前获取倒计时的机制是 如果已安装mlkitOcr插件则自动使用mlkit，未安装则尝试PaddleOCR（需要修改版AutoJS支持），AutoJS不支持则根据如下规则：</tip-block>
-      <tip-block>当不启用百度OCR的时候会使用多点找色方式模拟识别倒计时，如果模拟识别不准确时可以看情况选择百度OCR方式，需要注意默认每天的免费次数是500次</tip-block>
-      <tip-block v-if="configs.useBaiduOcr">{{ocr_invoke_count}}</tip-block>
+      <tip-block>本地OCR支持，目前主要为神奇海洋和排行榜倒计时使用。如果已安装mlkitOcr插件则自动使用mlkit，未安装则尝试PaddleOCR（需要修改版AutoJS支持）</tip-block>
       <van-cell title="本地OCR优先级">
-          <template #right-icon>
-            <van-dropdown-menu active-color="#1989fa" class="cell-dropdown">
-              <van-dropdown-item v-model="configs.local_ocr_priority" :options="ocrPriorityOptions" />
-            </van-dropdown-menu>
-          </template>
-        </van-cell>
+        <template #right-icon>
+          <van-dropdown-menu active-color="#1989fa" class="cell-dropdown">
+            <van-dropdown-item v-model="configs.local_ocr_priority" :options="ocrPriorityOptions" />
+          </van-dropdown-menu>
+        </template>
+      </van-cell>
+      <tip-block>经过测试发现mlkitOcr识别倒计时并不太准确，可以选择Paddle优先或开启多点找色模拟OCR或百度OCR，这样排行榜中倒计时会获取的比较准确。神奇海洋不受此开关影响继续使用本地OCR</tip-block>
+      <tip-block>倒计时识别准确性 百度OCR > Paddle > 模拟OCR > MlKit</tip-block>
+      <tip-block>倒计时识别速度 模拟OCR > MlKit > Paddle > 百度OCR</tip-block>
+      <switch-cell title="是否启用模拟OCR倒计时" label-width="12em" v-model="configs.countdown_mock_ocr" />
+      <tip-block>如果模拟识别不准确时可以看情况选择开启百度OCR方式（开启后模拟OCR自动失效），需要注意默认每天的免费次数是500次</tip-block>
       <switch-cell title="是否启用百度OCR倒计时" v-model="configs.useBaiduOcr" />
+      <tip-block v-if="configs.useBaiduOcr">{{ocr_invoke_count}}</tip-block>
       <template v-if="configs.useBaiduOcr">
         <tip-block>请填写百度AI平台申请的API_KEY和SECRET_KEY</tip-block>
         <van-field v-model="configs.apiKey" label="" placeholder="apiKey" label-width="8em" type="text" input-align="right" />
