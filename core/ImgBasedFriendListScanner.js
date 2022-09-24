@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-09-24 17:41:38
+ * @Last Modified time: 2022-09-24 20:31:54
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -19,9 +19,10 @@ let BaiduOcrUtil = require('../lib/BaiduOcrUtil.js')
 let localOcrUtil = require('../lib/LocalOcrUtil.js')
 let aesUtil = require('../lib/AesUtil.js')
 let OcrUtil = null
-if (localOcrUtil.enabled) {
+if (!_config.countdown_mock_ocr && localOcrUtil.enabled) {
   OcrUtil = wrapLocalOcrUtil(localOcrUtil)
-} else if (_config.useBaiduOcr) {
+} 
+if (_config.useBaiduOcr) {
   OcrUtil = BaiduOcrUtil
 }
 let useMockOcr = false
@@ -34,6 +35,7 @@ function wrapLocalOcrUtil(localOcr) {
   return {
     getImageNumber: function (base64String) {
       let img = images.fromBase64(base64String)
+      img = images.resize(img, [img.getWidth() * 2, img.getHeight() * 2])
       let recognizedText = (localOcr.recognize(img) || '').replace(/\n/g, '')
       let regex = /(\d+)/
       let result = regex.exec(recognizedText)

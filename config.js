@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-09-24 18:17:46
+ * @Last Modified time: 2022-09-24 20:23:33
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -120,6 +120,8 @@ let default_config = {
   delayStartTime: 5,
   // 是否使用百度的ocr识别倒计时
   useBaiduOcr: false,
+  // 倒计时使用模拟OCR
+  countdown_mock_ocr: true,
   // 本地ocr优先级
   local_ocr_priority: 'auto',
   // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
