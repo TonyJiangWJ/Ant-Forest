@@ -28,11 +28,19 @@ config.show_debug_log = true
 config.async_save_log_file = false
 let commonFunction = sRequire('CommonFunction')
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
+let paddleOcr = sRequire('PaddleOcrUtil')
+let mlkitOcr = sRequire('MlkitOcrUtil')
 // 默认以优先级加载mlkit插件 无插件时使用paddleOcr
-let localOcr = require('../lib/LocalOcrUtil.js')
-console.info('当前本地ocr类型为：', localOcr.type, '启用状态：', localOcr.enabled)
+let localOcr = null
+let usePaddle = config.local_ocr_priority == 'paddle'
 // 强制指定为paddleOcr
-// localOcr = sRequire('PaddleOcrUtil')
+if (usePaddle) {
+  localOcr = paddleOcr
+} else {
+  localOcr = mlkitOcr
+}
+console.info('当前本地ocr类型为：', localOcr.type, '启用状态：', localOcr.enabled)
+
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 runningQueueDispatcher.addRunningTask()
 
@@ -77,6 +85,7 @@ var canvasWindow = floaty.rawWindow(
         <button id="cutOrPoint" layout_weight="1" text="裁切小图" />
         <button id="recognizeText" layout_weight="1" text="识别文字" />
         <button id="openFile" layout_weight="1" text="选择图片文件" />
+        <button id="toggleOcr" layout_weight="1" text="切换为Paddle" />
       </horizontal>
       <canvas id="canvas" margin="5dp" layout_weight="1" />
       <horizontal bg="#ffffff">
@@ -116,6 +125,8 @@ var canvasMove = canvasWindowCtrl.outScreen()
 var miniMove = miniWindowCtrl.outScreen()
 ui.run(function () {
   canvasWindow.recognizeText.setVisibility(View.GONE)
+  canvasWindow.toggleOcr.setVisibility(View.GONE)
+  canvasWindow.toggleOcr.setText(usePaddle ? '切换为Ml-Kit' : '切换为Paddle')
 })
 threads.start(function () {
   sleep(100)
@@ -232,24 +243,39 @@ canvasWindow.cutOrPoint.on('click', () => {
         canvasWindow.cutOrPoint.text('复制Base64')
         canvasWindow.recognizeText.setVisibility(View.VISIBLE)
         canvasWindow.previewCanvas.setVisibility(View.VISIBLE)
+        canvasWindow.openFile.setVisibility(View.GONE)
+        canvasWindow.toggleOcr.setVisibility(View.VISIBLE)
       } else {
         canvasWindow.cutOrPoint.text('裁切小图')
         canvasWindow.recognizeText.setVisibility(View.GONE)
         canvasWindow.previewCanvas.setVisibility(View.GONE)
         canvasWindow.previewVertical.setVisibility(View.GONE)
+
+        canvasWindow.openFile.setVisibility(View.VISIBLE)
+        canvasWindow.toggleOcr.setVisibility(View.GONE)
       }
       cutMode = !cutMode
     })
   })
 })
-
+canvasWindow.toggleOcr.on('click', () => {
+  usePaddle = !usePaddle
+  ui.run(function () {
+    canvasWindow.toggleOcr.setText(usePaddle ? '切换为Ml-Kit' : '切换为Paddle')
+  })
+  if (usePaddle) {
+    localOcr = paddleOcr
+  } else {
+    localOcr = mlkitOcr
+  }
+})
 canvasWindow.recognizeText.on('click', () => {
   threads.start(function () {
     if (cutMode) {
       if (localOcr == null || !localOcr.enabled) {
-        toastLog('当前版本AutoJS不支持本地OCR')
+        toastLog(['当前版本AutoJS不支持本地OCR {}', localOcr ? localOcr.type : ''])
         ui.post(() => {
-          canvasWindow.recognize_text.text('当前版本AutoJS不支持本地Ocr')
+          canvasWindow.recognize_text.text('当前版本AutoJS不支持本地' + (localOcr ? localOcr.type : '') + 'Ocr')
         })
         return
       }
