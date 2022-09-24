@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-09-24 17:17:53
+ * @Last Modified time: 2022-09-24 18:17:46
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -166,6 +166,11 @@ let default_config = {
   collectable_upper: '#ffff14',
   water_lower: '#e8cb3a',
   water_upper: '#ffed8e',
+  // 神奇海洋识别区域
+  sea_ocr_left: 10,
+  sea_ocr_top: 1800,
+  sea_ocr_width: 370,
+  sea_ocr_height: 240,
   // 排行榜校验区域
   rank_check_left: 190,
   rank_check_top: 170,

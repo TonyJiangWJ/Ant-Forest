@@ -275,6 +275,11 @@ const RegionConfig = {
       mounted: false,
       hough_config: false,
       configs: {
+        // 神奇海洋识别区域
+        sea_ocr_left: 10,
+        sea_ocr_top: 1800,
+        sea_ocr_width: 370,
+        sea_ocr_height: 240,
         // 排行榜校验区域
         rank_check_left: null,
         rank_check_top: null,
@@ -305,6 +310,7 @@ const RegionConfig = {
         rank_check_region: '',
         bottom_check_region: '',
         tree_collect_region: '',
+        sea_ocr_region: '',
         // 能量球识别配置
         skip_own_watering_ball: true,
         hough_param1: null,
@@ -322,6 +328,7 @@ const RegionConfig = {
       },
       validations: {
         stroll_button_region: VALIDATOR.REGION,
+        sea_ocr_region: VALIDATOR.REGION,
         rank_check_region: VALIDATOR.REGION,
         bottom_check_region: VALIDATOR.REGION,
         tree_collect_region: VALIDATOR.REGION,
@@ -342,6 +349,7 @@ const RegionConfig = {
       this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
       this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
       this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
+      this.configs.sea_ocr_region = this.configs.sea_ocr_left + ',' + this.configs.sea_ocr_top + ',' + this.configs.sea_ocr_width + ',' + this.configs.sea_ocr_height
 
       $app.invoke('loadConfigs', {}, config => {
         Object.keys(this.configs).forEach(key => {
@@ -352,7 +360,7 @@ const RegionConfig = {
         this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
         this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
         this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
-
+        this.configs.sea_ocr_region = this.configs.sea_ocr_left + ',' + this.configs.sea_ocr_top + ',' + this.configs.sea_ocr_width + ',' + this.configs.sea_ocr_height
         this.mounted = true
       })
     },
@@ -375,6 +383,9 @@ const RegionConfig = {
     },
     treeCollectRegion: function () {
       return this.configs.tree_collect_region
+    },
+    seaOcrRegion: function () {
+      return this.configs.sea_ocr_region
     },
     visualConfigs: function () {
       return {
@@ -438,6 +449,15 @@ const RegionConfig = {
         this.configs.tree_collect_height = parseInt(match[4])
       }
     },
+    seaOcrRegion: function () {
+      if (this.mounted && this.validations.sea_ocr_region.validate(this.seaOcrRegion)) {
+        let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.seaOcrRegion)
+        this.configs.sea_ocr_left = parseInt(match[1])
+        this.configs.sea_ocr_top = parseInt(match[2])
+        this.configs.sea_ocr_width = parseInt(match[3])
+        this.configs.sea_ocr_height = parseInt(match[4])
+      }
+    },
     // 变更区域信息，用于实时展示
     visualConfigs: {
       handler: function (v) {
@@ -495,6 +515,10 @@ const RegionConfig = {
         <tip-block>排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像判断无效只能如此</tip-block>
         <van-field v-model="configs.friendListScrollTime" label="排行榜下拉次数" label-width="10em" type="text" placeholder="请输入排行榜下拉次数" input-align="right" />
       </template>
+      <region-input-field
+          :device-height="device.height" :device-width="device.width"
+          :error-message="validationError.sea_ocr_region"
+          v-model="configs.sea_ocr_region" label="神奇海洋OCR识别区域" label-width="12em" />
       <color-input-field label="列表中可收取的颜色起始值" label-width="12em"
             placeholder="可收取颜色值 #FFFFFF" :error-message="validationError.can_collect_color_lower" v-model="configs.can_collect_color_lower"/>
       <color-input-field label="列表中可收取的颜色结束值" label-width="12em"

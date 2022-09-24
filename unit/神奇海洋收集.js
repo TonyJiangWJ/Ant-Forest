@@ -3,6 +3,7 @@ config.buddha_like_mode = false
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
+floatyInstance.enableLog()
 let commonFunctions = singletonRequire('CommonFunction')
 let widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
@@ -29,7 +30,7 @@ commonFunctions.registerOnEngineRemoved(function () {
   config.resetBrightness && config.resetBrightness()
   debugInfo('校验并移除已加载的dex')
   // 移除运行中任务
-  runningQueueDispatcher.removeRunningTask(true, true,
+  runningQueueDispatcher.removeRunningTask(true, false,
     () => {
       // 保存是否需要重新锁屏
       unlocker.saveNeedRelock()
@@ -125,11 +126,13 @@ function checkNext() {
   }
   let screen = commonFunctions.checkCaptureScreenPermission()
   if (screen) {
-    let text = ocrUtil.recognize(screen, [0, 1800, 370, 240])
+    let ocrRegion = [config.sea_ocr_left, config.sea_ocr_top, config.sea_ocr_width, config.sea_ocr_height]
+    debugInfo(['ocr识别区域：{}', JSON.stringify(ocrRegion)])
+    let text = ocrUtil.recognize(screen, ocrRegion)
     if (text) {
       text = text.replace(/\n/g, '')
-      let regex = /下次清理时间(\d+)分((\d+)秒)/
-      floatyInstance.setFloatyInfo({x: 120, y: 1800}, '识别倒计时文本：' + text)
+      let regex = /(\d+)分((\d+)秒)?/
+      floatyInstance.setFloatyInfo({x: ocrRegion[0], y: ocrRegion[1]}, '识别倒计时文本：' + text)
       sleep(500)
       let result = regex.exec(text)
       if (result && result.length > 0) {
