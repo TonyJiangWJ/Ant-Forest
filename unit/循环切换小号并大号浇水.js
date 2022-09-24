@@ -20,7 +20,7 @@ commonFunctions.registerOnEngineRemoved(function () {
     automator.lockScreen()
   }
   // 移除运行中任务
-  runningQueueDispatcher.removeRunningTask(true, true,
+  runningQueueDispatcher.removeRunningTask(true, false,
     () => {
       // 保存是否需要重新锁屏
       unlocker.saveNeedRelock()
