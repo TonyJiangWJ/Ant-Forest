@@ -238,6 +238,7 @@ module.exports = function (obj) {
 - **胜
 - **庭
 - **光
+- **杰
 
 
 #### wechat
