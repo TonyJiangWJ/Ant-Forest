@@ -88,8 +88,8 @@ function findTrashs (delay) {
       {
         param1: config.hough_param1 || 30,
         param2: config.hough_param2 || 30,
-        minRadius: config.hough_min_radius || cvt(65),
-        maxRadius: config.hough_max_radius || cvt(75),
+        minRadius: cvt(78),
+        maxRadius: cvt(88),
         minDst: config.hough_min_dst || cvt(100),
         region: [config.device_width / 2, config.device_height / 2, config.device_width / 2, config.device_height / 2]
       }
