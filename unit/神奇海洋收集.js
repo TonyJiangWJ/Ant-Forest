@@ -78,6 +78,7 @@ function openMiracleOcean () {
 }
 
 function findTrashs (delay) {
+  floatyInstance.setFloatyInfo({ x: config.device_width / 2, y: config.device_height / 2 }, '找垃圾球中...')
   sleep(delay || 3000)
   let screen = commonFunctions.checkCaptureScreenPermission()
   if (screen) {
