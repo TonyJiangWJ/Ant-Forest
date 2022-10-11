@@ -16,7 +16,7 @@ let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let SCALE_RATE = config.scaleRate
 let cvt = (v) => parseInt(v * SCALE_RATE)
 config.not_lingering_float_window = true
-
+config.sea_ball_region = config.sea_ball_region || [cvt(860), cvt(1350), cvt(140), cvt(160)]
 logInfo('======加入任务队列，并关闭重复运行的脚本=======')
 runningQueueDispatcher.addRunningTask()
 
@@ -89,15 +89,15 @@ function findTrashs (delay) {
       {
         param1: config.hough_param1 || 30,
         param2: config.hough_param2 || 30,
-        minRadius: cvt(78),
-        maxRadius: cvt(88),
+        minRadius: config.sea_ball_radius_min || cvt(20),
+        maxRadius: config.sea_ball_radius_max || cvt(35),
         minDst: config.hough_min_dst || cvt(100),
-        region: [config.device_width / 2, config.device_height / 2, config.device_width / 2, config.device_height / 2]
+        region: config.sea_ball_region
       }
     )
     findBalls = findBalls.map(ball => {
-      ball.x = ball.x + config.device_width / 2
-      ball.y = ball.y + config.device_height / 2
+      ball.x = ball.x + config.sea_ball_region[0]
+      ball.y = ball.y + config.sea_ball_region[1]
       return ball
     })
     debugInfo(['找到的球：{}', JSON.stringify(findBalls)])
@@ -126,6 +126,7 @@ function checkNext() {
     return
   }
   let screen = commonFunctions.checkCaptureScreenPermission()
+  let recognizeFailed = true
   if (screen) {
     let ocrRegion = [config.sea_ocr_left, config.sea_ocr_top, config.sea_ocr_width, config.sea_ocr_height]
     debugInfo(['ocr识别区域：{}', JSON.stringify(ocrRegion)])
@@ -141,7 +142,14 @@ function checkNext() {
         let remainSecs = parseInt(result[3])
         debugInfo(['下次生产时间: {} 分 {} 秒', remainMins, remainSecs])
         commonFunctions.setUpAutoStart(remainMins + 1)
+        recognizeFailed = false
       }
+    }
+  }
+  if (recognizeFailed) {
+    if (new Date().getHours() < 21) {
+      warnInfo('OCR识别失败，直接设置两小时后的定时任务')
+      commonFunctions.setUpAutoStart(120)
     }
   }
   

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-06-26 10:56:12
+ * @Last Modified time: 2022-09-30 15:40:36
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -334,7 +334,7 @@ const BaseScanner = function () {
     debugInfo(['找到可收取和和帮助的点集合：{}', JSON.stringify(clickPoints)])
     if (findPointCallback === EMPTY_FUNC) {
       let shouldWaitForWatering = false
-      clickPoints.forEach((point, idx) => {
+      clickPoints.sort(randomSort).forEach((point, idx) => {
         let b = point.ball
         if (
           // 收取自身的好友浇水球
@@ -351,7 +351,7 @@ const BaseScanner = function () {
             shouldWaitForWatering = true
           }
           if (idx < clickPoints.length - 1) {
-            this.randomSleep(100)
+            this.randomSleep()
           }
         }
       })
@@ -785,3 +785,8 @@ const BaseScanner = function () {
   }
 }
 module.exports = BaseScanner
+
+// inner function
+function randomSort(_, b) {
+  return Math.random() > Math.random() ? 1 : -1
+}
