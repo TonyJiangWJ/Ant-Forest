@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-09-24 20:23:33
+ * @Last Modified time: 2022-10-11 21:58:54
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -173,6 +173,9 @@ let default_config = {
   sea_ocr_top: 1800,
   sea_ocr_width: 370,
   sea_ocr_height: 240,
+  sea_ball_region: null,
+  sea_ball_radius_min: null,
+  sea_ball_radius_max: null,
   // 排行榜校验区域
   rank_check_left: 190,
   rank_check_top: 170,

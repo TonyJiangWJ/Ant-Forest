@@ -280,6 +280,9 @@ const RegionConfig = {
         sea_ocr_top: 1800,
         sea_ocr_width: 370,
         sea_ocr_height: 240,
+        sea_ball_region: [860, 1350, 140, 160],
+        sea_ball_radius_min: null,
+        sea_ball_radius_max: null,
         // 排行榜校验区域
         rank_check_left: null,
         rank_check_top: null,
@@ -515,10 +518,6 @@ const RegionConfig = {
         <tip-block>排行榜下拉的最大次数，使得所有数据都加载完，如果基于图像判断无效只能如此</tip-block>
         <van-field v-model="configs.friendListScrollTime" label="排行榜下拉次数" label-width="10em" type="text" placeholder="请输入排行榜下拉次数" input-align="right" />
       </template>
-      <region-input-field
-          :device-height="device.height" :device-width="device.width"
-          :error-message="validationError.sea_ocr_region"
-          v-model="configs.sea_ocr_region" label="神奇海洋OCR识别区域" label-width="12em" />
       <color-input-field label="列表中可收取的颜色起始值" label-width="12em"
             placeholder="可收取颜色值 #FFFFFF" :error-message="validationError.can_collect_color_lower" v-model="configs.can_collect_color_lower"/>
       <color-input-field label="列表中可收取的颜色结束值" label-width="12em"
@@ -528,6 +527,20 @@ const RegionConfig = {
       <color-input-field label="可收取颜色值结束值" label-width="10em" :error-message="validationError.collectable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_upper"/>
       <color-input-field label="浇水球颜色值起始值" label-width="10em" :error-message="validationError.water_lower" placeholder="颜色值 #FFFFFF" v-model="configs.water_lower"/>
       <color-input-field label="浇水球颜色值结束值" label-width="10em" :error-message="validationError.water_upper" placeholder="颜色值 #FFFFFF" v-model="configs.water_upper"/>
+      <van-divider content-position="left">
+        神奇海洋相关配置
+      </van-divider>
+      <region-input-field
+          :device-height="device.height" :device-width="device.width"
+          :error-message="validationError.sea_ocr_region"
+          v-model="configs.sea_ocr_region" label="神奇海洋OCR识别区域" label-width="12em" />
+      <tip-block>角标是指棕黄色的小球 中间带x1的那个</tip-block>
+      <region-input-field :array-value="true" v-model="configs.sea_ball_region" label="垃圾球角标所在位置" label-width="14em" :device-height="device.height" :device-width="device.width" />
+      <van-field v-model="configs.sea_ball_radius_min" label="垃圾球角标半径最小值" label-width="14em" type="text" placeholder="留空使用默认配置" input-align="right"/>
+      <van-field v-model="configs.sea_ball_radius_max" label="垃圾球角标半径最大值" label-width="14em" type="text" placeholder="留空使用默认配置" input-align="right"/>
+      <van-divider content-position="left">
+        进阶配置
+      </van-divider>
       <van-cell title="ocr配置" is-link @click="routerTo('/advance/region/ocr')" />
       <van-cell title="线程池配置" is-link @click="routerTo('/advance/region/threadPool')" />
     </van-cell-group>
