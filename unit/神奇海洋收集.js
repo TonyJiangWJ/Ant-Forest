@@ -103,11 +103,13 @@ function findTrashs (delay) {
     debugInfo(['找到的球：{}', JSON.stringify(findBalls)])
     if (findBalls && findBalls.length > 0) {
       let ball = findBalls[0]
-      floatyInstance.setFloatyInfo({x: ball.x, y:ball.y}, '找到了垃圾')
+      floatyInstance.setFloatyInfo({ x: ball.x, y: ball.y }, '找到了垃圾')
       sleep(500)
-      automator.click(ball.x + ball.radius, ball.y + ball.radius)
+      floatyInstance.setFloatyInfo({ x: ball.x - ball.radius * 2, y: ball.y + ball.radius * 2 }, '点击位置')
+      sleep(2000)
+      automator.click(ball.x - ball.radius * 2, ball.y + ball.radius * 2)
       sleep(1000)
-      let collect = widgetUtils.widgetGetOne('.*(清理|收下).*')
+      let collect = widgetUtils.widgetGetOne('.*(清理|收下|(欢迎|迎回)伙伴).*')
       if (collect) {
         automator.clickCenter(collect)
         // 二次校验
@@ -117,7 +119,8 @@ function findTrashs (delay) {
   }
 }
 
-function checkNext() {
+function checkNext (tryTime) {
+  tryTime = tryTime || 1
   if (!ocrUtil.enabled) {
     if (new Date().getHours() < 21) {
       warnInfo('当前版本AutoJS不支持本地OCR，直接设置两小时后的定时任务，此方式并不准确请手动设置实际定时时间，每天间隔两小时的定时任务 并注释下面自动设置定时任务的代码')
@@ -125,16 +128,21 @@ function checkNext() {
     }
     return
   }
+  let ocrRegion = [config.sea_ocr_left, config.sea_ocr_top, config.sea_ocr_width, config.sea_ocr_height]
+  floatyInstance.setFloatyInfo({ x: ocrRegion[0], y: ocrRegion[1] - 100}, '识别倒计时中...')
+  sleep(500)
   let screen = commonFunctions.checkCaptureScreenPermission()
   let recognizeFailed = true
   if (screen) {
-    let ocrRegion = [config.sea_ocr_left, config.sea_ocr_top, config.sea_ocr_width, config.sea_ocr_height]
     debugInfo(['ocr识别区域：{}', JSON.stringify(ocrRegion)])
+    screen = images.inRange(images.grayscale(screen), '#BEBEBE', '#ffffff')
+    let clip = images.clip(screen, ocrRegion[0], ocrRegion[1], ocrRegion[2], ocrRegion[3])
+    debugInfo(['图片信息：data:image/png;base64,{}', images.toBase64(clip)])
     let text = ocrUtil.recognize(screen, ocrRegion)
     if (text) {
       text = text.replace(/\n/g, '')
       let regex = /(\d+)分((\d+)秒)?/
-      floatyInstance.setFloatyInfo({x: ocrRegion[0], y: ocrRegion[1]}, '识别倒计时文本：' + text)
+      floatyInstance.setFloatyInfo({ x: ocrRegion[0], y: ocrRegion[1] }, '识别倒计时文本：' + text)
       sleep(500)
       let result = regex.exec(text)
       if (result && result.length > 0) {
@@ -148,9 +156,14 @@ function checkNext() {
   }
   if (recognizeFailed) {
     if (new Date().getHours() < 21) {
-      warnInfo('OCR识别失败，直接设置两小时后的定时任务')
-      commonFunctions.setUpAutoStart(120)
+      warnInfo('OCR识别失败，' + (tryTime <= 3 ? '再次识别' : '失败超过三次，直接设置两小时后的定时任务'))
+      if (tryTime <= 3) {
+        sleep(500)
+        checkNext(++tryTime)
+      } else {
+        commonFunctions.setUpAutoStart(120)
+      }
     }
   }
-  
+
 }
