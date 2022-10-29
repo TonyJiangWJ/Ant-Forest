@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-09-08 10:11:27
+ * @Last Modified time: 2022-10-29 19:35:35
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -371,12 +371,7 @@ function Ant_forest () {
    * @param {boolean} noStore 是否不记录当前能量值到缓存
    */
   const getCurrentEnergy = function (noStore) {
-    let currentEnergyWidget = _widgetUtils.widgetGetById(_config.energy_id || 'J_userEnergy')
-    let currentEnergy = undefined
-    if (currentEnergyWidget) {
-      let content = currentEnergyWidget.text() || currentEnergyWidget.desc()
-      currentEnergy = parseInt(content.match(/\d+/))
-    }
+    let currentEnergy = _widgetUtils.getCurrentEnergy()
     if (!noStore && currentEnergy) {
       // 存储能量值数据
       _commonFunctions.storeEnergy(currentEnergy)
@@ -546,7 +541,7 @@ function Ant_forest () {
   }
 
   const signUpForMagicSpecies = function () {
-    let find = _widgetUtils.widgetGetOne(_config.magic_species_text || '点击发现|抽取今日', 1000)
+    let find = _widgetUtils.widgetGetOne(_config.magic_species_text || '点击发现|抽取今日|点击开启', 1000)
     if (find) {
       automator.clickCenter(find)
       sleep(5000)

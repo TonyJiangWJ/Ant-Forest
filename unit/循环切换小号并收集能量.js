@@ -105,12 +105,7 @@ function doCollectSelf () {
 }
 
 function getCurrentEnergy () {
-  let currentEnergyWidget = widgetUtils.widgetGetById(config.energy_id || 'J_userEnergy')
-  let currentEnergy = undefined
-  if (currentEnergyWidget) {
-    let content = currentEnergyWidget.text() || currentEnergyWidget.desc()
-    currentEnergy = parseInt(content.match(/\d+/))
-  }
+  let currentEnergy = _widgetUtils.getCurrentEnergy()
   logUtils.debugInfo(['getCurrentEnergy 获取能量值: {}', currentEnergy])
   return currentEnergy
 }

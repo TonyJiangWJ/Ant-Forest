@@ -134,10 +134,11 @@ const FloatyConfig = {
       </number-field>
       <number-field v-model="configs.min_floaty_x" label="悬浮窗位置X" placeholder="请输入悬浮窗横坐标位置" />
       <number-field v-model="configs.min_floaty_y" label="悬浮窗位置Y" placeholder="请输入悬浮窗纵坐标位置" />
-      <tip-block>刘海屏或者挖孔屏悬浮窗显示位置和实际目测位置不同，需要施加一个偏移量，一般是负值，脚本运行时会自动设置</tip-block>
+      <tip-block>刘海屏或者挖孔屏悬浮窗显示位置和实际目测位置不同，需要施加一个偏移量，一般是负值，脚本运行时会自动设置，非异形屏请自行修改为0</tip-block>
       <switch-cell title="下次执行时重新识别" v-model="configs.auto_set_bang_offset" />
-      <van-cell center title="当前偏移量">
-        <span>{{configs.auto_set_bang_offset ? "下次执行时重新识别": configs.bang_offset}}</span>
+      <number-field v-if="!configs.auto_set_bang_offset" v-model="configs.bang_offset" label="偏移量" label-width="12em" />
+      <van-cell center title="偏移量" v-else>
+        <span>下次执行时重新识别</span>
       </van-cell>
       <switch-cell title="不自动设置定时任务" label="是否在脚本执行完成后不自动设置定时任务，仅保留倒计时悬浮窗" title-style="flex:3;" v-model="configs.not_setup_auto_start" />
       <switch-cell v-if="configs.not_setup_auto_start" title="完全关闭定时任务功能" label="完全禁止脚本设置定时任务，只保留部分延迟机制的定时任务" title-style="flex:3;" v-model="configs.disable_all_auto_start" />
