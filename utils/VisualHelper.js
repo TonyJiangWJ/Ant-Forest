@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-20 16:55:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-10 11:36:41
+ * @Last Modified time: 2022-10-26 03:59:43
  * @Description: 
  */
 
@@ -16,6 +16,7 @@ function VisualHelper () {
   let self = this
   this.window = null
   this.toDrawList = []
+  this.drawer = null
 
   this.init = function () {
     if (!config.enable_visual_helper) {
@@ -29,37 +30,46 @@ function VisualHelper () {
     this.window.setSize(config.device_width, config.device_height)
     this.window.setTouchable(false)
 
+    let Typeface = android.graphics.Typeface
+    var paint = new Paint()
+    paint.setStrokeWidth(1)
+    paint.setTypeface(Typeface.DEFAULT_BOLD)
+    paint.setTextAlign(Paint.Align.LEFT)
+    paint.setAntiAlias(true)
+    paint.setStrokeJoin(Paint.Join.ROUND)
+    paint.setDither(true)
+    paint.setTextSize(30)
     this.window.canvas.on("draw", function (canvas) {
       // try {
       // 清空内容
       canvas.drawColor(0xFFFFFF, android.graphics.PorterDuff.Mode.CLEAR)
+      if (self.drawer == null) {
+        self.drawer = new Drawer(canvas, paint)
+      }
 
       // let canvas = new com.stardust.autojs.core.graphics.ScriptCanvas(width, height)
-      let Typeface = android.graphics.Typeface
-      var paint = new Paint()
-      paint.setStrokeWidth(1)
-      paint.setTypeface(Typeface.DEFAULT_BOLD)
-      paint.setTextAlign(Paint.Align.LEFT)
-      paint.setAntiAlias(true)
-      paint.setStrokeJoin(Paint.Join.ROUND)
-      paint.setDither(true)
-      paint.setTextSize(30)
 
       drawText('可视化辅助工具运行中', { x: 100, y: 300 + offset }, canvas, paint, null, 30)
-      if (self.toDrawList && self.toDrawList.length > 0) {
-        self.toDrawList.forEach(drawInfo => {
-          switch (drawInfo.type) {
-            case 'rect':
-              drawRectAndText(drawInfo.text, drawInfo.rect, drawInfo.color || '#00ff00', canvas, paint)
-              break
-            case 'circle':
-              drawCircleAndText(drawInfo.text, drawInfo.circle, drawInfo.color || '#00ff00', canvas, paint)
-              break
-            case 'text':
-              drawText(drawInfo.text, drawInfo.position, canvas, paint, drawInfo.color || '#00ff00')
-              break
-            default:
-              debugInfo(['no match draw event for {}', drawInfo.type], true)
+      let toDrawList = self.toDrawList
+      if (toDrawList && toDrawList.length > 0) {
+        toDrawList.forEach(drawInfo => {
+          try {
+            switch (drawInfo.type) {
+              case 'rect':
+                self.drawer.drawRectAndText(drawInfo.text, drawInfo.rect, drawInfo.color || '#00ff00')
+                break
+              case 'circle':
+                self.drawer.drawCircleAndText(drawInfo.text, drawInfo.circle, drawInfo.color || '#00ff00')
+                break
+              case 'text':
+                self.drawer.drawText(drawInfo.text, drawInfo.position, drawInfo.color || '#00ff00')
+                break
+              default:
+                debugInfo(['no match draw event for {}', drawInfo.type], true)
+            }
+          } catch (e) {
+            errorInfo('执行异常' + e)
+            commonFunction.printExceptionStack(e)
           }
         })
       }
@@ -78,19 +88,23 @@ function VisualHelper () {
     }
   }
 
-  this.displayAndClearAll = function () {
+  this.displayAndClearAll = function (timeout) {
     if (!config.enable_visual_helper) {
       return
     }
+    timeout = timeout || 1000
     if (this.toDrawList && this.toDrawList.length > 0) {
-      debugInfo('展示所有元素并等待1秒 总数：' + this.toDrawList.length)
-      sleep(1000)
+      debugInfo(['展示所有元素并等待{}秒 总数：{}', timeout / 1000, this.toDrawList.length])
+      sleep(timeout)
       this.toDrawList = []
     }
   }
 
   this.addRectangle = function (text, rectRegion, color) {
     if (!config.enable_visual_helper) {
+      return
+    }
+    if (!validRegion(rectRegion)) {
       return
     }
     ui.run(function () {
@@ -102,6 +116,11 @@ function VisualHelper () {
         color: color,
       })
     })
+    return this
+  }
+
+  this.isValidRectangle = function (r) {
+    return validRegion(r)
   }
 
   this.addCircle = function (text, circleInfo, color) {
@@ -117,6 +136,7 @@ function VisualHelper () {
         color: color,
       })
     })
+    return this
   }
 
   this.addText = function (text, position, color) {
@@ -132,6 +152,7 @@ function VisualHelper () {
         color: color,
       })
     })
+    return this
   }
 
 }
@@ -218,6 +239,45 @@ function drawCoordinateAxis (canvas, paint) {
     canvas.drawText(y, 0, y + offset, paint)
     paint.setStrokeWidth(0.5)
     canvas.drawLine(0, y + offset, width, y + offset, paint)
+  }
+}
+
+function validRegion (region) {
+  if (!region || region.length !== 4) {
+    return false
+  }
+  if (region.filter(v => v < 0).length > 0) {
+    return false
+  }
+  if (region[2] == 0 || region[3] == 0) {
+    return false
+  }
+  return true
+}
+
+function Drawer (canvas, paint) {
+  this.canvas = canvas
+  this.paint = paint
+  this.color = '#ffffff'
+  this.textSize = 20
+  this.drawText = function (text, position, color, textSize) {
+    this.color = color || this.color
+    this.textSize = textSize || this.textSize
+    drawText(text, position, this.canvas, this.paint, this.color, this.textSize)
+  }
+
+  this.drawRectAndText = function (text, position, color, textSize) {
+    this.color = color || this.color
+    this.textSize = textSize || this.textSize
+    this.paint.setTextSize(this.textSize)
+    drawRectAndText(text, position, this.color, this.canvas, this.paint)
+  }
+
+  this.drawCircleAndText = function (text, circleInfo, color, textSize) {
+    this.color = color || this.color
+    this.textSize = textSize || this.textSize
+    this.paint.setTextSize(this.textSize)
+    drawCircleAndText(text, circleInfo, this.color, this.canvas, this.paint)
   }
 }
 

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-09-30 15:40:36
+ * @Last Modified time: 2022-10-29 19:47:45
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -465,7 +465,7 @@ const BaseScanner = function () {
   }
 
   this._protectInfoDetect = function (name) {
-    let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 500, true, true)
+    let usingInfo = _widgetUtils.widgetGetOne(_config.using_protect_content, 500, true, true, null, { algorithm: 'PDFS' })
     if (usingInfo !== null) {
       let target = usingInfo.target
       let usingTime = null
@@ -477,7 +477,7 @@ const BaseScanner = function () {
         time = parent.child(2).desc()
       }
       let isToday = true
-      let yesterday = _widgetUtils.widgetGetOne('昨天|Yesterday', 1000, true, true)
+      let yesterday = _widgetUtils.widgetGetOne('昨天|Yesterday', 1000, true, true, null, { algorithm: 'PDFS' })
       let yesterdayRow = null
       if (yesterday !== null) {
         yesterdayRow = yesterday.target.row()
@@ -487,7 +487,7 @@ const BaseScanner = function () {
       if (!isToday) {
         // 获取前天的日期
         let dateBeforeYesterday = formatDate(new Date(new Date().getTime() - 3600 * 24 * 1000 * 2), 'MM-dd')
-        let dayBeforeYesterday = _widgetUtils.widgetGetOne(dateBeforeYesterday, 200, true, true)
+        let dayBeforeYesterday = _widgetUtils.widgetGetOne(dateBeforeYesterday, 200, true, true, null, { algorithm: 'PDFS' })
         if (dayBeforeYesterday !== null) {
           let dayBeforeYesterdayRow = dayBeforeYesterday.target.row()
           if (dayBeforeYesterdayRow < targetRow) {
@@ -584,7 +584,7 @@ const BaseScanner = function () {
         }
         sleep(50)
         postCollected = _widgetUtils.getYouCollectEnergy() || 0
-        postEnergy = _widgetUtils.getFriendEnergy()
+        postEnergy = _widgetUtils.getCurrentEnergy()
       }
       if (!timeoutFlag) {
         debugInfo([
@@ -620,7 +620,7 @@ const BaseScanner = function () {
     }
     try {
       preGot = _widgetUtils.getYouCollectEnergy() || 0
-      preE = _widgetUtils.getFriendEnergy()
+      preE = _widgetUtils.getCurrentEnergy()
     } catch (e) {
       errorInfo("[" + obj.name + "]获取收集前能量异常" + e)
       _commonFunctions.printExceptionStack(e)
@@ -650,7 +650,7 @@ const BaseScanner = function () {
       try {
         // 1.5秒后重新获取能量值
         postGet = _widgetUtils.getYouCollectEnergy() || 0
-        postE = _widgetUtils.getFriendEnergy()
+        postE = _widgetUtils.getCurrentEnergy()
         collectEnergy = postGet - preGot
         friendGrowEnergy = postE - preE
       } catch (e) {

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-10-11 21:58:54
+ * @Last Modified time: 2022-10-24 00:11:05
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -147,7 +147,7 @@ let default_config = {
   home_ui_content: '查看更多动态.*',
   friend_home_check_regex: '你收取TA|TA收取你',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
-  magic_species_text: '点击发现|抽取今日',
+  magic_species_text: '点击发现|抽取今日|点击开启',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
   // 用于判断是否在好友排行榜
