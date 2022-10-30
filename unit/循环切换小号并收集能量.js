@@ -105,7 +105,7 @@ function doCollectSelf () {
 }
 
 function getCurrentEnergy () {
-  let currentEnergy = _widgetUtils.getCurrentEnergy()
+  let currentEnergy = widgetUtils.getCurrentEnergy()
   logUtils.debugInfo(['getCurrentEnergy 获取能量值: {}', currentEnergy])
   return currentEnergy
 }
