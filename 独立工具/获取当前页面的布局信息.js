@@ -2,8 +2,8 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-04-29 14:44:49
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-10-23 09:54:34
- * @Description: 
+ * @Last Modified time: 2022-11-23 16:40:13
+ * @Description: https://github.com/TonyJiangWJ/AutoScriptBase
  */
 let { config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
@@ -11,14 +11,40 @@ let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
-
+let formatDate = require('../lib/DateUtil.js')
 let workpath = FileUtils.getCurrentWorkPath()
 runtime.loadDex(workpath + '/lib/autojs-common.dex')
 importClass(com.tony.autojs.search.UiObjectTreeBuilder)
 
+let args = engines.myEngine().execArgv
+console.log('来源参数：' + JSON.stringify(args))
+let inspectConfig = args || {}
+if (typeof inspectConfig.save_data_js == 'undefined') {
+  inspectConfig.save_data_js = true
+}
+if (typeof inspectConfig.save_img_js == 'undefined') {
+  inspectConfig.save_img_js = true
+}
+if (typeof inspectConfig.save_history == 'undefined') {
+  inspectConfig.save_history = true
+}
 commonFunctions.registerOnEngineRemoved(function () {
   logUtils.showCostingInfo()
 }, 'logging cost')
+
+// 检查手机是否开启无障碍服务
+// 当无障碍经常莫名消失时  可以传递true 强制开启无障碍
+// if (!commonFunctions.checkAccessibilityService(true)) {
+if (!commonFunctions.ensureAccessibilityEnabled()) {
+  toastLog('获取无障碍权限失败')
+  exit()
+}
+if (inspectConfig.capture) {
+  if (!requestScreenCapture()) {
+    toastLog('请求截图权限失败')
+    exit()
+  }
+}
 // 清空所有日志
 logUtils.clearLogFile()
 if (!floatyInstance.init()) {
@@ -41,9 +67,17 @@ if (!floatyInstance.hasOwnProperty('setFloatyInfo')) {
 floatyInstance.setFloatyInfo({ x: parseInt(config.device_width / 2.7), y: parseInt(config.device_height / 2) }, '即将开始分析', { textSize: 20 })
 sleep(1000)
 let limit = 3
-while (limit > 0) {
+while (limit > 0 && !inspectConfig.immediate) {
   floatyInstance.setFloatyText('倒计时' + limit-- + '秒')
   sleep(1000)
+}
+
+let imgBase64 = null
+if (inspectConfig.capture) {
+  floatyInstance.setFloatyText(' ')
+  sleep(50)
+  let screen = captureScreen()
+  imgBase64 = images.toBase64(screen)
 }
 floatyInstance.setFloatyText('正在分析中...')
 let windowRootsList = getWindowRoots()
@@ -55,7 +89,7 @@ let start = new Date().getTime()
 let nodeList = treeNodeBuilder.buildTreeNode()
 logUtils.debugInfo(['获取总根节点数：{}', nodeList.size()])
 if (nodeList.size() <= 0) {
-  logUtils.warnInfo(['获取根节点失败 退出执行'], true)
+  logUtils.warnInfo(['获取根节点失败 退出执行 请检查无障碍是否正常'], true)
   exit()
 }
 let root = nodeList.get(0)
@@ -71,14 +105,36 @@ if (root) {
     id, content,
     boundsInfo.left, boundsInfo.top, boundsInfo.width(), boundsInfo.height()
   )
-  rootSummary+='\n'+rootInfo
+  rootSummary += '\n' + rootInfo
   logUtils.infoLog(rootInfo)
   let rawList = iterateAll(root).filter(v => v !== null)
+
   // 异步写入文件 用于后续分析
   threads.start(function () {
     let savePath = workpath + '/logs/uiobjects.json'
-    files.write(savePath, JSON.stringify(rawList))
-    toastLog('控件元数据以保存到：' + savePath)
+    let content = JSON.stringify(rawList)
+    files.write(savePath, content)
+    if (inspectConfig.save_data_js) {
+      files.write(workpath + '/logs/data.js', 'let objects = ' + content)
+    }
+    let hisPath = workpath + '/logs/hisUiObjects/' + formatDate(new Date(), 'yyyyMMdd/')
+    let time = formatDate(new Date(), 'HHmmss')
+    if (inspectConfig.save_history) {
+      console.log('ensureDir?' + files.ensureDir(hisPath))
+      files.write(hisPath + '/uiobjects.' + time + '.json', content)
+      files.write(hisPath + '/data.' + time + '.js', 'let objects = ' + content)
+    }
+    if (inspectConfig.capture && imgBase64) {
+      let base64Content = 'data:image/png;base64,' + imgBase64
+      files.write(workpath + '/logs/img.log', base64Content)
+      inspectConfig.save_history && files.write(hisPath + '/img.' + time + '.log', base64Content)
+      if (inspectConfig.save_img_js) {
+        let jsBase64 = 'let imageBase64=\'' + base64Content + '\''
+        files.write(workpath + '/logs/img.js', jsBase64)
+        inspectConfig.save_history && files.write(hisPath + '/img.' + time + '.js', jsBase64)
+      }
+    }
+    toastLog('控件元数据已保存到：' + savePath)
   })
   let resultList = rawList.sort((a, b) => {
     let depth1 = getCompareDepth(a)
@@ -87,12 +143,12 @@ if (root) {
     if (depth1 > depth2) {
       return 1
     } else if (depth1 === depth2) {
-      return 0
+      return compareWithIndex(a, b)
     } else {
       return -1
     }
   })
-  rootSummary+='\n控件最大深度：' + maxDepth
+  rootSummary += '\n控件最大深度：' + maxDepth
   uiObjectInfoList = flatMap(flatArrayList, resultList)
 
   floatyInstance.setPosition(parseInt(config.device_width / 5), parseInt(config.device_height / 2))
@@ -147,12 +203,37 @@ function iterateAll (root, depth, index) {
 
 function UiObjectInfo (uiObject, depth, index) {
   this.content = uiObject.text() || uiObject.desc() || ''
-  this.isDesc = typeof uiObject.desc() !== 'undefined' && uiObject.desc() !== ''
+  this.isDesc = typeof uiObject.desc() !== 'undefined' && uiObject.desc() !== '' && uiObject.desc() != null
   this.id = uiObject.id()
   this.boundsInfo = uiObject.bounds()
   this.depth = depth
   this.index = index
+  this.indexInParent = uiObject.indexInParent()
   this.visible = uiObject.visibleToUser()
+  this.visibleToUser = uiObject.visibleToUser()
+  this.clickable = uiObject.clickable()
+  this.drawingOrder = uiObject.drawingOrder()
+  this.className = uiObject.className()
+  this.packageName = uiObject.packageName()
+  this.mDepth = uiObject.depth()
+  this.checkable = uiObject.checkable()
+  this.checked = uiObject.checked()
+  this.focusable = uiObject.focusable()
+  this.focused = uiObject.focused()
+  this.accessibilityFocused = uiObject.accessibilityFocused()
+  this.selected = uiObject.selected()
+  this.longClickable = uiObject.longClickable()
+  this.enabled = uiObject.enabled()
+  this.password = uiObject.password()
+  this.scrollable = uiObject.scrollable()
+  this.row = uiObject.row()
+  this.column = uiObject.column()
+  this.rowSpan = uiObject.rowSpan()
+  this.columnSpan = uiObject.columnSpan()
+  this.rowCount = uiObject.rowCount()
+  this.columnCount = uiObject.columnCount()
+  this.desc = uiObject.desc()
+  this.text = uiObject.text()
 
 
   this.toString = function () {
@@ -212,12 +293,34 @@ function getCompareDepth (a) {
         return getCompareDepth(a[i])
       } else {
         let data = a[i]
-        if (data.id || data.content)
-          return data.depth
+        // if (data.id || data.content)
+        return data.depth
       }
     }
   } else {
     return a.depth
+  }
+}
+
+function compareWithIndex (a, b) {
+  let idxA = getCompareIndex(a)
+  let idxB = getCompareIndex(b)
+  return idxA - idxB
+}
+
+function getCompareIndex (a) {
+  if (a instanceof Array) {
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] instanceof Array) {
+        return getCompareIndex(a[i])
+      } else {
+        let data = a[i]
+        // if (data.id || data.content)
+        return data.indexInParent
+      }
+    }
+  } else {
+    return a.indexInParent
   }
 }
 
@@ -260,7 +363,7 @@ function removeMinPrefix (list) {
   return result
 }
 
-function getWindowRoots() {
+function getWindowRoots () {
   let windowInfoList = []
   let windows = runtime.accessibilityBridge.getService().getWindows()
   if (windows != null && windows.size() > 0) {

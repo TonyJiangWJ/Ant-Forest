@@ -84,7 +84,7 @@ function openFriendHomeByWidget () {
   sleep(1000)
   floatyInstance.setFloatyText('查找是否存在点击展开好友')
   let openSuccess = false, limit = 3
-  while (!(openSuccess = widgetUtils.widgetWaiting('点击展开好友动态')) && limit-- > 0) {
+  while (!(openSuccess = widgetUtils.widgetWaiting(config.friend_load_more_content)) && limit-- > 0) {
     target = widgetUtils.widgetGetOne('重新加载')
     if (target) {
       automator.clickCenter(target)
@@ -112,7 +112,7 @@ function openFriendHomeByUserId (count) {
   floatyInstance.setFloatyText('查找是否存在点击展开好友')
 
   let openSuccess = false, limit = 3
-  while (!(openSuccess = widgetUtils.widgetWaiting('点击展开好友动态')) && limit-- > 0) {
+  while (!(openSuccess = widgetUtils.widgetWaiting(config.friend_load_more_content)) && limit-- > 0) {
     //
   }
   if (!openSuccess && count > 0) {

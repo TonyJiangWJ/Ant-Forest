@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-10-29 19:35:35
+ * @Last Modified time: 2022-11-28 00:10:10
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -405,9 +405,11 @@ function Ant_forest () {
   // 记录最终能量值
   const getPostEnergy = function (collectedFriend) {
     if (collectedFriend) {
-      debugInfo('非仅收自己，返回主页面' + _config.disable_image_based_collect)
-      automator.back()
-      _widgetUtils.homePageWaiting()
+      if (!_widgetUtils.homePageWaiting()) {
+        debugInfo('非仅收自己，返回主页面' + _config.disable_image_based_collect)
+        automator.back()
+        _widgetUtils.homePageWaiting()
+      }
       // 二次收集自身能量
       recheckOwn()
     }
@@ -488,7 +490,11 @@ function Ant_forest () {
     scanner.destroy()
     if (runResult) {
       let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
-      automator.back()
+      if (backToForest) {
+        automator.clickCenter(backToForest)
+      } else {
+        automator.back()
+      }
       sleep(500)
       let tryCount = 1
       while (!_widgetUtils.homePageWaiting()) {

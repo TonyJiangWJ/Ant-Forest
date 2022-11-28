@@ -14,13 +14,15 @@ console.log("decrypted: " + AesUtil.decrypt(encrypt, key));
 
 key = key + key
 encrypt = CryptoJS.AES.encrypt(message, CryptoJS.enc.Utf8.parse(key), {
-  mode: CryptoJS.mode.ECB,
+  mode: CryptoJS.mode.CBC,
+  iv: CryptoJS.enc.Hex.parse(key),
   padding: CryptoJS.pad.Pkcs7
-})
+}).toString()
 console.log('加密内容：' + encrypt)
 
 let decrypt = CryptoJS.AES.decrypt(encrypt, CryptoJS.enc.Utf8.parse(key), {
-  mode: CryptoJS.mode.ECB,
+  mode: CryptoJS.mode.CBC,
+  iv: CryptoJS.enc.Hex.parse(key),
   padding: CryptoJS.pad.Pkcs7
 }).toString(CryptoJS.enc.Utf8)
 
