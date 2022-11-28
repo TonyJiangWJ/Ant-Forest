@@ -98,7 +98,7 @@ logInfo(['运行模式：{}{} {} {} 排行榜可收取判定方式：{} {}',
   config.check_finger_by_pixels_amount ? '基于像素点个数判断是否可收取，阈值<=' + config.finger_img_pixels : '自动判断是否可收取',
   config.useCustomScrollDown ? '使用模拟滑动, 底部高度：' + config.bottomHeight : ''
 ])
-logInfo(['设备分辨率：[{}, {}]', config.device_width, config.device_height])
+logInfo(['设备分辨率：[{}, {}] 配置缩放比例：{}', config.device_width, config.device_height, config.scaleRate])
 // -------- WARING --------
 if (!config.useCustomScrollDown) {
   warnInfo('排行榜中控件不存在时无法使用自带的scrollDown，请开启模拟滑动并自行调试设置底部高度')

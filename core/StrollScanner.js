@@ -148,7 +148,7 @@ const StrollScanner = function () {
    */
   this.getFriendName = function () {
     let friendNameGettingRegex = _config.friend_name_getting_regex || '(.*)的蚂蚁森林'
-    let titleContainer = _widgetUtils.alternativeWidget(friendNameGettingRegex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, null, true)
+    let titleContainer = _widgetUtils.alternativeWidget(friendNameGettingRegex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, null, true, null, { algorithm: 'PVDFS' })
     if (titleContainer.value === 1) {
       let regex = new RegExp(friendNameGettingRegex)
       if (titleContainer && regex.test(titleContainer.content)) {
@@ -183,7 +183,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
   }
   debugInfo(['刷新根控件成功: {}ms', (new Date().getTime() - start)])
   // 未找到好友首页控件 循环等待三次
-  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/)) !== 1) {
+  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, null, false, null, { algorithm: 'PVDFS' })) !== 1) {
     // 找到了结束标志信息 停止逛一逛
     let ended = false
     if (alternativeFriendOrDone === 2) {

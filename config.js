@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-10-24 00:11:05
+ * @Last Modified time: 2022-11-28 21:24:07
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -144,7 +144,7 @@ let default_config = {
   suspend_on_alarm_clock: false,
   suspend_alarm_content: '滑动关闭闹钟',
   delay_start_pay_code_content: '向商家付(钱|款)',
-  home_ui_content: '查看更多动态.*',
+  home_ui_content: '森林新消息|最新动态',
   friend_home_check_regex: '你收取TA|TA收取你',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
   magic_species_text: '点击发现|抽取今日|点击开启',
@@ -158,12 +158,12 @@ let default_config = {
   load_more_ui_content: '查看更多',
   watering_widget_content: '浇水',
   do_watering_button_content: '送给\\s*TA|浇水送祝福',
-  friend_load_more_content: '点击展开好友动态',
+  friend_load_more_content: '(点击)?展开好友动态',
   using_protect_content: '使用了保护罩',
   collectable_energy_ball_content: '收集能量\\d+克',
-  can_collect_color_lower: '#12905F',
-  can_collect_color_upper: '#2EA178',
-  // 配置帮助收取能量球的颜色，用于查找帮助收取的能量球
+  can_collect_color_lower: '#008A31',
+  can_collect_color_upper: '#6FDC90',
+  // 配置可收取能量球颜色范围
   collectable_lower: '#89d600',
   collectable_upper: '#ffff14',
   water_lower: '#e8cb3a',
@@ -214,7 +214,7 @@ let default_config = {
   // 逛一逛结束是否进行能量雨收集
   collect_rain_when_stroll: true,
   disable_image_based_collect: false,
-  force_disable_image_based_collect: false,
+  force_disable_image_based_collect: true,
   stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$',
   collect_by_stroll_only: false,
   stroll_button_regenerate: true,
@@ -259,7 +259,7 @@ let default_config = {
   // 标记是否清除webview缓存
   clear_webview_cache: false,
   // 更新后需要强制执行的标记
-  updated_temp_flag_13682: true,
+  updated_temp_flag_13700V1: true,
   // 多账号管理
   accounts: [],
   main_account: '',
@@ -322,6 +322,10 @@ config.scaleRate = (() => {
   } else if (width < 1000) {
     return 720 / 1080
   } else {
+    if (config.device_width * config.device_height > 3000000) {
+      // K50U 1.5k屏幕
+      return config.device_width / 1080
+    }
     return 1
   }
 })()
@@ -425,17 +429,23 @@ function resetConfigsIfNeeded () {
     storageConfig.put('friend_home_check_regex', default_config.friend_home_check_regex)
   }
   let resetFields = [
+    'home_ui_content',
     'stroll_button_regenerate',
+    'friend_load_more_content',
+    'can_collect_color_lower',
+    'can_collect_color_upper',
+    'force_disable_image_based_collect',
   ]
-  if (config.updated_temp_flag_13682) {
+  if (config.updated_temp_flag_13700V1) {
     resetFields.forEach(key => {
       config[key] = default_config[key]
       storageConfig.put(key, default_config[key])
     })
-    storageConfig.put('updated_temp_flag_13682', false)
+    storageConfig.put('updated_temp_flag_13700V1', false)
     if (!config.auto_lock) {
       config.auto_lock = default_config.auto_lock
     }
+    config.image_config = resetImgDefault(default_image_config, CONFIG_STORAGE_NAME + '_image')
   }
 }
 
@@ -444,6 +454,15 @@ function convertDefaultData (default_config, config_storage_name) {
   let configData = {}
   Object.keys(default_config).forEach(key => {
     configData[key] = config_storage.get(key, default_config[key])
+  })
+  return configData
+}
+function resetImgDefault (default_config, config_storage_name) {
+  let config_storage = storages.create(config_storage_name)
+  let configData = {}
+  Object.keys(default_config).forEach(key => {
+    configData[key] = default_config[key]
+    config_storage.put(key, default_config[key])
   })
   return configData
 }

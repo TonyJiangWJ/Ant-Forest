@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-11-11 09:17:29
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-09-24 20:31:54
+ * @Last Modified time: 2022-11-28 20:54:42
  * @Description: 基于图像识别控件信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -270,7 +270,7 @@ const ImgBasedFriendListScanner = function () {
       if (_config.cutAndSaveRankList && screen) {
         images.save(screen, FileUtils.getCurrentWorkPath() + '/resources/rank_list/' + (Math.random() * 899 + 100).toFixed(0) + '.png')
       }
-      intervalScreenForDetectCollect = images.copy(images.inRange(screen, _config.can_collect_color_lower || '#12905F', _config.can_collect_color_upper || '#2EA178'), true)
+      intervalScreenForDetectCollect = images.copy(images.inRange(screen, _config.can_collect_color_lower || '#008A31', _config.can_collect_color_upper || '#6FDC90'), true)
       let countdown = new Countdown()
       let waitForCheckPoints = this.getAllCheckPoints(intervalScreenForDetectCollect)
       countdown.summary('获取可能可收取的点')

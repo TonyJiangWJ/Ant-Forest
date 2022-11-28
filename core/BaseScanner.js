@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-10-29 19:47:45
+ * @Last Modified time: 2022-11-28 14:57:56
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -561,12 +561,11 @@ const BaseScanner = function () {
    * 等待能量值控件数据刷新 超时时间1秒
    * 
    * @param {number} oldCollected 
-   * @param {number} oldFriendEnergy 
    */
-  this.waitEnergyChangedIfCollected = function (oldCollected, oldFriendEnergy) {
-    let postCollected = oldCollected, postEnergy = oldFriendEnergy
+  this.waitEnergyChangedIfCollected = function (oldCollected) {
+    let postCollected = oldCollected
     if (this.collect_operated) {
-      debugInfo(['等待能量值数据刷新，原始值collect:{} energy:{}', oldCollected, oldFriendEnergy])
+      debugInfo(['等待能量值数据刷新，原始值collect:{}', oldCollected])
       let sleepTime = 1000
       if (this.collect_count > 1) {
         // 多个能量球，多等待五百毫秒
@@ -576,7 +575,7 @@ const BaseScanner = function () {
       // 最多等一秒
       let timeout = new Date().getTime() + sleepTime
       let timeoutFlag = false
-      while (postCollected === oldCollected && postEnergy === oldFriendEnergy) {
+      while (postCollected === oldCollected) {
         if (new Date().getTime() > timeout) {
           debugInfo('等待能量数据更新超时')
           timeoutFlag = true
@@ -584,18 +583,16 @@ const BaseScanner = function () {
         }
         sleep(50)
         postCollected = _widgetUtils.getYouCollectEnergy() || 0
-        postEnergy = _widgetUtils.getCurrentEnergy()
       }
       if (!timeoutFlag) {
         debugInfo([
-          '能量值数据刷新，新值collect:{} energy:{} 总耗时：{}ms',
+          '能量值数据刷新，新值collect:{} 总耗时：{}ms',
           this.checkAndDisplayIncreased(postCollected, oldCollected),
-          this.checkAndDisplayIncreased(postEnergy, oldFriendEnergy),
           new Date().getTime() - timeout + sleepTime
         ])
       }
     }
-    return { postCollected: postCollected, postEnergy: postEnergy }
+    return { postCollected: postCollected }
   }
 
   this.checkAndDisplayIncreased = function (newVal, oldVal) {
@@ -610,17 +607,20 @@ const BaseScanner = function () {
     debugInfo(['准备开始收取好友：「{}」', obj.name])
     let regetFriendName = this.getFriendName()
     if (regetFriendName != obj.name) {
+      if (regetFriendName == false) {
+        warnInfo(['当前非好友首页 估计已经结束'])
+        return false
+      }
       warnInfo(['重新通过控件获取好友名称为：{} 和旧值「{}」不符，重置好友名称', regetFriendName, obj.name])
       obj.name = regetFriendName
     }
-    let preGot, postGet, preE, postE, rentery = false
+    let preGot, postGet, rentery = false
     let screen = null
     if (_config.cutAndSaveTreeCollect) {
       screen = images.copy(_commonFunctions.checkCaptureScreenPermission(), true)
     }
     try {
       preGot = _widgetUtils.getYouCollectEnergy() || 0
-      preE = _widgetUtils.getCurrentEnergy()
     } catch (e) {
       errorInfo("[" + obj.name + "]获取收集前能量异常" + e)
       _commonFunctions.printExceptionStack(e)
@@ -633,26 +633,22 @@ const BaseScanner = function () {
     }
     try {
       // 等待控件数据刷新
-      let { postEnergy, postCollected } = this.waitEnergyChangedIfCollected(preGot, preE)
+      let { postCollected } = this.waitEnergyChangedIfCollected(preGot)
       postGet = postCollected
-      postE = postEnergy
     } catch (e) {
       errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
       _commonFunctions.printExceptionStack(e)
     }
-    let friendGrowEnergy = postE - preE
     let collectEnergy = postGet - preGot
-    debugInfo(['执行前，收集数据：{} 好友能量：{}; 执行后，收集数据：{} 好友能量：{}', preGot, preE, postGet, postE])
-    if (this.collect_operated && friendGrowEnergy === 0 && collectEnergy === 0 && !obj.recheck) {
+    debugInfo(['执行前，收集数据：{}; 执行后，收集数据：{}', preGot, postGet])
+    if (this.collect_operated && collectEnergy === 0 && !obj.recheck) {
       // 没有收集到能量，可能有保护罩，等待1.5秒
       warnInfo(['未收集到能量，可能当前能量值未刷新或者好友使用了保护罩，等待1.5秒'], true)
       sleep(1500)
       try {
         // 1.5秒后重新获取能量值
         postGet = _widgetUtils.getYouCollectEnergy() || 0
-        postE = _widgetUtils.getCurrentEnergy()
         collectEnergy = postGet - preGot
-        friendGrowEnergy = postE - preE
       } catch (e) {
         errorInfo("[" + obj.name + "]二次获取收取后能量异常" + e)
         _commonFunctions.printExceptionStack(e)
@@ -664,7 +660,7 @@ const BaseScanner = function () {
       let needWaterback = _commonFunctions.recordFriendCollectInfo({
         hasSummaryWidget: _config.has_summary_widget,
         friendName: obj.name,
-        friendEnergy: postE,
+        friendEnergy: 0,
         postCollect: postGet,
         preCollect: preGot,
         helpCollect: 0
@@ -682,7 +678,7 @@ const BaseScanner = function () {
         "收取好友:{} 能量 {}g {}",
         obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (_config.targetWateringAmount || 0) + 'g' : '')
       ])
-      AntForestDao.saveFriendCollect(obj.name, postE, gotEnergyAfterWater, needWaterback ? _config.targetWateringAmount : null)
+      AntForestDao.saveFriendCollect(obj.name, 0, gotEnergyAfterWater, needWaterback ? _config.targetWateringAmount : null)
       this.showCollectSummaryFloaty(gotEnergyAfterWater)
       if (_config.cutAndSaveTreeCollect && screen) {
         let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
@@ -698,31 +694,6 @@ const BaseScanner = function () {
     // 校验是否有森林赠礼
     if (this.checkForPlantReward()) {
       infoLog(['好友「{}」有森林赠礼，已领取', obj.name])
-    }
-
-    if (friendGrowEnergy > 0) {
-      this.collect_any = true
-      logInfo("帮助好友:" + obj.name + " 回收能量 " + friendGrowEnergy + "g")
-      _commonFunctions.recordFriendCollectInfo({
-        hasSummaryWidget: _config.has_summary_widget,
-        fromHelp: true,
-        friendName: obj.name,
-        friendEnergy: postE,
-        postCollect: postGet,
-        preCollect: preGot,
-        helpCollect: friendGrowEnergy
-      })
-      // 如果是可帮助 且 无法获取控件信息的，已帮助收取的重新进入判断一次
-      debugInfo('帮助收取后需要再次进入好友页面检测')
-      rentery = true
-
-      if (_config.cutAndSaveTreeCollect && screen) {
-        let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
-          + 'unknow_helped_' + friendGrowEnergy + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
-        files.ensureDir(savePath)
-        images.save(screen, savePath)
-        debugForDev(['保存可帮助能量球图片：「{}」', savePath])
-      }
     }
     screen && screen.recycle()
     events.removeAllListeners('toast')

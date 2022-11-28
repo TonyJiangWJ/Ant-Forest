@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-05-12 20:33:18
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-09-24 17:43:37
+ * @Last Modified time: 2022-11-27 22:37:23
  * @Description: 
  */
 let resolver = require('../lib/AutoJSRemoveDexResolver.js')
@@ -39,6 +39,9 @@ _config.enable_visual_helper = true
 // 启用或者禁用ocr 都禁用则使用默认
 _config.useTesseracOcr = false
 _config.useBaiduOcr = false
+_config.countdown_mock_ocr = false
+_config.ocrThreshold = 1600
+_config.saveBase64ImgInfo = true
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _commonFunctions = singletonRequire('CommonFunction')
 let _paddleOcrUtil = singletonRequire('PaddleOcrUtil')
@@ -85,7 +88,7 @@ const MockFriendListScanner = function () {
   }
 
   this.doRecognizeIfPossiable = function () {
-    console.warn('准备识别好友名称')
+    // console.warn('准备识别好友名称')
     if (localOcr == null || !localOcr.enabled) {
       console.error('当前版本不支持本地Ocr无法识别好友名称')
       return
@@ -113,7 +116,7 @@ const MockFriendListScanner = function () {
         image.recycle()
       }
     } else {
-      console.warn('可收取数量为零 跳过识别')
+      // console.warn('可收取数量为零 跳过识别')
     }
   }
 }
