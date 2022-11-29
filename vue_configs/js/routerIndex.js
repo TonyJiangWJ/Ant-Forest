@@ -10,6 +10,7 @@ const router = new VueRouter({
   routes: [
     { path: '/', component: Index, meta: { index: 0 } },
     { path: '/basic/rain', component: RainConfig, meta: { index: 1, title: '能量雨设置' } },
+    { path: '/basic/magic_sea', component: MagicSeaConfig, meta: { index: 1, title: '神奇海洋设置' } },
     { path: '/basic/collect', component: CollectConfig, meta: { index: 1, title: '收集设置' } },
     { path: '/advance/accounts', component: AlipayAccountManage, meta: { index: 1, title: '多账号管理' } },
     { path: '/advance/walkingData', component: WalkingData, meta: { index: 1, title: '刷步数' } },

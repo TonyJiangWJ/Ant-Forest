@@ -8,6 +8,7 @@ const RainConfig = {
     return {
       configs: {
         rain_start_content: '再来一次|立即开启',
+        rain_entry_content: '.*能量雨.*',
         rain_end_content: '.*去蚂蚁森林看看.*',
         rain_press_duration: 7,
         rain_collect_duration: 18,
@@ -47,10 +48,11 @@ const RainConfig = {
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="startRainCollect">启动能量雨</van-button>
     </van-divider>
     <van-cell-group>
-      <tip-block>最新版支付宝已经无法在逛一逛中直接触发能量雨，请设置以下任一脚本的定时任务进行触发:</tip-block>
+      <tip-block>不建议在逛一逛中触发能量雨，请设置以下任一脚本的定时任务进行触发，避免影响偷能量:</tip-block>
       <tip-block>unit/循环切换小号并执行能量雨收集.js{{timedUnit1|displayTime}}</tip-block>
       <tip-block>unit/自动启动并执行能量雨.js{{timedUnit2|displayTime}}</tip-block>
-      <!--<switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />-->
+      <switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />
+      <van-field v-model="configs.rain_entry_content" v-if="configs.collect_rain_when_stroll" label="能量雨入口文本" label-width="10em" type="text" placeholder="请输入能量雨入口文本" input-align="right" />
       <van-field v-model="configs.rain_start_content" label="启动按钮文本" label-width="10em" type="text" placeholder="请输入启动按钮文本" input-align="right" />
       <van-field v-model="configs.rain_end_content" label="无能量雨机会文本" label-width="10em" type="text" placeholder="请输入无能量雨机会文本" input-align="right" />
       <tip-block>在执行一次之后自动判断是否可以赠送好友机会，配置后自动送给对应好友一次机会，不配置则不会赠送，脚本只执行一轮。</tip-block>
@@ -68,6 +70,86 @@ const RainConfig = {
       </number-field>
       <number-field v-model="configs.rain_click_top" label="距离顶部的点击高度" label-width="10em" type="text" placeholder="请输入距离顶部的点击高度" input-align="right" />
     </van-cell-group>
+  </div>
+  `
+}
+
+/**
+ * 神奇海洋
+ */
+ const MagicSeaConfig = {
+  mixins: [mixin_common],
+  data () {
+    return {
+      configs: {
+        // 神奇海洋识别区域
+        sea_ocr_left: 10,
+        sea_ocr_top: 1800,
+        sea_ocr_width: 370,
+        sea_ocr_height: 240,
+        sea_ocr_region: '',
+        sea_ball_region: [860, 1350, 140, 160],
+        sea_ball_radius_min: null,
+        sea_ball_radius_max: null,
+      },
+      validations: {
+        sea_ocr_region: VALIDATOR.REGION,
+      },
+      timedUnit1: '每天7点',
+    }
+  },
+  computed: {
+    seaOcrRegion: function () {
+      return this.configs.sea_ocr_region
+    },
+  },
+  watch: {
+    seaOcrRegion: function () {
+      if (this.mounted && this.validations.sea_ocr_region.validate(this.seaOcrRegion)) {
+        let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.seaOcrRegion)
+        this.configs.sea_ocr_left = parseInt(match[1])
+        this.configs.sea_ocr_top = parseInt(match[2])
+        this.configs.sea_ocr_width = parseInt(match[3])
+        this.configs.sea_ocr_height = parseInt(match[4])
+      }
+    },
+  },
+  filters: {
+    displayTime: value => {
+      if (value && value.length > 0) {
+        return `[${value}]`
+      }
+      return ''
+    }
+  },
+  methods: {
+    loadConfigs: function () {
+      this.configs.sea_ocr_region = this.configs.sea_ocr_left + ',' + this.configs.sea_ocr_top + ',' + this.configs.sea_ocr_width + ',' + this.configs.sea_ocr_height
+      $app.invoke('loadConfigs', {}, config => {
+        Object.keys(this.configs).forEach(key => {
+          console.log('child load config key:[' + key + '] value: [' + config[key] + ']')
+          this.$set(this.configs, key, config[key])
+        })
+        this.configs.sea_ocr_region = this.configs.sea_ocr_left + ',' + this.configs.sea_ocr_top + ',' + this.configs.sea_ocr_width + ',' + this.configs.sea_ocr_height
+        this.mounted = true
+      })
+    }
+  },
+  mounted () {
+    $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/神奇海洋收集.js' }).then(r => this.timedUnit1 = r)
+  },
+  template: `
+  <div>
+    <tip-block>对下述文件创建每天7点的定时任务即可，如果怕影响偷能量则创建9点的。脚本执行后会自动每隔两小时创建定时任务</tip-block>
+    <tip-block>unit/神奇海洋收集.js{{timedUnit1|displayTime}}</tip-block>
+    <region-input-field
+        :device-height="device.height" :device-width="device.width"
+        :error-message="validationError.sea_ocr_region"
+        v-model="configs.sea_ocr_region" label="神奇海洋OCR识别区域" label-width="12em" />
+    <tip-block>角标是指棕黄色的小球 中间带x1的那个</tip-block>
+    <region-input-field :array-value="true" v-model="configs.sea_ball_region" label="垃圾球角标所在位置" label-width="14em" :device-height="device.height" :device-width="device.width" />
+    <van-field v-model="configs.sea_ball_radius_min" label="垃圾球角标半径最小值" label-width="14em" type="text" placeholder="留空使用默认配置" input-align="right"/>
+    <van-field v-model="configs.sea_ball_radius_max" label="垃圾球角标半径最大值" label-width="14em" type="text" placeholder="留空使用默认配置" input-align="right"/>
   </div>
   `
 }
@@ -97,17 +179,10 @@ const CollectConfig = {
         cool_down_time: 10,
         collect_self_only: true,
         not_collect_self: true,
-        try_collect_by_stroll: true,
         collect_rain_when_stroll: true,
-        recheck_rank_list: true,
         double_click_card_used: true,
         merge_countdown_by_gaps: true,
         limit_runnable_time_range: true,
-        disable_image_based_collect: true,
-        force_disable_image_based_collect: true,
-        collect_by_stroll_only: true,
-        useCustomScrollDown: true,
-        bottomHeight: 200,
         countdown_gaps: 30,
       },
       currentInCoolDown: false,
@@ -183,6 +258,7 @@ const CollectConfig = {
   template: `
     <div>
       <van-cell-group>
+        <tip-block>当前版本仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，有一定几率会漏收倒计时刚刚结束的能量</tip-block>
         <switch-cell title="是否循环" v-model="configs.is_cycle" />
         <number-field v-if="configs.is_cycle" v-model="configs.cycle_times" label="循环次数" placeholder="请输入单次运行循环次数" />
         <switch-cell title="是否永不停止" v-model="configs.never_stop" v-if="!configs.is_cycle"/>
@@ -237,23 +313,7 @@ const CollectConfig = {
         <switch-cell v-if="!configs.not_collect_self" title="只收自己的能量" v-model="configs.collect_self_only" />
         <switch-cell v-if="!configs.collect_self_only" title="不收自己的能量" v-model="configs.not_collect_self" />
         <switch-cell title="是否二次校验能量球" v-model="configs.double_click_card_used" />
-        <switch-cell title="是否通过逛一逛收集能量" v-model="configs.try_collect_by_stroll" />
-        <template v-if="configs.try_collect_by_stroll">
-          <switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />
-          <tip-block>开启仅执行逛一逛后将只通过逛一逛执行，仅循环模式有效</tip-block>
-          <switch-cell title="循环模式仅执行逛一逛" v-model="configs.disable_image_based_collect" />
-          <tip-block>开启此项将仅通过逛一逛执行不去排行榜获取任何信息，此时无法从排行榜识别倒计时数据，会影响后续定时任务的设置，可以配合永不停止达到自动设置随机的定时任务，但不建议开启此项</tip-block>
-          <switch-cell title="所有模式强制仅执行逛一逛" v-model="configs.force_disable_image_based_collect" />
-          <tip-block>开启仅识别倒计时可以仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，能够避免重复进入白名单或者保护罩好友页面，
-            但是也有一定几率会漏收倒计时刚刚结束的能量，请酌情选择是否开启</tip-block>
-          <switch-cell title="排行榜中仅识别倒计时" v-model="configs.collect_by_stroll_only" />
-        </template>
-        <tip-block>有时候排行榜中无法使用scrollDown函数下滑，需启用模拟滑动</tip-block>
-        <switch-cell title="是否使用模拟滑动" v-model="configs.useCustomScrollDown" />
-        <template v-if="configs.useCustomScrollDown">
-          <number-field v-model="configs.bottomHeight" label="模拟底部起始高度" label-width="8em" />
-        </template>
-        <switch-cell title="是否在收集或帮助后重新检查排行榜" title-style="flex:2;" v-model="configs.recheck_rank_list" />
+        <switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />
         <switch-cell title="是否限制0:30-6:50不可运行" title-style="flex:2;" v-model="configs.limit_runnable_time_range" />
       </van-cell-group>
     </div>

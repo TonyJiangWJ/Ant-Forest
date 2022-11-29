@@ -10,3 +10,4 @@ ExternalUnlockDevice.js
 *.txt
 *.txt.*
 *.db
+logs/

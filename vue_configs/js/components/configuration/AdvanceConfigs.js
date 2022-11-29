@@ -275,14 +275,6 @@ const RegionConfig = {
       mounted: false,
       hough_config: false,
       configs: {
-        // 神奇海洋识别区域
-        sea_ocr_left: 10,
-        sea_ocr_top: 1800,
-        sea_ocr_width: 370,
-        sea_ocr_height: 240,
-        sea_ball_region: [860, 1350, 140, 160],
-        sea_ball_radius_min: null,
-        sea_ball_radius_max: null,
         // 排行榜校验区域
         rank_check_left: null,
         rank_check_top: null,
@@ -313,7 +305,6 @@ const RegionConfig = {
         rank_check_region: '',
         bottom_check_region: '',
         tree_collect_region: '',
-        sea_ocr_region: '',
         // 能量球识别配置
         skip_own_watering_ball: true,
         hough_param1: null,
@@ -331,7 +322,6 @@ const RegionConfig = {
       },
       validations: {
         stroll_button_region: VALIDATOR.REGION,
-        sea_ocr_region: VALIDATOR.REGION,
         rank_check_region: VALIDATOR.REGION,
         bottom_check_region: VALIDATOR.REGION,
         tree_collect_region: VALIDATOR.REGION,
@@ -352,7 +342,6 @@ const RegionConfig = {
       this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
       this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
       this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
-      this.configs.sea_ocr_region = this.configs.sea_ocr_left + ',' + this.configs.sea_ocr_top + ',' + this.configs.sea_ocr_width + ',' + this.configs.sea_ocr_height
 
       $app.invoke('loadConfigs', {}, config => {
         Object.keys(this.configs).forEach(key => {
@@ -363,7 +352,6 @@ const RegionConfig = {
         this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
         this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height
         this.configs.tree_collect_region = this.configs.tree_collect_left + ',' + this.configs.tree_collect_top + ',' + this.configs.tree_collect_width + ',' + this.configs.tree_collect_height
-        this.configs.sea_ocr_region = this.configs.sea_ocr_left + ',' + this.configs.sea_ocr_top + ',' + this.configs.sea_ocr_width + ',' + this.configs.sea_ocr_height
         this.mounted = true
       })
     },
@@ -386,9 +374,6 @@ const RegionConfig = {
     },
     treeCollectRegion: function () {
       return this.configs.tree_collect_region
-    },
-    seaOcrRegion: function () {
-      return this.configs.sea_ocr_region
     },
     visualConfigs: function () {
       return {
@@ -450,15 +435,6 @@ const RegionConfig = {
         this.configs.tree_collect_top = parseInt(match[2])
         this.configs.tree_collect_width = parseInt(match[3])
         this.configs.tree_collect_height = parseInt(match[4])
-      }
-    },
-    seaOcrRegion: function () {
-      if (this.mounted && this.validations.sea_ocr_region.validate(this.seaOcrRegion)) {
-        let match = /^(\d+)\s*,(\d+)\s*,(\d+)\s*,(\d+)\s*$/.exec(this.seaOcrRegion)
-        this.configs.sea_ocr_left = parseInt(match[1])
-        this.configs.sea_ocr_top = parseInt(match[2])
-        this.configs.sea_ocr_width = parseInt(match[3])
-        this.configs.sea_ocr_height = parseInt(match[4])
       }
     },
     // 变更区域信息，用于实时展示
@@ -527,17 +503,6 @@ const RegionConfig = {
       <color-input-field label="可收取颜色值结束值" label-width="10em" :error-message="validationError.collectable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_upper"/>
       <color-input-field label="浇水球颜色值起始值" label-width="10em" :error-message="validationError.water_lower" placeholder="颜色值 #FFFFFF" v-model="configs.water_lower"/>
       <color-input-field label="浇水球颜色值结束值" label-width="10em" :error-message="validationError.water_upper" placeholder="颜色值 #FFFFFF" v-model="configs.water_upper"/>
-      <van-divider content-position="left">
-        神奇海洋相关配置
-      </van-divider>
-      <region-input-field
-          :device-height="device.height" :device-width="device.width"
-          :error-message="validationError.sea_ocr_region"
-          v-model="configs.sea_ocr_region" label="神奇海洋OCR识别区域" label-width="12em" />
-      <tip-block>角标是指棕黄色的小球 中间带x1的那个</tip-block>
-      <region-input-field :array-value="true" v-model="configs.sea_ball_region" label="垃圾球角标所在位置" label-width="14em" :device-height="device.height" :device-width="device.width" />
-      <van-field v-model="configs.sea_ball_radius_min" label="垃圾球角标半径最小值" label-width="14em" type="text" placeholder="留空使用默认配置" input-align="right"/>
-      <van-field v-model="configs.sea_ball_radius_max" label="垃圾球角标半径最大值" label-width="14em" type="text" placeholder="留空使用默认配置" input-align="right"/>
       <van-divider content-position="left">
         进阶配置
       </van-divider>

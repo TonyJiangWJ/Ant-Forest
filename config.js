@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-28 21:24:07
+ * @Last Modified time: 2022-11-29 18:39:32
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -81,7 +81,7 @@ let default_config = {
   collect_self_only: false,
   not_collect_self: false,
   // 当有收集或者帮助后 重新检查排行榜
-  recheck_rank_list: true,
+  // recheck_rank_list: true,
   // 是否基于图像分析是否到达底部
   checkBottomBaseImg: true,
   // 基于图像分析时 在好友排行榜下拉的次数，因为无法辨别是否已经达到了最低点
@@ -134,6 +134,7 @@ let default_config = {
   // 秘钥
   secretKey: '',
   my_id: '',
+  rain_entry_content: '.*能量雨.*',
   rain_start_content: '再来一次|立即开启',
   rain_end_content: '.*去蚂蚁森林看看.*',
   send_chance_to_friend: '',
@@ -148,6 +149,7 @@ let default_config = {
   friend_home_check_regex: '你收取TA|TA收取你',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
   magic_species_text: '点击发现|抽取今日|点击开启',
+  magic_species_text_in_stroll: '.*神奇物种新图鉴.*',
   // 废弃
   friend_list_ui_content: '(周|总)排行榜',
   // 用于判断是否在好友排行榜
@@ -209,14 +211,9 @@ let default_config = {
   double_click_card_used: false,
   // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
   is_pro: is_pro,
-  // 尝试先逛一逛进行能量收取
-  try_collect_by_stroll: true,
   // 逛一逛结束是否进行能量雨收集
   collect_rain_when_stroll: true,
-  disable_image_based_collect: false,
-  force_disable_image_based_collect: true,
   stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$',
-  collect_by_stroll_only: false,
   stroll_button_regenerate: true,
   stroll_button_left: null,
   stroll_button_top: null,
@@ -434,7 +431,6 @@ function resetConfigsIfNeeded () {
     'friend_load_more_content',
     'can_collect_color_lower',
     'can_collect_color_upper',
-    'force_disable_image_based_collect',
   ]
   if (config.updated_temp_flag_13700V1) {
     resetFields.forEach(key => {
