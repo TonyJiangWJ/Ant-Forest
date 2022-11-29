@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-28 00:10:10
+ * @Last Modified time: 2022-11-29 18:39:10
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -19,6 +19,7 @@ let callStateListener = !_config.is_pro && _config.enable_call_state_control ? s
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
 let StrollScanner = require('./StrollScanner.js')
 let ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
+let FriendListScanner = require('./FriendListScanner.js')
 let BaseScanner = require('./BaseScanner.js')
 
 function Ant_forest () {
@@ -406,7 +407,7 @@ function Ant_forest () {
   const getPostEnergy = function (collectedFriend) {
     if (collectedFriend) {
       if (!_widgetUtils.homePageWaiting()) {
-        debugInfo('非仅收自己，返回主页面' + _config.disable_image_based_collect)
+        debugInfo('非仅收自己，返回主页面')
         automator.back()
         _widgetUtils.homePageWaiting()
       }
@@ -464,6 +465,71 @@ function Ant_forest () {
     return new ImgBasedFriendListScanner()
   }
 
+  function newFriendListScanner () {
+    return new FriendListScanner()
+  }
+
+  function randomScrollDown () {
+    let duration = 100 + Math.random() * 1000 % 300
+    let startY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 1600
+    let endY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 400
+    debugInfo(['滑动起始：{} 结束：{}', startY, endY])
+    automator.gestureDown(startY, endY, duration)
+    sleep(duration)
+  }
+  function randomScrollUp () {
+    let duration = 100 + Math.random() * 1000 % 300
+    let startY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 400
+    let endY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 1600
+    debugInfo(['滑动起始：{} 结束：{}', startY, endY])
+    automator.gestureUp(startY, endY, duration)
+    sleep(duration)
+  }
+
+  function scrollUpTop() {
+    do {
+      randomScrollUp()
+      randomScrollUp()
+    } while (!_widgetUtils.widgetGetOne(/\d+g/, 1000, false, false, m => m.boundsInside(_config.device_width / 2, 0, _config.device_width, _config.device_width * 0.4), { algorithm: 'PVDFS' }))
+    randomScrollUp()
+  }
+
+  function enterFriendList() {
+    do {
+      randomScrollDown()
+    } while (!_widgetUtils.widgetChecking('.*查看更多好友.*', { algorithm: 'PVDFS', timeoutSetting: 1000 }))
+    sleep(500)
+    let moreFriends = _widgetUtils.widgetGetOne('.*查看更多好友.*')
+    if (moreFriends) {
+      moreFriends.click()
+      sleep(1000)
+      return true
+    }
+    return false
+  }
+
+  function checkFriendListCountdown() {
+    if (!enterFriendList()) {
+      debugInfo('进入排行榜失败 跳过获取倒计时')
+      scrollUpTop()
+      return
+    }
+    let scanner = newFriendListScanner()
+    scanner.init({ currentTime: _current_time, increasedEnergy: _post_energy - _pre_energy })
+    let executeResult = scanner.start()
+    // 执行失败 返回 true
+    if (executeResult === true) {
+      recordLost('收集执行失败')
+    } else {
+      _friends_min_countdown = executeResult.minCountdown
+    }
+    scanner.destroy()
+    scanner = null
+    debugInfo('返回主页')
+    automator.back()
+    scrollUpTop()
+  }
+
   const findAndCollect = function () {
     let scanner = checkAndNewImageBasedScanner()
     scanner.init({ currentTime: _current_time, increasedEnergy: _post_energy - _pre_energy })
@@ -489,6 +555,7 @@ function Ant_forest () {
     let runResult = scanner.start()
     scanner.destroy()
     if (runResult) {
+      trySignUpForMagicSpeciesByStroll()
       let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
       if (backToForest) {
         automator.clickCenter(backToForest)
@@ -548,6 +615,16 @@ function Ant_forest () {
 
   const signUpForMagicSpecies = function () {
     let find = _widgetUtils.widgetGetOne(_config.magic_species_text || '点击发现|抽取今日|点击开启', 1000)
+    if (find) {
+      automator.clickCenter(find)
+      sleep(5000)
+      automator.back()
+      sleep(1000)
+    }
+  }
+
+  function trySignUpForMagicSpeciesByStroll() {
+    let find = _widgetUtils.widgetGetOne(_config.magic_species_text_in_stroll || '.*神奇物种新图鉴.*', 1000)
     if (find) {
       automator.clickCenter(find)
       sleep(5000)
@@ -627,8 +704,8 @@ function Ant_forest () {
     clearPopup()
     // 校验是否使用了双击卡
     checkIfDbClickUsed()
-    // 神奇物种签到
-    signUpForMagicSpecies()
+    // 神奇物种签到 改到逛一逛结束
+    // signUpForMagicSpecies()
     // 执行合种浇水
     _widgetUtils.enterCooperationPlantAndDoWatering()
     if (!_widgetUtils.homePageWaiting()) {
@@ -683,13 +760,13 @@ function Ant_forest () {
   // 收取好友的能量
   const collectFriend = function () {
     _commonFunctions.addOpenPlacehold('开始收集好友能量')
-    if (_config.try_collect_by_stroll) {
-      // 首先尝试逛一逛收集
-      if (!tryCollectByStroll()) {
-        recordLost('逛一逛执行异常')
-        return false
-      }
+    // 首先尝试逛一逛收集
+    if (!tryCollectByStroll()) {
+      recordLost('逛一逛执行异常')
+      return false
     }
+    checkFriendListCountdown()
+    /*
     if (!((_config.disable_image_based_collect && _config.is_cycle || _config.force_disable_image_based_collect) && _config.try_collect_by_stroll)) {
       _widgetUtils.enterFriendList()
       let enterFlag = _widgetUtils.friendListWaiting()
@@ -716,6 +793,7 @@ function Ant_forest () {
         _re_try = 0
       }
     }
+    */
     _commonFunctions.addClosePlacehold("收集好友能量结束")
   }
 
@@ -875,7 +953,7 @@ function Ant_forest () {
           }
           if (runSuccess) {
             generateNext()
-            getPostEnergy(!_config.collect_self_only && !(_config.disable_image_based_collect || _config.force_disable_image_based_collect))
+            getPostEnergy(!_config.collect_self_only)
           }
         } catch (e) {
           errorInfo('发生异常 [' + e + ']')
@@ -918,6 +996,7 @@ function Ant_forest () {
             _has_next = true
             runSuccess = false
           }
+          /* recheck_rank_list is disabled
           debugInfo(['收集好友能量结束，运行状态：{} 是否收集过: {} 是否重新校验排行榜：{}', runSuccess, _collect_any, _config.recheck_rank_list])
           executeNext = runSuccess && _collect_any && _config.recheck_rank_list
           if (executeNext) {
@@ -925,6 +1004,7 @@ function Ant_forest () {
             _widgetUtils.homePageWaiting()
             _post_energy = getCurrentEnergy(true)
           }
+          */
         } while (executeNext)
       }
       if (runSuccess) {

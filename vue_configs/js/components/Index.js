@@ -12,6 +12,10 @@ let Index = {
           link: '/basic/rain'
         },
         {
+          title: '神奇海洋设置',
+          link: '/basic/magic_sea'
+        },
+        {
           title: '收集设置',
           link: '/basic/collect'
         },

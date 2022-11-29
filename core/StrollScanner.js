@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-08-17 15:23:34
+ * @Last Modified time: 2022-11-29 14:43:24
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -249,9 +249,14 @@ StrollScanner.prototype.collectTargetFriend = function () {
 }
 
 StrollScanner.prototype.checkAndCollectRain = function () {
-  if (_widgetUtils.widgetCheck(_config.rain_start_content || '开始拯救绿色能量|再来一次|立即开启', 500)) {
+  let target = null
+  if ((target = _widgetUtils.widgetGetOne(_config.rain_entry_content || '.*能量雨.*', 500, true)) != null) {
     if (!_config.collect_rain_when_stroll) {
       debugInfo('找到能量雨开始标志，但是不需要执行能量雨')
+      return true
+    }
+    if (/已完成/.test(target.content)) {
+      debugInfo('今日能量雨已完成')
       return true
     }
     debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
