@@ -43,12 +43,18 @@ module.exports = function (runtime, global) {
         if (options && typeof (options.password) != 'undefined') {
             zip.setPassword(options.password);
         }
+        if (options && typeof (options.fileNameCharset) != 'undefined') {
+            zip.setFileNameCharset(options.fileNameCharset);
+        }
         zip.extractAll(dest, options);
     }
 
     function Zip(path) {
         this._path = $files.path(path);
         this._zip = new ZipFile(this._path);
+        this.setFileNameCharset = function (charsetName) {
+            this._zip.setFileNameCharset(charsetName)
+        }
     }
 
     Zip.buildZipParameters = function (options) {

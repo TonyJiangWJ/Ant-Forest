@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-29 18:39:32
+ * @Last Modified time: 2022-12-03 10:55:33
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -150,10 +150,6 @@ let default_config = {
   friend_name_getting_regex: '(.*)的蚂蚁森林',
   magic_species_text: '点击发现|抽取今日|点击开启',
   magic_species_text_in_stroll: '.*神奇物种新图鉴.*',
-  // 废弃
-  friend_list_ui_content: '(周|总)排行榜',
-  // 用于判断是否在好友排行榜
-  friend_list_id: '.*react-content.*',
   // 查看更多好友的按钮
   enter_friend_list_ui_content: '查看更多好友',
   no_more_ui_content: '没有更多了',
@@ -162,7 +158,8 @@ let default_config = {
   do_watering_button_content: '送给\\s*TA|浇水送祝福',
   friend_load_more_content: '(点击)?展开好友动态',
   using_protect_content: '使用了保护罩',
-  collectable_energy_ball_content: '收集能量\\d+克',
+  friend_list_max_scroll_down_time: 30,
+  friend_list_end_content: '.*没有更多了.*',
   can_collect_color_lower: '#008A31',
   can_collect_color_upper: '#6FDC90',
   // 配置可收取能量球颜色范围
@@ -291,9 +288,6 @@ Object.keys(default_config).forEach(key => {
     config[key] = default_config[key]
   }
 })
-if (typeof config.collectable_energy_ball_content !== 'string') {
-  config.collectable_energy_ball_content = default_config.collectable_energy_ball_content
-}
 config.recalculateRegion = () => {
   if (config.device_height > 10 && config.device_width > 10) {
     if (config.bottom_check_top > config.device_height || config.bottom_check_top <= 0) {
@@ -355,8 +349,14 @@ let configDataPath = workpath + '/config_data/'
 let default_image_config = {};
 [
   'reward_for_plant', 'backpack_icon', 'sign_reward_icon', 'water_icon',
-  'stroll_icon', 'watering_cooperation',
-].forEach(key => default_image_config[key] = files.read(configDataPath + key + '.data'))
+  'stroll_icon', 'watering_cooperation', 'magic_species_icon'
+].forEach(key => {
+  if (!files.exists(configDataPath + key + '.data')) {
+    default_image_config[key] = ''
+    return
+  }
+  default_image_config[key] = files.read(configDataPath + key + '.data')
+})
 default_config.image_config = default_image_config
 config.image_config = convertDefaultData(default_image_config, CONFIG_STORAGE_NAME + '_image')
 

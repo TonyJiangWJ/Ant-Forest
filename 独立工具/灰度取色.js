@@ -2,25 +2,15 @@
  * 原作者QQ: 1811588980
  * 修改者：https://github.com/TonyJiangWJ
  */
+// 杀死当前同名脚本
+(()=>{let g=engines.myEngine();var e=engines.all(),n=e.length;let r=g.getSource()+"";1<n&&e.forEach(e=>{var n=e.getSource()+"";g.id!==e.id&&n==r&&e.forceStop()})})();
+
 importClass(java.io.StringWriter)
 importClass(java.io.StringReader)
 importClass(java.io.PrintWriter)
 importClass(java.io.BufferedReader)
 importClass(java.lang.StringBuilder)
 importClass(android.view.View)
-let currentEngine = engines.myEngine()
-let runningEngines = engines.all()
-let runningSize = runningEngines.length
-let currentSource = currentEngine.getSource() + ''
-if (runningSize > 1) {
-  runningEngines.forEach(compareEngine => {
-    let compareSource = compareEngine.getSource() + ''
-    if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
-      // 强制关闭同名的脚本
-      compareEngine.forceStop()
-    }
-  })
-}
 
 let { config, storage_name: _storage_name } = require('../config.js')(runtime, global)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
@@ -28,11 +18,14 @@ config.show_debug_log = true
 config.async_save_log_file = false
 let commonFunction = sRequire('CommonFunction')
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
+let fileUtils = sRequire('FileUtils')
+let formatDate = require('../lib/DateUtil.js')
 let paddleOcr = sRequire('PaddleOcrUtil')
 let mlkitOcr = sRequire('MlkitOcrUtil')
 // 默认以优先级加载mlkit插件 无插件时使用paddleOcr
 let localOcr = null
 let usePaddle = config.local_ocr_priority == 'paddle'
+let currentPath = fileUtils.getCurrentWorkPath()
 // 强制指定为paddleOcr
 if (usePaddle) {
   localOcr = paddleOcr
@@ -98,6 +91,7 @@ var canvasWindow = floaty.rawWindow(
         <button id="btnMove" layout_weight="1" text="移动" />
         <button id="btnClose" layout_weight="1" text="关闭" />
       </horizontal>
+      <text id="tip_text" margin="1dp 0dp" w="*" bg="#aaaaaa" />
     </vertical>
     <vertical id="previewVertical" bg="#aaaaaa" w="{{Math.floor(device_width*0.8)}}px" h="{{Math.floor(device_height*0.2)}}px" gravity="center">
       <canvas id="previewCanvas" margin="5dp" layout_weight="1" />
@@ -230,10 +224,17 @@ canvasWindow.cutOrPoint.on('click', () => {
           return
         }
         let base64Str = images.toBase64(clipImg)
-        toastLog('小图base64已复制')
         setClip(base64Str)
         log('base64:' + base64Str)
+        let filePath = 'logs/base64/' + formatDate(new Date(), 'yyyyMMdd/HHmmss.log')
+        let savePath = currentPath + '/' + filePath
+        files.ensureDir(savePath)
+        files.write( savePath, base64Str)
+        toastLog('小图base64已复制并保存到：' + savePath)
         previewImage = null
+        ui.post(() => {
+          canvasWindow.tip_text.text('数据已保存到：' + filePath)
+        })
       } else {
         toastLog('未框选小图')
       }
@@ -264,6 +265,9 @@ canvasWindow.toggleOcr.on('click', () => {
     canvasWindow.toggleOcr.setText(usePaddle ? '切换为Ml-Kit' : '切换为Paddle')
   })
   if (usePaddle) {
+    if (!paddleOcr.initialized) {
+      paddleOcr.init()
+    }
     localOcr = paddleOcr
   } else {
     localOcr = mlkitOcr

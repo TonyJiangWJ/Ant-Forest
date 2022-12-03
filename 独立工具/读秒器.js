@@ -1,19 +1,5 @@
-
-let currentEngine = engines.myEngine()
-let runningEngines = engines.all()
-let runningSize = runningEngines.length
-let currentSource = currentEngine.getSource() + ''
-if (runningSize > 1) {
-  runningEngines.forEach(engine => {
-    let compareEngine = engine
-    let compareSource = compareEngine.getSource() + ''
-    if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
-      // 强制关闭同名的脚本
-      compareEngine.forceStop()
-    }
-  })
-}
-
+// 杀死当前同名脚本
+(()=>{let g=engines.myEngine();var e=engines.all(),n=e.length;let r=g.getSource()+"";1<n&&e.forEach(e=>{var n=e.getSource()+"";g.id!==e.id&&n==r&&e.forceStop()})})();
 
 let floatyWindow = floaty.rawWindow(
   <horizontal>
