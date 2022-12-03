@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-29 14:43:24
+ * @Last Modified time: 2022-12-03 22:28:21
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -88,17 +88,17 @@ const StrollScanner = function () {
       let screen = _commonFunctions.checkCaptureScreenPermission()
       let imagePoint = OpenCvUtil.findByGrayBase64(screen, _config.image_config.stroll_icon)
       if (!imagePoint) {
-        imagePoint = OpenCvUtil.findBySIFTGrayBase64(screen, _config.image_config.stroll_icon) 
+        imagePoint = OpenCvUtil.findBySIFTGrayBase64(screen, _config.image_config.stroll_icon)
       }
       if (imagePoint) {
         region = [
           imagePoint.left, imagePoint.top,
           imagePoint.width(), imagePoint.height()
         ]
-        _config.stroll_button_left = region[0]
-        _config.stroll_button_top = region[1]
-        _config.stroll_button_width = region[2]
-        _config.stroll_button_height = region[3]
+        _config.stroll_button_left = parseInt(region[0])
+        _config.stroll_button_top = parseInt(region[1])
+        _config.stroll_button_width = parseInt(region[2])
+        _config.stroll_button_height = parseInt(region[3])
         _config.stroll_button_regenerate = true
         debugInfo(['重新生成逛一逛按钮区域：{}', JSON.stringify(region)])
         this.visualHelper.addRectangle('自动识别逛一逛按钮', region)

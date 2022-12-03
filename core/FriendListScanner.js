@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2022-11-28 20:54:42
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-30 14:11:43
+ * @Last Modified time: 2022-12-03 22:27:23
  * @Description: 控件识别倒计时信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -100,8 +100,9 @@ const FriendListScanner = function () {
    */
   this.collectingCountdown = function () {
     this.scrollUpIfNeeded()
-    debugInfo('准备获取倒计时控件信息 等待10秒')
-    let countingDownWidgets = _widgetUtils.widgetGetAll('\\d+’', 10000, true, null, { algorithm: 'PDFS' })
+    let timeout = _config.friend_list_countdown_timeout || 10000
+    logInfo(['准备获取倒计时控件信息 超时时间：{}秒', timeout / 1000], true)
+    let countingDownWidgets = _widgetUtils.widgetGetAll('\\d+’', timeout, true, null, { algorithm: 'PDFS' })
     if (countingDownWidgets) {
       let isDesc = countingDownWidgets.isDesc
       let widgets = countingDownWidgets.target
