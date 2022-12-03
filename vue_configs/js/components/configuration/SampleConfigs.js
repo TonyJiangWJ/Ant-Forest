@@ -184,6 +184,9 @@ const CollectConfig = {
         merge_countdown_by_gaps: true,
         limit_runnable_time_range: true,
         countdown_gaps: 30,
+        friend_list_countdown_timeout: 10000,
+        friend_list_max_scroll_down_time: 30,
+        friend_list_end_content: '.*没有更多了.*',
       },
       currentInCoolDown: false,
       currentCollected: 0,
@@ -259,6 +262,11 @@ const CollectConfig = {
     <div>
       <van-cell-group>
         <tip-block>当前版本仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，有一定几率会漏收倒计时刚刚结束的能量</tip-block>
+        <number-field v-model="configs.friend_list_countdown_timeout" label="排行榜获取倒计时超时时间" label-width="12em" placeholder="请输入超时时间" >
+          <template #right-icon><span>毫秒</span></template>
+        </number-field>
+        <number-field v-model="configs.friend_list_max_scroll_down_time" label="排行榜下拉最大次数" label-width="10em" placeholder="请输入最大次数" />
+        <van-field v-model="configs.friend_list_end_content" label="排行榜底部判断控件文本" label-width="12em" placeholder="请输入底部判断文本" input-align="right" />
         <switch-cell title="是否循环" v-model="configs.is_cycle" />
         <number-field v-if="configs.is_cycle" v-model="configs.cycle_times" label="循环次数" placeholder="请输入单次运行循环次数" />
         <switch-cell title="是否永不停止" v-model="configs.never_stop" v-if="!configs.is_cycle"/>

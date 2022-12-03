@@ -160,6 +160,7 @@ let default_config = {
   using_protect_content: '使用了保护罩',
   friend_list_max_scroll_down_time: 30,
   friend_list_end_content: '.*没有更多了.*',
+  friend_list_countdown_timeout: 10000,
   can_collect_color_lower: '#008A31',
   can_collect_color_upper: '#6FDC90',
   // 配置可收取能量球颜色范围
