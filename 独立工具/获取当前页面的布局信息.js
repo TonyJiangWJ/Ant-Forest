@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-04-29 14:44:49
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-23 16:40:13
+ * @Last Modified time: 2022-12-01 11:19:05
  * @Description: https://github.com/TonyJiangWJ/AutoScriptBase
  */
 let { config } = require('../config.js')(runtime, global)
@@ -112,7 +112,21 @@ if (root) {
   // 异步写入文件 用于后续分析
   threads.start(function () {
     let savePath = workpath + '/logs/uiobjects.json'
-    let content = JSON.stringify(rawList)
+    let packageName = null
+    // 过滤false和无效值 压缩json大小
+    let content = JSON.stringify(rawList, (key, value) => {
+      if (typeof value === 'undefined' || value === false) {
+        return undefined
+      }
+      if (key == 'packageName') {
+        if (packageName) {
+          return undefined
+        } else {
+          packageName = value
+        }
+      }
+      return value
+    })
     files.write(savePath, content)
     if (inspectConfig.save_data_js) {
       files.write(workpath + '/logs/data.js', 'let objects = ' + content)

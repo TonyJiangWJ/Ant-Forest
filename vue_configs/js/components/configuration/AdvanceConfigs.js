@@ -477,6 +477,7 @@ const RegionConfig = {
         <number-field v-model="configs.hough_max_radius" label="最大球半径" placeholder="留空使用默认配置" label-width="8em" />
         <number-field v-model="configs.hough_min_dst" label="球心最小距离" placeholder="留空使用默认配置" label-width="8em" />
       </template>
+      <!--
       <region-input-field
           :device-height="device.height" :device-width="device.width"
           :error-message="validationError.rank_check_region"
@@ -498,7 +499,8 @@ const RegionConfig = {
             placeholder="可收取颜色值 #FFFFFF" :error-message="validationError.can_collect_color_lower" v-model="configs.can_collect_color_lower"/>
       <color-input-field label="列表中可收取的颜色结束值" label-width="12em"
             placeholder="可帮助颜色值 #FFFFFF" :error-message="validationError.can_collect_color_upper" v-model="configs.can_collect_color_upper"/>
-            <tip-block>以下配置为执行优化使用，尽量不要修改除非出问题了</tip-block>
+      -->
+      <tip-block>以下配置为执行优化使用，尽量不要修改除非出问题了</tip-block>
       <color-input-field label="可收取颜色值起始值" label-width="10em" :error-message="validationError.collectable_lower" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_lower"/>
       <color-input-field label="可收取颜色值结束值" label-width="10em" :error-message="validationError.collectable_upper" placeholder="颜色值 #FFFFFF" v-model="configs.collectable_upper"/>
       <color-input-field label="浇水球颜色值起始值" label-width="10em" :error-message="validationError.water_lower" placeholder="颜色值 #FFFFFF" v-model="configs.water_lower"/>

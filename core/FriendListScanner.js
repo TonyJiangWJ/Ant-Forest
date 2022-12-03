@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2022-11-28 20:54:42
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-29 10:43:15
+ * @Last Modified time: 2022-11-30 14:11:43
  * @Description: 控件识别倒计时信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -74,13 +74,13 @@ const FriendListScanner = function () {
   }
 
   this.scrollUpIfNeeded = function () {
-    debugInfo('向下滑动寻找 没有更多了')
-    let limit = 10
+    let limit = Math.ceil((_config.friend_list_max_scroll_down_time || 30) / 3)
+    debugInfo(['向下滑动寻找 没有更多了 最大滑动次数：{}', limit * 3])
     do {
       randomScrollDown()
       randomScrollDown()
       randomScrollDown()
-    } while (!_widgetUtils.widgetChecking('.*没有更多了.*', { algorithm: 'PDFS', timeoutSetting: 1000 }) && limit-- > 0)
+    } while (!_widgetUtils.widgetChecking(_config.friend_list_end_content || '.*没有更多了.*', { algorithm: 'PDFS', timeoutSetting: 1000 }) && limit-- > 0)
   }
 
   function randomScrollDown () {

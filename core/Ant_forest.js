@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-29 18:39:10
+ * @Last Modified time: 2022-12-03 11:13:45
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -613,13 +613,33 @@ function Ant_forest () {
     }
   }
 
-  const signUpForMagicSpecies = function () {
-    let find = _widgetUtils.widgetGetOne(_config.magic_species_text || '点击发现|抽取今日|点击开启', 1000)
-    if (find) {
-      automator.clickCenter(find)
-      sleep(5000)
-      automator.back()
-      sleep(1000)
+  function doSignUpForMagicSpecies() {
+    sleep(5000)
+    let confirm = _widgetUtils.widgetGetOne('收下|再抽一次.*')
+    do {
+      if (confirm) {
+        automator.clickCenter(confirm)
+        if (!/收下/.test(confirm.desc()||confirm.text())) {
+          sleep(5000)
+        }
+      } else {
+        break;
+      }
+      confirm = _widgetUtils.widgetGetOne('收下|再抽一次.*')
+    } while (confirm)
+    automator.back()
+    sleep(1000)
+  }
+
+  function signUpForMagicSpecies() {
+    let screen = _commonFunctions.checkCaptureScreenPermission()
+    if (screen && _config.image_config.magic_species_icon) {
+      let find = OpenCvUtil.findByGrayBase64(screen, _config.image_config.magic_species_icon)
+      if (find) {
+        debugInfo(['找到了神奇物种入口：{}', JSON.stringify(find)])
+        automator.click(find.centerX(), find.centerY())
+        doSignUpForMagicSpecies()
+      }
     }
   }
 
@@ -627,9 +647,7 @@ function Ant_forest () {
     let find = _widgetUtils.widgetGetOne(_config.magic_species_text_in_stroll || '.*神奇物种新图鉴.*', 1000)
     if (find) {
       automator.clickCenter(find)
-      sleep(5000)
-      automator.back()
-      sleep(1000)
+      doSignUpForMagicSpecies()
     }
   }
 
@@ -741,6 +759,7 @@ function Ant_forest () {
 
   // 二次校验自己的能量值
   const recheckOwn = function () {
+    signUpForMagicSpecies()
     if (_config.not_collect_self) {
       return
     }
