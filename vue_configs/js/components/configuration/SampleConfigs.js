@@ -181,12 +181,15 @@ const CollectConfig = {
         not_collect_self: true,
         collect_rain_when_stroll: true,
         double_click_card_used: true,
+        fast_collect_mode: true,
         merge_countdown_by_gaps: true,
         limit_runnable_time_range: true,
         countdown_gaps: 30,
         friend_list_countdown_timeout: 10000,
         friend_list_max_scroll_down_time: 30,
         friend_list_end_content: '.*没有更多了.*',
+        random_gesture_safe_range_top: '',
+        random_gesture_safe_range_bottom: '',
       },
       currentInCoolDown: false,
       currentCollected: 0,
@@ -222,6 +225,8 @@ const CollectConfig = {
         cool_down_minutes: VALIDATOR.P_INT,
         cool_down_time: VALIDATOR.P_INT,
         countdown_gaps: VALIDATOR.P_INT,
+        random_gesture_safe_range_top: VALIDATOR.RANDOM_RANGE,
+        random_gesture_safe_range_bottom: VALIDATOR.RANDOM_RANGE,
       }
     }
   },
@@ -267,6 +272,11 @@ const CollectConfig = {
         </number-field>
         <number-field v-model="configs.friend_list_max_scroll_down_time" label="排行榜下拉最大次数" label-width="10em" placeholder="请输入最大次数" />
         <van-field v-model="configs.friend_list_end_content" label="排行榜底部判断控件文本" label-width="12em" placeholder="请输入底部判断文本" input-align="right" />
+        <tip-block>排行榜使用了随机手势来上下滑动，如果触发了状态栏下拉等操作，请手动配置范围，否则留空就行。排行榜下滑时从底部滑动到顶部，返回首页时从顶部滑动到底部。</tip-block>
+        <van-field v-model="configs.random_gesture_safe_range_top" :error-message="validationError.random_gesture_safe_range_top"
+          error-message-align="right" label="随机滑动顶部起止范围" label-width="12em" type="text" placeholder="留空使用默认值如400-600" input-align="right" />
+        <van-field v-model="configs.random_gesture_safe_range_bottom" :error-message="validationError.random_gesture_safe_range_bottom"
+          error-message-align="right" label="随机滑动底部起止范围" label-width="12em" type="text" placeholder="例如1800-2000" input-align="right" />
         <switch-cell title="是否循环" v-model="configs.is_cycle" />
         <number-field v-if="configs.is_cycle" v-model="configs.cycle_times" label="循环次数" placeholder="请输入单次运行循环次数" />
         <switch-cell title="是否永不停止" v-model="configs.never_stop" v-if="!configs.is_cycle"/>
@@ -321,6 +331,8 @@ const CollectConfig = {
         <switch-cell v-if="!configs.not_collect_self" title="只收自己的能量" v-model="configs.collect_self_only" />
         <switch-cell v-if="!configs.collect_self_only" title="不收自己的能量" v-model="configs.not_collect_self" />
         <switch-cell title="是否二次校验能量球" v-model="configs.double_click_card_used" />
+        <tip-block>开启快速收集后收取能量球间隔不再随机睡眠，但是有可能被检测为异常，谨慎开启</tip-block>
+        <switch-cell title="快速收集模式" v-model="configs.fast_collect_mode" />
         <switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />
         <switch-cell title="是否限制0:30-6:50不可运行" title-style="flex:2;" v-model="configs.limit_runnable_time_range" />
       </van-cell-group>

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-28 14:57:56
+ * @Last Modified time: 2022-12-05 19:35:01
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -370,6 +370,9 @@ const BaseScanner = function () {
   }
 
   this.randomSleep = function () {
+    if (_config.fast_collect_mode || _config._double_click_card_used) {
+      return
+    }
     sleep(100 + Math.random() * (_config.random_sleep_time || 500))
   }
 

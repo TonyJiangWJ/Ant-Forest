@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2022-11-28 20:54:42
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-03 22:27:23
+ * @Last Modified time: 2022-12-05 10:22:18
  * @Description: 控件识别倒计时信息
  */
 importClass(com.tony.ColorCenterCalculatorWithInterval)
@@ -84,12 +84,7 @@ const FriendListScanner = function () {
   }
 
   function randomScrollDown () {
-    let duration = 100 + Math.random() * 1000 % 300
-    let startY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 1600
-    let endY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 400
-    debugInfo(['滑动起始：{} 结束：{}', startY, endY])
-    automator.gestureDown(startY, endY, duration)
-    sleep(duration)
+    automator.randomScrollDown()
   }
 
   /**

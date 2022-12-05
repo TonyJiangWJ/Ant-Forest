@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-03 11:13:45
+ * @Last Modified time: 2022-12-05 19:35:32
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -470,20 +470,15 @@ function Ant_forest () {
   }
 
   function randomScrollDown () {
-    let duration = 100 + Math.random() * 1000 % 300
-    let startY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 1600
-    let endY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 400
-    debugInfo(['滑动起始：{} 结束：{}', startY, endY])
-    automator.gestureDown(startY, endY, duration)
-    sleep(duration)
+    let randomTop = _config.topRange() || {}
+    let randomBottom = _config.bottomRange() || {}
+    automator.randomScrollDown(randomTop.start, randomTop.end, randomBottom.start, randomBottom.end)
   }
+
   function randomScrollUp () {
-    let duration = 100 + Math.random() * 1000 % 300
-    let startY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 400
-    let endY = ~~(Math.random() * _config.device_height * 0.85 % 200 + 50) * (Math.random() > 0.5 ? 1 : -1) + 1600
-    debugInfo(['滑动起始：{} 结束：{}', startY, endY])
-    automator.gestureUp(startY, endY, duration)
-    sleep(duration)
+    let randomTop = _config.topRange() || {}
+    let randomBottom = _config.bottomRange() || {}
+    automator.randomScrollUp(randomBottom.start, randomBottom.end, randomTop.start, randomTop.end)
   }
 
   function scrollUpTop() {
@@ -610,6 +605,7 @@ function Ant_forest () {
     if (dbClickCountDown) {
       debugInfo(['发现双击卡倒计时组件，当前倒计时：{}', dbClickCountDown.content])
       _config.double_click_card_used = true
+      _config._double_click_card_used = true
     }
   }
 
