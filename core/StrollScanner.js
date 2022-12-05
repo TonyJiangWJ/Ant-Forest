@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-03 22:28:21
+ * @Last Modified time: 2022-12-05 13:43:15
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -260,10 +260,18 @@ StrollScanner.prototype.checkAndCollectRain = function () {
       return true
     }
     debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
-    let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
-    runningQueueDispatcher.doAddRunningTask({source: source})
-    engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByStroll: true, executorSource: engines.myEngine().getSource() + '' } })
-    _commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
+    target = _widgetUtils.widgetGetOne('去收取')
+    if (target) {
+      automator.clickCenter(target)
+      sleep(1000)
+      let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
+      runningQueueDispatcher.doAddRunningTask({source: source})
+      engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByStroll: true, executorSource: engines.myEngine().getSource() + '' } })
+      _commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
+      automator.back()
+    } else {
+      debugInfo('未找到去收取，执行能量雨脚本失败')
+    }
     this.showCollectSummaryFloaty()
     return true
   }

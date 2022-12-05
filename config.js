@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-03 10:55:33
+ * @Last Modified time: 2022-12-05 19:43:50
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -207,6 +207,8 @@ let default_config = {
   hough_min_dst: null,
   // 使用双击卡
   double_click_card_used: false,
+  // 快速收集模式
+  fast_collect_mode: false,
   // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
   is_pro: is_pro,
   // 逛一逛结束是否进行能量雨收集
@@ -269,7 +271,9 @@ let default_config = {
   pushplus_token: '',
   pushplus_walking_data: true,
   // 配置界面webview打印日志
-  webview_loging: false
+  webview_loging: false,
+  random_gesture_safe_range_top: '',
+  random_gesture_safe_range_bottom: '',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token']
@@ -381,6 +385,11 @@ if (!isRunningMode) {
           return reactiveTime
         }
       }
+
+      // 安全范围
+      config.topRange = () => getRange(config.random_gesture_safe_range_top)
+      config.bottomRange = () => getRange(config.random_gesture_safe_range_bottom)
+
       scope.config_instance = {
         config: config,
         default_config: default_config,
@@ -480,7 +489,7 @@ function getCurrentWorkPath () {
   }
 }
 
-function getConfigValue(configValue, key) {
+function getConfigValue (configValue, key) {
   if (securityFields.indexOf(key) > -1) {
     try {
       configValue = AesUtil.decrypt(configValue, aesKey) || configValue
@@ -492,4 +501,15 @@ function getConfigValue(configValue, key) {
     }
   }
   return configValue
+}
+
+function getRange (config_value) {
+  let rangeRegex = /^(\d+)-(\d+)$/
+  if (config_value && rangeRegex.test(config_value)) {
+    let result = rangeRegex.exec(config_value)
+    let start = parseInt(result[1])
+    let end = parseInt(result[2])
+    return { start: start, end: end }
+  }
+  return null
 }

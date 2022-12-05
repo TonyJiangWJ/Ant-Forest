@@ -28,6 +28,26 @@ const VALIDATOR = {
   COLOR: {
     validate: (v) => /^#[\dabcdef]{6}$/i.test(v),
     message: () => '颜色值格式不正确'
+  },
+  // 随机范围
+  RANDOM_RANGE: {
+    validate: () => false,
+    message: v => {
+      if (v) {
+        let rangeCheckRegex = /^(\d+)-(\d+)$/
+        if (rangeCheckRegex.test(v)) {
+          let execResult = rangeCheckRegex.exec(v)
+          let start = parseInt(execResult[1])
+          let end = parseInt(execResult[2])
+          if (start > end || start <= 0) {
+            return '随机范围应当大于零，且 start < end'
+          }
+        } else {
+          return '随机范围请按此格式输入: 5-10'
+        }
+      }
+      return ''
+    }
   }
 }
 
@@ -104,8 +124,8 @@ let mixin_common = {
         this.onConfigLoad(config)
       })
     },
-    onConfigLoad: function (config) {},
-    onSaveConfig: function () {},
+    onConfigLoad: function (config) { },
+    onSaveConfig: function () { },
     doSaveConfigs: function (deleteFields) {
       console.log('执行保存配置')
       let newConfigs = this.filterErrorFields(this.configs)
@@ -152,7 +172,7 @@ let mixin_common = {
   mounted () {
     this.loadConfigs()
   },
-  destroyed() {
+  destroyed () {
     console.log('保存当前界面配置')
     this.saveConfigs()
   }
@@ -864,7 +884,7 @@ const FileSelector = {
     prop: 'value',
     event: 'select-change'
   },
-  data() {
+  data () {
     return {
       showFileSelectDialog: this.value,
       currentSelectPath: this.initSelectPath,
@@ -938,7 +958,7 @@ const FileSelector = {
       }
     }
   },
-  mounted() {
+  mounted () {
     this.listFiles()
   },
   template: `
@@ -1005,7 +1025,7 @@ Vue.component('base64-image-viewer', resolve => {
       }
     },
     methods: {
-      handleFileSelect: function ({filePath}) {
+      handleFileSelect: function ({ filePath }) {
         console.log('准备加载文件内容：' + filePath)
         $nativeApi.request('loadFileContent', { filePath: filePath }).then(({ fileContent }) => {
           this.innerValue = fileContent
@@ -1085,12 +1105,12 @@ function formatDate (date, fmt) {
 API = {
   post: function (url, data) {
     return axios.post(url, qs.stringify(data))
-    .then(resp => Promise.resolve(resp.data))
-    .catch(e => Promise.reject(e))
+      .then(resp => Promise.resolve(resp.data))
+      .catch(e => Promise.reject(e))
   },
   get: function (url, data) {
     return axios.get(url, data)
-    .then(resp => Promise.resolve(resp.data))
-    .catch(e => Promise.reject(e))
+      .then(resp => Promise.resolve(resp.data))
+      .catch(e => Promise.reject(e))
   }
 }
