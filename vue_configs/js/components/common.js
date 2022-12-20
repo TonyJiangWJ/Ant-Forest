@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-03 13:22:48
+ * @Last Modified time: 2022-12-08 16:25:11
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 
@@ -1044,6 +1044,79 @@ Vue.component('base64-image-viewer', resolve => {
           <van-button square type="primary" text="修改Base64" @click="showBase64Inputer=true" />
         </template>
       </van-swipe-cell>
+      <file-selector v-model="showBase64Selector" @file-selected="handleFileSelect" />
+      <van-popup v-model="showBase64Inputer" position="bottom" :style="{ height: '30%', alignItems: 'center' }" :get-container="getContainer">
+        <tip-block>左滑可清空数据</tip-block>
+        <van-swipe-cell stop-propagation style="width:100%">
+          <van-field v-model="innerValue" label="图片base64" type="textarea" placeholder="请输入base64" input-align="right" rows="6" />
+          <template #right>
+            <van-button square type="primary" text="清空" @click="innerValue=''" style="height:100%" />
+          </template>
+        </van-swipe-cell>
+      </van-popup>
+    </div>
+    `
+  })
+})
+
+/**
+ * ImageCell
+ * 封装是switch按钮
+ */
+Vue.component('image-cell', resolve => {
+  resolve({
+    mixins: [mixin_methods],
+    components: { FileSelector },
+    props: {
+      value: String,
+      title: String,
+      titleStyle: String
+    },
+    model: {
+      prop: 'value',
+      event: 'change'
+    },
+    data: function () {
+      return {
+        innerValue: this.value,
+        showBase64Inputer: false,
+        showBase64Selector: false,
+      }
+    },
+    computed: {
+      base64Data: function () {
+        if (this.innerValue) {
+          return 'data:image/png;base64,' + this.innerValue
+        }
+        return null
+      }
+    },
+    watch: {
+      innerValue: function (v) {
+        this.$emit('change', v)
+      },
+      value: function (v) {
+        this.innerValue = v
+      }
+    },
+    methods: {
+      handleFileSelect: function ({ filePath }) {
+        console.log('准备加载文件内容：' + filePath)
+        $nativeApi.request('loadFileContent', { filePath: filePath }).then(({ fileContent }) => {
+          this.innerValue = fileContent
+        })
+      }
+    },
+    template: `
+    <div>
+      <div class="base64-viewer">
+        <img :src="base64Data" class="base64-img"/>
+        <van-cell :title="accountInfo.account" :label="accountInfo.accountName" clickable @click="changeMainAccount(idx)">
+          <template #right-icon>
+            <slot name="right-icon"></slot>
+          </template>
+        </van-cell>
+      </div>
       <file-selector v-model="showBase64Selector" @file-selected="handleFileSelect" />
       <van-popup v-model="showBase64Inputer" position="bottom" :style="{ height: '30%', alignItems: 'center' }" :get-container="getContainer">
         <tip-block>左滑可清空数据</tip-block>

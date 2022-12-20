@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-05 13:43:15
+ * @Last Modified time: 2022-12-19 15:05:11
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -172,16 +172,11 @@ StrollScanner.prototype.collectTargetFriend = function () {
   let count = 1
   ///sleep(1000)
   let alternativeFriendOrDone = 0
-  let start = new Date().getTime()
-  let windowRoots = runtime.getAccessibilityBridge().windowRoots()
-  for (let i = windowRoots.size() - 1; i >= 0; i++) {
-    let root = windowRoots.get(i)
-    if (root !== null && root.getPackageName()) {
-      root.refresh()
-      break
-    }
+  if (auto.clearCache) {
+    let start = new Date().getTime()
+    auto.clearCache()
+    debugInfo(['刷新根控件成功: {}ms', (new Date().getTime() - start)])
   }
-  debugInfo(['刷新根控件成功: {}ms', (new Date().getTime() - start)])
   // 未找到好友首页控件 循环等待三次
   while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, null, false, null, { algorithm: 'PVDFS' })) !== 1) {
     // 找到了结束标志信息 停止逛一逛
@@ -250,6 +245,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
 
 StrollScanner.prototype.checkAndCollectRain = function () {
   let target = null
+  auto.clearCache && auto.clearCache()
   if ((target = _widgetUtils.widgetGetOne(_config.rain_entry_content || '.*能量雨.*', 500, true)) != null) {
     if (!_config.collect_rain_when_stroll) {
       debugInfo('找到能量雨开始标志，但是不需要执行能量雨')
@@ -259,6 +255,7 @@ StrollScanner.prototype.checkAndCollectRain = function () {
       debugInfo('今日能量雨已完成')
       return true
     }
+    sleep(1000)
     debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
     target = _widgetUtils.widgetGetOne('去收取')
     if (target) {
@@ -280,12 +277,11 @@ StrollScanner.prototype.checkAndCollectRain = function () {
 
 StrollScanner.prototype.saveButtonRegionIfNeeded = function () {
   if (_config.stroll_button_regenerate) {
-    let configStorage = storages.create(_storage_name)
-    configStorage.put('stroll_button_left', _config.stroll_button_left)
-    configStorage.put('stroll_button_top', _config.stroll_button_top)
-    configStorage.put('stroll_button_width', _config.stroll_button_width)
-    configStorage.put('stroll_button_height', _config.stroll_button_height)
-    configStorage.put('stroll_button_regenerate', false)
+    _config.overwrite('stroll_button_left', _config.stroll_button_left)
+    _config.overwrite('stroll_button_top', _config.stroll_button_top)
+    _config.overwrite('stroll_button_width', _config.stroll_button_width)
+    _config.overwrite('stroll_button_height', _config.stroll_button_height)
+    _config.overwrite('stroll_button_regenerate', false)
     debugInfo(['保存重新生成的逛一逛按钮区域：{}', JSON.stringify([_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height])])
   }
 }

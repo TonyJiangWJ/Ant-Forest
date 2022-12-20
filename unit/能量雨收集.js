@@ -89,6 +89,7 @@ let ballsComplete = writeLock.newCondition()
 let clickPoint = null
 
 let clickGap = config.rain_click_gap || cvt(195)
+let maxGap = config.device_width / 4 - 5
 let middlePoint = config.device_width / 2
 // 暴力点击的区域
 let violentClickPoints = [middlePoint - 2 * clickGap, middlePoint - clickGap, middlePoint, middlePoint + clickGap, middlePoint + 2 * clickGap].map(v => [v, config.rain_click_top || cvt(300)])
@@ -124,28 +125,24 @@ threadPool.execute(function () {
     }
   }
 })
-
+let btns = [
+  { id: 'openRainPage', text: '打开能量雨界面' },
+  { id: 'changeStatus', text: '开始点击' },
+  { id: 'delayClose', text: '续命(拖动)' },
+  { id: 'closeBtn', text: '关闭' },
+]
 let clickButtonWindow = floaty.rawWindow(
-  <horizontal>
-    <vertical padding="1">
-      <vertical>
-        <button id="openRainPage" text="打开能量雨界面" />
-      </vertical>
-      <vertical>
-        <button id="changeStatus" text="开始点击" />
-      </vertical>
-      <vertical>
-        <button id="delayClose" text="续命(拖动)" />
-      </vertical>
-      <vertical>
-        <button id="closeBtn" text="关闭" />
-      </vertical>
-      <seekbar id="zoom" progress="{{clickGap}}" max="500" w="*" h="*" />
-    </vertical>
-    <vertical h="*" w="40">
-      <seekbar id="zoomClick" progress="{{clickGap}}" max="{{config.device_height/2}}" rotation="90" w="200" h="*" />
-    </vertical>
-  </horizontal>
+  '<horizontal>\
+    <vertical padding="1">'
+  + btns.map(btn => {
+    return '<vertical padding="1"><button id="' + btn.id + '" text="' + btn.text + '" textSize="12sp" w="*" h="*" /></vertical>'
+  }).join('\n')
+  + '<seekbar id="zoom" progress="{{clickGap}}" max="{{maxGap}}" w="*" h="*" />\
+    </vertical>\
+    <vertical h="*" w="40">\
+      <seekbar id="zoomClick" progress="{{clickGap}}" max="{{config.device_height/2}}" rotation="90" w="200" h="*" />\
+    </vertical>\
+  </horizontal>'
 );
 let rainClickTop = config.rain_click_top || cvt(300)
 ui.run(function () {
