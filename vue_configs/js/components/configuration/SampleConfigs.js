@@ -162,6 +162,7 @@ const CollectConfig = {
   data () {
     return {
       configs: {
+        no_friend_list_countdown: true,
         is_cycle: true,
         cycle_times: 10,
         never_stop: true,
@@ -267,6 +268,8 @@ const CollectConfig = {
     <div>
       <van-cell-group>
         <tip-block>当前版本仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，有一定几率会漏收倒计时刚刚结束的能量</tip-block>
+        <switch-cell title="不去排行榜获取倒计时数据" v-model="configs.no_friend_list_countdown"/>
+        <template v-if="!configs.no_friend_list_countdown">
         <number-field v-model="configs.friend_list_countdown_timeout" label="排行榜获取倒计时超时时间" label-width="12em" placeholder="请输入超时时间" >
           <template #right-icon><span>毫秒</span></template>
         </number-field>
@@ -277,6 +280,10 @@ const CollectConfig = {
           error-message-align="right" label="随机滑动顶部起止范围" label-width="12em" type="text" placeholder="留空使用默认值如400-600" input-align="right" />
         <van-field v-model="configs.random_gesture_safe_range_bottom" :error-message="validationError.random_gesture_safe_range_bottom"
           error-message-align="right" label="随机滑动底部起止范围" label-width="12em" type="text" placeholder="例如1800-2000" input-align="right" />
+        </template>
+        <template v-else>
+          <tip-block>关闭排行榜获取倒计时后，脚本将只根据自身能量倒计时来创建定时任务，无法知晓好友能量的倒计时时间。建议同时开启永不停止，实现全天随机的启动并收能量</tip-block>
+        </template>
         <switch-cell title="是否循环" v-model="configs.is_cycle" />
         <number-field v-if="configs.is_cycle" v-model="configs.cycle_times" label="循环次数" placeholder="请输入单次运行循环次数" />
         <switch-cell title="是否永不停止" v-model="configs.never_stop" v-if="!configs.is_cycle"/>

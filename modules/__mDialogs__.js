@@ -219,6 +219,8 @@ module.exports = function (__runtime__, scope) {
     for (var i = 0; i < len; i++) {
       if (isInt) {
         jsArray.push(parseInt(javaArray[i]));
+      } else {
+        jsArray.push(javaArray[i]);
       }
     }
     return jsArray;

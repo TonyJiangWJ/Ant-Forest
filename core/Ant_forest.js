@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-05 19:35:32
+ * @Last Modified time: 2022-12-19 15:57:47
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -18,7 +18,6 @@ let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
 let StrollScanner = require('./StrollScanner.js')
-let ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
 let FriendListScanner = require('./FriendListScanner.js')
 let BaseScanner = require('./BaseScanner.js')
 
@@ -445,26 +444,6 @@ function Ant_forest () {
     _base_scanner.checkAndCollectByHough(true)
   }
 
-  const checkAndNewImageBasedScanner = function () {
-    if (ImgBasedFriendListScanner === null) {
-      warnInfo('未加载基于图像分析的资源，重新加载')
-      resolver()
-      runtime.loadDex('../lib/color-region-center.dex')
-      try {
-        importClass(com.tony.ColorCenterCalculatorWithInterval)
-      } catch (e) {
-        let errorInfo = e + ''
-        if (/importClass must be called/.test(errorInfo)) {
-          errorInfo('请强制关闭AutoJS并重新启动', true)
-          _runningQueueDispatcher.removeRunningTask()
-          exit()
-        }
-      }
-      ImgBasedFriendListScanner = require('./ImgBasedFriendListScanner.js')
-    }
-    return new ImgBasedFriendListScanner()
-  }
-
   function newFriendListScanner () {
     return new FriendListScanner()
   }
@@ -492,9 +471,9 @@ function Ant_forest () {
   function enterFriendList() {
     do {
       randomScrollDown()
-    } while (!_widgetUtils.widgetChecking('.*查看更多好友.*', { algorithm: 'PVDFS', timeoutSetting: 1000 }))
+    } while (!_widgetUtils.widgetChecking(_config.enter_friend_list_ui_content || '.*查看更多好友.*', { algorithm: 'PVDFS', timeoutSetting: 1000 }))
     sleep(500)
-    let moreFriends = _widgetUtils.widgetGetOne('.*查看更多好友.*')
+    let moreFriends = _widgetUtils.widgetGetOne(_config.enter_friend_list_ui_content || '.*查看更多好友.*')
     if (moreFriends) {
       moreFriends.click()
       sleep(1000)
@@ -523,24 +502,6 @@ function Ant_forest () {
     debugInfo('返回主页')
     automator.back()
     scrollUpTop()
-  }
-
-  const findAndCollect = function () {
-    let scanner = checkAndNewImageBasedScanner()
-    scanner.init({ currentTime: _current_time, increasedEnergy: _post_energy - _pre_energy })
-    let executeResult = scanner.start()
-    // 执行失败 返回 true
-    if (executeResult === true) {
-      recordLost('收集执行失败')
-    } else {
-      _lost_someone = executeResult.lostSomeone
-      _lost_reason = executeResult.lostReason
-      _collect_any = executeResult.collectAny
-      _friends_min_countdown = executeResult.minCountdown
-    }
-    scanner.destroy()
-    scanner = null
-    return _lost_someone
   }
 
   const tryCollectByStroll = function () {
@@ -780,35 +741,16 @@ function Ant_forest () {
       recordLost('逛一逛执行异常')
       return false
     }
-    checkFriendListCountdown()
-    /*
-    if (!((_config.disable_image_based_collect && _config.is_cycle || _config.force_disable_image_based_collect) && _config.try_collect_by_stroll)) {
-      _widgetUtils.enterFriendList()
-      let enterFlag = _widgetUtils.friendListWaiting()
-      if (!enterFlag) {
-        errorInfo('进入好友排行榜失败')
-        recordLost('进入好友排行榜失败')
-        return false
-      }
-      // 延迟操作 避免截图失败
-      sleep(200)
-      let loadedStatus = _widgetUtils.ensureRankListLoaded(3)
-      if (!loadedStatus) {
-        warnInfo('排行榜加载中')
-      }
-      debugInfo('进入好友排行榜成功')
-      if (true === findAndCollect()) {
-        _min_countdown = null
-        _has_next = true
-        _current_time = _current_time == 0 ? 0 : _current_time - 1
-        errorInfo('收集好友能量失败，重新开始')
-        _re_try++
-        return false
-      } else {
-        _re_try = 0
-      }
+    let skip = false
+    if (_config.is_cycle) {
+      debugInfo('循环模式不去排行榜获取倒计时')
+      skip = true
     }
-    */
+    if (!skip && _config.no_friend_list_countdown) {
+      debugInfo('已关闭获取排行榜倒计时')
+      skip = true
+    }
+    !skip && checkFriendListCountdown()
     _commonFunctions.addClosePlacehold("收集好友能量结束")
   }
 

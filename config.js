@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-05 19:43:50
+ * @Last Modified time: 2022-12-19 15:12:36
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -24,6 +24,7 @@ let default_config = {
   min_floaty_y: 20,
   min_floaty_color: '#00ff00',
   min_floaty_text_size: 8,
+  no_friend_list_countdown: false,
   is_cycle: false,
   cycle_times: 10,
   never_stop: false,
@@ -151,7 +152,7 @@ let default_config = {
   magic_species_text: '点击发现|抽取今日|点击开启',
   magic_species_text_in_stroll: '.*神奇物种新图鉴.*',
   // 查看更多好友的按钮
-  enter_friend_list_ui_content: '查看更多好友',
+  enter_friend_list_ui_content: '.*查看更多好友.*',
   no_more_ui_content: '没有更多了',
   load_more_ui_content: '查看更多',
   watering_widget_content: '浇水',
