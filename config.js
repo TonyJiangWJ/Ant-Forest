@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-19 15:12:36
+ * @Last Modified time: 2022-12-29 15:03:03
  * @Description: 
  */
 let currentEngine = engines.myEngine().getSource() + ''
@@ -147,7 +147,7 @@ let default_config = {
   suspend_alarm_content: '滑动关闭闹钟',
   delay_start_pay_code_content: '向商家付(钱|款)',
   home_ui_content: '森林新消息|最新动态',
-  friend_home_check_regex: '你收取TA|TA收取你',
+  friend_home_check_regex: '(你收取TA|TA收取你).*',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
   magic_species_text: '点击发现|抽取今日|点击开启',
   magic_species_text_in_stroll: '.*神奇物种新图鉴.*',
@@ -257,7 +257,7 @@ let default_config = {
   // 标记是否清除webview缓存
   clear_webview_cache: false,
   // 更新后需要强制执行的标记
-  updated_temp_flag_13700V1: true,
+  updated_temp_flag_13732: true,
   // 多账号管理
   accounts: [],
   main_account: '',
@@ -432,27 +432,15 @@ if (!isRunningMode) {
  * 脚本更新后自动恢复一些不太稳定的配置
  */
 function resetConfigsIfNeeded () {
-  if (config.friend_home_check_regex === '浇水') {
-    config.friend_home_check_regex = default_config.friend_home_check_regex
-    storageConfig.put('friend_home_check_regex', default_config.friend_home_check_regex)
-  }
   let resetFields = [
-    'home_ui_content',
-    'stroll_button_regenerate',
-    'friend_load_more_content',
-    'can_collect_color_lower',
-    'can_collect_color_upper',
+    'friend_home_check_regex',
   ]
-  if (config.updated_temp_flag_13700V1) {
+  if (config.updated_temp_flag_13732) {
     resetFields.forEach(key => {
       config[key] = default_config[key]
       storageConfig.put(key, default_config[key])
     })
-    storageConfig.put('updated_temp_flag_13700V1', false)
-    if (!config.auto_lock) {
-      config.auto_lock = default_config.auto_lock
-    }
-    config.image_config = resetImgDefault(default_image_config, CONFIG_STORAGE_NAME + '_image')
+    storageConfig.put('updated_temp_flag_13732', false)
   }
 }
 
