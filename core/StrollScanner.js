@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-19 15:05:11
+ * @Last Modified time: 2023-01-09 10:14:01
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -12,6 +12,7 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let fileUtils = singletonRequire('FileUtils')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
+let localOcrUtil = require('../lib/LocalOcrUtil.js')
 
 let BaseScanner = require('./BaseScanner.js')
 
@@ -78,35 +79,15 @@ const StrollScanner = function () {
   this.collecting = function () {
     let hasNext = true
     let region = null
-    if (_config.stroll_button_left && !_config.stroll_button_regenerate) {
+    if (_config.stroll_button_left && !_config.stroll_button_regenerate && !this._regenerate_stroll_button) {
       region = [_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height]
     } else {
-      if (!_config.image_config.stroll_icon) {
-        warnInfo(['请配置逛一逛按钮图片或者手动指定逛一逛按钮区域'], true)
-        return this.getCollectResult()
-      }
-      let screen = _commonFunctions.checkCaptureScreenPermission()
-      let imagePoint = OpenCvUtil.findByGrayBase64(screen, _config.image_config.stroll_icon)
-      if (!imagePoint) {
-        imagePoint = OpenCvUtil.findBySIFTGrayBase64(screen, _config.image_config.stroll_icon)
-      }
-      if (imagePoint) {
-        region = [
-          imagePoint.left, imagePoint.top,
-          imagePoint.width(), imagePoint.height()
-        ]
-        _config.stroll_button_left = parseInt(region[0])
-        _config.stroll_button_top = parseInt(region[1])
-        _config.stroll_button_width = parseInt(region[2])
-        _config.stroll_button_height = parseInt(region[3])
-        _config.stroll_button_regenerate = true
-        debugInfo(['重新生成逛一逛按钮区域：{}', JSON.stringify(region)])
-        this.visualHelper.addRectangle('自动识别逛一逛按钮', region)
-        this.visualHelper.displayAndClearAll()
-        _commonFunctions.ensureRegionInScreen(region)
-      } else {
+      let successful = regenerateStrollButton()
+      if (!successful) {
         warnInfo('自动识别逛一逛按钮失败，请主动配置区域或者图片信息', true)
         hasNext = false
+      } else {
+        region = [_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height]
       }
     }
     while (hasNext) {
@@ -121,7 +102,7 @@ const StrollScanner = function () {
       sleep(300)
       hasNext = this.collectTargetFriend()
     }
-    let result = {}
+    let result = { regenerate_stroll_button: this._regenerate_stroll_button }
     Object.assign(result, this.getCollectResult())
     return result
   }
@@ -196,13 +177,20 @@ StrollScanner.prototype.collectTargetFriend = function () {
     )
     sleep(500)
     if (count >= 3) {
+      if (regenerateStrollButton()) {
+        let region = [_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height]
+        automator.clickRandomRegion({ left: region[0], top: region[1], width: region[2], height: region[3] })
+        sleep(1000)
+        continue
+      }
+      this._regenerate_stroll_button = true
       warnInfo('重试超过3次，取消操作')
       restartLoop = true
       break
     }
   }
   if (restartLoop) {
-    errorInfo('页面流程出错，重新开始')
+    errorInfo('页面流程出错，跳过好友能量收集')
     return false
   }
   let name = this.getFriendName()
@@ -286,3 +274,82 @@ StrollScanner.prototype.saveButtonRegionIfNeeded = function () {
   }
 }
 module.exports = StrollScanner
+
+
+// inner functions
+
+function refillStrollInfo(region) {
+  _config.stroll_button_left = parseInt(region[0])
+  _config.stroll_button_top = parseInt(region[1])
+  _config.stroll_button_width = parseInt(region[2])
+  _config.stroll_button_height = parseInt(region[3])
+  // 用于执行保存数值
+  _config.stroll_button_regenerate = true
+
+  debugInfo(['重新生成逛一逛按钮区域：{}', JSON.stringify(region)])
+}
+
+function ocrFindText(screen, text, tryTime) {
+  tryTime = tryTime || 0
+  let ocrCheck = localOcrUtil.recognizeWithBounds(screen, null, text)
+  if (ocrCheck && ocrCheck.length > 0) {
+    return ocrCheck[0]
+  } else {
+    if (--tryTime > 0) {
+      sleep(500)
+      return ocrFindText(screen, text, tryTime)
+    }
+    return null
+  }
+}
+
+function regenerateByOcr(screen) {
+  let ocrCheck = ocrFindText(screen, '找能量', 3)
+  if (ocrCheck) {
+    let bounds = ocrCheck.bounds
+    if (!bounds) {
+      return false
+    }
+    region = [
+      bounds.left, bounds.top,
+      bounds.width(), bounds.height()
+    ]
+    refillStrollInfo(region)
+    return true
+  }
+  return false
+}
+
+function regenerateByImg(screen) {
+  let imagePoint = OpenCvUtil.findByGrayBase64(screen, _config.image_config.stroll_icon)
+  if (!imagePoint) {
+    imagePoint = OpenCvUtil.findBySIFTGrayBase64(screen, _config.image_config.stroll_icon)
+  }
+  if (imagePoint) {
+    region = [
+      imagePoint.left, imagePoint.top,
+      imagePoint.width(), imagePoint.height()
+    ]
+    refillStrollInfo(region)
+    _commonFunctions.ensureRegionInScreen(region)
+    return true
+  }
+  return false
+}
+
+function regenerateStrollButton() {
+  if (!_config.image_config.stroll_icon && !localOcrUtil.enabled) {
+    warnInfo(['请配置逛一逛按钮图片或者手动指定逛一逛按钮区域'], true)
+    return false
+  }
+  let screen = _commonFunctions.checkCaptureScreenPermission()
+  if (!screen) {
+    errorInfo(['获取截图失败'])
+    return false
+  }
+  let successful = true
+  if (!regenerateByOcr(screen)) {
+    successful = regenerateByImg(screen)
+  }
+  return successful
+}

@@ -30,6 +30,9 @@ const mainJsList = [
 let start = new Date().getTime()
 appendJs('./js/components/common.js')
   .then(() => {
+    return appendJs('./js/components/configuration/UpdateTipsDialog.js')
+  })
+  .then(() => {
     // 加载基础js 然后异步加载所有组件
     Promise.all(loadJsList.map(js => {
       console.log('异步加载：', js)

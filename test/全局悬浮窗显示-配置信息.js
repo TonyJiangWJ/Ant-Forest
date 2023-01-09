@@ -153,11 +153,11 @@ window.canvas.on("draw", function (canvas) {
     paint.setStrokeJoin(Paint.Join.ROUND)
     paint.setDither(true)
     // 打印排行榜判断区域
-    drawRectAndText('排行榜判断区域', rankRegion, '#FF00FF', canvas, paint)
+    // drawRectAndText('排行榜判断区域', rankRegion, '#FF00FF', canvas, paint)
     if (strollButtonRegion[0]) {
       drawRectAndText('逛一逛按钮区域', strollButtonRegion, '#FF00FF', canvas, paint)
     }
-    drawRectAndText('底部判断区域', bottomRegion, '#FF00FF', canvas, paint)
+    // drawRectAndText('底部判断区域', bottomRegion, '#FF00FF', canvas, paint)
     drawRectAndText('有效能量球所在区域', validBallRegion, '#FF00FF', canvas, paint)
     if (back_img) {
       let matrix = new android.graphics.Matrix()

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2020-12-30 20:00:45
+ * @Last Modified time: 2023-01-09 21:14:01
  * @Description: 
  */
 "ui";
@@ -43,8 +43,10 @@ let errorFilePath = "file://" + mainScriptPath + "/vue_configs/error.html"
 let postMessageToWebView = () => { console.error('function not ready') }
 
 ui.webview.setVisibility(View.GONE)
+let clearLocalStorage = false
 if (config.clear_webview_cache) {
   ui.webview.clearCache(true)
+  clearLocalStorage = true
   config.overwrite('clear_webview_cache', false)
 }
 prepareWebView(ui.loadingWebview, {
@@ -94,6 +96,7 @@ postMessageToWebView = prepareWebView(ui.webview, {
       activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
       log('切换webview')
       ui.webview.loadUrl('javascript:window.vConsole && window.vConsole.destroy()')
+      clearLocalStorage && ui.webview.loadUrl('javascript:localStorage.clear()')
       loadSuccess = true
       setTimeout(function () {
         console.log('loadingWebview height:', ui.loadingWebview.getHeight())
