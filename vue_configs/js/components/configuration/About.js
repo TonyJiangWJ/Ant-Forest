@@ -31,6 +31,9 @@ const About = {
       if (this.qq_group_url) {
         $app.invoke('openUrl', { url: this.qq_group_url })
       }
+    },
+    showReleases: function () {
+      this.$router.push('/about/releases')
     }
   },
   computed: {
@@ -63,6 +66,7 @@ const About = {
     <van-cell-group>
       <van-cell title="版本" :value="version"/>
       <van-cell title="检测更新" value="点击更新" @click="checkForUpdate"/>
+      <van-cell title="更新历史" value="点击查看" @click="showReleases"/>
       <van-cell title="作者" value="TonyJiangWJ"/>
       <van-cell title="Email" value="TonyJiangWJ@gmail.com"/>
       <van-cell v-if="qq_group" title="QQ交流群" :value="qq_group" @click="openQQGroup"/>

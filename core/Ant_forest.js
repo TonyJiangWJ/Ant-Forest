@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-19 15:57:47
+ * @Last Modified time: 2023-01-09 10:17:59
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -511,6 +511,11 @@ function Ant_forest () {
     let runResult = scanner.start()
     scanner.destroy()
     if (runResult) {
+      if (runResult.regenerate_stroll_button && !_config._tried_regenerate_stroll_button) {
+        _config._tried_regenerate_stroll_button = true
+        warnInfo(['需要重新生成逛一逛按钮区域'])
+        return false
+      }
       trySignUpForMagicSpeciesByStroll()
       let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
       if (backToForest) {

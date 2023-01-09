@@ -3,7 +3,7 @@ const MarkdownPreview = {
   props: {
     text: String
   },
-  data() {
+  data () {
     return {
     }
   },
@@ -17,7 +17,7 @@ const MarkdownPreview = {
     }
   },
   template: `
-    <p v-html="markdownHtml" class="markdown-preview"></p>
+    <p v-html="markdownHtml" class="markdown-preview" style="width: 100%;word-break: break-all;"></p>
   `
 }
 
@@ -28,7 +28,7 @@ const QueryLimit = {
   props: {
     targetUrl: String
   },
-  data() {
+  data () {
     return {
       accessToken: '',
       showDialog: false,
@@ -107,7 +107,7 @@ const QuestionPreview = {
 const QuestionAnswer = {
   name: 'QuestionAnswer',
   components: { QueryLimit, QuestionPreview },
-  data() {
+  data () {
     return {
       pager: {
         currentPage: 1,
@@ -130,24 +130,24 @@ const QuestionAnswer = {
     doQuery: function () {
       this.loading = true
       API.get('https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/issues?state=all&sort=created&direction=desc&labels=question' + `&page=${this.pager.currentPage}&pre_page=${this.pager.size}&access_token=${this.accessToken}`)
-      .then(resp => {
-        this.queryResult = resp
-        return Promise.resolve(true)
-      }).catch(e => {
-        console.error('请求失败', e)
-        return Promise.resolve(false)
-      }).then(success => {
-        if (success) {
-          this.loading = false
-          this.noAccessPerm = false
-          this.contentFrom = 'Gitee'
+        .then(resp => {
+          this.queryResult = resp
           return Promise.resolve(true)
-        } else {
-          return this.doQueryGithubIssue()
-        }
-      }).then(_ => {
-        this.doGetAdbUseDoc()
-      })
+        }).catch(e => {
+          console.error('请求失败', e)
+          return Promise.resolve(false)
+        }).then(success => {
+          if (success) {
+            this.loading = false
+            this.noAccessPerm = false
+            this.contentFrom = 'Gitee'
+            return Promise.resolve(true)
+          } else {
+            return this.doQueryGithubIssue()
+          }
+        }).then(_ => {
+          this.doGetAdbUseDoc()
+        })
     },
     doQueryGithubIssue: function () {
       return API.get('https://api.github.com/repos/TonyJiangWJ/Ant-Forest/issues?labels=documentation').then(resp => {
@@ -165,24 +165,24 @@ const QuestionAnswer = {
     },
     doGetAdbUseDoc: function () {
       API.get('https://api.github.com/repos/TonyJiangWJ/AutoScriptBase/contents/resources/doc/ADB%E6%8E%88%E6%9D%83%E8%84%9A%E6%9C%AC%E8%87%AA%E5%8A%A8%E5%BC%80%E5%90%AF%E6%97%A0%E9%9A%9C%E7%A2%8D%E6%9D%83%E9%99%90.md?ref=master')
-      .then(resp => {
-        this.adbUseDoc.title = 'ADB授权脚本自动开启无障碍权限'
-        this.adbUseDoc.content = Base64.decode(resp.content)
-        this.adbUseDoc.createTime = '2021-01-26T11:08:03Z'
-        this.adbUseDoc.htmlUrl = resp.html_url
-        return Promise.resolve(true)
-      }).catch(e => {
-        return Promise.resolve(false)
-      }).then(_ =>
-        this.loading = false
-      )
+        .then(resp => {
+          this.adbUseDoc.title = 'ADB授权脚本自动开启无障碍权限'
+          this.adbUseDoc.content = Base64.decode(resp.content)
+          this.adbUseDoc.createTime = '2021-01-26T11:08:03Z'
+          this.adbUseDoc.htmlUrl = resp.html_url
+          return Promise.resolve(true)
+        }).catch(e => {
+          return Promise.resolve(false)
+        }).then(_ =>
+          this.loading = false
+        )
     },
     queryWithAccessToken: function (payload) {
       this.accessToken = payload.accessToken
       this.doQuery()
     }
   },
-  mounted() {
+  mounted () {
     this.accessToken = localStorage.getItem('accessToken')
     this.doQuery()
   },
@@ -208,7 +208,7 @@ const QuestionAnswer = {
 const Readme = {
   name: 'Readme',
   components: { MarkdownPreview, QueryLimit },
-  data() {
+  data () {
     return {
       base64Content: '',
       accessToken: '',
@@ -247,27 +247,27 @@ const Readme = {
     },
     getGithubReadme: function () {
       API.get(`https://api.github.com/repos/TonyJiangWJ/Ant-Forest/contents/README.md?ref=master`)
-      .then(resp => {
-        this.noAccessPerm = false
-        this.base64Content = resp.content
-        this.contentFrom = 'Github'
-        return Promise.resolve({})
-      })
-      .catch(e => {
-        this.noAccessPerm = true
-        this.$toast('accessToken 无效 被限流啦')
-        return Promise.resolve({})
-      })
-      .then(r => {
-        this.loading = false
-      })
+        .then(resp => {
+          this.noAccessPerm = false
+          this.base64Content = resp.content
+          this.contentFrom = 'Github'
+          return Promise.resolve({})
+        })
+        .catch(e => {
+          this.noAccessPerm = true
+          this.$toast('accessToken 无效 被限流啦')
+          return Promise.resolve({})
+        })
+        .then(r => {
+          this.loading = false
+        })
     },
     queryWithAccessToken: function (payload) {
       this.accessToken = payload.accessToken
       this.getReadme()
     }
   },
-  mounted() {
+  mounted () {
     this.accessToken = localStorage.getItem('accessToken')
     this.getReadme()
   },
@@ -285,5 +285,70 @@ const Readme = {
       </div>
     </van-overlay>
   </div>
+  `
+}
+
+const HistoryRelease = {
+  name: 'HistoryRelease',
+  components: { MarkdownPreview },
+  data () {
+    return {
+      loading: false,
+      releasesUrl: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases',
+      historyReleases: []
+    }
+  },
+  filters: {
+    dateStr: function (value) {
+      // console.log('date: ', value)
+      return formatDate(new Date(value))
+    }
+  },
+  methods: {
+    loadHistoryReleases: function () {
+      this.loadReleasesUrlByConfig().then(_ => {
+        this.loading = true
+        return API.get(this.releasesUrl).then(resp => {
+          let queryResult = resp
+          this.historyReleases = queryResult.map(({ tag_name, created_at, published_at, body }) => ({ tagName: tag_name, createdAt: created_at, publishedAt: published_at, body }))
+          return Promise.resolve(true)
+        }).catch(e => {
+          console.error('请求失败', e)
+          return Promise.resolve(false)
+        }).then(_ => this.loading = false)
+      })
+    },
+    loadReleasesUrlByConfig: function () {
+      return new Promise(resolve => {
+        if ($app.mock) {
+          resolve(this.releasesUrl)
+          return
+        }
+        $app.invoke('loadConfigs', {}, config => {
+          this.releasesUrl = (config.github_latest_url || '').replace('/latest', '') || this.releasesUrl
+          console.log('替换历史releaseUrl为：', this.releasesUrl)
+          resolve(this.releasesUrl)
+        })
+      })
+    }
+  },
+  mounted () {
+    this.loadHistoryReleases()
+  },
+  template: `
+   <div style="width: 100%">
+    <div v-for="release in historyReleases" :key="release.tagName" style="margin: 1rem;padding: 1rem;box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;">
+      <h4>{{release.tagName}}</h4>
+      <div style="display:inline">
+        <label style="font-size: 0.75rem;">{{release.publishedAt|dateStr}} => {{release.createdAt|dateStr}}</label>
+      </div>
+      <markdown-preview :text="release.body" />
+    </div>
+    <van-overlay :show="loading" z-index="1000">
+      <div class="wrapper">
+        <van-loading size="4rem" vertical>加载中...</van-loading>
+      </div>
+    </van-overlay>
+   </div>
   `
 }
