@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-01-09 10:14:01
+ * @Last Modified time: 2023-01-11 11:38:46
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -185,6 +185,8 @@ StrollScanner.prototype.collectTargetFriend = function () {
       }
       this._regenerate_stroll_button = true
       warnInfo('重试超过3次，取消操作')
+      warnInfo(['无法确认是否进入好友主页，请检查`判断是否进入好友首页`的控件文本配置是否正确，当前值：{}', _config.friend_home_check_regex])
+      warnInfo(['或者检查一下逛一逛按钮的位置是否正确，当前按钮区域：{}', JSON.stringify([_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height])])
       restartLoop = true
       break
     }

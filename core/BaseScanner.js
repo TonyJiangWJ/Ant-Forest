@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-05 19:35:01
+ * @Last Modified time: 2023-01-11 11:42:07
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -642,23 +642,23 @@ const BaseScanner = function () {
       errorInfo("[" + obj.name + "]获取收取后能量异常" + e)
       _commonFunctions.printExceptionStack(e)
     }
-    let collectEnergy = postGet - preGot
+    let collectedEnergy = postGet - preGot
     debugInfo(['执行前，收集数据：{}; 执行后，收集数据：{}', preGot, postGet])
-    if (this.collect_operated && collectEnergy === 0 && !obj.recheck) {
+    if (this.collect_operated && collectedEnergy === 0 && !obj.recheck) {
       // 没有收集到能量，可能有保护罩，等待1.5秒
       warnInfo(['未收集到能量，可能当前能量值未刷新或者好友使用了保护罩，等待1.5秒'], true)
       sleep(1500)
       try {
         // 1.5秒后重新获取能量值
         postGet = _widgetUtils.getYouCollectEnergy() || 0
-        collectEnergy = postGet - preGot
+        collectedEnergy = postGet - preGot
       } catch (e) {
         errorInfo("[" + obj.name + "]二次获取收取后能量异常" + e)
         _commonFunctions.printExceptionStack(e)
       }
     }
-    if (collectEnergy > 0) {
-      let gotEnergyAfterWater = collectEnergy
+    if (collectedEnergy > 0) {
+      let gotEnergyAfterWater = collectedEnergy
       this.collect_any = true
       let needWaterback = _commonFunctions.recordFriendCollectInfo({
         hasSummaryWidget: _config.has_summary_widget,
@@ -674,7 +674,7 @@ const BaseScanner = function () {
           gotEnergyAfterWater -= (_config.targetWateringAmount || 0)
         }
       } catch (e) {
-        errorInfo('收取[' + obj.name + ']' + collectEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
+        errorInfo('收取[' + obj.name + ']' + collectedEnergy + 'g 大于阈值:' + _config.wateringThreshold + ' 回馈浇水失败 ' + e)
         _commonFunctions.printExceptionStack(e)
       }
       logInfo([

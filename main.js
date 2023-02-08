@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-11-29 15:40:09
+ * @Last Modified time: 2023-02-01 09:39:41
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, global)
@@ -12,10 +12,10 @@ require('./modules/init_if_needed.js')(runtime, global)
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 let commonFunctions = singletonRequire('CommonFunction')
+let AntForestDao = singletonRequire('AntForestDao')
 // 避免定时任务打断前台运行中的任务
 commonFunctions.checkAnyReadyAndSleep()
 commonFunctions.delayIfBatteryLow()
-commonFunctions.exitIfCoolDown()
 // 不管其他脚本是否在运行 清除任务队列 适合只使用蚂蚁森林的用户
 if (config.single_script) {
   logInfo('======单脚本运行直接清空任务队列=======')
@@ -26,8 +26,10 @@ logInfo('======尝试加入任务队列，并关闭重复运行的脚本======='
 runningQueueDispatcher.addRunningTask()
 commonFunctions.killDuplicateScript()
 logInfo('======加入任务队列成功=======')
-
-
+logInfo('======初始化SQLite=======')
+AntForestDao.init()
+commonFunctions.exitIfCoolDown()
+logInfo('======初始化SQLite成功=======')
 logInfo('======基于图像分析模式：加载dex=======')
 resolver()
 runtime.loadDex('./lib/color-region-center.dex')

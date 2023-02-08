@@ -39,7 +39,7 @@ appendJs('./js/components/common.js')
       return appendJs(js)
     })).then(_ => {
       // 组件加载完毕后 加载vue-router vuex app
-      return asyncAppendJs(mainJsList)
+      return syncAppendJs(mainJsList)
     }).then(() => {
       console.log('加载所有js耗时：', (new Date().getTime() - start), 'ms')
     })
@@ -97,7 +97,7 @@ function appendJs (url) {
 /**
  * 按顺序同步加载
  */
-async function asyncAppendJs (jsList) {
+async function syncAppendJs (jsList) {
   for (var i = 0; i < jsList.length; i++) {
     console.log('同步加载：', jsList[i])
     await appendJs(jsList[i])
