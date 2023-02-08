@@ -13,7 +13,6 @@ const router = new VueRouter({
     { path: '/basic/magic_sea', component: MagicSeaConfig, meta: { index: 1, title: '神奇海洋设置' } },
     { path: '/basic/collect', component: CollectConfig, meta: { index: 1, title: '收集设置' } },
     { path: '/advance/accounts', component: AlipayAccountManage, meta: { index: 1, title: '多账号管理' } },
-    { path: '/advance/walkingData', component: WalkingData, meta: { index: 1, title: '刷步数' } },
     { path: '/advance/region', component: RegionConfig, meta: { index: 1, title: '图像识别相关设置' } },
     { path: '/advance/imageConfig', component: ImageConfig, meta: { index: 1, title: '查找图片设置' } },
     { path: '/advance/region/ocr', component: OcrConfig, meta: { index: 2, title: 'OCR设置' } },
