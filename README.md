@@ -1,10 +1,10 @@
 
 # 简介
 
-基于 Autojs 的蚂蚁森林自动收能量脚本，采用 [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk)  版本开发。解锁模块参考自：[https://github.com/e1399579/autojs](https://github.com/e1399579/autojs)
+基于 Autojs 的蚂蚁森林自动收能量脚本，采用 [AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 版本开发。解锁模块参考自：[https://github.com/e1399579/autojs](https://github.com/e1399579/autojs)
 
-- 脚本执行依赖于：AutoJs 4.1.1 alpha2（非完全兼容） 或者 [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk)  建议下载该版本，4.1.1原作者完全不会再维护了，存在较多内存泄露等问题，且不支持Android12 脚本中部分特性也不支持，如本地OCR 多分辨率找图 等等
-- 本项目原始版本 [https://github.com/Nick-Hopps/Ant-Forest-autoscript](https://github.com/Nick-Hopps/Ant-Forest-autoscript) ，原作者已不再维护。虽然目前版本和原始版本代码已经完全不一样，但是还是非常感谢 [Nick-Hoops](https://github.com/Nick-Hopps)
+- 脚本执行依赖于：[AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk)，4.1.1原作者完全不会再维护且已经删库，同时存在较多内存泄露等问题、不支持Android12、脚本中部分特性也不支持，如本地OCR 多分辨率找图 等等。Pro限制无障碍操作且存在代码审查机制，不再受支持。
+- 本项目原始版本 [https://github.com/Nick-Hopps/Ant-Forest-autoscript](https://github.com/Nick-Hopps/Ant-Forest-autoscript) ，原作者[Nick-Hoops](https://github.com/Nick-Hopps)已不再维护。虽然目前版本和原始版本代码已经完全不一样，但是还是非常感谢 [Nick-Hoops](https://github.com/Nick-Hopps)
 - 设备系统要求
 
   - 具有 ROOT 权限的安卓 5.0 及以上版本
@@ -20,15 +20,15 @@
 
 ## 使用
 
-- 下载安装 AutoJs 4.1.1 alpha2 or [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 `main.js` 即可。
+- 下载安装 [AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 `main.js` 即可。
 - 给与软件必要权限 `后台弹出界面`、`显示悬浮窗`、`自启动`、`电量无限制`，并将软件保持后台运行
 - 定时启动脚本，点击 `main.js` 的菜单，选择 `更多` `定时任务` 即可配置定时启动
 - 如果运行提示有任务正在队列中，请运行配置 `可视化配置.js` 然后进到 `高级设置` 中勾选 `单脚本运行`，该功能是用于多个脚本同时运行时的任务队列 相当于一个调度程序，避免多个脚本抢占前台导致出错
 - 当前版本森林只通过逛一逛收集能量，排行榜中仅获取倒计时数据，需要配置逛一逛（收能量）按钮位置或图片信息。更多配置信息见[配置小节](#配置)
 - 运行有问题请查看[#常见问题小节](#常见问题)
 - 不同手机的解锁方法不同可能不适配，需要自行编写解锁方法，具体见[#添加解锁设备](#添加解锁设备)小节
-- ocr优先使用mlkit，不支持时尝试paddleocr，最后使用百度（需要配置API KEY，而且每天有500次的次数限制），推荐下载ocr插件[mlkit-ocr插件下载](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/mlkit-ocr-plugin-latest.apk)
-- 关于本地OCR的说明，mlkit-ocr速度非常快，但是缺点是识别准确性不佳，目前基本能满足所需要的识别功能。PaddleOCR识别准确性很高但是缺点是速度慢，而且必须给AutoJS设置电量无限制权限否则容易闪退，另外就是必须安装[我的修改的AutoJS](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk)才能使用PaddleOCR。
+- ocr优先使用mlkit，不支持时尝试paddleocr，最后使用百度（需要配置API KEY，而且每天有500次的次数限制），推荐直接使用修改版或下载ocr插件[mlkit-ocr插件下载](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/mlkit-ocr-plugin-latest.apk)
+- 关于本地OCR的说明，mlkit-ocr速度非常快，但是缺点是识别准确性不佳，目前基本能满足所需要的识别功能。PaddleOCR识别准确性很高但是缺点是速度慢，而且必须给AutoJS设置电量无限制权限否则容易闪退，另外就是必须安装[我的修改的AutoJS](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk) 才能使用PaddleOCR。
 - 当前版本仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，有一定几率会漏收倒计时刚刚结束的能量
 
 ## 配置
@@ -68,10 +68,10 @@
   - 自动收集 `unit/循环切换小号并收集能量.js` 支持小号给大号浇水
   - 自动循环执行能量雨 `unit/循环切换小号并执行能量雨收集.js` 建议同时关闭逛一逛结束自动执行能量雨的功能
   - 自动同步设备步数 `unit/循环切换小号用于同步数据.js`
-- 可以自动打开无障碍，需要配合adb赋权，不同的软件请自行替换包名: Pro版为 `org.autojs.autojspro` 可以通过 `context.getPackageName()` 获取
+- 可以自动打开无障碍，需要配合adb赋权，不同的软件请自行替换包名: 可以通过 `context.getPackageName()` 获取
 
   ```shell
-    adb shell pm grant org.autojs.autojs android.permission.WRITE_SECURE_SETTINGS
+    adb shell pm grant org.autojs.autojs.modify android.permission.WRITE_SECURE_SETTINGS
   ```
 
 - [通过ADB授权脚本自动获取无障碍权限](https://github.com/TonyJiangWJ/AutoScriptBase/blob/master/resources/doc/ADB%E6%8E%88%E6%9D%83%E8%84%9A%E6%9C%AC%E8%87%AA%E5%8A%A8%E5%BC%80%E5%90%AF%E6%97%A0%E9%9A%9C%E7%A2%8D%E6%9D%83%E9%99%90.md)
@@ -112,9 +112,9 @@
 
 ## 常见问题
 
-- 可视化配置.js 执行异常，运行 `unit/功能测试-重置默认配置.js` 依旧有问题，尝试重启AutoJS，并检查AutoJS的版本是否为 `4.1.1 Alpah2` 或者 [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 或 `AutoJS Pro7` ，`AutoJS Pro8/9` 由于限制了支付宝控件，暂不能完全支持。
+- 可视化配置.js 执行异常，运行 `unit/功能测试-重置默认配置.js` 依旧有问题，尝试重启AutoJS，并检查AutoJS的版本是否为 [AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk)，其他版本可能有兼容性问题，另外Pro版不再支持。
 - 可视化配置 运行后显示白屏或者显示 加载失败 大概是因为某个网络资源加载失败了，请退出重新打开，多试几次即可。
-- 如果报错 `Function importClass must be called with a class;...` 直接强制关闭AutoJS软件，然后再打开即可。一般只在跨版本更新后才会出现这个问题，最新版脚本已解决这个问题，建议安装 [AutoJS Modify](https://github.com/TonyJiangWJ/Auto.js/releases/download/v4.1.1/AutoJS.Modify.latest.apk) 
+- 如果报错 `Function importClass must be called with a class;...` 直接强制关闭AutoJS软件，然后再打开即可。一般只在跨版本更新后才会出现这个问题，最新版脚本已解决这个问题，建议安装 [AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk)
 - 另外如果不断的运行异常，强制关闭AutoJS软件后重新执行脚本。同时建议定期强制关闭AutoJS软件，避免内存不断增长导致卡顿
 - 图像分析模式 如果识别有遗漏，尝试将 `颜色相似度` 调低 当前默认值已改为20，或者检查一下是否开启了护眼模式或者暗色模式。
 - 软件的定时任务，点击main.js的 三个点菜单->更多->定时任务 然后设置相应的时间即可
@@ -255,3 +255,4 @@ module.exports = function (obj) {
 - **昌
 - F*sW
 - **昌
+- *z
