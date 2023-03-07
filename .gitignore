@@ -11,3 +11,5 @@ ExternalUnlockDevice.js
 *.txt.*
 *.db
 logs/
+unit/小米运动刷步数.js
+lib/FakeWalkDataUtil.js
