@@ -13,7 +13,7 @@ let commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let formatDate = require('../lib/DateUtil.js')
 let workpath = FileUtils.getCurrentWorkPath()
-runtime.loadDex(workpath + '/lib/autojs-common.dex')
+checkAndLoadDex(workpath + '/lib/autojs-common.dex')
 importClass(com.tony.autojs.search.UiObjectTreeBuilder)
 
 let args = engines.myEngine().execArgv

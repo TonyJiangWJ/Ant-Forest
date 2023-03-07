@@ -183,6 +183,7 @@ const CollectConfig = {
         cool_down_time: 10,
         collect_self_only: true,
         not_collect_self: true,
+        recheck_after_stroll: false,
         collect_rain_when_stroll: true,
         double_click_card_used: true,
         fast_collect_mode: true,
@@ -271,6 +272,7 @@ const CollectConfig = {
     <div>
       <van-cell-group>
         <tip-block>当前版本仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，有一定几率会漏收倒计时刚刚结束的能量</tip-block>
+        <switch-cell title="逛一逛结束后重复一遍" v-model="configs.recheck_after_stroll" label="逛一逛收集到能量后，重复逛一逛避免漏收倒计时刚刚结束的能量" title-style="flex:3.5;" />
         <switch-cell title="不去排行榜获取倒计时数据" v-model="configs.no_friend_list_countdown"/>
         <template v-if="!configs.no_friend_list_countdown">
         <number-field v-model="configs.friend_list_countdown_timeout" label="排行榜获取倒计时超时时间" label-width="12em" placeholder="请输入超时时间" >

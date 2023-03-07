@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-01-09 10:17:59
+ * @Last Modified time: 2023-03-07 13:43:27
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -504,19 +504,21 @@ function Ant_forest () {
     scrollUpTop()
   }
 
-  const tryCollectByStroll = function () {
+  const tryCollectByStroll = function (recheck) {
     debugInfo('尝试逛一逛收集能量')
     let scanner = new StrollScanner()
     scanner.init({ currentTime: _current_time, increasedEnergy: _post_energy - _pre_energy })
     let runResult = scanner.start()
     scanner.destroy()
     if (runResult) {
-      if (runResult.regenerate_stroll_button && !_config._tried_regenerate_stroll_button) {
-        _config._tried_regenerate_stroll_button = true
-        warnInfo(['需要重新生成逛一逛按钮区域'])
-        return false
+      if (!recheck) {
+        if (runResult.regenerate_stroll_button && !_config._tried_regenerate_stroll_button) {
+          _config._tried_regenerate_stroll_button = true
+          warnInfo(['需要重新生成逛一逛按钮区域'])
+          return false
+        }
+        trySignUpForMagicSpeciesByStroll()
       }
-      trySignUpForMagicSpeciesByStroll()
       let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
       if (backToForest) {
         automator.clickCenter(backToForest)
@@ -534,7 +536,12 @@ function Ant_forest () {
         sleep(500)
       }
       _post_energy = getCurrentEnergy(true)
-      logInfo('逛一逛结束 当前能量：' + _post_energy)
+      logInfo(['逛一逛结束 当前能量：{}', _post_energy])
+      debugInfo(['collect any?: {}', runResult.collectAny])
+      if (runResult.collectAny && config.recheck_after_stroll) {
+        logInfo(['二次校验逛一逛'])
+        return tryCollectByStroll(true)
+      }
     }
     return true
   }

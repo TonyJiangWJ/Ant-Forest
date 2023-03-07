@@ -18,7 +18,7 @@ let commonFunctions = singletonRequire('CommonFunction')
 let unlocker = require('../lib/Unlock.js').unlocker
 let FileUtils = singletonRequire('FileUtils')
 let workpath = FileUtils.getCurrentWorkPath()
-runtime.loadDex(workpath + '/lib/autojs-common.dex')
+checkAndLoadDex(workpath + '/lib/autojs-common.dex')
 importClass(com.tony.autojs.search.UiObjectTreeBuilder)
 let inspectConfig = { save_img_js: true, capture: true }
 commonFunctions.registerOnEngineRemoved(function () {

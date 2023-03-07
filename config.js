@@ -2,9 +2,10 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-29 15:03:03
+ * @Last Modified time: 2023-03-07 10:21:52
  * @Description: 
  */
+require('./lib/Runtimes.js')(global)
 let currentEngine = engines.myEngine().getSource() + ''
 let isRunningMode = currentEngine.endsWith('/config.js') && typeof module === 'undefined'
 let is_pro = !!Object.prototype.toString.call(com.stardust.autojs.core.timing.TimedTask.Companion).match(/Java(Class|Object)/)
@@ -214,6 +215,8 @@ let default_config = {
   is_pro: is_pro,
   // 逛一逛结束是否进行能量雨收集
   collect_rain_when_stroll: true,
+  // 逛一逛结束后重复一遍
+  recheck_after_stroll: false,
   stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$',
   stroll_button_regenerate: true,
   stroll_button_left: null,
@@ -275,9 +278,11 @@ let default_config = {
   webview_loging: false,
   random_gesture_safe_range_top: '',
   random_gesture_safe_range_bottom: '',
+  // 代码版本
+  code_version: 'v1.3.7.6',
 }
 // 文件更新后直接生效，不使用缓存的值
-let no_cache_configs = ['release_access_token']
+let no_cache_configs = ['release_access_token', 'code_version']
 let securityFields = ['password', 'alipay_lock_password', 'walking_accounts']
 let objFields = ['walking_accounts']
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
