@@ -244,14 +244,35 @@ function Ant_forest () {
     return result
   }
 
+  /**
+   * 获取有效范围内的球，避免点击到活动图标
+   *
+   * @returns 
+   */
+  function getValidClickableBalls() {
+    let ballPoints = []
+    _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, null, 1)
+    return ballPoints.filter(ball => {
+      let radius = parseInt(ball.radius)
+      if (
+        // 可能是左上角的活动图标 或者 识别到了其他范围的球
+        ball.y < _config.tree_collect_top || ball.y > _config.tree_collect_top + _config.tree_collect_height
+        || ball.x < _config.tree_collect_left || ball.x > _config.tree_collect_left + _config.tree_collect_width
+        // 取值范围就不正确的无效球，避免后续报错，理论上不会进来，除非配置有误
+        || ball.x - radius <= 0 || ball.x + radius >= _config.device_width || ball.y - radius <= 0 || ball.y + 1.6 * radius >= _config.device_height) {
+        return false
+      }
+      return true
+    })
+  }
+
   // 获取自己的能量球中可收取倒计时的最小值
   const getMinCountdownOwn = function () {
     let temp = []
     let toasts = []
 
     // 通过图像分别判断白天和晚上的倒计时球颜色数据
-    let ballPoints = []
-    _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, null, 1)
+    let ballPoints = getValidClickableBalls()
     if (ballPoints && ballPoints.length > 0) {
       ballPoints.sort((a, b) => a.x - b.x)
       debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
