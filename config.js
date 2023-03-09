@@ -279,7 +279,7 @@ let default_config = {
   random_gesture_safe_range_top: '',
   random_gesture_safe_range_bottom: '',
   // 代码版本
-  code_version: 'v1.3.7.6',
+  code_version: 'v1.3.7.7',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
