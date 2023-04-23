@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-03-07 13:57:11
+ * @Last Modified time: 2023-04-13 14:43:41
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -52,6 +52,8 @@ const BaseScanner = function () {
   this.houghHelper = null
   this.visualHelper = new _VisualHelper()
   this.visualHelper.init()
+  // 收集对象
+  this.target = null
   this.createNewThreadPool = function () {
     this.threadPool = new ThreadPoolExecutor(_config.thread_pool_size || 4, _config.thread_pool_max_size || 4, 60,
       TimeUnit.SECONDS, new LinkedBlockingQueue(_config.thread_pool_queue_size || 256),
@@ -293,16 +295,17 @@ const BaseScanner = function () {
         || ball.x < _config.tree_collect_left || ball.x > _config.tree_collect_left + _config.tree_collect_width
         // 取值范围就不正确的无效球，避免后续报错，理论上不会进来，除非配置有误
         || ball.x - radius <= 0 || ball.x + radius >= _config.device_width || ball.y - radius <= 0 || ball.y + 1.6 * radius >= _config.device_height) {
+        debugInfo(['球：[{},{} r{}]不在能量球所在区域范围内', ball.x, ball.y, ball.radius])
         return
       }
-      let ballImage = images.clip(rgbImg, ball.x - radius, ball.y - radius, radius * 2, 2.6 * radius)
+      let ballImage = images.clip(rgbImg, ball.x - radius, ball.y - radius, radius * 2, 2 * radius)
       // 用于判定是否可收取
-      let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#89d600', _config.collectable_upper || '#ffff14')
+      let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#9BDA00', _config.collectable_upper || '#E1FF2F')
       let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
       // 用于判定是否浇水球
-      let intervalForHelpCheck = images.inRange(ballImage, _config.water_lower || '#e8cb3a', _config.water_upper || '#ffed8e')
+      let intervalForWaterCheck = images.inRange(ballImage, _config.water_lower || '#e8cb3a', _config.water_upper || '#ffed8e')
       // 判定是否为浇水球
-      let avgHsv = OpenCvUtil.getHistAverage(intervalForHelpCheck)
+      let avgHsv = OpenCvUtil.getHistAverage(intervalForWaterCheck)
       let collectableBall = {
         ball: ball, isOwn: this.is_own, avg: avgHsv,
         mainAvg: avgForCollectable,
@@ -530,7 +533,7 @@ const BaseScanner = function () {
     if (_config.cutAndSaveTreeCollect && this.temp_img) {
       try {
         let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect_not_found/'
-          + 'unknow_not_found_' + (new Date().getMonth() + 1 + '-' + new Date().getDate() + '_')+ (Math.random() * 9999 + 100).toFixed(0) + '.png'
+          + (this.target ? this.target : 'unknow') + '_not_found_' + (new Date().getMonth() + 1 + '-' + new Date().getDate() + '_') + (Math.random() * 9999 + 100).toFixed(0) + '.png'
         files.ensureDir(savePath)
         images.save(this.temp_img, savePath)
         debugForDev(['保存未识别能量球图片：「{}」', savePath])
@@ -608,6 +611,7 @@ const BaseScanner = function () {
 
   this.doCollectTargetFriend = function (obj, toastListenThread) {
     debugInfo(['准备开始收取好友：「{}」', obj.name])
+    this.target = obj.name
     let regetFriendName = this.getFriendName()
     if (regetFriendName != obj.name) {
       if (regetFriendName == false) {
@@ -670,7 +674,20 @@ const BaseScanner = function () {
       })
       try {
         if (needWaterback) {
-          _widgetUtils.wateringFriends()
+          if (!_widgetUtils.wateringFriends()) {
+            warnInfo(['给好友{}浇水失败，可能界面卡死，取消浇水', obj.name])
+            let widgetChecking = _widgetUtils.widgetGetOne('请选择为TA浇水的克数', 1000)
+            if (widgetChecking) {
+              let p = {
+                x: widgetChecking.bounds().left,
+                y: widgetChecking.bounds().top
+              }
+              debugInfo(['点击位置「{}, {}」关闭浇水菜单', p.x, p.y])
+              automator.click(p.x, p.y / 2)
+              sleep(500)
+            }
+            needWaterback = false
+          }
           gotEnergyAfterWater -= (_config.targetWateringAmount || 0)
         }
       } catch (e) {
@@ -685,7 +702,7 @@ const BaseScanner = function () {
       this.showCollectSummaryFloaty(gotEnergyAfterWater)
       if (_config.cutAndSaveTreeCollect && screen) {
         let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
-          + 'unknow_collected_' + gotEnergyAfterWater + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
+          + obj.name + '_collected_' + (new Date().getMonth() + 1 + '-' + new Date().getDate() + '_') + gotEnergyAfterWater + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
         files.ensureDir(savePath)
         images.save(screen, savePath)
         debugForDev(['保存可收取能量球图片：「{}」', savePath])
@@ -761,6 +778,6 @@ const BaseScanner = function () {
 module.exports = BaseScanner
 
 // inner function
-function randomSort(_, b) {
+function randomSort (_, b) {
   return Math.random() > Math.random() ? 1 : -1
 }

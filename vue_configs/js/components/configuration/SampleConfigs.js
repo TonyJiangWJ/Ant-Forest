@@ -80,7 +80,7 @@ const RainConfig = {
 /**
  * 神奇海洋
  */
- const MagicSeaConfig = {
+const MagicSeaConfig = {
   mixins: [mixin_common],
   data () {
     return {
@@ -105,6 +105,22 @@ const RainConfig = {
     seaOcrRegion: function () {
       return this.configs.sea_ocr_region
     },
+    visualConfigs: function () {
+      let {
+        sea_ocr_left,
+        sea_ocr_top,
+        sea_ocr_width,
+        sea_ocr_height,
+        sea_ball_region,
+      } = this.configs
+      return {
+        sea_ocr_left,
+        sea_ocr_top,
+        sea_ocr_width,
+        sea_ocr_height,
+        sea_ball_region,
+      }
+    }
   },
   watch: {
     seaOcrRegion: function () {
@@ -115,6 +131,14 @@ const RainConfig = {
         this.configs.sea_ocr_width = parseInt(match[3])
         this.configs.sea_ocr_height = parseInt(match[4])
       }
+    },
+    // 变更区域信息，用于实时展示
+    visualConfigs: {
+      handler: function (v) {
+        console.log('区域信息变更 触发消息')
+        $app.invoke('saveConfigs', v)
+      },
+      deep: true
     },
   },
   filters: {
@@ -133,10 +157,15 @@ const RainConfig = {
           console.log('child load config key:[' + key + '] value: [' + config[key] + ']')
           this.$set(this.configs, key, config[key])
         })
+        this.device.width = config.device_width
+        this.device.height = config.device_height
         this.configs.sea_ocr_region = this.configs.sea_ocr_left + ',' + this.configs.sea_ocr_top + ',' + this.configs.sea_ocr_width + ',' + this.configs.sea_ocr_height
         this.mounted = true
       })
-    }
+    },
+    showRealVisual: function () {
+      $app.invoke('executeTargetScript', '/test/全局悬浮窗显示-神奇海洋信息.js')
+    },
   },
   mounted () {
     $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/神奇海洋收集.js' }).then(r => this.timedUnit1 = r)
@@ -145,6 +174,10 @@ const RainConfig = {
   <div>
     <tip-block>对下述文件创建每天7点的定时任务即可，如果怕影响偷能量则创建9点的。脚本执行后会自动每隔两小时创建定时任务</tip-block>
     <tip-block>unit/神奇海洋收集.js{{timedUnit1|displayTime}}</tip-block>
+    <van-divider content-position="left">
+      神奇海洋配置
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="showRealVisual">实时查看区域配置</van-button>
+    </van-divider>
     <region-input-field
         :device-height="device.height" :device-width="device.width"
         :error-message="validationError.sea_ocr_region"

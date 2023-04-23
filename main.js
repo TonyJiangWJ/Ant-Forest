@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-02-01 09:39:41
+ * @Last Modified time: 2023-04-22 13:41:23
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, global)
@@ -98,6 +98,8 @@ logInfo(['运行模式：{} {} {}',
   config.is_cycle ? '循环' + config.cycle_times + '次' : (config.never_stop ? '永不停止，重新激活时间：' + config.reactive_time : '计时模式，超时时间：' + config.max_collect_wait_time),
 ])
 logInfo(['设备分辨率：[{}, {}] 配置缩放比例：{}', config.device_width, config.device_height, config.scaleRate])
+let { tree_collect_left, tree_collect_top, tree_collect_width, tree_collect_height } = config
+logInfo(['能量球所在区域：{}', JSON.stringify([tree_collect_left, tree_collect_top, tree_collect_width, tree_collect_height])])
 // -------- WARING --------
 warnInfo('以上配置的详细内容请见README.md')
 

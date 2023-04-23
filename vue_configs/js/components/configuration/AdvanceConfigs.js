@@ -348,6 +348,8 @@ const RegionConfig = {
           console.log('child load config key:[' + key + '] value: [' + config[key] + ']')
           this.$set(this.configs, key, config[key])
         })
+        this.device.width = config.device_width
+        this.device.height = config.device_height
         this.configs.stroll_button_region = this.configs.stroll_button_left + ',' + this.configs.stroll_button_top + ',' + this.configs.stroll_button_width + ',' + this.configs.stroll_button_height
         this.configs.rank_check_region = this.configs.rank_check_left + ',' + this.configs.rank_check_top + ',' + this.configs.rank_check_width + ',' + this.configs.rank_check_height
         this.configs.bottom_check_region = this.configs.bottom_check_left + ',' + this.configs.bottom_check_top + ',' + this.configs.bottom_check_width + ',' + this.configs.bottom_check_height

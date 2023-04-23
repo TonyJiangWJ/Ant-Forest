@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2021-01-05 23:20:33
+ * @Last Modified time: 2023-04-11 22:00:31
  * @Description: 
  */
 
@@ -26,6 +26,7 @@ requestScreenCapture(false)
 var window = floaty.rawWindow(
   <canvas id="canvas" layout_weight="1" />
 );
+let localOcrUtil = require('../lib/LocalOcrUtil')
 
 window.setSize(config.device_width, config.device_height)
 window.setTouchable(false)
@@ -43,6 +44,7 @@ let flag = 0
 let clickPoints = []
 let invalidPoints = []
 let findBalls = []
+let ballContents = []
 let lock = threads.lock()
 let condition = lock.newCondition()
 let inCapture = false
@@ -57,6 +59,7 @@ let detectThread = threads.start(function () {
       clickPoints = []
       invalidPoints = []
       findBalls = []
+      ballContents = []
       try {
         let _start = new Date().getTime()
         scanner.isProtectDetectDone = true
@@ -70,6 +73,21 @@ let detectThread = threads.start(function () {
           },
           1
         )
+        if (invalidPoints.length > 0) {
+          // OCR识别倒计时球的时间
+          let screen = commonFunction.checkCaptureScreenPermission()
+          invalidPoints.forEach(point => {
+            let ball = point.ball
+            let radius = ball.radius
+            let ballImage = images.clip(screen, ball.x - radius, ball.y - radius, radius * 2, 2 * radius)
+            let text = localOcrUtil.recognize(ballImage)
+            if (text) {
+              ballContents.push({
+                x: ball.x, y: ball.y, content: text
+              })
+            }
+          })
+        }
         logInfo(['识别总耗时：{}ms', new Date().getTime() - _start])
       } catch (e) {
         commonFunction.printExceptionStack(e)
@@ -171,6 +189,11 @@ window.canvas.on("draw", function (canvas) {
         paint.setStrokeWidth(3)
         paint.setStyle(Paint.Style.STROKE)
         canvas.drawCircle(p.x, p.y + offset, p.radius, paint)
+      })
+    }
+    if (ballContents && ballContents.length > 0) {
+      ballContents.forEach(info => {
+        drawText(info.content, info, canvas, paint)
       })
     }
   }
