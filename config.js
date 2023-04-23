@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-03-07 10:21:52
+ * @Last Modified time: 2023-04-23 23:07:13
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -55,8 +55,6 @@ let default_config = {
   // 电量保护，低于该值延迟60分钟执行脚本
   battery_keep_threshold: 20,
   // 开发用开关，截图并保存一些图片
-  // 保存倒计时图片
-  cutAndSaveCountdown: false,
   // 保存好友页面可收取和可帮助图片
   cutAndSaveTreeCollect: false,
   auto_lock: device.sdkInt >= 28,
@@ -166,8 +164,8 @@ let default_config = {
   can_collect_color_lower: '#008A31',
   can_collect_color_upper: '#6FDC90',
   // 配置可收取能量球颜色范围
-  collectable_lower: '#89d600',
-  collectable_upper: '#ffff14',
+  collectable_lower: '#9BDA00',
+  collectable_upper: '#E1FF2F',
   water_lower: '#e8cb3a',
   water_upper: '#ffed8e',
   // 神奇海洋识别区域
@@ -279,7 +277,7 @@ let default_config = {
   random_gesture_safe_range_top: '',
   random_gesture_safe_range_bottom: '',
   // 代码版本
-  code_version: 'v1.3.7.7',
+  code_version: 'v1.3.7.8',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']

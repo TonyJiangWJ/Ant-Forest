@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-01-09 21:14:01
+ * @Last Modified time: 2023-04-23 11:27:45
  * @Description: 
  */
 "ui";
@@ -28,7 +28,7 @@ if (config.device_width < 10 || config.device_height < 10) {
   toastLog('设备分辨率信息不正确，可能无法正常运行脚本, 请先运行一遍main.js以便自动获取分辨率')
   exit()
 }
-
+console.log('当前设备分辨率：' + config.device_width + ',' + config.device_height)
 ui.layout(
   <vertical>
     <webview id="loadingWebview" margin="0 0" h="*" w="*" />

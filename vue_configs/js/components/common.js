@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-08 16:25:11
+ * @Last Modified time: 2023-04-23 22:54:33
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 
@@ -394,7 +394,13 @@ Vue.component('region-slider', function (resolve, reject) {
             this.height = parseInt(match[4])
           }
         }
-      }
+      },
+      resetDeviceInfo: function () {
+        $app.invoke('loadConfigs', {}, config => {
+          this.device.width = config.device_width
+          this.device.height = config.device_height
+        })
+      },
     },
     computed: {
       regionText: function () {
@@ -411,6 +417,7 @@ Vue.component('region-slider', function (resolve, reject) {
     },
     mounted () {
       this.resolveDetailInfo()
+      this.resetDeviceInfo()
     },
     template: `<div style="padding: 1rem 2rem;">
       <van-row style="margin: 0.5rem 0">

@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-03-07 13:43:27
+ * @Last Modified time: 2023-04-23 23:04:25
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -20,6 +20,7 @@ let callStateListener = !_config.is_pro && _config.enable_call_state_control ? s
 let StrollScanner = require('./StrollScanner.js')
 let FriendListScanner = require('./FriendListScanner.js')
 let BaseScanner = require('./BaseScanner.js')
+let localOcrUtil = require('../lib/LocalOcrUtil.js')
 
 function Ant_forest () {
   let _base_scanner = new BaseScanner()
@@ -177,7 +178,8 @@ function Ant_forest () {
    * 构建下次运行
    ***********************/
 
-  // 异步获取 toast 内容
+  // 异步获取 toast 内容 
+  // deprecated toast获取已失效，改用OCR识别
   const getToastAsync = function (filter, limit, exec) {
     limit = limit >= 6 ? 6 : limit
     filter = typeof filter == null ? '' : filter
@@ -249,7 +251,7 @@ function Ant_forest () {
    *
    * @returns 
    */
-  function getValidClickableBalls() {
+  function getValidClickableBalls () {
     let ballPoints = []
     _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, null, 1)
     return ballPoints.filter(ball => {
@@ -265,49 +267,31 @@ function Ant_forest () {
       return true
     })
   }
-
+  // let localOcrUtil = require('../lib/LocalOcrUtil.js')
   // 获取自己的能量球中可收取倒计时的最小值
   const getMinCountdownOwn = function () {
-    let temp = []
-    let toasts = []
-
     // 通过图像分别判断白天和晚上的倒计时球颜色数据
     let ballPoints = getValidClickableBalls()
     if (ballPoints && ballPoints.length > 0) {
       ballPoints.sort((a, b) => a.x - b.x)
       debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
-      toasts = getToastAsync(_config.package_name, ballPoints.length >= 2 ? 2 : ballPoints.length,
-        () => {
-          let count = 0
-          ballPoints.forEach(point => {
-            if (point.y < _config.tree_collect_top || point.y > _config.tree_collect_top + _config.tree_collect_height) {
-              // 可能是左上角的活动图标 或者 识别到了其他范围的球
-              return
-            }
-            automator.click(point.x, point.y)
-            sleep(500)
-            count++
-          })
-          // 返回实际倒计时个数, 用于终止toast等待
-          return count
+      let screen = _commonFunctions.checkCaptureScreenPermission()
+      let countdownCheck = /(\d+)[:.](\d+)/
+      ballPoints.find(ball => {
+        let radius = ball.radius
+        let ballImage = images.clip(screen, ball.x - radius, ball.y - radius, radius * 2, 2 * radius)
+        let text = localOcrUtil.recognize(ballImage)
+        if (text && countdownCheck.test(text)) {
+          let r = countdownCheck.exec(text)
+          _min_countdown = parseInt(r[1]) * 60 + parseInt(r[2])
+          debugInfo(['识别倒计时数据：{} 最小剩余时间为：{}', text, _min_countdown])
+          return true
         }
-      )
+        return false
+      })
     } else {
       debugInfo('未找到能量球')
     }
-
-    toasts.forEach(function (toast) {
-      let regex = /\D*((\d+)小时)?((\d+)分钟)?后/
-      let countdown = regex.exec(toast)
-      if (countdown !== null) {
-        let hours = !!countdown[2] ? +countdown[2] : 0
-        let minutes = !!countdown[4] ? +countdown[4] : 0
-        temp.push(hours * 60 + minutes)
-      } else {
-        errorInfo(['未匹配倒计时数据：{}', toast])
-      }
-    })
-    _min_countdown = Math.min.apply(null, temp)
     _timestamp = new Date()
   }
 
@@ -481,7 +465,7 @@ function Ant_forest () {
     automator.randomScrollUp(randomBottom.start, randomBottom.end, randomTop.start, randomTop.end)
   }
 
-  function scrollUpTop() {
+  function scrollUpTop () {
     do {
       randomScrollUp()
       randomScrollUp()
@@ -489,21 +473,24 @@ function Ant_forest () {
     randomScrollUp()
   }
 
-  function enterFriendList() {
+  function enterFriendList () {
+    let limit = 5
     do {
       randomScrollDown()
-    } while (!_widgetUtils.widgetChecking(_config.enter_friend_list_ui_content || '.*查看更多好友.*', { algorithm: 'PVDFS', timeoutSetting: 1000 }))
+    } while (--limit > 0 && !_widgetUtils.widgetChecking(_config.enter_friend_list_ui_content || '.*查看更多好友.*', { algorithm: 'PDFS', timeoutSetting: 1000 }))
     sleep(500)
     let moreFriends = _widgetUtils.widgetGetOne(_config.enter_friend_list_ui_content || '.*查看更多好友.*')
     if (moreFriends) {
       moreFriends.click()
       sleep(1000)
       return true
+    } else {
+      warnInfo(['查找 查看更多好友 控件失败，无法进入排行榜'])
     }
     return false
   }
 
-  function checkFriendListCountdown() {
+  function checkFriendListCountdown () {
     if (!enterFriendList()) {
       debugInfo('进入排行榜失败 跳过获取倒计时')
       scrollUpTop()
@@ -603,25 +590,26 @@ function Ant_forest () {
     }
   }
 
-  function doSignUpForMagicSpecies() {
+  function doSignUpForMagicSpecies () {
     sleep(5000)
     let confirm = _widgetUtils.widgetGetOne('收下|再抽一次.*')
+    let maxTry = 3
     do {
       if (confirm) {
         automator.clickCenter(confirm)
-        if (!/收下/.test(confirm.desc()||confirm.text())) {
+        if (!/收下/.test(confirm.desc() || confirm.text())) {
           sleep(5000)
         }
       } else {
         break;
       }
       confirm = _widgetUtils.widgetGetOne('收下|再抽一次.*')
-    } while (confirm)
+    } while (confirm && --maxTry > 0)
     automator.back()
     sleep(1000)
   }
 
-  function signUpForMagicSpecies() {
+  function signUpForMagicSpecies () {
     let screen = _commonFunctions.checkCaptureScreenPermission()
     if (screen && _config.image_config.magic_species_icon) {
       let find = OpenCvUtil.findByGrayBase64(screen, _config.image_config.magic_species_icon)
@@ -633,7 +621,7 @@ function Ant_forest () {
     }
   }
 
-  function trySignUpForMagicSpeciesByStroll() {
+  function trySignUpForMagicSpeciesByStroll () {
     let find = _widgetUtils.widgetGetOne(_config.magic_species_text_in_stroll || '.*神奇物种新图鉴.*', 1000)
     if (find) {
       automator.clickCenter(find)
