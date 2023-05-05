@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-04-23 23:07:13
+ * @Last Modified time: 2023-05-05 19:59:15
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -268,8 +268,6 @@ let default_config = {
   watering_main_account: true,
   to_main_by_user_id: true,
   enable_multi_account: false,
-  // 刷步数
-  walking_accounts: [],
   pushplus_token: '',
   pushplus_walking_data: true,
   // 配置界面webview打印日志
@@ -277,12 +275,12 @@ let default_config = {
   random_gesture_safe_range_top: '',
   random_gesture_safe_range_bottom: '',
   // 代码版本
-  code_version: 'v1.3.7.8',
+  code_version: 'v1.3.7.9',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
-let securityFields = ['password', 'alipay_lock_password', 'walking_accounts']
-let objFields = ['walking_accounts']
+let securityFields = ['password', 'alipay_lock_password']
+let objFields = []
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
 let config = {}

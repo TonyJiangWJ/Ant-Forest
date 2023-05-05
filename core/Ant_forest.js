@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-04-23 23:04:25
+ * @Last Modified time: 2023-05-05 18:46:17
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -639,6 +639,14 @@ function Ant_forest () {
       let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.sign_reward_icon))
       if (collect) {
         debugInfo('截图找到了 奖励')
+      } else if (localOcrUtil.enabled) {
+        let rewardBtn = localOcrUtil.recognizeWithBounds(screen, null, '奖励')
+        if (rewardBtn && rewardBtn.length > 0) {
+          collect = rewardBtn[0].bounds
+          debugInfo('OCR找到了 奖励')
+        }
+      }
+      if (collect) {
         automator.click(collect.centerX(), collect.centerY())
         sleep(1000)
         let getRewards = _widgetUtils.widgetGetAll('立即领取')
