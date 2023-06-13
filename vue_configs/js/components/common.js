@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-04-23 22:54:33
+ * @Last Modified time: 2023-06-13 16:48:18
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 
@@ -112,10 +112,18 @@ let mixin_common = {
     saveConfigs: function () {
       this.doSaveConfigs()
     },
+    persistCurrentFields: function () {
+      this.$store.commit('setCurrentFields', Object.keys(this.configs))
+      let _this = this
+      this.$store.commit('setConfigChangedCallback', () => _this.loadConfigs())
+    },
     loadConfigs: function () {
       $app.invoke('loadConfigs', {}, config => {
         Object.keys(this.configs).forEach(key => {
           // console.log('load config key:[' + key + '] value: [' + config[key] + ']')
+          if (!config.hasOwnProperty(key)) {
+            console.error('config.js中未配置', key, '请检查代码')
+          }
           this.$set(this.configs, key, config[key])
         })
         this.device.width = config.device_width
@@ -171,10 +179,12 @@ let mixin_common = {
   },
   mounted () {
     this.loadConfigs()
+    this.persistCurrentFields()
   },
   destroyed () {
     console.log('保存当前界面配置')
     this.saveConfigs()
+    this.$store.commit('clearConfig')
   }
 }
 

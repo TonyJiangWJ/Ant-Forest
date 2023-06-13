@@ -21,6 +21,7 @@ const ImageConfig = {
       Object.keys(this.configs).forEach(key => {
         this.$set(this.configs, key, imageConfig[key])
       })
+      this.$store.commit('setExtendPrepend', 'image')
     },
     doSaveConfigs () {
       let newConfigs = this.filterErrorFields(this.configs)

@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-05-05 18:46:17
+ * @Last Modified time: 2023-06-12 18:34:27
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -649,7 +649,7 @@ function Ant_forest () {
       if (collect) {
         automator.click(collect.centerX(), collect.centerY())
         sleep(1000)
-        let getRewards = _widgetUtils.widgetGetAll('立即领取')
+        let getRewards = _widgetUtils.widgetGetAll('^(立即领取|领取)$')
         if (getRewards && getRewards.length > 0) {
           debugInfo(['找到可领取的奖励数量：{}', getRewards.length])
           getRewards.forEach(getReward => {
