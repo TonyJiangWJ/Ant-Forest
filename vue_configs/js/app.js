@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:24:38
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-09-07 13:56:05
+ * @Last Modified time: 2023-06-13 16:51:41
  * @Description: 
  */
 
@@ -41,7 +41,17 @@ let app = new Vue({
       this.$router.back()
     },
     resetDefaultConfigs: function () {
-      $app.invoke('resetConfigs')
+      $nativeApi.request('resetConfigs').then(resp => {
+        this.$store.commit('configChanged')
+      })
+    },
+    resetPageConfigs: function () {
+      let currentFields = this.$store.getters.getCurrentFields
+      if (currentFields && currentFields.length > 0) {
+        $nativeApi.request('resetPageConfigs', { resetFields: currentFields, prepend: this.$store.getters.getExtendPrepend }).then(resp => {
+          this.$store.commit('configChanged')
+        })
+      }
     },
     exportConfigs: function () {
       $app.invoke('exportConfigs')

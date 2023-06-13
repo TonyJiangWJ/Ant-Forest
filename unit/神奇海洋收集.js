@@ -105,9 +105,10 @@ function findTrashs (delay) {
       let ball = findBalls[0]
       floatyInstance.setFloatyInfo({ x: ball.x, y: ball.y }, '找到了垃圾')
       sleep(500)
-      floatyInstance.setFloatyInfo({ x: ball.x - ball.radius * 2, y: ball.y + ball.radius * 2 }, '点击位置')
+      let clickPos = { x: ball.x - ball.radius * 1.5, y: ball.y + ball.radius * 1.5 }
+      floatyInstance.setFloatyInfo(clickPos, '点击位置')
       sleep(2000)
-      automator.click(ball.x - ball.radius * 2, ball.y + ball.radius * 2)
+      automator.click(clickPos.x, clickPos.y)
       sleep(1000)
       let collect = widgetUtils.widgetGetOne('.*(清理|收下|(欢迎|迎回)伙伴).*')
       if (collect) {

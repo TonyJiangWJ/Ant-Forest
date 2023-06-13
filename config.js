@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-05-05 19:59:15
+ * @Last Modified time: 2023-06-13 20:53:53
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -275,7 +275,7 @@ let default_config = {
   random_gesture_safe_range_top: '',
   random_gesture_safe_range_bottom: '',
   // 代码版本
-  code_version: 'v1.3.7.9',
+  code_version: 'v1.3.8',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']

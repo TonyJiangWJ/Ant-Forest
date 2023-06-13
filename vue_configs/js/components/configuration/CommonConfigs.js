@@ -65,10 +65,12 @@ const LockConfig = {
       <number-field v-model="configs.timeout_unlock" label="解锁超时时间" placeholder="请输入解锁超时时间">
         <template #right-icon><span>毫秒</span></template>
       </number-field>
-      <tip-block>仅限在支付宝账号管理-登录设置-开启可信设备自动登录后才有效，否则需要密码登录，无法使用此功能自动登录</tip-block>
-      <switch-cell title="多设备自动登录" v-model="configs.multi_device_login" />
-      <switch-cell title="支付宝是否锁定" v-model="configs.is_alipay_locked" />
-      <van-field v-if="configs.is_alipay_locked" v-model="configs.alipay_lock_password" label="手势密码" placeholder="请输入手势密码对应的九宫格数字" type="password" input-align="right" />
+      <template v-if="typeof config.is_alipay_locked != 'undefined'">
+        <tip-block>仅限在支付宝账号管理-登录设置-开启可信设备自动登录后才有效，否则需要密码登录，无法使用此功能自动登录</tip-block>
+        <switch-cell title="多设备自动登录" v-model="configs.multi_device_login" />
+        <switch-cell title="支付宝是否锁定" v-model="configs.is_alipay_locked" />
+        <van-field v-if="configs.is_alipay_locked" v-model="configs.alipay_lock_password" label="手势密码" placeholder="请输入手势密码对应的九宫格数字" type="password" input-align="right" />
+      </template>
       <switch-cell title="锁屏启动设置最低亮度" v-model="configs.auto_set_brightness" />
       <tip-block>启用佛系模式之后，如果屏幕未锁定，则认定手机正在使用中，自动延迟五分钟，等待下次运行时状态为已锁屏才继续运行。由其他脚本触发的不受此模式限制</tip-block>
       <switch-cell title="启用佛系模式" v-model="configs.buddha_like_mode" />
