@@ -32,6 +32,11 @@ const LockConfig = {
       },
     }
   },
+  computed: {
+    alipay_support: function () {
+      return typeof this.is_alipay_locked != 'undefined'
+    }
+  },
   filters: {
     toFixed3: function (v) {
       if (v) {
@@ -65,7 +70,7 @@ const LockConfig = {
       <number-field v-model="configs.timeout_unlock" label="解锁超时时间" placeholder="请输入解锁超时时间">
         <template #right-icon><span>毫秒</span></template>
       </number-field>
-      <template v-if="typeof config.is_alipay_locked != 'undefined'">
+      <template v-if="alipay_support">
         <tip-block>仅限在支付宝账号管理-登录设置-开启可信设备自动登录后才有效，否则需要密码登录，无法使用此功能自动登录</tip-block>
         <switch-cell title="多设备自动登录" v-model="configs.multi_device_login" />
         <switch-cell title="支付宝是否锁定" v-model="configs.is_alipay_locked" />
