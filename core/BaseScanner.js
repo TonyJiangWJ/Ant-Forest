@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-04-13 14:43:41
+ * @Last Modified time: 2023-07-08 18:23:43
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -18,6 +18,7 @@ let automator = singletonRequire('Automator')
 let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let AntForestDao = singletonRequire('AntForestDao')
+let WarningFloaty = singletonRequire('WarningFloaty')
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev, developSaving } = singletonRequire('LogUtils')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let ENGINE_ID = engines.myEngine().id
@@ -210,6 +211,7 @@ const BaseScanner = function () {
         debugInfo(['需要二次校验，等待{}ms', this.is_own ? 200 : 500])
         sleep(this.is_own ? 200 : 500)
       }
+      WarningFloaty.clearAll()
     } while (repeat)
     debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
   }
@@ -236,9 +238,9 @@ const BaseScanner = function () {
             collectableBall.ballImage = null
             if (!collectableBall.invalid) {
               clickPoints.push(collectableBall)
-              self.visualHelper.addCircle(collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball, '#00ff00')
+              WarningFloaty.addCircle(collectableBall.isWatering ? '好友浇水能量球' : '可收取', collectableBall.ball, '#00ff00')
             } else {
-              self.visualHelper.addCircle('非有效能量球', collectableBall.ball)
+              WarningFloaty.addCircle('非有效能量球', collectableBall.ball, '#888888')
               invalidPoints.push(collectableBall)
               findInvalidCallback(collectableBall)
             }
@@ -255,7 +257,6 @@ const BaseScanner = function () {
     debugInfo(['countdownLatch waiting count: {}', countdownLatch.getCount()])
     countdownLatch.await(_config.thread_pool_waiting_time || 5, TimeUnit.SECONDS)
     debugInfo(['判断可收集或帮助能量球信息总耗时：{}ms', new Date().getTime() - _start])
-    this.visualHelper.displayAndClearAll()
     if (!this.awaitForCollectable()) {
       return
     }
@@ -289,12 +290,14 @@ const BaseScanner = function () {
        */
       let startForColorValue = new Date().getTime()
       let radius = parseInt(ball.radius)
+      let ballArea = 3.14 * radius * radius
+      let areaCount = ballArea
       if (
         // 可能是左上角的活动图标 或者 识别到了其他范围的球
         ball.y < _config.tree_collect_top - (this.is_own ? cvt(80) : 0) || ball.y > _config.tree_collect_top + _config.tree_collect_height
         || ball.x < _config.tree_collect_left || ball.x > _config.tree_collect_left + _config.tree_collect_width
         // 取值范围就不正确的无效球，避免后续报错，理论上不会进来，除非配置有误
-        || ball.x - radius <= 0 || ball.x + radius >= _config.device_width || ball.y - radius <= 0 || ball.y + 1.6 * radius >= _config.device_height) {
+        || ball.x - radius <= radius || ball.x + radius >= _config.device_width - radius || ball.y - radius <= 0 || ball.y + 1.6 * radius >= _config.device_height) {
         debugInfo(['球：[{},{} r{}]不在能量球所在区域范围内', ball.x, ball.y, ball.radius])
         return
       }
@@ -302,6 +305,13 @@ const BaseScanner = function () {
       // 用于判定是否可收取
       let intervalForCollectCheck = images.inRange(ballImage, _config.collectable_lower || '#9BDA00', _config.collectable_upper || '#E1FF2F')
       let avgForCollectable = OpenCvUtil.getHistAverage(intervalForCollectCheck)
+      try {
+        let start = new Date().getTime()
+        areaCount = OpenCvUtil.getNoneZeroCount(intervalForCollectCheck)
+        debugInfo(['cost: {}ms 亮色面积「{}」占比「{}%」avg: {}', new Date().getTime() - start, areaCount, (areaCount / ballArea * 100).toFixed(2), avgForCollectable])
+      } catch (e) {
+        warnInfo(['获取面积异常' + e])
+      }
       // 用于判定是否浇水球
       let intervalForWaterCheck = images.inRange(ballImage, _config.water_lower || '#e8cb3a', _config.water_upper || '#ffed8e')
       // 判定是否为浇水球
@@ -317,7 +327,7 @@ const BaseScanner = function () {
         // 浇水能量球
         collectableBall.isWatering = true
         this.recheck = this.is_own
-      } else if (avgForCollectable < COLLECTING_THRESHOLD) {
+      } else if (avgForCollectable < COLLECTING_THRESHOLD && areaCount / ballArea < 0.2) {
         // 非帮助或可收取, 大于25的则是可收取的，否则为无效球
         collectableBall.invalid = true
       }
@@ -530,7 +540,7 @@ const BaseScanner = function () {
   }
 
   this.savingDevelopImageForNotFound = function () {
-    if (_config.cutAndSaveTreeCollect && this.temp_img) {
+    if (_config.cutAndSaveTreeNoCollect && this.temp_img) {
       try {
         let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect_not_found/'
           + (this.target ? this.target : 'unknow') + '_not_found_' + (new Date().getMonth() + 1 + '-' + new Date().getDate() + '_') + (Math.random() * 9999 + 100).toFixed(0) + '.png'
@@ -623,7 +633,7 @@ const BaseScanner = function () {
     }
     let preGot, postGet, rentery = false
     let screen = null
-    if (_config.cutAndSaveTreeCollect) {
+    if (_config.cutAndSaveTreeCollect || _config.cutAndSaveTreeNoCollect) {
       screen = images.copy(_commonFunctions.checkCaptureScreenPermission(), true)
     }
     try {
@@ -667,7 +677,7 @@ const BaseScanner = function () {
       let needWaterback = _commonFunctions.recordFriendCollectInfo({
         hasSummaryWidget: _config.has_summary_widget,
         friendName: obj.name,
-        friendEnergy: 0,
+        friendEnergy: _widgetUtils.getFriendCurrentEnergy(),
         postCollect: postGet,
         preCollect: preGot,
         helpCollect: 0

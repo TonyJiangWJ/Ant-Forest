@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-06-14 08:21:23
+ * @Last Modified time: 2023-07-08 16:56:30
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -57,6 +57,8 @@ let default_config = {
   // 开发用开关，截图并保存一些图片
   // 保存好友页面可收取和可帮助图片
   cutAndSaveTreeCollect: false,
+  // 保存好友页面未找到可收取能量球的图片
+  cutAndSaveTreeNoCollect: false,
   auto_lock: device.sdkInt >= 28,
   lock_x: 150,
   lock_y: 970,

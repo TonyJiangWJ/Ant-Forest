@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-06-12 18:34:27
+ * @Last Modified time: 2023-07-08 17:48:57
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -14,6 +14,7 @@ let _runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
 let AntForestDao = singletonRequire('AntForestDao')
 let FloatyInstance = singletonRequire('FloatyUtil')
+let WarningFloaty = singletonRequire('WarningFloaty')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
@@ -555,30 +556,40 @@ function Ant_forest () {
   }
 
   const autoDetectTreeCollectRegion = function () {
+    let showVisual = true
     if (_config.auto_detect_tree_collect_region) {
-      let treeDialog = _widgetUtils.widgetGetById('J_tree_dialog_wrap', 1000)
-      let plantTree = _widgetUtils.widgetGetOne(/^\s*种树\s*$/, 1000)
-      if (treeDialog && plantTree) {
-        let anchorTop = plantTree.bounds().bottom
-        let anchorBottom = treeDialog.bounds().top
-        let marginBorder = plantTree.bounds().width()
-        _config.tree_collect_left = marginBorder
-        _config.tree_collect_top = parseInt(0.6 * (anchorBottom - anchorTop) + anchorTop)
-        _config.tree_collect_width = parseInt(_config.device_width - 2 * marginBorder)
-        _config.tree_collect_height = parseInt((anchorBottom - anchorTop) * 1.25)
-        detectRegion = [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height]
+      WarningFloaty.addText('准备查找 证书 控件', { x: config.device_width / 2, y: config.device_height / 2 })
+      let licenseWidget = WidgetUtil.widgetGetOne(/^\s*证书\s*$/, 1000)
+      if (licenseWidget) {
+        WarningFloaty.addRectangle('找到了证书控件', boundsToRegion(licenseWidget.bounds()))
+        let anchorLeft = licenseWidget.bounds().left
+        let anchorBottom = licenseWidget.parent().bounds().bottom
+        let anchorHeight = licenseWidget.parent().bounds().height()
+        let tree_collect_left = anchorLeft
+        let tree_collect_top = anchorBottom + anchorHeight
+        let tree_collect_width = config.device_width - (anchorLeft * 2)
+        let tree_collect_height = anchorHeight * 2.5
+        detectRegion = [tree_collect_left, tree_collect_top, tree_collect_width, tree_collect_height]
         infoLog('自动识别能量球区域：' + JSON.stringify(detectRegion))
-        let configStorage = storages.create(_storage_name)
-        configStorage.put('tree_collect_left', _config.tree_collect_left)
-        configStorage.put('tree_collect_top', _config.tree_collect_top)
-        configStorage.put('tree_collect_width', _config.tree_collect_width)
-        configStorage.put('tree_collect_height', _config.tree_collect_height)
-        configStorage.put('auto_detect_tree_collect_region', false)
+        _config.overwrite('tree_collect_left', tree_collect_left)
+        _config.overwrite('tree_collect_top', tree_collect_top)
+        _config.overwrite('tree_collect_width', tree_collect_width)
+        _config.overwrite('tree_collect_height', tree_collect_height)
+        _config.overwrite('auto_detect_tree_collect_region', false)
       } else {
-        warnInfo('自动识别能量球识别区域失败，未识别到对象：' + (treeDialog ? '' : '种树 ') + (plantTree ? '' : 'J_tree_dialog_wrap'))
-        warnInfo('请运行config.js并手动修改能量球所在区域的配置', true)
+        WarningFloaty.addText('未找到证书控件', { x: config.device_width / 2, y: config.device_height / 2 + 100 })
+        warnInfo('自动识别能量球识别区域失败，未识别到对象：证书')
+        warnInfo('请运行 可视化配置.js并手动修改能量球所在区域的配置', true)
+        WarningFloaty.addRectangle('当前能量球所在区域可能不正确，请手动配置', [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height], '#ff0000')
+        sleep(5000)
+        WarningFloaty.clearAll()
+        showVisual = false
       }
     }
+    if (!showVisual) {
+      return
+    }
+    WarningFloaty.addRectangle('有效能量球所在区域', [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height], '#00ff00')
   }
 
   const checkIfDbClickUsed = function () {
@@ -741,6 +752,7 @@ function Ant_forest () {
     }
     _commonFunctions.addClosePlacehold("收集自己的能量完毕")
     _fisrt_running = false
+    WarningFloaty.clearAll()
   }
 
   // 二次校验自己的能量值
@@ -765,6 +777,7 @@ function Ant_forest () {
   // 收取好友的能量
   const collectFriend = function () {
     _commonFunctions.addOpenPlacehold('开始收集好友能量')
+    WarningFloaty.clearAll()
     // 首先尝试逛一逛收集
     if (!tryCollectByStroll()) {
       recordLost('逛一逛执行异常')

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-01-11 11:38:46
+ * @Last Modified time: 2023-07-05 20:42:07
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -13,6 +13,7 @@ let _commonFunctions = singletonRequire('CommonFunction')
 let fileUtils = singletonRequire('FileUtils')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let localOcrUtil = require('../lib/LocalOcrUtil.js')
+let WarningFloaty = singletonRequire('WarningFloaty')
 
 let BaseScanner = require('./BaseScanner.js')
 
@@ -97,11 +98,13 @@ const StrollScanner = function () {
       }
       debugInfo(['逛下一个, click random region: [{}]', JSON.stringify(region)])
       this.visualHelper.addRectangle('准备点击下一个', region)
+      WarningFloaty.addRectangle('逛一逛按钮区域', region, '#00ff00')
       this.visualHelper.displayAndClearAll()
       automator.clickRandomRegion({ left: region[0], top: region[1], width: region[2], height: region[3] })
       sleep(300)
       hasNext = this.collectTargetFriend()
     }
+    WarningFloaty.clearAll()
     let result = { regenerate_stroll_button: this._regenerate_stroll_button }
     Object.assign(result, this.getCollectResult())
     return result
@@ -187,6 +190,8 @@ StrollScanner.prototype.collectTargetFriend = function () {
       warnInfo('重试超过3次，取消操作')
       warnInfo(['无法确认是否进入好友主页，请检查`判断是否进入好友首页`的控件文本配置是否正确，当前值：{}', _config.friend_home_check_regex])
       warnInfo(['或者检查一下逛一逛按钮的位置是否正确，当前按钮区域：{}', JSON.stringify([_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height])])
+      WarningFloaty.addRectangle('逛一逛按钮区域不正确', [_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height], '#ff0000')
+      WarningFloaty.addText('逛一逛按钮区域不正确', { x: _config.device_width * 0.4, y: _config.device_height * 0.5 }, '#ff0000', 30)
       restartLoop = true
       break
     }

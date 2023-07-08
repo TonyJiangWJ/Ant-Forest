@@ -20,7 +20,7 @@
 
 ## 使用
 
-- 下载安装 [AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 `main.js` 即可。
+- 下载安装 [AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 `main.js` 即可运行，首次运行请先进行部分必要配置否则部分功能不能正常运行，见[配置小节](#配置)。
 - 给与软件必要权限 `后台弹出界面`、`显示悬浮窗`、`自启动`、`电量无限制`，并将软件保持后台运行
 - 定时启动脚本，点击 `main.js` 的菜单，选择 `更多` `定时任务` 即可配置定时启动
 - 如果运行提示有任务正在队列中，请运行配置 `可视化配置.js` 然后进到 `高级设置` 中勾选 `单脚本运行`，该功能是用于多个脚本同时运行时的任务队列 相当于一个调度程序，避免多个脚本抢占前台导致出错
@@ -38,8 +38,9 @@
 - 常用配置按不同类别进行分组，按实际内容进入对应菜单项目即可
 - 所有列表项都可以左滑触发删除或修改，部分输入框也能左滑触发高级输入操作如区域配置和颜色值配置等，多多摸索
 - 运行配置后右上角菜单可以重置所有配置信息为默认值
-- 配置导出导入功能，点击右上角菜单即可导出当前配置到local_config.cfg中，默认已加密加密密码为device.getAndriodId() 如果需要在免费版和付费版AutoJS之间同步 需要自行输入该密码
+- 配置导出导入功能，点击右上角菜单即可导出当前配置到local_config.cfg中，默认已加密加密密码为 `device.getAndriodId()` 如果需要在免费版和付费版AutoJS之间同步 需要自行创建脚本获取该密码
 - 运行时数据导出导入功能同上所述
+- **重要** 因为当前手机分辨率多种多样，请前往 `查找图片设置` 按说明截取相应位置的图片，特别是逛一逛按钮，避免运行不正常
 - **重要** 基于图像分析模式必须按如下配置，否则脚本无法正常执行
 - 好友首页的能量球无法通过控件识别，请进行如下配置：
 - 图像识别区域信息可以在运行可视化配置.js之后进入 `图像识别相关配置` 直接点击 `实时查看可视化配置信息` 按钮来刷新配置并显示当前的框选区域。也可以在配置完之后可以运行`test/全局悬浮窗显示-配置信息.js` 查看配置生效状况，可在 `resources` 目录下截图保存 `region_check.jpg` ，然后可以悬浮窗显示半透明信息，方便在运行 `可视化配置.js` 时拖动进度条快速调整具体区域
