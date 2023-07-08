@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-08-17 22:14:39
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-08 17:47:52
+ * @Last Modified time: 2023-07-08 20:33:32
  * @Description: 
  */
 
@@ -36,32 +36,44 @@ function boundsToRegion (bd) {
   return [bd.left, bd.top, bd.right - bd.left, (bd.bottom - bd.top)]
 }
 
-function showWarningText (text, position) {
-  WarningFloaty.addText(text, position)
+let getFriendName = function () {
+  let titleContainer = WidgetUtil.widgetGetOne(config.friend_name_getting_regex || '.*的蚂蚁森林', null, true)
+  let regex = new RegExp(config.friend_name_getting_regex || '(.*)的蚂蚁森林')
+  if (titleContainer && regex.test(titleContainer.content)) {
+    let friendName = regex.exec(titleContainer.content)[1]
+    WarningFloaty.addRectangle(titleContainer.content, boundsToRegion(titleContainer.target.bounds()))
+    return friendName
+  } else {
+    errorInfo(['获取好友名称失败，请检查好友首页文本"{}"是否存在', config.friend_name_getting_regex || '(.*)的蚂蚁森林'])
+    return null
+  }
 }
 
+function showLog (text, lineOffset) {
+  lineOffset = lineOffset || 0
+  WarningFloaty.addText(text, { x: 100, y: config.device_height / 2 + lineOffset })
+}
 let detectRegion = null
 let running = true
 
 threads.start(function () {
   while (running) {
-    WarningFloaty.addText('准备查找 证书 控件', { x: config.device_width / 2, y: config.device_height / 2 })
-    let licenseWidget = WidgetUtil.widgetGetOne(/^\s*证书\s*$/, 1000)
-    if (licenseWidget) {
-      WarningFloaty.addRectangle('找到了证书控件', boundsToRegion(licenseWidget.bounds()))
-      let anchorLeft = licenseWidget.bounds().left
-      let anchorBottom = licenseWidget.parent().bounds().bottom
-      let anchorHeight = licenseWidget.parent().bounds().height()
-      let tree_collect_left = anchorLeft
-      let tree_collect_top = anchorBottom + anchorHeight
-      let tree_collect_width = config.device_width - (anchorLeft * 2)
-      let tree_collect_height = anchorHeight * 2.5
-      detectRegion = [tree_collect_left, tree_collect_top, tree_collect_width, tree_collect_height]
-      log('自动识别能量球区域：' + JSON.stringify(detectRegion))
+    let line = 0
+    showLog('准备查找 好友名称 控件')
+    let friendName = getFriendName()
+    if (friendName) {
+      let currentFriendEnergy = WidgetUtil.getFriendCurrentEnergy()
+      let collectFriendEnergy = WidgetUtil.getYouCollectEnergy()
+      showLog('好友当前能量值：' + currentFriendEnergy, (line += 50))
+      showLog('你收取ta能量值：' + collectFriendEnergy, (line += 50))
+      let wateringBtn = WidgetUtil.findWateringBtn()
+      if (wateringBtn) {
+        WarningFloaty.addText('浇水按钮', { x: wateringBtn.centerX, y: wateringBtn.centerY })
+      }
+      WarningFloaty.addRectangle('有效能量球所在区域', [config.tree_collect_left, config.tree_collect_top, config.tree_collect_width, config.tree_collect_height], '#00ff00')
       break
     } else {
-      WarningFloaty.addText('未找到证书控件', { x: config.device_width / 2, y: config.device_height / 2 + 100 })
-      log('自动识别能量球识别区域失败，未识别到对象：证书')
+      showLog('未找到好友名称控件', line += 50)
     }
     sleep(2000)
     WarningFloaty.clearAll()
@@ -101,8 +113,6 @@ window.canvas.on("draw", function (canvas) {
       startTime = new Date().getTime()
       console.verbose('关闭倒计时：' + countdown.toFixed(2))
     }
-
-
 
 
     if (detectRegion && detectRegion.length === 4) {

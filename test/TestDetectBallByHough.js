@@ -2,12 +2,13 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-23 23:56:10
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-04-11 22:00:31
+ * @Last Modified time: 2023-07-08 16:45:48
  * @Description: 
  */
 
 let { config } = require('../config.js')(runtime, global)
 config.cutAndSaveTreeCollect = false
+config.cutAndSaveTreeNoCollect = false
 config.show_debug_log = true
 config.save_log_file = false
 config.async_save_log_file = false
@@ -153,13 +154,7 @@ window.canvas.on("draw", function (canvas) {
   drawText('收集自身能量：' + (flag === 1 ? '是' : '否'), { x: 100, y: 400 }, canvas, paint)
   if (!inCapture) {
     drawRectAndText('能量球有效区域', detectRegion, '#808080', canvas, paint)
-    if (findBalls && findBalls.length > 0) {
-      // canvas.drawImage(grayImgInfo, 0, 0, paint)
-      findBalls.forEach(b => {
-        let region = [b.x - 40, b.y + 70, 60, 50]
-        drawRectAndText('', region, '#808080', canvas, paint)
-      })
-    }
+
 
     //******* */
     if (clickPoints && clickPoints.length > 0) {

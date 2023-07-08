@@ -34,7 +34,7 @@ const LockConfig = {
   },
   computed: {
     alipay_support: function () {
-      return typeof this.is_alipay_locked != 'undefined'
+      return typeof this.configs.is_alipay_locked != 'undefined'
     }
   },
   filters: {
