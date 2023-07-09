@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-05 20:42:07
+ * @Last Modified time: 2023-07-09 11:47:42
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -29,7 +29,7 @@ const DuplicateChecker = function () {
       return false
     }
     for (let key in this.duplicateChecked) {
-      if (this.duplicateChecked[key].count <= 1) {
+      if (this.duplicateChecked[key].count <= 2) {
         return false
       }
     }

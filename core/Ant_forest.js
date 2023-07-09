@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-09 11:08:42
+ * @Last Modified time: 2023-07-09 11:44:40
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -553,6 +553,10 @@ function Ant_forest () {
       }
     }
     return true
+  }
+
+  function boundsToRegion (bd) {
+    return [bd.left, bd.top, bd.right - bd.left, (bd.bottom - bd.top)]
   }
 
   const autoDetectTreeCollectRegion = function () {
