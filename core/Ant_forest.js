@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-08 17:48:57
+ * @Last Modified time: 2023-07-09 11:08:42
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -559,7 +559,7 @@ function Ant_forest () {
     let showVisual = true
     if (_config.auto_detect_tree_collect_region) {
       WarningFloaty.addText('准备查找 证书 控件', { x: config.device_width / 2, y: config.device_height / 2 })
-      let licenseWidget = WidgetUtil.widgetGetOne(/^\s*证书\s*$/, 1000)
+      let licenseWidget = _widgetUtils.widgetGetOne(/^\s*证书\s*$/, 1000)
       if (licenseWidget) {
         WarningFloaty.addRectangle('找到了证书控件', boundsToRegion(licenseWidget.bounds()))
         let anchorLeft = licenseWidget.bounds().left
@@ -577,7 +577,7 @@ function Ant_forest () {
         _config.overwrite('tree_collect_height', tree_collect_height)
         _config.overwrite('auto_detect_tree_collect_region', false)
       } else {
-        WarningFloaty.addText('未找到证书控件', { x: config.device_width / 2, y: config.device_height / 2 + 100 })
+        WarningFloaty.addText('未找到证书控件', { x: _config.device_width / 2, y: _config.device_height / 2 + 100 })
         warnInfo('自动识别能量球识别区域失败，未识别到对象：证书')
         warnInfo('请运行 可视化配置.js并手动修改能量球所在区域的配置', true)
         WarningFloaty.addRectangle('当前能量球所在区域可能不正确，请手动配置', [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height], '#ff0000')
