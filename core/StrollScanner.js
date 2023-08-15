@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-09 11:47:42
+ * @Last Modified time: 2023-08-15 13:44:40
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -46,8 +46,19 @@ const DuplicateChecker = function () {
       exist.count++
     } else {
       exist = { name: obj.name, count: 1 }
-      this.duplicateChecked[obj.name] = exist
     }
+    this.duplicateChecked[obj.name] = exist
+    
+  }
+
+  /**
+   * 收集过1个好友后，重置白名单缓存计数
+   * 用以确保连续遇到白名单好友才退出逛一逛
+   */
+  this.resetAll = function () {
+    Object.keys(this.duplicateChecked).forEach(key => {
+      this.duplicateChecked[key].count = 0
+    })
   }
 
 }
@@ -55,6 +66,7 @@ const DuplicateChecker = function () {
 const StrollScanner = function () {
   BaseScanner.call(this)
   this.duplicateChecker = new DuplicateChecker()
+  this.first_check = true
   this.init = function (option) {
     this.current_time = option.currentTime || 0
     this.increased_energy = option.increasedEnergy || 0
@@ -124,7 +136,7 @@ const StrollScanner = function () {
   }
 
   this.doIfProtected = function (obj) {
-    this.duplicateChecker.pushIntoDuplicated(obj)
+    //
   }
 
   /**
@@ -218,7 +230,6 @@ StrollScanner.prototype.collectTargetFriend = function () {
     skip = true
   }
   if (skip) {
-    this.duplicateChecker.pushIntoDuplicated(obj)
     return true
   }
   if (!obj.recheck) {
@@ -230,10 +241,16 @@ StrollScanner.prototype.collectTargetFriend = function () {
     this.isProtectDetectDone = true
   }
   this.saveButtonRegionIfNeeded()
+  if (this.first_check) {
+    _widgetUtils.checkAndUseDuplicateCard()
+    this.first_check = false
+  }
   let result = this.doCollectTargetFriend(obj)
   if (!this.collect_any) {
-    // 未收取任何能量，可能发生了异常或者识别出错 将其放入重复队列
+    // 未收取任何能量，可能在保护罩或者白名单中，亦或者发生了异常或识别出错 将其放入重复队列
     this.duplicateChecker.pushIntoDuplicated(obj)
+  } else {
+    this.duplicateChecker.resetAll()
   }
   return result
 }
@@ -254,6 +271,7 @@ StrollScanner.prototype.checkAndCollectRain = function () {
     debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
     target = _widgetUtils.widgetGetOne('去收取')
     if (target) {
+      WarningFloaty.clearAll()
       automator.clickCenter(target)
       sleep(1000)
       let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'

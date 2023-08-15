@@ -12,6 +12,7 @@ const ImageConfig = {
         stroll_icon: '',
         watering_cooperation: '',
         magic_species_icon: '',
+        use_item: '',
       },
     }
   },
@@ -41,5 +42,6 @@ const ImageConfig = {
     <base64-image-viewer title="校验‘逛一逛’按钮" v-model="configs.stroll_icon"/>
     <base64-image-viewer title="校验‘合种’按钮" v-model="configs.watering_cooperation"/>
     <base64-image-viewer title="校验‘神奇物种’按钮" v-model="configs.magic_species_icon"/>
+    <base64-image-viewer title="校验‘用道具’按钮" v-model="configs.use_item"/>
   </div>`
 }

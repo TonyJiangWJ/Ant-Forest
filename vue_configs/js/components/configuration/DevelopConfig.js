@@ -10,6 +10,7 @@ const DevelopConfig = {
         develop_mode: true,
         develop_saving_mode: true,
         cutAndSaveTreeCollect: true,
+        cutAndSaveTreeNoCollect: true,
         saveBase64ImgInfo: true,
         enable_visual_helper: true,
         auto_check_update: true,

@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-04-22 13:41:23
+ * @Last Modified time: 2023-08-09 10:39:35
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, global)
@@ -12,7 +12,7 @@ require('./modules/init_if_needed.js')(runtime, global)
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 let commonFunctions = singletonRequire('CommonFunction')
-let AntForestDao = singletonRequire('AntForestDao')
+
 // 避免定时任务打断前台运行中的任务
 commonFunctions.checkAnyReadyAndSleep()
 commonFunctions.delayIfBatteryLow()
@@ -27,6 +27,8 @@ runningQueueDispatcher.addRunningTask()
 commonFunctions.killDuplicateScript()
 logInfo('======加入任务队列成功=======')
 logInfo('======初始化SQLite=======')
+// 涉及dex操作，在加入任务队列后执行 避免影响其他脚本
+let AntForestDao = singletonRequire('AntForestDao')
 AntForestDao.init()
 commonFunctions.exitIfCoolDown()
 logInfo('======初始化SQLite成功=======')
@@ -119,6 +121,7 @@ try {
     exit()
   }
 }
+commonFunctions.forceCheckForcegroundPermission()
 logInfo('解锁成功')
 let executeArguments = engines.myEngine().execArgv
 debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])

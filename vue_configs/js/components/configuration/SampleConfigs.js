@@ -197,6 +197,7 @@ const CollectConfig = {
   mixins: [mixin_common],
   data () {
     return {
+      cardTipsName: [],
       configs: {
         no_friend_list_countdown: true,
         is_cycle: true,
@@ -218,7 +219,7 @@ const CollectConfig = {
         not_collect_self: true,
         recheck_after_stroll: false,
         collect_rain_when_stroll: true,
-        double_click_card_used: true,
+        double_check_collect: true,
         fast_collect_mode: true,
         merge_countdown_by_gaps: true,
         limit_runnable_time_range: true,
@@ -228,6 +229,10 @@ const CollectConfig = {
         friend_list_end_content: '.*没有更多了.*',
         random_gesture_safe_range_top: '',
         random_gesture_safe_range_bottom: '',
+        // 是否使用双击卡
+        use_duplicate_card: false,
+        // 双击卡使用时间段
+        duplicate_card_using_time_ranges: '00:00-00:10',
       },
       currentInCoolDown: false,
       currentCollected: 0,
@@ -259,6 +264,27 @@ const CollectConfig = {
             return ''
           }
         },
+        duplicate_card_using_time_ranges: {
+          required: true,
+          validate: () => false,
+          message: v => {
+            if (v) {
+              let current_time_ranges = this.configs.duplicate_card_using_time_ranges.split(';')
+              let timeRangeRegex = /^(\d{2}:\d{2})-(\d{2}:\d{2})$/
+              for (let i=0;i<current_time_ranges.length;i++) {
+                let timeRange = current_time_ranges[i]
+                if (!timeRangeRegex.test(timeRange)) {
+                  return '时间范围格式不正确，多个时间段分号分隔如：00:00-00:10;07:00-07:10'
+                }
+                let times = timeRangeRegex.exec(timeRange)
+                if (times[1] > times[2]) {
+                  return '时间范围格式不正确，请确保-左侧小于等于右侧'
+                }
+              }
+            }
+            return ''
+          }
+        },
         cool_down_per_increase: VALIDATOR.P_INT,
         cool_down_minutes: VALIDATOR.P_INT,
         cool_down_time: VALIDATOR.P_INT,
@@ -269,6 +295,9 @@ const CollectConfig = {
     }
   },
   computed: {
+    currentTimeRanges: function () {
+      return (this.configs.duplicate_card_using_time_ranges || '').split(';')
+    },
     reactiveTimeDisplay: function () {
       if (this.configs.reactive_time) {
         let rangeCheckRegex = /^(\d+)-(\d+)$/
@@ -375,7 +404,27 @@ const CollectConfig = {
         </template>
         <switch-cell v-if="!configs.not_collect_self" title="只收自己的能量" v-model="configs.collect_self_only" />
         <switch-cell v-if="!configs.collect_self_only" title="不收自己的能量" v-model="configs.not_collect_self" />
-        <switch-cell title="是否二次校验能量球" v-model="configs.double_click_card_used" />
+        <switch-cell title="是否二次校验能量球" v-model="configs.double_check_collect" />
+        <switch-cell title="是否自动使用双击卡" v-model="configs.use_duplicate_card" />
+        <template v-if="configs.use_duplicate_card">
+          <tip-block>可以指定多个时间范围，脚本在指定时间范围内启动时将自动使用双击卡，格式如下：00:00-00:10;07:00-07:10</tip-block>
+          <tip-block>需要注意的是，使用双击卡可能导致被支付宝风控检测为行为异常，这不是脚本导致的，单纯因为短时间内收集了太多能量导致的，请酌情使用</tip-block>
+          <van-field v-model="configs.duplicate_card_using_time_ranges"
+            :error-message="validationError.duplicate_card_using_time_ranges" error-message-align="right"
+            label="指定使用双击卡的时间段" label-width="12em" placeholder="请输入使用的时间段" input-align="right" />
+            <van-collapse v-model="cardTipsName">
+              <van-collapse-item title="更多说明" name="1">
+                <van-divider content-position="left">当前设置的区间</van-divider>
+                <van-cell v-if="currentTimeRanges.length==0" title="无"/>
+                <van-cell v-else v-for="timeRange in currentTimeRanges" :title="timeRange" :key="timeRange" style="overflow:auto;" />
+                <tip-block>对于最优的时间范围，可以自行摸索，推荐0点后运行一次，可以多收取一次未过期的能量。其他时间段推荐的方式是：根据每天的收集统计数据，查看各个时间段收集的能量数据，选择适合自己的触发时间段。</tip-block>
+                <tip-block>同时建议通过unit下的脚本控制自动定时任务触发的执行，避免高能量区间自动执行却未触发双击卡，或者未能在生效的5分钟之内收取最大数量的能量。</tip-block>
+                <tip-block>脚本并不校验双击卡库存，请在自己双击卡充裕的情况下使用</tip-block>
+                <tip-block>可以对 unit/自动使用双击卡-启用[禁用].js 创建定时任务，用于控制每周不同时间是否触发</tip-block>
+                <tip-block>默认使用找图方式查找 用道具 按钮，找不到时使用OCR查找，但是OCR并不稳定因此请在 查找图片设置 中设置适合自己分辨率的实际图片，确保准确触发</tip-block>
+              </van-collapse-item>
+            </van-collapse>
+        </template>
         <tip-block>开启快速收集后收取能量球间隔不再随机睡眠，但是有可能被检测为异常，谨慎开启</tip-block>
         <switch-cell title="快速收集模式" v-model="configs.fast_collect_mode" />
         <switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />

@@ -9,7 +9,7 @@ let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let fileUtils = singletonRequire('FileUtils')
 let automator = singletonRequire('Automator')
 let unlocker = require('../lib/Unlock.js')
-let { openFriendHome, doWaterFriend, openAndWaitForPersonalHome } = require('./waterFriend.js')
+let { openFriendHome, doWaterFriend, openAndWaitForPersonalHome, getSignReward } = require('./waterFriend.js')
 config.not_lingering_float_window = true
 config.targetWateringAmount = 66
 runningQueueDispatcher.addRunningTask()
@@ -53,6 +53,10 @@ if (config.accounts && config.accounts.length > 1) {
     accountChange(account)
     floatyInstance.setFloatyText('切换完毕')
     sleep(500)
+    openAndWaitForPersonalHome()
+    floatyInstance.setFloatyText('准备收集奖励')
+    sleep(1000)
+    getSignReward()
     floatyInstance.setFloatyText('开始执行浇水')
     try {
       if (openFriendHome()) {

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-09 11:09:04
+ * @Last Modified time: 2023-08-15 23:50:01
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -207,8 +207,8 @@ let default_config = {
   hough_min_radius: null,
   hough_max_radius: null,
   hough_min_dst: null,
-  // 使用双击卡
-  double_click_card_used: false,
+  // 二次校验
+  double_check_collect: false,
   // 快速收集模式
   fast_collect_mode: false,
   // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
@@ -276,8 +276,12 @@ let default_config = {
   webview_loging: false,
   random_gesture_safe_range_top: '',
   random_gesture_safe_range_bottom: '',
+  // 是否使用双击卡
+  use_duplicate_card: false,
+  // 双击卡使用时间段
+  duplicate_card_using_time_ranges: '00:00-00:10',
   // 代码版本
-  code_version: 'v1.3.8.3',
+  code_version: 'v1.3.9.0',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
@@ -358,7 +362,7 @@ let configDataPath = workpath + '/config_data/'
 let default_image_config = {};
 [
   'reward_for_plant', 'backpack_icon', 'sign_reward_icon', 'water_icon',
-  'stroll_icon', 'watering_cooperation', 'magic_species_icon'
+  'stroll_icon', 'watering_cooperation', 'magic_species_icon', 'use_item'
 ].forEach(key => {
   if (!files.exists(configDataPath + key + '.data')) {
     default_image_config[key] = ''

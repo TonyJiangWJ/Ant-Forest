@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-04-29 14:44:49
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-12-01 11:19:05
+ * @Last Modified time: 2023-07-19 22:34:46
  * @Description: https://github.com/TonyJiangWJ/AutoScriptBase
  */
 let { config } = require('../config.js')(runtime, global)
@@ -39,7 +39,7 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
   toastLog('获取无障碍权限失败')
   exit()
 }
-if (inspectConfig.capture) {
+if (inspectConfig.capture && !automator.takeScreenshot) {
   if (!requestScreenCapture()) {
     toastLog('请求截图权限失败')
     exit()
@@ -76,7 +76,12 @@ let imgBase64 = null
 if (inspectConfig.capture) {
   floatyInstance.setFloatyText(' ')
   sleep(50)
-  let screen = captureScreen()
+  let screen = null
+  if (automator.takeScreenshot) {
+    screen = automator.takeScreenshot()
+  } else {
+    screen = captureScreen()
+  }
   imgBase64 = images.toBase64(screen)
 }
 floatyInstance.setFloatyText('正在分析中...')

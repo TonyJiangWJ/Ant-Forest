@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-08 18:23:43
+ * @Last Modified time: 2023-08-15 23:53:33
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -206,7 +206,7 @@ const BaseScanner = function () {
       // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次 || 使用了双击卡，且点击过球
       repeat = this.recheck && this.is_own && --recheckLimit > 0
         || !haveValidBalls && haveBalls && --recheckLimit >= 2
-        || _config.double_click_card_used && haveValidBalls && --recheckLimit > 0
+        || _config.double_check_collect && haveValidBalls && --recheckLimit > 0
       if (repeat) {
         debugInfo(['需要二次校验，等待{}ms', this.is_own ? 200 : 500])
         sleep(this.is_own ? 200 : 500)
@@ -384,6 +384,7 @@ const BaseScanner = function () {
 
   this.randomSleep = function () {
     if (_config.fast_collect_mode || _config._double_click_card_used) {
+      sleep(100)
       return
     }
     sleep(100 + Math.random() * (_config.random_sleep_time || 500))
@@ -673,11 +674,12 @@ const BaseScanner = function () {
     }
     if (collectedEnergy > 0) {
       let gotEnergyAfterWater = collectedEnergy
+      let friendEnergy = _widgetUtils.getFriendCurrentEnergy()
       this.collect_any = true
       let needWaterback = _commonFunctions.recordFriendCollectInfo({
         hasSummaryWidget: _config.has_summary_widget,
         friendName: obj.name,
-        friendEnergy: _widgetUtils.getFriendCurrentEnergy(),
+        friendEnergy: friendEnergy,
         postCollect: postGet,
         preCollect: preGot,
         helpCollect: 0
@@ -708,7 +710,7 @@ const BaseScanner = function () {
         "收取好友:{} 能量 {}g {}",
         obj.name, gotEnergyAfterWater, (needWaterback ? '浇水' + (_config.targetWateringAmount || 0) + 'g' : '')
       ])
-      AntForestDao.saveFriendCollect(obj.name, 0, gotEnergyAfterWater, needWaterback ? _config.targetWateringAmount : null)
+      AntForestDao.saveFriendCollect(obj.name, friendEnergy, gotEnergyAfterWater, needWaterback ? _config.targetWateringAmount : null)
       this.showCollectSummaryFloaty(gotEnergyAfterWater)
       if (_config.cutAndSaveTreeCollect && screen) {
         let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
@@ -773,6 +775,8 @@ const BaseScanner = function () {
       if (collect) {
         debugInfo('截图找到了目标, 获取森林赠礼')
         automator.click(collect.centerX(), collect.centerY())
+        // 等待点击后的动画结束
+        sleep(1000)
         let gotItBtn = _widgetUtils.widgetGetOne('知道了', 1000)
         if (gotItBtn) {
           debugInfo('大礼盒需要点击知道了')
