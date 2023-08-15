@@ -262,3 +262,4 @@ module.exports = function (obj) {
 - *z
 - **昌
 - **昌
+- *🍃
