@@ -12,7 +12,7 @@ let unlocker = require('../lib/Unlock.js')
 let _BaseScanner = require('../core/BaseScanner.js')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
-let { openFriendHome, doWaterFriend, openAndWaitForPersonalHome } = require('./waterFriend.js')
+let { openFriendHome, doWaterFriend, openAndWaitForPersonalHome, getSignReward } = require('./waterFriend.js')
 config.not_lingering_float_window = true
 runningQueueDispatcher.addRunningTask()
 // 注册自动移除运行中任务
@@ -108,34 +108,4 @@ function getCurrentEnergy () {
   let currentEnergy = widgetUtils.getCurrentEnergy()
   logUtils.debugInfo(['getCurrentEnergy 获取能量值: {}', currentEnergy])
   return currentEnergy
-}
-
-// 每日签到奖励
-function getSignReward () {
-  floatyInstance.setFloatyText('准备校验是否有奖励')
-  let screen = commonFunctions.checkCaptureScreenPermission()
-  if (screen && config.image_config.sign_reward_icon) {
-    let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(config.image_config.sign_reward_icon))
-    if (collect) {
-      floatyInstance.setFloatyInfo({ x: collect.centerX(), y: collect.centerY() }, '点击奖励按钮')
-      automator.click(collect.centerX(), collect.centerY())
-      sleep(1000)
-      let getRewards = widgetUtils.widgetGetAll('立即领取')
-      if (getRewards && getRewards.length > 0) {
-        floatyInstance.setFloatyText('找到可领取的奖励数量：' + getRewards.length)
-        getRewards.forEach(getReward => {
-          getReward.click()
-          sleep(500)
-        })
-      } else {
-        floatyInstance.setFloatyText('未找到可领取的奖励')
-      }
-      commonFunctions.setRewardCollected()
-      automator.click(config.device_width * 0.2, config.device_width * 0.3)
-      sleep(200)
-    } else {
-      floatyInstance.setFloatyText('未找到奖励按钮')
-    }
-    sleep(500)
-  }
 }

@@ -386,6 +386,7 @@ window.canvas.on("draw", function (canvas) {
     drawText('请进入能量雨界面后手动开始，音量上键可关闭脚本，音量下停止点击', { x: displayInfoZone[0], y: displayInfoZone[1] - 200 }, canvas, paint, '#00ff00')
     drawText('将在' + countdown.toFixed(0) + 's后自动关闭', { x: displayInfoZone[0], y: displayInfoZone[1] - 150 }, canvas, paint, '#00ff00')
     drawText('点击倒计时：' + (VIOLENT_CLICK_TIME - passedTime).toFixed(1) + 's', { x: displayInfoZone[0], y: displayInfoZone[1] - 100 }, canvas, paint, '#00ff00')
+    drawText('如果无法点击，请见常见问题中的解决方案', { x: displayInfoZone[0], y: displayInfoZone[1] + 50 }, canvas, paint, '#00ff00')
 
     passwindow = new Date().getTime() - startTime
 
@@ -510,10 +511,12 @@ function drawRectAndText (desc, position, colorStr, canvas, paint) {
 
 function drawText (text, position, canvas, paint, colorStr) {
   colorStr = colorStr || '#0000ff'
-  let color = colors.parseColor(colorStr)
-  paint.setARGB(255, color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff)
   paint.setStrokeWidth(1)
   paint.setStyle(Paint.Style.FILL)
+  paint.setARGB(255, 136, 136, 136)
+  canvas.drawText(text, position.x + 2, position.y + offset - 2, paint)
+  let color = colors.parseColor(colorStr)
+  paint.setARGB(255, color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff)
   canvas.drawText(text, position.x, position.y + offset, paint)
 }
 let starting = false

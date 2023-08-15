@@ -220,6 +220,7 @@ const AdvanceCommonConfig = {
       activeNames: [],
       enabledServices: 'com.taobao.idlefishs.modify.opencv4/org.autojs.autojs.timing.work.AlarmManagerProvider:com.taobao.idlefishs.modify.opencv4/org.autojs.autojs.timing.work.AlarmManagerProvider:com.taobao.idlefishs.modify.opencv4/org.autojs.autojs.timing.work.AlarmManagerProvider',
       configs: {
+        auto_set_bang_offset: false,
         single_script: true,
         auto_restart_when_crashed: true,
         useCustomScrollDown: true,
@@ -275,6 +276,12 @@ const AdvanceCommonConfig = {
     <van-cell-group>
       <tip-block>当需要使用多个脚本时不要勾选（如同时使用我写的蚂蚁庄园脚本），避免抢占前台</tip-block>
       <switch-cell title="是否单脚本运行" v-model="configs.single_script" />
+      <tip-block>刘海屏或者挖孔屏悬浮窗显示位置和实际目测位置不同，需要施加一个偏移量，一般是负值，脚本运行时会自动设置，非异形屏请自行修改为0</tip-block>
+      <switch-cell title="下次执行时重新识别" v-model="configs.auto_set_bang_offset" />
+      <number-field v-if="!configs.auto_set_bang_offset" v-model="configs.bang_offset" label="偏移量" label-width="12em" />
+      <van-cell center title="偏移量" v-else>
+        <span>下次执行时重新识别</span>
+      </van-cell>
       <tip-block>AutoJS有时候会莫名其妙的崩溃，但是授权了自启动权限之后又会自动启动。开启该选项之后会创建一个广播事件的定时任务，
         当脚本执行过程中AutoJS崩溃自启，将重新开始执行脚本。如果脚本执行完毕，则不会触发执行</tip-block>
       <switch-cell title="AutoJS崩溃自启后重启脚本" title-style="flex:2;" v-model="configs.auto_restart_when_crashed" />

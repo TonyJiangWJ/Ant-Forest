@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-09 11:44:40
+ * @Last Modified time: 2023-07-13 10:11:49
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -51,11 +51,12 @@ function Ant_forest () {
 
   // 进入蚂蚁森林主页
   const startApp = function (reopen) {
-    app.startActivity({
-      action: 'VIEW',
-      data: 'alipays://platformapi/startapp?appId=60000002',
-      packageName: _config.package_name
-    })
+    // app.startActivity({
+    //   action: 'VIEW',
+    //   data: 'alipays://platformapi/startapp?appId=60000002',
+    //   packageName: _config.package_name
+    // })
+    app.openUrl('https://render.alipay.com/p/s/i/?scheme=' + encodeURIComponent('alipays://platformapi/startapp?appId=60000002'))
     FloatyInstance.setFloatyInfo({ x: _config.device_width / 2, y: _config.device_height / 2 }, "查找是否有'打开'对话框")
     let confirm = _widgetUtils.widgetGetOne(/^打开$/, 1000)
     if (confirm) {
@@ -596,15 +597,6 @@ function Ant_forest () {
     WarningFloaty.addRectangle('有效能量球所在区域', [_config.tree_collect_left, _config.tree_collect_top, _config.tree_collect_width, _config.tree_collect_height], '#00ff00')
   }
 
-  const checkIfDbClickUsed = function () {
-    let dbClickCountDown = _widgetUtils.widgetGetOne(/^\d{2}:\d{2}$/, 1000, true)
-    if (dbClickCountDown) {
-      debugInfo(['发现双击卡倒计时组件，当前倒计时：{}', dbClickCountDown.content])
-      _config.double_click_card_used = true
-      _config._double_click_card_used = true
-    }
-  }
-
   function doSignUpForMagicSpecies () {
     sleep(5000)
     let confirm = _widgetUtils.widgetGetOne('收下|再抽一次.*')
@@ -722,7 +714,7 @@ function Ant_forest () {
     autoDetectTreeCollectRegion()
     clearPopup()
     // 校验是否使用了双击卡
-    checkIfDbClickUsed()
+    _widgetUtils.checkIsDuplicateCardUsed()
     // 神奇物种签到 改到逛一逛结束
     // signUpForMagicSpecies()
     // 执行合种浇水

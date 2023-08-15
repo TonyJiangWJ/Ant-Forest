@@ -4,11 +4,14 @@ let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
+let commonFunctions = singletonRequire('CommonFunction')
+let OpenCvUtil = require('../lib/OpenCvUtil.js')
 
 module.exports = {
   openFriendHome: openFriendHome,
   doWaterFriend: doWaterFriend,
   openAndWaitForPersonalHome: openAndWaitForPersonalHome,
+  getSignReward: getSignReward,
 }
 
 
@@ -152,5 +155,34 @@ function doWaterFriend () {
       limit++
     }
     !done && limit > 0 && sleep(1500)
+  }
+}
+// 每日签到奖励
+function getSignReward () {
+  floatyInstance.setFloatyText('准备校验是否有奖励')
+  let screen = commonFunctions.checkCaptureScreenPermission()
+  if (screen && config.image_config.sign_reward_icon) {
+    let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(config.image_config.sign_reward_icon))
+    if (collect) {
+      floatyInstance.setFloatyInfo({ x: collect.centerX(), y: collect.centerY() }, '点击奖励按钮')
+      automator.click(collect.centerX(), collect.centerY())
+      sleep(1000)
+      let getRewards = widgetUtils.widgetGetAll('(立即)?领取')
+      if (getRewards && getRewards.length > 0) {
+        floatyInstance.setFloatyText('找到可领取的奖励数量：' + getRewards.length)
+        getRewards.forEach(getReward => {
+          getReward.click()
+          sleep(500)
+        })
+      } else {
+        floatyInstance.setFloatyText('未找到可领取的奖励')
+      }
+      commonFunctions.setRewardCollected()
+      automator.click(config.device_width * 0.2, config.device_width * 0.3)
+      sleep(200)
+    } else {
+      floatyInstance.setFloatyText('未找到奖励按钮')
+    }
+    sleep(500)
   }
 }
