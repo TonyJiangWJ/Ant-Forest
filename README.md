@@ -135,6 +135,7 @@
 
 - 具体开发需要获取到锁屏界面的控件信息，可以运行 `/unit/获取锁屏界面控件信息.js` 根据提示进行操作，然后得到相应的布局信息进行开发，或者在执行完之后发起ISSUE并提供 `logs/info.log` 文件让开发者帮忙。
 - 脚本根目录下新建extends文件夹，然后创建ExternalUnlockDevice.js文件，内容格式如下自定义
+- 修改完毕后运行 `test/测试解锁.js` 即可对解锁代码进行测试
 - 更多扩展可以参考`extends/ExternalUnlockDevice-demo.js`
 
 ```javascript
@@ -230,6 +231,7 @@ module.exports = function (obj) {
 - **庭
 - **光
 - **杰
+- **俊
 - *森
 - *悦
 
