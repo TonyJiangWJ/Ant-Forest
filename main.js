@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-08-09 10:39:35
+ * @Last Modified time: 2023-08-18 22:09:34
  * @Description: 蚂蚁森林自动收能量
  */
 let { config, storage_name } = require('./config.js')(runtime, global)
@@ -129,6 +129,38 @@ debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
 if (!executeArguments.intent || executeArguments.executeByDispatcher) {
   commonFunctions.requestScreenCaptureOrRestart()
   commonFunctions.ensureDeviceSizeValid()
+  if (files.exists(FileUtils.getRealMainScriptPath(true) + '/请认准github下载.txt')) {
+    let content = files.read(FileUtils.getRealMainScriptPath(true) + '/请认准github下载.txt')
+    let showDialog = true
+    let confirmDialog = dialogs.build({
+      title: '检测到你可能是盗版受害者',
+      content: content.replace('花Q托米！', '(15)你被骗了，这个人'),
+      positive: '知道了',
+      positiveColor: '#f9a01c',
+      cancelable: false
+    })
+      .on('positive', () => {
+        showDialog = false
+        confirmDialog.dismiss()
+      })
+      .show()
+    debugInfo(['isShowing：{} isCanceled: {}', confirmDialog.isShowing(), confirmDialog.isCancelled()])
+    // 注册当脚本中断时隐藏弹出框
+    commonFunctions.registerOnEngineRemoved(function () {
+      if (confirmDialog) {
+        confirmDialog.dismiss()
+        confirmDialog.removeAllListeners()
+      }
+    })
+    let sleepCount = 15
+    while (sleepCount-- > 0 && showDialog) {
+      sleep(1000)
+      confirmDialog.setContent(content.replace('花Q托米！', '(' + sleepCount + ')你被骗了，这个人'))
+    }
+    confirmDialog.setContent('即将开始')
+    confirmDialog.dismiss()
+    confirmDialog.removeAllListeners()
+  }
 }
 // 初始化悬浮窗
 if (!FloatyInstance.init()) {
