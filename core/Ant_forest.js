@@ -51,12 +51,16 @@ function Ant_forest () {
 
   // 进入蚂蚁森林主页
   const startApp = function (reopen) {
-    // app.startActivity({
-    //   action: 'VIEW',
-    //   data: 'alipays://platformapi/startapp?appId=60000002',
-    //   packageName: _config.package_name
-    // })
-    app.openUrl('https://render.alipay.com/p/s/i/?scheme=' + encodeURIComponent('alipays://platformapi/startapp?appId=60000002'))
+    if (_config.start_alipay_by_url) {
+      debugInfo(['使用app.openUrl方式打开森林，如果无法打开请去配置中关闭'])
+      app.openUrl('https://render.alipay.com/p/s/i/?scheme=' + encodeURIComponent('alipays://platformapi/startapp?appId=60000002'))
+    } else {
+      app.startActivity({
+        action: 'VIEW',
+        data: 'alipays://platformapi/startapp?appId=60000002',
+        packageName: _config.package_name
+      })
+    }
     FloatyInstance.setFloatyInfo({ x: _config.device_width / 2, y: _config.device_height / 2 }, "查找是否有'打开'对话框")
     let confirm = _widgetUtils.widgetGetOne(/^打开$/, 1000)
     if (confirm) {

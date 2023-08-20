@@ -8,6 +8,7 @@ const LockConfig = {
     return {
       configs: {
         password: '',
+        start_alipay_by_url: false,
         is_alipay_locked: true,
         multi_device_login: false,
         alipay_lock_password: '',
@@ -71,6 +72,7 @@ const LockConfig = {
         <template #right-icon><span>毫秒</span></template>
       </number-field>
       <template v-if="alipay_support">
+        <switch-cell title="通过url方式打开森林" v-model="configs.start_alipay_by_url" />
         <tip-block>仅限在支付宝账号管理-登录设置-开启可信设备自动登录后才有效，否则需要密码登录，无法使用此功能自动登录</tip-block>
         <switch-cell title="多设备自动登录" v-model="configs.multi_device_login" />
         <switch-cell title="支付宝是否锁定" v-model="configs.is_alipay_locked" />

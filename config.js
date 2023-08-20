@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-08-15 23:50:01
+ * @Last Modified time: 2023-08-20 01:24:10
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -234,6 +234,7 @@ let default_config = {
   auto_restart_when_crashed: true,
   thread_name_prefix: 'antforest_',
   package_name: 'com.eg.android.AlipayGphone',
+  start_alipay_by_url: false,
   auto_check_update: true,
   github_url: 'https://github.com/TonyJiangWJ/Ant-Forest',
   gitee_url: 'https://gitee.com/TonyJiangWJ/Ant-Forest',
@@ -281,7 +282,7 @@ let default_config = {
   // 双击卡使用时间段
   duplicate_card_using_time_ranges: '00:00-00:10',
   // 代码版本
-  code_version: 'v1.3.9.0',
+  code_version: 'v1.3.9.1',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
