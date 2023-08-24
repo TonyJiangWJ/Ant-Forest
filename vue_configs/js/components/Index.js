@@ -5,6 +5,18 @@ let Index = {
     return {
       menuItems: [
         {
+          title: '常见问题',
+          link: '/QA'
+        },
+        {
+          title: '脚本说明README',
+          link: '/readme'
+        },
+        {
+          title: '关于项目',
+          link: '/about'
+        },
+        {
           title: '锁屏设置',
           link: '/basic/lock'
         },
@@ -67,18 +79,6 @@ let Index = {
         {
           title: '高级设置',
           link: '/advance/common'
-        },
-        {
-          title: '关于项目',
-          link: '/about'
-        },
-        {
-          title: '常见问题',
-          link: '/QA'
-        },
-        {
-          title: '脚本说明README',
-          link: '/readme'
         },
       ]
     }

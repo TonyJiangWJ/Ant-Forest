@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-08-15 23:53:33
+ * @Last Modified time: 2023-08-24 23:08:36
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -11,7 +11,7 @@ importClass(java.util.concurrent.TimeUnit)
 importClass(java.util.concurrent.CountDownLatch)
 importClass(java.util.concurrent.ThreadFactory)
 importClass(java.util.concurrent.Executors)
-let { config: _config, storage_name } = require('../config.js')(runtime, global)
+let { config: _config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let _widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
@@ -19,6 +19,8 @@ let _commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let AntForestDao = singletonRequire('AntForestDao')
 let WarningFloaty = singletonRequire('WarningFloaty')
+let YoloTrainHelper = singletonRequire('YoloTrainHelper')
+let YoloDetection = singletonRequire('YoloDetectionUtil')
 let { debugInfo, logInfo, errorInfo, warnInfo, infoLog, debugForDev, developSaving } = singletonRequire('LogUtils')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let ENGINE_ID = engines.myEngine().id
@@ -41,6 +43,7 @@ const BaseScanner = function () {
   this.increased_energy = 0
   this.current_time = 0
   this.collect_any = false
+  this.nocollect_count = 0
   this.min_countdown = 10000
   this.lost_reason = ''
   this.lost_someone = false
@@ -126,8 +129,13 @@ const BaseScanner = function () {
   }
 
   // 收取能量
-  this.collectEnergy = function () {
-    this.checkAndCollectByHough()
+  this.collectEnergy = function (isOwn) {
+    this.collect_operated = false
+    if (YoloDetection.enabled && _config.detect_ball_by_yolo) {
+      this.checkAndCollectByYolo(isOwn)
+    } else {
+      this.checkAndCollectByHough(isOwn)
+    }
   }
 
   /**
@@ -149,7 +157,63 @@ const BaseScanner = function () {
   }
 
   /**
-   * 根据图像识别 帮助收取或者收取能量球
+   * 根据YOLO模型进行识别 收取能量球
+   * @param {boolean} isOwn 是否收集自己
+   * @param {int} recheckLimit 识别次数
+   */
+  this.checkAndCollectByYolo = function (isOwn, recheckLimit) {
+    this.is_own = isOwn || false
+    recheckLimit = recheckLimit || 3
+    let repeat = false
+    if (this.is_own) {
+      // 收集自己，直接设置保护罩检测完毕
+      this.isProtectDetectDone = true
+    }
+    let start = new Date().getTime()
+    do {
+      haveValidBalls = false
+      this.recheck = false
+      let screen = _commonFunctions.checkCaptureScreenPermission()
+      if (screen) {
+        let rgbImg = images.copy(screen, true)
+        YoloTrainHelper.saveImage(screen, (isOwn ? '自身首页' : '好友首页') + '识别是否有可收集能量球')
+        if (this.isProtected) {
+          // 已判定为使用了保护罩
+          return
+        }
+        let _start = new Date().getTime()
+        let collectableList = YoloDetection.forward(rgbImg, { confidence: 0.85, filter: (result) => result.label == 'collect' || isOwn && result.label == 'waterBall' })
+        debugInfo(['本次yolo模型判断可收集能量球信息总耗时：{}ms', new Date().getTime() - _start])
+        if (collectableList.length > 0) {
+          haveValidBalls = true
+          if (!this.awaitForCollectable()) {
+            return
+          }
+          collectableList.forEach(c => {
+            WarningFloaty.addRectangle('collect:' + c.confidence.toFixed(2), [c.x, c.y, c.width, c.height])
+            automator.click(c.x + c.width / 2, c.y + c.height / 2)
+            self.collect_count++
+            self.randomSleep()
+          })
+          self.collect_operated = true
+        }
+        rgbImg.recycle()
+      }
+      // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次 || 使用了双击卡，且点击过球
+      repeat = this.recheck && this.is_own && --recheckLimit > 0
+        || !haveValidBalls && --recheckLimit >= 2
+        || _config.double_check_collect && haveValidBalls && --recheckLimit > 0
+      if (repeat) {
+        debugInfo(['需要二次校验，等待{}ms', this.is_own ? 200 : 500])
+        sleep(this.is_own ? 200 : 500)
+      }
+      WarningFloaty.clearAll()
+    } while (repeat)
+    debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
+  }
+
+  /**
+   * 根据图像识别 收取能量球
    * @param isOwn 是否收集自己，收自己时不判断帮收能量球
    * @param {function} findBallsCallback 测试用 回调找到的球列表
    * @param {function} findPointCallback 测试用 回调可点击的点
@@ -178,6 +242,7 @@ const BaseScanner = function () {
       this.recheck = false
       let screen = _commonFunctions.checkCaptureScreenPermission()
       if (screen) {
+        YoloTrainHelper.saveImage(screen, (isOwn ? '自身首页' : '好友首页') + '识别是否有可收集能量球')
         this.temp_img = images.copy(screen, true)
         let rgbImg = images.copy(screen, true)
         let grayImgInfo = images.grayscale(images.medianBlur(screen, 5))
@@ -270,12 +335,8 @@ const BaseScanner = function () {
         debugForDev(['invalidBalls: [{}]', JSON.stringify(invalidPoints)])
       }
     }
-    if (this.is_own && _config.cutAndSaveTreeCollect && this.recheck && rgbImg) {
-      let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
-        + 'collect_own_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
-      files.ensureDir(savePath)
-      images.save(rgbImg, savePath)
-      debugForDev(['保存自身能量球图片：「{}」', savePath])
+    if (this.is_own && _config.save_yolo_train_data && this.recheck && rgbImg) {
+      YoloTrainHelper.saveImage(rgbImg, '自身有可收取能量球')
     }
     if (!this.is_own && !haveValidBalls) {
       this.savingDevelopImageForNotFound()
@@ -541,16 +602,8 @@ const BaseScanner = function () {
   }
 
   this.savingDevelopImageForNotFound = function () {
-    if (_config.cutAndSaveTreeNoCollect && this.temp_img) {
-      try {
-        let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect_not_found/'
-          + (this.target ? this.target : 'unknow') + '_not_found_' + (new Date().getMonth() + 1 + '-' + new Date().getDate() + '_') + (Math.random() * 9999 + 100).toFixed(0) + '.png'
-        files.ensureDir(savePath)
-        images.save(this.temp_img, savePath)
-        debugForDev(['保存未识别能量球图片：「{}」', savePath])
-      } catch (e) {
-        errorInfo('保存未识别能量球图片异常' + e)
-      }
+    if (_config.save_yolo_train_data && this.temp_img) {
+      YoloTrainHelper.saveImage(this.temp_img, '好友界面未找到可收取能量球')
     }
     if (this.temp_img) {
       this.temp_img.recycle()
@@ -634,7 +687,7 @@ const BaseScanner = function () {
     }
     let preGot, postGet, rentery = false
     let screen = null
-    if (_config.cutAndSaveTreeCollect || _config.cutAndSaveTreeNoCollect) {
+    if (_config.save_yolo_train_data) {
       screen = images.copy(_commonFunctions.checkCaptureScreenPermission(), true)
     }
     try {
@@ -712,16 +765,16 @@ const BaseScanner = function () {
       ])
       AntForestDao.saveFriendCollect(obj.name, friendEnergy, gotEnergyAfterWater, needWaterback ? _config.targetWateringAmount : null)
       this.showCollectSummaryFloaty(gotEnergyAfterWater)
-      if (_config.cutAndSaveTreeCollect && screen) {
-        let savePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
-          + obj.name + '_collected_' + (new Date().getMonth() + 1 + '-' + new Date().getDate() + '_') + gotEnergyAfterWater + '_' + (Math.random() * 899 + 100).toFixed(0) + '.png'
-        files.ensureDir(savePath)
-        images.save(screen, savePath)
-        debugForDev(['保存可收取能量球图片：「{}」', savePath])
+      if (_config.save_yolo_train_data && screen) {
+        YoloTrainHelper.saveImage(screen, '好友界面有可收取能量球')
       }
     } else {
       warnInfo(['未收取能量，可能有森林赠礼，延迟等待动画'], true)
       sleep(1500)
+      this.nocollect_count++
+      if (!this.collect_any && this.nocollect_count >= 3) {
+        warnInfo(['如果你首次使用，且无法收取能量，请检查并关闭MIUI电诈防护功能，具体见可视化配置中常见问题，不要再单独来问，谢谢'], true)
+      }
     }
     // 校验是否有森林赠礼
     if (this.checkForPlantReward()) {
@@ -770,6 +823,7 @@ const BaseScanner = function () {
    */
   this.checkForPlantReward = function () {
     let screen = _commonFunctions.checkCaptureScreenPermission()
+    YoloTrainHelper.saveImage(screen, '校验是否有种树奖励')
     if (screen && _config.image_config.reward_for_plant) {
       let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.reward_for_plant))
       if (collect) {

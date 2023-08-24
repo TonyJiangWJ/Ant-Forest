@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-08-20 01:24:10
+ * @Last Modified time: 2023-08-24 23:17:49
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -44,6 +44,8 @@ let default_config = {
   log_saved_days: 3,
   develop_mode: false,
   develop_saving_mode: false,
+  // 是否保存YOLO训练用的图片数据
+  save_yolo_train_data: false,
   check_device_posture: false,
   check_distance: false,
   posture_threshold_z: 6,
@@ -55,10 +57,6 @@ let default_config = {
   // 电量保护，低于该值延迟60分钟执行脚本
   battery_keep_threshold: 20,
   // 开发用开关，截图并保存一些图片
-  // 保存好友页面可收取和可帮助图片
-  cutAndSaveTreeCollect: false,
-  // 保存好友页面未找到可收取能量球的图片
-  cutAndSaveTreeNoCollect: false,
   auto_lock: device.sdkInt >= 28,
   lock_x: 150,
   lock_y: 970,
@@ -129,8 +127,6 @@ let default_config = {
   // 识别像素点阈值 识别到倒计时的绿色像素点 像素点越多数字相对越小，设置大一些可以节省调用次数 毕竟每天只有500次
   ocrThreshold: 2600,
   autoSetThreshold: false,
-  // 是否记录图片base64信息到日志中
-  saveBase64ImgInfo: false,
   // ApiKey和SecretKey都来自百度AI平台 需要自己申请
   apiKey: '',
   // 秘钥
@@ -202,6 +198,8 @@ let default_config = {
   try_collect_by_multi_touch: false,
   // 跳过好友浇水能量球
   skip_own_watering_ball: false,
+  // 是否使用YOLO模型检测能量球
+  detect_ball_by_yolo: false,
   hough_param1: 30,
   hough_param2: 30,
   hough_min_radius: null,
@@ -243,6 +241,7 @@ let default_config = {
   github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   gitee_relase_url: 'https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   history_tag_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/tags',
+  yolo_onnx_model_url: 'https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/forest_lite.onnx',
   gitee_package_prefix: 'Ant-Forest-',
   gitee_package_url: 'https://gitee.com/TonyJiangWJ/Ant-Forest/raw/release_pkgs/',
   release_access_token: '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',
@@ -282,7 +281,7 @@ let default_config = {
   // 双击卡使用时间段
   duplicate_card_using_time_ranges: '00:00-00:10',
   // 代码版本
-  code_version: 'v1.3.9.1',
+  code_version: 'v1.4.0',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']

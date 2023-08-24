@@ -14,6 +14,7 @@ let fileUtils = singletonRequire('FileUtils')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let localOcrUtil = require('../lib/LocalOcrUtil.js')
 let WarningFloaty = singletonRequire('WarningFloaty')
+let YoloTrainHelper = singletonRequire('YoloTrainHelper')
 
 let BaseScanner = require('./BaseScanner.js')
 
@@ -372,6 +373,7 @@ function regenerateStrollButton() {
     errorInfo(['获取截图失败'])
     return false
   }
+  YoloTrainHelper.saveImage(screen, '识别逛一逛按钮')
   let successful = true
   if (!regenerateByOcr(screen)) {
     successful = regenerateByImg(screen)
