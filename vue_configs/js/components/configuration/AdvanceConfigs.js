@@ -306,6 +306,7 @@ const RegionConfig = {
         bottom_check_region: '',
         tree_collect_region: '',
         // 能量球识别配置
+        detect_ball_by_yolo: true,
         skip_own_watering_ball: true,
         hough_param1: null,
         hough_param2: null,
@@ -470,6 +471,7 @@ const RegionConfig = {
         :error-message="validationError.tree_collect_region"
         v-model="configs.tree_collect_region" label="能量球所在区域" label-width="10em" />
       <van-field :readonly="true" v-else value="下次运行时重新识别" label="能量球所在区域" label-width="10em" type="text" input-align="right" />
+      <switch-cell title="使用YOLO模型识别能量球" v-model="configs.detect_ball_by_yolo" />
       <switch-cell title="下次运行时重新识别" v-model="configs.auto_detect_tree_collect_region" />
       <switch-cell title="霍夫变换进阶配置" label="如非必要请不要随意修改" v-model="hough_config" />
       <template v-if="hough_config">

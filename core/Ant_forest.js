@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-13 10:11:49
+ * @Last Modified time: 2023-08-24 23:11:34
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -15,6 +15,7 @@ let alipayUnlocker = singletonRequire('AlipayUnlocker')
 let AntForestDao = singletonRequire('AntForestDao')
 let FloatyInstance = singletonRequire('FloatyUtil')
 let WarningFloaty = singletonRequire('WarningFloaty')
+let YoloTrainHelper = singletonRequire('YoloTrainHelper')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
@@ -39,7 +40,6 @@ function Ant_forest () {
     _current_time = 0, // 当前收集次数
     _fisrt_running = true, // 是否第一次进入蚂蚁森林
     _has_next = true, // 是否下一次运行
-    _collect_any = false, // 收集过能量
     _re_try = 0,
     _lost_someone = false, // 是否漏收,
     _lost_count = 0, // 漏收异常次数,
@@ -282,6 +282,7 @@ function Ant_forest () {
       ballPoints.sort((a, b) => a.x - b.x)
       debugInfo(['图像分析获取到倒计时能量球位置：{}', JSON.stringify(ballPoints)])
       let screen = _commonFunctions.checkCaptureScreenPermission()
+      YoloTrainHelper.saveImage(screen, '识别自身能量球倒计时')
       let countdownCheck = /(\d+)[:.](\d+)/
       ballPoints.find(ball => {
         let radius = ball.radius
@@ -452,7 +453,7 @@ function Ant_forest () {
   // 收取能量
   const collectEnergy = function () {
     debugInfo('直接通过图像分析收取能量')
-    _base_scanner.checkAndCollectByHough(true)
+    _base_scanner.collectEnergy(true)
   }
 
   function newFriendListScanner () {
@@ -622,6 +623,7 @@ function Ant_forest () {
 
   function signUpForMagicSpecies () {
     let screen = _commonFunctions.checkCaptureScreenPermission()
+    YoloTrainHelper.saveImage(screen, '识别神奇物种入口')
     if (screen && _config.image_config.magic_species_icon) {
       let find = OpenCvUtil.findByGrayBase64(screen, _config.image_config.magic_species_icon)
       if (find) {
@@ -646,6 +648,7 @@ function Ant_forest () {
       return
     }
     let screen = _commonFunctions.checkCaptureScreenPermission()
+    YoloTrainHelper.saveImage(screen, '识别每日奖励')
     if (screen && _config.image_config.sign_reward_icon) {
       let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.sign_reward_icon))
       if (collect) {
@@ -987,7 +990,6 @@ function Ant_forest () {
       let executeNext = false
       if (!_config.collect_self_only) {
         do {
-          _collect_any = false
           if (collectFriend() === false) {
             // 收集失败，重新开始
             _lost_someone = true
@@ -995,15 +997,6 @@ function Ant_forest () {
             _has_next = true
             runSuccess = false
           }
-          /* recheck_rank_list is disabled
-          debugInfo(['收集好友能量结束，运行状态：{} 是否收集过: {} 是否重新校验排行榜：{}', runSuccess, _collect_any, _config.recheck_rank_list])
-          executeNext = runSuccess && _collect_any && _config.recheck_rank_list
-          if (executeNext) {
-            automator.back()
-            _widgetUtils.homePageWaiting()
-            _post_energy = getCurrentEnergy(true)
-          }
-          */
         } while (executeNext)
       }
       if (runSuccess) {
@@ -1019,7 +1012,6 @@ function Ant_forest () {
       this.setupEventListeners()
       _current_time = 0
       while (true) {
-        _collect_any = false
         if (_lost_someone) {
           warnInfo('上一次收取有漏收，再次收集', true)
           warnInfo('漏收原因：' + _lost_reason)
