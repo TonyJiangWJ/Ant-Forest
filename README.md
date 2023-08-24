@@ -18,6 +18,12 @@
 - [聚合签到-签到薅羊毛](https://github.com/TonyJiangWJ/Unify-Sign)
 - 拆分出来了基础项目，用于快速开发AutoJS脚本[AutoScriptBase](https://github.com/TonyJiangWJ/AutoScriptBase)
 
+## 实验性功能
+
+- 1.4.0版本开始增加基于YOLO的目标检测算法，需要下载最新版本的[AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk)
+- 请手动下载YOLO模型，并将其放置到config_data目录下，链接地址：[https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/forest_lite.onnx](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/forest_lite.onnx)
+- 运行可视化配置，进入图像识别相关设置，打开使用YOLO模型识别能量球即可启用。如果当前AutoJS不支持或者模型未下载将自动降级使用旧版识别方案。
+
 ## 使用
 
 - 下载安装 [AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk) 之后把整个脚本项目放进 **"/sdcard/脚本/"** 文件夹下面。打开软件后下拉刷新，然后运行项目或者 `main.js` 即可运行，首次运行请先进行部分必要配置否则部分功能不能正常运行，见[配置小节](#配置)。
