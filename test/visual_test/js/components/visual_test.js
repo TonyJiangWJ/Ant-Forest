@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-12-22 21:30:51
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-03-30 13:42:58
+ * @Last Modified time: 2023-09-01 17:38:56
  * @Description: 开发测试时使用的组件
  */
 
@@ -16,7 +16,8 @@ let ImageSelectDialog = {
     rootPath: {
       type: String,
       default: ''
-    }
+    },
+    imageFileMatcher: null
   },
   model: {
     prop: 'showDialog',
@@ -50,7 +51,7 @@ let ImageSelectDialog = {
   },
   methods: {
     listFiles: function (path) {
-      $nativeApi.request('listImageFiles', { filePath: path || this.rootPath }).then(({ fileResult }) => {
+      $nativeApi.request('listImageFiles', { filePath: path || this.rootPath, imageFileMatcher: this.imageFileMatcher }).then(({ fileResult }) => {
         if (fileResult.error) {
           return
         }
@@ -76,7 +77,7 @@ let ImageSelectDialog = {
       }
     }
   },
-  mounted() {
+  mounted () {
     this.listFiles(this.rootPath)
   },
   template: `
@@ -726,14 +727,14 @@ let BallDetectVisualTest = {
       }
       this.fileIndex -= 1
       $nativeApi.request('loadTestImageByIndex', { fileIndex: this.fileIndex })
-      .then(resp => {
-        if (resp.success) {
-          this.currentImagePath = resp.filePath
-          this.doDetectBalls()
-        } else {
-          console.log('加载失败：', JSON.stringify(resp))
-        }
-      })
+        .then(resp => {
+          if (resp.success) {
+            this.currentImagePath = resp.filePath
+            this.doDetectBalls()
+          } else {
+            console.log('加载失败：', JSON.stringify(resp))
+          }
+        })
     },
     loadNext: function () {
       if (this.loading) {
@@ -741,14 +742,14 @@ let BallDetectVisualTest = {
       }
       this.fileIndex += 1
       $nativeApi.request('loadTestImageByIndex', { fileIndex: this.fileIndex })
-      .then(resp => {
-        if (resp.success) {
-          this.currentImagePath = resp.filePath
-          this.doDetectBalls()
-        } else {
-          console.log('加载失败：', JSON.stringify(resp))
-        }
-      })
+        .then(resp => {
+          if (resp.success) {
+            this.currentImagePath = resp.filePath
+            this.doDetectBalls()
+          } else {
+            console.log('加载失败：', JSON.stringify(resp))
+          }
+        })
     },
     doDetectBalls: function () {
       console.log('准备识别球 path:', this.currentImagePath)
@@ -779,12 +780,12 @@ let BallDetectVisualTest = {
   },
   mounted () {
     $nativeApi.request('loadTestImageByIndex', { fileIndex: this.fileIndex })
-    .then(resp => {
-      if (resp.success) {
-        this.currentImagePath = resp.filePath
-        this.doDetectBalls()
-      }
-    })
+      .then(resp => {
+        if (resp.success) {
+          this.currentImagePath = resp.filePath
+          this.doDetectBalls()
+        }
+      })
   },
   template: `<div>
     <tip-block>请保存需要调试的图片到 {{ballImagePath}} 路径下</tip-block>
@@ -939,7 +940,7 @@ let CommonImageTest = {
       localStorage.setItem('upperRange', v)
     }
   },
-  mounted() {
+  mounted () {
     this.lowerRange = localStorage.getItem('lowerRange') || this.lowerRange
     this.upperRange = localStorage.getItem('upperRange') || this.upperRange
   },
@@ -971,5 +972,166 @@ let CommonImageTest = {
       <van-loading type="spinner" class="wrapper" />
     </van-overlay>
     <ImageSelectDialog v-model="showSelectDialog" @on-chose="choseImage" :root-path="rootPath"/>
+  </div>`
+}
+
+let YoloCanvasViewer = {
+  mixins: [mixin_methods],
+  props: {
+    image: {
+      type: Object,
+      default: () => {
+        return {
+          imageData: '',
+          intervalImageData: '',
+          grayImageData: '',
+          originImageData: '',
+          createTime: ''
+        }
+      }
+    },
+    imageStyle: {
+      type: String,
+      default: 'height:3rem;'
+    },
+    detectResult: []
+  },
+  data: function () {
+    return {
+      target: 0,
+      timeoutId: null
+    }
+  },
+  methods: {
+    displayImage: function () {
+      if (this.timeoutId != null) {
+        console.log('cancel timeout: ' + this.timeoutId)
+        clearTimeout(this.timeoutId)
+      }
+      let self = this
+      try {
+        console.log('start render canvas')
+        let img = new Image()
+        img.src = self.displayImageData
+        img.onload = function () {
+          console.log('canvas image data: ' + self.displayImageData.substring(0, 40))
+          let canvas = self.$refs['canvas']
+          let ctx = canvas.getContext('2d')
+          canvas.width = img.width
+          canvas.height = img.height
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+          ctx.strokeStyle = "green";
+          context.fillStyle = 'green';
+          if (this.detectResult && this.detectResult.length > 0) {
+            this.detectResult.forEach(result => {
+              let { x, y, width, height } = result
+              ctx.fillText(result.label + ': ' + result.confidence.toFixed(2), x, y - 20)
+              ctx.rect(x, y, width, height)
+            })
+          }
+
+          ctx.stroke()
+          console.log('render canvas done, ' + canvas.width + ',' + canvas.height)
+        }
+      } catch (e) {
+        console.log('render canvas failed ' + e)
+      }
+    },
+  },
+  computed: {
+    displayImageData: function () {
+      if (this.target === 0) {
+        return this.image.intervalImageData
+      } else if (this.target === 1) {
+        return this.image.grayImageData
+      } else {
+        return this.image.originImageData
+      }
+    }
+  },
+  watch: {
+    defaultImage: function (v) {
+      this.target = parseInt(v)
+    },
+    displayImageData: function (v) {
+      console.log("displayImageData: " + v.substring(0, 40))
+      if (v) {
+        this.displayImage()
+      }
+    },
+    drawPoint: {
+      deep: true,
+      handler: function (v) {
+        this.displayImage()
+        $nativeApi.request('getPointColor', v)
+          .then(resp => {
+            if (resp.success) {
+              this.$emit('get-point-color', { rgbColor: resp.rgbColor, grayColor: resp.grayColor })
+            }
+          })
+      }
+    }
+  },
+  template: '<canvas ref="canvas" :style="imageStyle" />'
+}
+
+let YoloImageTest = {
+  mixins: [mixin_methods],
+  components: {
+    ColorRangeSlider, YoloCanvasViewer, ImageSelectDialog
+  },
+  data: function () {
+    return {
+      loading: false,
+      timeout: null,
+      draging: false,
+      dragingTimeout: null,
+      showSelectDialog: false,
+      rootPath: 'resources/trainData',
+      currentImagePath: '',
+      image: {
+        originImageData: ''
+      },
+      detectResult: []
+    }
+  },
+  methods: {
+    doLoadImage: function () {
+      if (!this.currentImagePath) {
+        $app.invoke('toastLog', { message: '未选择图片' })
+      }
+      if (this.loading) {
+        return
+      }
+      this.loading = true
+      $nativeApi.request('loadAndYoloDetect', { imagePath: this.currentImagePath })
+        .then(resp => {
+          if (resp.success) {
+            this.image = resp.image
+            this.detectResult = resp.detectResult
+          }
+          this.loading = false
+        })
+    },
+    selectImageFile: function () {
+      this.showSelectDialog = true
+    },
+    choseImage: function (image) {
+      this.currentImagePath = image
+      this.doLoadImage()
+    }
+  },
+  mounted () {
+  },
+  template: `<div>
+    <tip-block>请保存需要调试的图片到 {{rootPath}} 路径下</tip-block>
+    <van-divider content-position="left">
+      测试图片&nbsp;&nbsp;&nbsp;<van-button @click="selectImageFile" size="mini">选择图片</van-button>
+    </van-divider>
+    <YoloCanvasViewer :image="image" detect-result="detectResult" image-style="width:100%;" :default-image="0" />
+    <van-overlay :show="loading">
+      <van-loading type="spinner" class="wrapper" />
+    </van-overlay>
+    <ImageSelectDialog v-model="showSelectDialog" @on-chose="choseImage" :root-path="rootPath" :imageFileMatcher="\\.(png|jpg|jpeg|jpg\\.data)$"/>
   </div>`
 }

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-08-24 23:17:49
+ * @Last Modified time: 2023-11-03 23:08:40
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -209,6 +209,8 @@ let default_config = {
   double_check_collect: false,
   // 快速收集模式
   fast_collect_mode: false,
+  // 一键收
+  use_one_key_collect: false,
   // 是否是AutoJS Pro  需要屏蔽部分功能，暂时无法实现：生命周期监听等 包括通话监听
   is_pro: is_pro,
   // 逛一逛结束是否进行能量雨收集
@@ -362,7 +364,7 @@ let configDataPath = workpath + '/config_data/'
 let default_image_config = {};
 [
   'reward_for_plant', 'backpack_icon', 'sign_reward_icon', 'water_icon',
-  'stroll_icon', 'watering_cooperation', 'magic_species_icon', 'use_item'
+  'stroll_icon', 'watering_cooperation', 'magic_species_icon', 'use_item', 'one_key_collect'
 ].forEach(key => {
   if (!files.exists(configDataPath + key + '.data')) {
     default_image_config[key] = ''

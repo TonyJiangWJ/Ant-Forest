@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-03-30 13:44:22
+ * @Last Modified time: 2023-09-01 17:32:16
  * @Description: 
  */
 "ui";
@@ -27,6 +27,7 @@ config.develop_mode = true
 config.show_debug_log = true
 config.async_save_log_file = false
 let commonFunctions = singletonRequire('CommonFunction')
+let YoloDetection = singletonRequire('YoloDetectionUtil')
 let resourceMonitor = require('../../lib/ResourceMonitor.js')(runtime, global)
 let OpenCvUtil = require('../../lib/OpenCvUtil.js')
 let _BaseScanner = require('../../core/BaseScanner.js')
@@ -44,11 +45,13 @@ ui.webview.clearCache(true)
 let mainScriptPath = FileUtils.getRealMainScriptPath(true)
 let indexFilePath = "file://" + mainScriptPath + "/test/visual_test/index.html"
 let postMessageToWebView = () => { console.error('function not ready') }
+let rootPath = FileUtils.getCurrentWorkPath()
 // 图片数据
-let imageDataPath = FileUtils.getCurrentWorkPath() + '/logs/ball_image.data'
-let testImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/测试用图片.png'
-let testBallImagePath = FileUtils.getCurrentWorkPath() + '/test/visual_test/图片/'
+let imageDataPath = rootPath + '/logs/ball_image.data'
+let testImagePath = rootPath + '/test/visual_test/测试用图片.png'
+let testBallImagePath = rootPath + '/test/visual_test/图片/'
 // let testBallImagePath = FileUtils.getCurrentWorkPath() + '/resources/tree_collect/'
+let trainDataPath = rootPath + '/resources/trainData'
 let BASE64_PREFIX = 'data:image/png;base64,'
 let scanner = new _BaseScanner()
 let bridgeHandler = {
@@ -255,6 +258,33 @@ let bridgeHandler = {
       //   toastLog('图片数据不存在，无法执行')
       //   postMessageToWebView({ callbackId: callbackId, data: { success: false } })
       // }
+    })
+  },
+  loadAndYoloDetect: (data, callbackId) => {
+    threads.start(function () {
+      let readPath = testImagePath
+      if (data.imagePath) {
+        readPath = data.imagePath
+        if (!readPath.startsWith('/storage')) {
+          readPath = mainScriptPath + '/' + readPath
+        }
+      }
+      if (files.exists(readPath)) {
+        let countdown = new Countdown()
+        let imageInfo = images.read(readPath)
+        let detectResult = YoloDetection.forward(imageInfo)
+        countdown.summary('图片Yolo识别')
+        countdown.restart()
+        let image = {
+          originImageData: BASE64_PREFIX + images.toBase64(imageInfo)
+        }
+        countdown.summary('图片数据转Base64')
+        console.verbose('图片base64:', image.intervalImageData)
+        postMessageToWebView({ callbackId: callbackId, data: { success: true, image: image, detectResult } })
+      } else {
+        toastLog('图片数据不存在，无法执行')
+        postMessageToWebView({ callbackId: callbackId, data: { success: false } })
+      }
     })
   },
 }

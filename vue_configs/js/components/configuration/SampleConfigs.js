@@ -233,6 +233,8 @@ const CollectConfig = {
         use_duplicate_card: false,
         // 双击卡使用时间段
         duplicate_card_using_time_ranges: '00:00-00:10',
+        // 使用一键收
+        use_one_key_collect: false,
       },
       currentInCoolDown: false,
       currentCollected: 0,
@@ -427,6 +429,8 @@ const CollectConfig = {
         </template>
         <tip-block>开启快速收集后收取能量球间隔不再随机睡眠，但是有可能被检测为异常，谨慎开启</tip-block>
         <switch-cell title="快速收集模式" v-model="configs.fast_collect_mode" />
+        <tip-block>开启一键收需要正确配置一键收的图片信息，请前往查找图片设置进行配置</tip-block>
+        <switch-cell title="使用一键收" v-model="configs.use_one_key_collect" />
         <switch-cell title="逛一逛结束是否执行能量雨" v-model="configs.collect_rain_when_stroll" />
         <switch-cell title="是否限制0:30-6:50不可运行" title-style="flex:2;" v-model="configs.limit_runnable_time_range" />
       </van-cell-group>

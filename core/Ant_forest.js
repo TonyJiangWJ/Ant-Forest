@@ -831,6 +831,7 @@ function Ant_forest () {
      * 监听音量上键直接关闭 音量下延迟5分钟
      */
     this.listenStopCollect = function () {
+      _commonFunctions.cancelDelayKeyDown()
       this.interruptStopListenThread()
       this.stopListenThread = threads.start(function () {
         infoLog('即将收取能量，运行中可按音量上键关闭', true)

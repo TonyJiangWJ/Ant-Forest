@@ -11,6 +11,7 @@ const router = new VueRouter({
     { path: '/image_balls', component: BallImageDataVisualTest },
     { path: '/ball_detect', component: BallDetectVisualTest },
     { path: '/common_image_test', component: CommonImageTest },
+    { path: '/yolo_test', component: YoloImageTest },
   ]
 })
 
