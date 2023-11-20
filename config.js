@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-11-03 23:08:40
+ * @Last Modified time: 2023-11-20 22:20:53
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -283,7 +283,7 @@ let default_config = {
   // 双击卡使用时间段
   duplicate_card_using_time_ranges: '00:00-00:10',
   // 代码版本
-  code_version: 'v1.4.0',
+  code_version: 'v1.4.1',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
@@ -407,7 +407,10 @@ if (!isRunningMode) {
         securityFields: securityFields,
         project_name: PROJECT_NAME
       }
-      if (currentEngine.endsWith('/main.js') || scope.subscribe_config_change) {
+      config.subscribe_changes = function () {
+        if (config._subscribed) {
+          retrun
+        }
         // 运行main.js时监听配置是否变更 实现动态更新配置
         let processShare = require('./lib/prototype/ProcessShare.js')
         processShare
@@ -426,6 +429,7 @@ if (!isRunningMode) {
               console.error('接收到config变更消息，但是处理发生异常', newConfigInfos, e)
             }
           }, -1, scope.subscribe_file_name || '.configShare')
+        config._subscribed = true
       }
     }
     return scope.config_instance

@@ -13,8 +13,8 @@ if (runningSize > 1) {
 }
 // 标记当前脚本需要监听
 this.subscribe_interval = 10
-this.subscribe_config_change = true
 let { config } = require('../config.js')(runtime, global)
+config.subscribe_changes()
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let automator = sRequire('Automator')
 let { debugInfo, warnInfo, errorInfo, infoLog, logInfo, debugForDev } = sRequire('LogUtils')

@@ -26,6 +26,7 @@ logInfo('======尝试加入任务队列，并关闭重复运行的脚本======='
 // 加入任务队列
 runningQueueDispatcher.addRunningTask()
 commonFunctions.killDuplicateScript()
+config.subscribe_changes()
 logInfo('======加入任务队列成功=======')
 logInfo('======初始化SQLite=======')
 // 涉及dex操作，在加入任务队列后执行 避免影响其他脚本

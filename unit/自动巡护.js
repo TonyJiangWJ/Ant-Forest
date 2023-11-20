@@ -1,17 +1,19 @@
 let { config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
+let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
+let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
+logInfo('======加入任务队列，并关闭重复运行的脚本=======')
+runningQueueDispatcher.addRunningTask()
 let commonFunctions = singletonRequire('CommonFunction')
 let widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let FloatyInstance = singletonRequire('FloatyUtil')
 let logFloaty = singletonRequire('LogFloaty')
 let WarningFloaty = singletonRequire('WarningFloaty')
-let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
+let localOcrUtil = require('../lib/LocalOcrUtil.js')
 config.buddha_like_mode = false
-let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 config.not_lingering_float_window = true
-logInfo('======加入任务队列，并关闭重复运行的脚本=======')
-runningQueueDispatcher.addRunningTask()
+
 
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
@@ -114,8 +116,10 @@ function prepareWalker () {
         this.currentWalker.doOperate(this)
         if (lastState == this.currentState) {
           this.loopCount++
+          this.duplicateState = true
         } else {
           this.loopCount = 0
+          this.duplicateState = false
         }
         lastState = this.currentState
         sleep(2000)
@@ -193,11 +197,15 @@ function prepareWalker () {
     errorInfo(['do nonthing, should be override by subclass'], true)
   }
 
+  function extend(child, parent) {
+    child.prototype = Object.create(parent.prototype)
+    child.prototype.constructor = child
+  }
   function InitWalker () {
     PatrolWalker.call(this)
   }
 
-  InitWalker.prototype = Object.create(PatrolWalker.prototype)
+  extend(InitWalker, PatrolWalker)
   InitWalker.prototype.doOperate = function (context) {
     context.currentState = 'init'
     let start = widgetUtils.widgetGetOne('开始巡护.*', 1000)
@@ -212,14 +220,15 @@ function prepareWalker () {
     PatrolWalker.call(this)
   }
 
-  SeekWalker.prototype = Object.create(PatrolWalker.prototype)
+  extend(SeekWalker, PatrolWalker)
   SeekWalker.prototype.doOperate = function (context) {
     context.currentState = 'seek'
     sleep(1000)
     let seekTrack = widgetUtils.widgetGetOne('追寻踪迹', 1000)
     if (seekTrack) {
       WarningFloaty.addRectangle('追寻踪迹', boundsToRegion(seekTrack.bounds()))
-      automator.clickCenter(seekTrack)
+      // automator.clickCenter(seekTrack)
+      seekTrack.click()
       sleep(1000)
       let keepForward = widgetUtils.widgetGetOne('继续前进', 1000)
       if (keepForward) {
@@ -234,7 +243,7 @@ function prepareWalker () {
   function InviteWalker () {
     PatrolWalker.call(this)
   }
-  InviteWalker.prototype = Object.create(PatrolWalker.prototype)
+  extend(InviteWalker, PatrolWalker)
   InviteWalker.prototype.doOperate = function (context) {
     context.currentState = 'invite'
     /*
@@ -252,7 +261,7 @@ function prepareWalker () {
       sleep(1000)
       let continueWalk = widgetUtils.widgetGetOne('继续', 1000)
       if (continueWalk) {
-        automator.clickCenter('continueWalk')
+        automator.clickCenter(continueWalk)
         sleep(1000)
       }
     }
@@ -262,7 +271,7 @@ function prepareWalker () {
     PatrolWalker.call(this)
   }
 
-  ExchangeWalker.prototype = Object.create(PatrolWalker.prototype)
+  extend(ExchangeWalker, PatrolWalker)
   ExchangeWalker.prototype.doOperate = function (context) {
     context.currentState = 'exchange'
     let exchange = widgetUtils.widgetGetOne('兑换巡护机会', 1000)
@@ -298,7 +307,7 @@ function prepareWalker () {
     PatrolWalker.call(this)
   }
 
-  VideoWalker.prototype = Object.create(PatrolWalker.prototype)
+  extend(VideoWalker, PatrolWalker)
   VideoWalker.prototype.doOperate = function (context) {
     context.currentState = 'video'
     sleep(1000)
