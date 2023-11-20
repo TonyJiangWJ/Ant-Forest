@@ -42,3 +42,4 @@ accountChange(config.main_account)
 
 commonFunctions.minimize()
 debugInfo(['切换完毕'])
+exit()

@@ -1,9 +1,10 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-08-18 22:09:34
+ * @Last Modified time: 2023-08-28 11:30:18
  * @Description: 蚂蚁森林自动收能量
  */
+console.warn('如遇语法报错，请从README下载最新版的AutoJS，旧版本不维护，不适配')
 let { config, storage_name } = require('./config.js')(runtime, global)
 let singletonRequire = require('./lib/SingletonRequirer.js')(runtime, global)
 const resolver = require('./lib/AutoJSRemoveDexResolver.js')
@@ -25,6 +26,7 @@ logInfo('======尝试加入任务队列，并关闭重复运行的脚本======='
 // 加入任务队列
 runningQueueDispatcher.addRunningTask()
 commonFunctions.killDuplicateScript()
+config.subscribe_changes()
 logInfo('======加入任务队列成功=======')
 logInfo('======初始化SQLite=======')
 // 涉及dex操作，在加入任务队列后执行 避免影响其他脚本

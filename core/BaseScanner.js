@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-08-24 23:08:36
+ * @Last Modified time: 2023-11-03 23:07:21
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -131,11 +131,52 @@ const BaseScanner = function () {
   // 收取能量
   this.collectEnergy = function (isOwn) {
     this.collect_operated = false
+    if (!isOwn && _config.use_one_key_collect && _config.image_config.one_key_collect) {
+      this.collectByOneKeyCollect()
+      return
+    }
     if (YoloDetection.enabled && _config.detect_ball_by_yolo) {
       this.checkAndCollectByYolo(isOwn)
     } else {
       this.checkAndCollectByHough(isOwn)
     }
+  }
+
+  /**
+   * 使用一键收
+   *
+   * @returns 
+   */
+  this.collectByOneKeyCollect = function () {
+
+    let start = new Date().getTime()
+    let haveValidBalls = false
+    do {
+      haveValidBalls = false
+      let screen = _commonFunctions.checkCaptureScreenPermission()
+      if (screen) {
+        if (this.isProtected) {
+          // 已判定为使用了保护罩
+          return
+        }
+        let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.one_key_collect))
+        if (collect) {
+          haveValidBalls = true
+          if (!this.awaitForCollectable()) {
+            return
+          }
+          WarningFloaty.addRectangle('一键收', [collect.left, collect.top, collect.width(), collect.height()])
+          automator.click(collect.centerX(), collect.centerY())
+          this.collect_operated = true
+        }
+      }
+      if (haveValidBalls) {
+        debugInfo(['需要二次校验，等待{}ms', 500])
+        sleep(500)
+      }
+      WarningFloaty.clearAll()
+    } while (haveValidBalls)
+    debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
   }
 
   /**
