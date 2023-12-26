@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-11-03 23:07:21
+ * @Last Modified time: 2023-11-22 21:17:05
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -135,7 +135,7 @@ const BaseScanner = function () {
       this.collectByOneKeyCollect()
       return
     }
-    if (YoloDetection.enabled && _config.detect_ball_by_yolo) {
+    if (YoloDetection.enabled) {
       this.checkAndCollectByYolo(isOwn)
     } else {
       this.checkAndCollectByHough(isOwn)

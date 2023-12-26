@@ -1,5 +1,7 @@
 let { config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
+let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
+runningQueueDispatcher.addRunningTask()
 let accountChange = require('../lib/AlipayAccountManage.js')
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
@@ -7,11 +9,9 @@ let commonFunctions = singletonRequire('CommonFunction')
 let widgetUtils = singletonRequire('WidgetUtils')
 let fileUtils = singletonRequire('FileUtils')
 let automator = singletonRequire('Automator')
-let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let unlocker = require('../lib/Unlock.js')
 config.not_lingering_float_window = true
 
-runningQueueDispatcher.addRunningTask()
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
   if (config.auto_lock && unlocker.needRelock() === true) {
@@ -139,7 +139,9 @@ function donate() {
     automator.clickCenter(donateBtn)
     sleep(1000)
     let okBtn = widgetUtils.widgetGetOne('知道了')
-    automator.clickCenter(okBtn)
+    if (okBtn) {
+      automator.clickCenter(okBtn)
+    }
     sleep(1000)
   } else {
     floatyInstance.setFloatyText('未找到立即捐步按钮')

@@ -1,11 +1,12 @@
 let { config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
+let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
+runningQueueDispatcher.addRunningTask()
 let accountChange = require('../lib/AlipayAccountManage.js')
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let widgetUtils = singletonRequire('WidgetUtils')
-let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let fileUtils = singletonRequire('FileUtils')
 let automator = singletonRequire('Automator')
 let unlocker = require('../lib/Unlock.js')
@@ -14,7 +15,6 @@ let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let { openFriendHome, doWaterFriend, openAndWaitForPersonalHome, getSignReward } = require('./waterFriend.js')
 config.not_lingering_float_window = true
-runningQueueDispatcher.addRunningTask()
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
   if (config.auto_lock && unlocker.needRelock() === true) {
