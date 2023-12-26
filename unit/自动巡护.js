@@ -11,6 +11,7 @@ let FloatyInstance = singletonRequire('FloatyUtil')
 let logFloaty = singletonRequire('LogFloaty')
 let WarningFloaty = singletonRequire('WarningFloaty')
 let localOcrUtil = require('../lib/LocalOcrUtil.js')
+let alipayUnlocker = singletonRequire('AlipayUnlocker')
 config.buddha_like_mode = false
 config.not_lingering_float_window = true
 
@@ -246,22 +247,24 @@ function prepareWalker () {
   extend(InviteWalker, PatrolWalker)
   InviteWalker.prototype.doOperate = function (context) {
     context.currentState = 'invite'
-    /*
-    let closeInvite = widgetUtils.widgetGetById('inviteFriendDialog-close', 1000)
-    if (closeInvite) {
-      WarningFloaty.addRectangle('关闭邀请', boundsToRegion(closeInvite.bounds()))
-      logFloaty.pushLog('关闭邀请')
-      automator.clickCenter(closeInvite)
-      sleep(1000)
-    } 默认关闭邀请 */
-    let invite = widgetUtils.widgetGetOne('邀请TA', 1000)
-    if (invite) {
-      debugInfo('点击邀请TA')
-      automator.clickCenter(invite)
-      sleep(1000)
-      let continueWalk = widgetUtils.widgetGetOne('继续', 1000)
-      if (continueWalk) {
-        automator.clickCenter(continueWalk)
+    if (config.invite_friends_gaint_chance) {
+      let invite = widgetUtils.widgetGetOne('邀请TA', 1000)
+      if (invite) {
+        debugInfo('点击邀请TA')
+        automator.clickCenter(invite)
+        sleep(1000)
+        let continueWalk = widgetUtils.widgetGetOne('继续', 1000)
+        if (continueWalk) {
+          automator.clickCenter(continueWalk)
+          sleep(1000)
+        }
+      }
+    } else {
+      let closeInvite = widgetUtils.widgetGetById('inviteFriendDialog-close', 1000)
+      if (closeInvite) {
+        WarningFloaty.addRectangle('关闭邀请', boundsToRegion(closeInvite.bounds()))
+        logFloaty.pushLog('关闭邀请')
+        automator.clickCenter(closeInvite)
         sleep(1000)
       }
     }

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-11-20 22:20:53
+ * @Last Modified time: 2023-12-10 00:14:49
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -12,6 +12,7 @@ let is_pro = !!Object.prototype.toString.call(com.stardust.autojs.core.timing.Ti
 let default_config = {
   unlock_device_flag: 'normal',
   password: '',
+  infinite_retry_unlock: false,
   is_alipay_locked: false,
   alipay_lock_password: '',
   color_offset: 20,
@@ -261,6 +262,8 @@ let default_config = {
   noneed_resolve_dex: false,
   // 标记是否清除webview缓存
   clear_webview_cache: false,
+  // 邀请好友获取巡护机会
+  invite_friends_gaint_chance: false,
   // 更新后需要强制执行的标记
   updated_temp_flag_13732: true,
   // 多账号管理
@@ -283,7 +286,7 @@ let default_config = {
   // 双击卡使用时间段
   duplicate_card_using_time_ranges: '00:00-00:10',
   // 代码版本
-  code_version: 'v1.4.1',
+  code_version: 'v1.4.2',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']

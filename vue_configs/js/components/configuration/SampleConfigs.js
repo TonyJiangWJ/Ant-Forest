@@ -190,6 +190,39 @@ const MagicSeaConfig = {
   `
 }
 
+const PatrolWalkerConfig = {
+  mixins: [mixin_common],
+  data () {
+    return {
+      timedUnit1: '',
+      configs: {
+        invite_friends_gaint_chance: false,
+      }
+    }
+  },
+  filters: {
+    displayTime: value => {
+      if (value && value.length > 0) {
+        return `[${value}]`
+      }
+      return ''
+    }
+  },
+  mounted () {
+    $nativeApi.request('queryTargetTimedTaskInfo', { path: '/unit/自动巡护.js' }).then(r => this.timedUnit1 = r)
+  },
+  template: `
+  <div>
+    <tip-block>对下述文件创建每天固定时间的定时任务即可，不过建议使用github actions刷步数，然后在步数达到1万以上后再触发，以便得到最大巡护次数</tip-block>
+    <tip-block>unit/自动巡护.js{{timedUnit1|displayTime}}</tip-block>
+    <van-divider content-position="left">
+      自动巡护配置
+    </van-divider>
+    <switch-cell title="是否邀请好友获取巡护机会" v-model="configs.invite_friends_gaint_chance"/>
+  </div>
+  `
+}
+
 /**
  * 收集配置
  */

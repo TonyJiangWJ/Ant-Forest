@@ -8,6 +8,7 @@ const LockConfig = {
     return {
       configs: {
         password: '',
+        infinite_retry_unlock: false,
         start_alipay_by_url: false,
         is_alipay_locked: true,
         multi_device_login: false,
@@ -68,6 +69,7 @@ const LockConfig = {
   <div>
     <van-cell-group>
       <van-field v-model="configs.password" label="锁屏密码" type="password" placeholder="请输入锁屏密码" input-align="right" />
+      <switch-cell title="无限尝试解锁" v-model="configs.infinite_retry_unlock" />
       <number-field v-model="configs.timeout_unlock" label="解锁超时时间" placeholder="请输入解锁超时时间">
         <template #right-icon><span>毫秒</span></template>
       </number-field>
