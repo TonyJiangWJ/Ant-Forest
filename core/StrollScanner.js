@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-12-12 09:27:33
+ * @Last Modified time: 2024-02-28 15:40:50
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -217,6 +217,17 @@ StrollScanner.prototype.collectTargetFriend = function () {
   if (name) {
     obj.name = name
     debugInfo(['进入好友[{}]首页成功', obj.name])
+    if (name == this.lastFriendName) {
+      this.duplicateEnterCount = (this.duplicateEnterCount?this.duplicateEnterCount:0)+1
+    } else {
+      this.duplicateEnterCount = 0
+    }
+    if (this.duplicateEnterCount >= 3) {
+      this._regenerate_stroll_button = true
+      warnInfo(['重复卡在一个好友界面，可能逛一逛按钮区域不正确，重新识别'], true)
+      return false
+    }
+    this.lastFriendName = name
   } else {
     this.checkAndCollectRain()
     return false

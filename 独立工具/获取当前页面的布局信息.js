@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-04-29 14:44:49
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-07-19 22:34:46
+ * @Last Modified time: 2024-01-02 16:00:48
  * @Description: https://github.com/TonyJiangWJ/AutoScriptBase
  */
 let { config } = require('../config.js')(runtime, global)
@@ -13,6 +13,7 @@ let commonFunctions = singletonRequire('CommonFunction')
 let FileUtils = singletonRequire('FileUtils')
 let formatDate = require('../lib/DateUtil.js')
 let workpath = FileUtils.getCurrentWorkPath()
+let processShare = singletonRequire('ProcessShare')
 checkAndLoadDex(workpath + '/lib/autojs-common.dex')
 importClass(com.tony.autojs.search.UiObjectTreeBuilder)
 
@@ -136,7 +137,7 @@ if (root) {
     if (inspectConfig.save_data_js) {
       files.write(workpath + '/logs/data.js', 'let objects = ' + content)
     }
-    let hisPath = workpath + '/logs/hisUiObjects/' + formatDate(new Date(), 'yyyyMMdd/')
+    let hisPath = workpath + '/logs/hisUiObjects/' + prefixWithPath(inspectConfig.record_path) + formatDate(new Date(), 'yyyyMMdd/')
     let time = formatDate(new Date(), 'HHmmss')
     if (inspectConfig.save_history) {
       console.log('ensureDir?' + files.ensureDir(hisPath))
@@ -187,6 +188,10 @@ if (uiObjectInfoList) {
   let content = rootSummary + '\n' + logInfoList.join('\n')
   logUtils.infoLog('\n' + content)
   logUtils.logInfo('布局层次结果已经保存到logs/info.log')
+  if (inspectConfig.no_dialog) {
+    processShare.postInfo('done')
+    exit()
+  }
   dialogs.build({
     title: '布局分析结果',
     content: commonFunctions.formatString("总分析耗时：{}ms 总控件数：{}\n{}", timeCost, total, content),
@@ -423,4 +428,14 @@ function getWindowRoots () {
     }
   }
   return windowInfoList
+}
+
+function prefixWithPath(path) {
+  if (!path) {
+    return ''
+  }
+  if (path.endsWith('/')) {
+    return path
+  }
+  return path + '/'
 }

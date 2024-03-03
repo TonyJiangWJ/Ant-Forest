@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-11-22 21:17:05
+ * @Last Modified time: 2024-02-28 16:06:59
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -27,6 +27,7 @@ let ENGINE_ID = engines.myEngine().id
 let _package_name = 'com.eg.android.AlipayGphone'
 let _HoughHelper = require('../utils/HoughHelper.js')
 let _VisualHelper = require('../utils/VisualHelper.js')
+let localOcrUtil = require('../lib/LocalOcrUtil.js')
 
 const BaseScanner = function () {
   let self = this
@@ -168,6 +169,31 @@ const BaseScanner = function () {
           WarningFloaty.addRectangle('一键收', [collect.left, collect.top, collect.width(), collect.height()])
           automator.click(collect.centerX(), collect.centerY())
           this.collect_operated = true
+        } else {
+          warnInfo(['未能通过一键收图片找到目标按钮，请确认在查找图片设这中正确配置了相应图片，仅仅覆盖文字即可，不要截取多余的信息'])
+          debugInfo(['尝试ocr识别一键收'])
+          let ocrCheck = localOcrUtil.recognizeWithBounds(screen, null, '一键收')
+          if (ocrCheck && ocrCheck.length > 0) {
+            let bounds = ocrCheck[0].bounds
+            debugInfo(['识别结果：{}', JSON.stringify(bounds)])
+            try {
+              debugInfo(['{} {} {} {}', bounds.left, bounds.top, bounds.width(), bounds.height])
+            } catch (e) {
+
+            }
+            let region = [
+              bounds.left, bounds.top,
+              bounds.right - bounds.left, bounds.bottom - bounds.top
+            ]
+            debugInfo(['通过ocr找到了目标：{}', region])
+            let subImage = images.clip(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), region[0], region[1], region[2], region[3])
+            _config.overwrite('image_config.one_key_collect', images.toBase64(subImage))
+            WarningFloaty.addRectangle('一键收', region)
+            automator.click(bounds.left + (bounds.right - bounds.left) * 0.5, bounds.top + (bounds.bottom - bounds.top) * 0.5)
+            this.collect_operated = true
+          } else {
+            warnInfo(['无法通过ocr找到一键收，可能当前有活动元素阻断'])
+          }
         }
       }
       if (haveValidBalls) {

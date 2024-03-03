@@ -7,6 +7,7 @@ floatyInstance.enableLog()
 let commonFunctions = singletonRequire('CommonFunction')
 let widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
+let YoloTrainHelper = singletonRequire('YoloTrainHelper')
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let ocrUtil = require('../lib/LocalOcrUtil.js')
 infoLog(['当前使用的OCR类型为：{} 是否启用：{}', ocrUtil.type, ocrUtil.enabled])
@@ -43,6 +44,14 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
   errorInfo('获取无障碍权限失败')
   exit()
 }
+if (typeof $shizuku == 'undefined') {
+  errorInfo('当前版本不支持shizuku', true)
+  exit()
+} else if (!$shizuku.isRunning()) {
+  errorInfo('当前shizuku未运行 无法执行点击', true)
+  exit()
+}
+
 
 unlocker.exec()
 
@@ -102,17 +111,20 @@ function findTrashs (delay) {
     })
     debugInfo(['找到的球：{}', JSON.stringify(findBalls)])
     if (findBalls && findBalls.length > 0) {
+      config.save_yolo_train_data = true
+      YoloTrainHelper.saveImage(this.temp_img, '有垃圾球')
+      this.temp_img.recycle()
       let ball = findBalls[0]
       floatyInstance.setFloatyInfo({ x: ball.x, y: ball.y }, '找到了垃圾')
       sleep(500)
       let clickPos = { x: ball.x - ball.radius * 1.5, y: ball.y + ball.radius * 1.5 }
       floatyInstance.setFloatyInfo(clickPos, '点击位置')
       sleep(2000)
-      automator.click(clickPos.x, clickPos.y)
+      $shizuku(`input tap ${clickPos.x} ${clickPos.y}`)
       sleep(1000)
-      let collect = widgetUtils.widgetGetOne('.*(清理|收下|(欢迎|迎回)伙伴).*')
+      let collect = widgetUtils.widgetGetOne('.*(清理|收下|(欢迎|迎回)伙伴|.*不.*了.*).*')
       if (collect) {
-        automator.clickCenter(collect)
+        $shizuku(`input tap ${collect.bounds().centerX()} ${collect.bounds().centerY()}`)
         // 二次校验
         findTrashs(1500)
       }
