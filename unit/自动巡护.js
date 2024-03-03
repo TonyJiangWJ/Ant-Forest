@@ -65,7 +65,7 @@ function Patrol () {
       sleep(1000)
       alipayUnlocker.unlockAlipay()
     }
-    if (widgetUtils.widgetWaiting('.*保护地', null, 2000)) {
+    if (widgetUtils.widgetWaiting('.*保护地.*', null, 2000)) {
       return true
     }
     warnInfo(['无法校验 保护地 控件，可能没有正确打开'], true)
@@ -141,18 +141,37 @@ function prepareWalker () {
       sleep(1500)
       WarningFloaty.clearAll()
       logFloaty.pushLog('检查是否有关闭按钮')
-      let closeDialog = widgetUtils.widgetGetOne('关闭|送去鼓励|继续|继续前进', 1000, true, true, matcher => matcher.boundsInside(0, config.device_height / 2, config.device_width, config.device_height))
+      let closeDialog = widgetUtils.widgetGetById('J_event_main-btn', 1000, matcher => matcher.filter(node => node.text().indexOf('派它巡护') < 0))
+      if (closeDialog) {
+        closeDialog = {
+          content: closeDialog.text() || closeDialog.desc(),
+          target: closeDialog
+        }
+      } else {
+       closeDialog = widgetUtils.widgetGetOne('关闭|送去鼓励|继续|继续前进', 1000, true, true, matcher => matcher.boundsInside(0, config.device_height / 2, config.device_width, config.device_height))
+      }
       if (closeDialog) {
         WarningFloaty.addRectangle(closeDialog.content, boundsToRegion(closeDialog.target.bounds()))
         logFloaty.pushLog('找到' + closeDialog.content + '按钮')
         automator.clickCenter(closeDialog.target)
         sleep(1000)
-        this.currentWalker = new InitWalker()
+        if (closeDialog.content.indexOf('观看视频') > -1) {
+          this.currentWalker = new VideoWalker()
+        } else {
+          this.currentWalker = new InitWalker()
+          this.currentWalker.tmpState = 'close'
+        }
         WarningFloaty.clearAll()
         return true
       }
       logFloaty.pushLog('检查当前界面元素')
       sleep(1000)
+      let answerBtnsExists = widgetUtils.idCheck('J_event_answerBtns', 1000)
+      if (answerBtnsExists) {
+        logFloaty.pushLog('切换为回答提问')
+        this.currentWalker = new QuestionWalker()
+        return true
+      }
       let stateCheckWidget = widgetUtils.widgetGetOne('追寻踪迹|观看视频|邀请好友得巡护机会', 1500, true)
       if (stateCheckWidget) {
         let content = stateCheckWidget.content
@@ -208,7 +227,7 @@ function prepareWalker () {
 
   extend(InitWalker, PatrolWalker)
   InitWalker.prototype.doOperate = function (context) {
-    context.currentState = 'init'
+    context.currentState = this.tmpState || 'init'
     let start = widgetUtils.widgetGetOne('开始巡护.*', 1000)
     if (start) {
       automator.clickCenter(start)
@@ -328,6 +347,26 @@ function prepareWalker () {
       sleep(1000)
       WarningFloaty.clearAll()
       automator.back()
+      let tryTime = 3
+      while (!widgetUtils.widgetWaiting('.*保护地.*', null, 2000) && --tryTime > 0) {
+        automator.back()
+      }
+    }
+  }
+
+  function QuestionWalker() {
+    PatrolWalker.call(this)
+  }
+  extend(QuestionWalker, PatrolWalker)
+  QuestionWalker.prototype.doOperate = function (context) {
+    context.currentState = 'question'
+    sleep(1000)
+    let target = selector().className('android.widget.Button').filter(node => node.bounds().left < config.device_width * 0.3 && node.bounds().right > 0.8 * config.device_width).findOne(config.timeout_findOne)
+    if (target) {
+      WarningFloaty.addRectangle(target.desc() || target.text(), target.bounds())
+      automator.clickCenter(target)
+    } else {
+      logFloaty.pushLog('查找答案控件失败')
     }
   }
   return PatrolWalker

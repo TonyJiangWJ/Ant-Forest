@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-08-24 23:11:34
+ * @Last Modified time: 2024-03-03 21:26:35
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -51,6 +51,12 @@ function Ant_forest () {
 
   // 进入蚂蚁森林主页
   const startApp = function (reopen) {
+    let screenOrientation = context.getResources().getConfiguration().orientation
+    debugInfo(['当前屏幕朝向：{}', screenOrientation])
+    if (screenOrientation == 0) {
+      warnInfo(['当前屏幕为横向，为避免出现问题，回到桌面再执行'])
+      home()
+    }
     if (_config.start_alipay_by_url) {
       debugInfo(['使用app.openUrl方式打开森林，如果无法打开请去配置中关闭'])
       app.openUrl('https://render.alipay.com/p/s/i/?scheme=' + encodeURIComponent('alipays://platformapi/startapp?appId=60000002'))
@@ -67,6 +73,11 @@ function Ant_forest () {
       automator.clickCenter(confirm)
     }
     _commonFunctions.readyForAlipayWidgets()
+    if (alipayInFloatyWindow()) {
+      warnInfo(['当前为小窗模式，回到桌面重新打开'])
+      home()
+      return startApp()
+    }
     if (openAlipayMultiLogin(reopen)) {
       return
     }
@@ -74,6 +85,19 @@ function Ant_forest () {
       sleep(1000)
       alipayUnlocker.unlockAlipay()
     }
+  }
+
+  function alipayInFloatyWindow() {
+    sleep(1000)
+    let navBar = _widgetUtils.widgetGetById('.*navigationBarBackground', 1000)
+    if (navBar) {
+      let barWidth = navBar.bounds().width()
+      debugInfo(['当前导航条宽度：{} id:{}', barWidth, navBar.id()])
+      return barWidth < _config.device_width
+    } else {
+      debugInfo(['未找到导航条，无法验证'])
+    }
+    return false
   }
 
   function openAlipayMultiLogin (reopen) {
@@ -384,9 +408,15 @@ function Ant_forest () {
    */
   const getCurrentEnergy = function (noStore) {
     let currentEnergy = _widgetUtils.getCurrentEnergy()
-    if (!noStore && currentEnergy) {
+    if (!noStore && currentEnergy > 0) {
       // 存储能量值数据
       _commonFunctions.storeEnergy(currentEnergy)
+    }
+    if (currentEnergy < 0) {
+      errorInfo(['获取能量值异常，可能打开森林界面失败'], true)
+      if (alipayInFloatyWindow()) {
+        throw new Error('当前支付宝在小窗中运行，需要重新打开')
+      }
     }
     debugInfo(['getCurrentEnergy 获取能量值: {}', currentEnergy])
     return currentEnergy
@@ -399,7 +429,7 @@ function Ant_forest () {
       _pre_energy = currentEnergy
       // _commonFunctions.persistHistoryEnergy(currentEnergy)
       logInfo('当前能量：' + currentEnergy)
-      AntForestDao.saveMyEnergy(currentEnergy)
+      currentEnergy > 0 && AntForestDao.saveMyEnergy(currentEnergy)
     }
     // 初始化，避免关闭收取自己时统计成负值
     _post_energy = currentEnergy
@@ -429,9 +459,11 @@ function Ant_forest () {
     sleep(500)
     _post_energy = getCurrentEnergy()
     logInfo('当前能量：' + _post_energy)
-    // 领取奖励
-    getSignReward()
-    AntForestDao.saveMyEnergy(_post_energy)
+    // 领取奖励, 如果是循环模式则跳过每日奖励
+    if (!_config.is_cycle) {
+      getSignReward()
+    }
+    _post_energy > 0 && AntForestDao.saveMyEnergy(_post_energy)
     _commonFunctions.showEnergyInfo()
     let energyInfo = _commonFunctions.getTodaysRuntimeStorage('energy')
     if (!_has_next) {
@@ -668,7 +700,11 @@ function Ant_forest () {
           debugInfo(['找到可领取的奖励数量：{}', getRewards.length])
           getRewards.forEach(getReward => {
             getReward.click()
-            sleep(500)
+            let confirmBtn = _widgetUtils.widgetGetOne('知道了', 500)
+            if (confirmBtn) {
+              automator.clickCenter(confirmBtn)
+              sleep(500)
+            }
           })
         } else {
           debugInfo(['未找到可领取的奖励'])
