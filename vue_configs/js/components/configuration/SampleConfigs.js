@@ -174,7 +174,8 @@ const MagicSeaConfig = {
   <div>
     <tip-block>对下述文件创建每天7点的定时任务即可，如果怕影响偷能量则创建9点的。脚本执行后会自动每隔两小时创建定时任务</tip-block>
     <tip-block>unit/神奇海洋收集.js{{timedUnit1|displayTime}}</tip-block>
-    <tip-block>神奇海洋需要shizuku支持，否则无法点击，需要安装并激活shizuku以及安装支持shizuku的Autojs</tip-block>
+    <tip-block>神奇海洋默认无法通过无障碍点击收集，请在神奇海洋设置中关闭3D模式。入口在神奇海洋右上角三点菜单中，点击“设置”按钮，然后关闭“3D模式”即可。</tip-block>
+    <tip-block>脚本默认尝试shizuku点击，如已关闭3D模式日志相关提示无视即可</tip-block>
     <van-divider content-position="left">
       神奇海洋配置
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="showRealVisual">实时查看区域配置</van-button>
