@@ -44,12 +44,16 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
   errorInfo('获取无障碍权限失败')
   exit()
 }
+let shizukuSupport = true
 if (typeof $shizuku == 'undefined') {
-  errorInfo('当前版本不支持shizuku', true)
-  exit()
+  errorInfo('当前版本不支持shizuku')
+  shizukuSupport = false
 } else if (!$shizuku.isRunning()) {
-  errorInfo('当前shizuku未运行 无法执行点击', true)
-  exit()
+  errorInfo('当前shizuku未运行 无法执行shizuku点击')
+  shizukuSupport = false
+}
+if (!shizukuSupport) {
+  errorInfo('请在神奇海洋设置中关闭3D模式，否则无法执行点击操作', true)
 }
 
 
@@ -120,15 +124,23 @@ function findTrashs (delay) {
       let clickPos = { x: ball.x - ball.radius * 1.5, y: ball.y + ball.radius * 1.5 }
       floatyInstance.setFloatyInfo(clickPos, '点击位置')
       sleep(2000)
-      $shizuku(`input tap ${clickPos.x} ${clickPos.y}`)
+      clickPoint(clickPos.x, clickPos.y)
       sleep(1000)
       let collect = widgetUtils.widgetGetOne('.*(清理|收下|(欢迎|迎回)伙伴|.*不.*了.*).*')
       if (collect) {
-        $shizuku(`input tap ${collect.bounds().centerX()} ${collect.bounds().centerY()}`)
+        clickPoint(collect.bounds().centerX(), collect.bounds().centerY())
         // 二次校验
         findTrashs(1500)
       }
     }
+  }
+}
+
+function clickPoint (x, y) {
+  if (shizukuSupport) {
+    $shizuku(`input tap ${x} ${y}`)
+  } else {
+    automator.click(x, y)
   }
 }
 
