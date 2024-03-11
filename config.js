@@ -286,7 +286,7 @@ let default_config = {
   // 双击卡使用时间段
   duplicate_card_using_time_ranges: '00:00-00:10',
   // 代码版本
-  code_version: 'v1.4.3',
+  code_version: 'v1.4.3.1',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
