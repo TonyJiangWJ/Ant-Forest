@@ -40,6 +40,7 @@ const ImageConfig = {
     <base64-image-viewer title="校验‘背包’按钮" v-model="configs.backpack_icon"/>
     <base64-image-viewer title="校验‘奖励’按钮" v-model="configs.sign_reward_icon"/>
     <base64-image-viewer title="校验‘浇水’按钮" v-model="configs.water_icon"/>
+    <tip-block>这里配置的是图片查找模板，如果识别逛一逛按钮区域有误，请在修改图片后在【图像识别相关设置】中打开重新识别或者直接配置实际的坐标信息</tip-block>
     <base64-image-viewer title="校验‘逛一逛’按钮" v-model="configs.stroll_icon"/>
     <base64-image-viewer title="校验‘一键收’按钮" v-model="configs.one_key_collect"/>
     <base64-image-viewer title="校验‘合种’按钮" v-model="configs.watering_cooperation"/>

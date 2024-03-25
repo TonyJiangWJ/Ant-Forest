@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-03-03 21:26:35
+ * @Last Modified time: 2024-03-13 11:28:47
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -505,10 +505,11 @@ function Ant_forest () {
   }
 
   function scrollUpTop () {
+    let limit = 3
     do {
       randomScrollUp()
       randomScrollUp()
-    } while (!_widgetUtils.widgetGetOne(/\d+g/, 1000, false, false, m => m.boundsInside(_config.device_width / 2, 0, _config.device_width, _config.device_width * 0.4), { algorithm: 'PVDFS' }))
+    } while (limit-- > 0 && !_widgetUtils.widgetGetOne(/\d+g/, 1000, false, false, m => m.boundsInside(_config.device_width / 2, 0, _config.device_width, _config.device_width * 0.4), { algorithm: 'PVDFS' }))
     randomScrollUp()
   }
 
@@ -549,6 +550,15 @@ function Ant_forest () {
     debugInfo('返回主页')
     automator.back()
     scrollUpTop()
+    let tryCount = 1
+    while (!_widgetUtils.homePageWaiting()) {
+      if (tryCount++ > 3) {
+        return false
+      }
+      warnInfo('未正确回到首页，尝试重新打开')
+      startApp()
+      sleep(500)
+    }
   }
 
   const tryCollectByStroll = function (recheck) {
