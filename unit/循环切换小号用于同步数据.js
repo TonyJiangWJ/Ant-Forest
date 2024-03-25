@@ -112,7 +112,7 @@ function findAndEnterWalkingDonate() {
   return false
 }
 
-function checkWalkingData() {
+function checkWalkingData(recheck) {
   let today = widgetUtils.widgetGetOne('今日步数')
   if (today) {
     let walkingData = widgetUtils.subWidgetGetOne(today.parent(), '^\\d+$', null, true)
@@ -124,8 +124,8 @@ function checkWalkingData() {
       donate()
     }
   } else {
-    if (findAndEnterWalkingDonate()) {
-      checkWalkingData()
+    if (!recheck && findAndEnterWalkingDonate()) {
+      checkWalkingData(true)
     }
   }
 }

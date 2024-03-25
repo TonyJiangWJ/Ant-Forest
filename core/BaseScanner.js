@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-02-28 16:06:59
+ * @Last Modified time: 2024-03-25 10:54:28
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -152,6 +152,7 @@ const BaseScanner = function () {
 
     let start = new Date().getTime()
     let haveValidBalls = false
+    let recheck = false
     do {
       haveValidBalls = false
       let screen = _commonFunctions.checkCaptureScreenPermission()
@@ -169,7 +170,7 @@ const BaseScanner = function () {
           WarningFloaty.addRectangle('一键收', [collect.left, collect.top, collect.width(), collect.height()])
           automator.click(collect.centerX(), collect.centerY())
           this.collect_operated = true
-        } else {
+        } else if (!recheck) {
           warnInfo(['未能通过一键收图片找到目标按钮，请确认在查找图片设这中正确配置了相应图片，仅仅覆盖文字即可，不要截取多余的信息'])
           debugInfo(['尝试ocr识别一键收'])
           let ocrCheck = localOcrUtil.recognizeWithBounds(screen, null, '一键收')
@@ -197,6 +198,7 @@ const BaseScanner = function () {
         }
       }
       if (haveValidBalls) {
+        recheck = true
         debugInfo(['需要二次校验，等待{}ms', 500])
         sleep(500)
       }

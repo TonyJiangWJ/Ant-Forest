@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-08-28 11:30:18
+ * @Last Modified time: 2024-03-25 11:28:14
  * @Description: 蚂蚁森林自动收能量
  */
 console.warn('如遇语法报错，请从README下载最新版的AutoJS，旧版本不维护，不适配')
@@ -123,7 +123,7 @@ try {
     exit()
   }
 }
-commonFunctions.forceCheckForcegroundPermission()
+
 logInfo('解锁成功')
 let executeArguments = engines.myEngine().execArgv
 debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
