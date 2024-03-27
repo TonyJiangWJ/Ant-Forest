@@ -9,7 +9,8 @@ let widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let YoloTrainHelper = singletonRequire('YoloTrainHelper')
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
-let TouchController = singletonRequire('TouchController')
+let TouchController = require('../lib/TouchController.js')
+let AiUtil = require('../lib/AIRequestUtil.js')
 let logFloaty = singletonRequire('LogFloaty')
 let warningFloaty = singletonRequire('WarningFloaty')
 let ocrUtil = require('../lib/LocalOcrUtil.js')
@@ -113,6 +114,7 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
     {
       id: 'auto_execute',
       text: '自动执行并设置定时任务',
+      textSize: 6,
       onClick: function () {
         checkNext()
         findTrashs(null)
@@ -154,7 +156,20 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
           window.setPosition(config.device_width * 0.1, config.device_height * 0.5)
         })
       }
-    },{
+    },
+    {
+      id: 'ai_answer',
+      text: 'AI答题',
+      onClick: function () {
+        logFloaty.pushLog('请手动打开答题界面再执行，否则无法识别答案')
+        if (!config.kimi_api_key) {
+          logFloaty.pushLog('推荐去KIMI开放平台申请API Key并在可视化配置中进行配置')
+          logFloaty.pushLog('否则免费接口这个智障AI经常性答错')
+        }
+        AiUtil.getQuestionInfo(config.ai_type||'kimi', config.kimi_api_key)
+      }
+    },
+    {
       id: 'exit',
       text: '退出脚本',
       onClick: function () {
@@ -167,7 +182,7 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
     `<horizontal>
     <vertical padding="1">
    ${btns.map(btn => {
-    return '<vertical padding="1"><button id="' + btn.id + '" text="' + btn.text + '" textSize="12sp" w="*" h="*" /></vertical>'
+    return `<vertical padding="1"><button id="${btn.id}" text="${btn.text}" textSize="${btn.textSize?btn.textSize:12}sp" w="*" h="*" /></vertical>`
   }).join('\n')
   }</vertical>
   </horizontal>`)
