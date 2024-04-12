@@ -1,3 +1,7 @@
+[![GitHub forks](https://img.shields.io/github/forks/TonyJiangWJ/Ant-Forest?style=flat-square)](https://github.com/TonyJiangWJ/Ant-Forest/forks)
+[![GitHub stars](https://img.shields.io/github/stars/TonyJiangWJ/Ant-Forest?style=flat-square)](https://github.com/TonyJiangWJ/Ant-Forest/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/TonyJiangWJ/Ant-Forest?style=flat-square)](https://github.com/TonyJiangWJ/Ant-Forest/issues)
+[![Page Views Count](https://badges.toozhao.com/badges/01HV8RHHZDJW7G9JFE65B6DZZJ/green.svg)](https://badges.toozhao.com/stats/01HV8RHHZDJW7G9JFE65B6DZZJ "Get your own page views count badge on badges.toozhao.com")
 
 # 简介
 
