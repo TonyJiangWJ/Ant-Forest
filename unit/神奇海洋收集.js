@@ -1,5 +1,5 @@
 let { config } = require('../config.js')(runtime, global)
-config.buddha_like_mode = false
+// config.buddha_like_mode = false
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
@@ -77,7 +77,9 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
   commonFunctions.minimize()
   exit()
 } else {
-  openMiracleOcean()
+  importClass(android.graphics.drawable.GradientDrawable)
+  importClass(android.graphics.drawable.RippleDrawable)
+  importClass(android.content.res.ColorStateList)
   importClass(java.util.concurrent.LinkedBlockingQueue)
   importClass(java.util.concurrent.ThreadPoolExecutor)
   importClass(java.util.concurrent.TimeUnit)
@@ -94,19 +96,20 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
   )
   let data = {
     _clickExecuting: false,
-    set clickExecuting(val) {
-      threadPool.execute(function (){
+    set clickExecuting (val) {
+      threadPool.execute(function () {
         if (val) {
-          logFloaty.logQueue.push('点击执行中，请稍等','#888888')
+          logFloaty.logQueue.push('点击执行中，请稍等', '#888888')
         } else {
-          logFloaty.logQueue.push('执行完毕','#888888')
+          logFloaty.logQueue.push('执行完毕', '#888888')
         }
       })
       this._clickExecuting = val
     },
-    get clickExecuting() {
+    get clickExecuting () {
       return this._clickExecuting
-    }
+    },
+    btnDrawables: {}
   }
   config.collecting_friends = false
   // 启动UI形式，支持手动执行更多功能
@@ -120,13 +123,13 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
         findTrashs(null)
         exit()
       }
-    },{
+    }, {
       id: 'find_trashs',
       text: '收垃圾',
       onClick: function () {
         findTrashs(null, true)
       }
-    },{
+    }, {
       id: 'collect_friends',
       text: '收取好友垃圾',
       onClick: () => {
@@ -142,9 +145,10 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
         config.collecting_friends = false
         ui.run(() => {
           window.collect_friends.setText('收取好友垃圾')
+          changeButtonStyle('collect_friends', null, '#3FBE7B')
         })
       }
-    },{
+    }, {
       id: 'check_next',
       text: '识别倒计时',
       onClick: function () {
@@ -166,11 +170,13 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
           logFloaty.pushLog('推荐去KIMI开放平台申请API Key并在可视化配置中进行配置')
           logFloaty.pushLog('否则免费接口这个智障AI经常性答错')
         }
-        AiUtil.getQuestionInfo(config.ai_type||'kimi', config.kimi_api_key)
+        AiUtil.getQuestionInfo(config.ai_type, config.kimi_api_key)
       }
     },
     {
       id: 'exit',
+      color: '#EB393C',
+      rippleColor: '#C2292C',
       text: '退出脚本',
       onClick: function () {
         exit()
@@ -182,21 +188,58 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
     `<horizontal>
     <vertical padding="1">
    ${btns.map(btn => {
-    return `<vertical padding="1"><button id="${btn.id}" text="${btn.text}" textSize="${btn.textSize?btn.textSize:12}sp" w="*" h="*" /></vertical>`
-  }).join('\n')
-  }</vertical>
+      return `<vertical padding="1"><button id="${btn.id}" text="${btn.text}" textSize="${btn.textSize ? btn.textSize : 12}sp" w="*" h="30" marginTop="5" marginBottom="5" /></vertical>`
+    }).join('\n')
+    }</vertical>
   </horizontal>`)
+
+  function setButtonStyle (btnId, color, rippleColor) {
+    let shapeDrawable = new GradientDrawable();
+    shapeDrawable.setShape(GradientDrawable.RECTANGLE);
+    // 设置圆角大小，或者直接使用setCornerRadius方法
+    // shapeDrawable.setCornerRadius(20); // 调整这里的数值来控制圆角的大小
+    let radius = util.java.array('float', 8)
+    for (let i = 0; i < 8; i++) {
+      radius[i] = 20
+    }
+    shapeDrawable.setCornerRadii(radius); // 调整这里的数值来控制圆角的大小
+    shapeDrawable.setColor(colors.parseColor(color || '#3FBE7B')); // 按钮的背景色
+    shapeDrawable.setPadding(10, 10, 10, 10); // 调整这里的数值来控制按钮的内边距
+    // shapeDrawable.setStroke(5, colors.parseColor('#FFEE00')); // 调整这里的数值来控制按钮的边框宽度和颜色
+    data.btnDrawables[btnId] = shapeDrawable
+    let btn = window[btnId]
+    btn.setShadowLayer(10, 5, 5, colors.parseColor('#888888'))
+    btn.setBackground(new RippleDrawable(ColorStateList.valueOf(colors.parseColor(rippleColor || '#27985C')), shapeDrawable, null))
+  }
+
+  function changeButtonStyle (btnId, handler, color, storkColor) {
+    handler = handler || function (shapeDrawable) {
+      color && shapeDrawable.setColor(colors.parseColor(color))
+      storkColor && shapeDrawable.setStroke(5, colors.parseColor(storkColor))
+    }
+    handler(data.btnDrawables[btnId])
+  }
+
   ui.run(() => {
     window.setPosition(config.device_width * 0.1, config.device_height * 0.5)
   })
   btns.forEach(btn => {
+    ui.run(() => {
+      if (typeof btn.render == 'function') {
+        btn.render(window[btn.id])
+      } else {
+        setButtonStyle(btn.id, btn.color, btn.rippleColor)
+      }
+    })
     if (btn.onClick) {
       window[btn.id].on('click', () => {
+        // region 点击操作执行中，对于collect_friends触发终止，等待执行结束
         if (data.clickExecuting) {
           if (btn.id === 'collect_friends') {
             if (config.collecting_friends) {
               ui.run(() => {
                 window.collect_friends.setText('等待停止')
+                changeButtonStyle('collect_friends', null, '#FF753A')
               })
               config.collecting_friends = false
             }
@@ -207,17 +250,35 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
           return
         }
         data.clickExecuting = true
+        // endregion
         threadPool.execute(function () {
-          btn.onClick()
-          data.clickExecuting = false
+          try {
+            btn.onClick()
+          } catch (e) {
+            errorInfo(['点击执行异常：{}', e.message], true)
+          } finally {
+            data.clickExecuting = false
+          }
         })
       })
     }
   })
+
   window.exit.setOnTouchListener(new TouchController(window, () => {
     exit()
+  }, () => {
+    changeButtonStyle('exit', null, '#FF753A', '#FFE13A')
+  }, () => {
+    changeButtonStyle('exit', (drawable) => {
+      drawable.setColor(colors.parseColor('#EB393C'))
+      drawable.setStroke(0, colors.parseColor('#3FBE7B'))
+    })
   }).createListener())
+
+  openMiracleOcean()
+
 }
+
 
 function openMiracleOcean () {
   logInfo('准备打开神奇海洋')
@@ -293,14 +354,14 @@ function findTrashs (delay, onceOnly) {
   return false
 }
 
-function collectFriends () {
+function collectFriends (retry) {
   if (!config.collecting_friends) {
     logFloaty.pushLog('停止执行')
     return
   }
   logFloaty.pushLog('准备收取好友垃圾')
   logFloaty.pushLog('OCR查找找拼图')
-  let btn = ocrUtil.recognizeWithBounds(commonFunctions.checkCaptureScreenPermission(), [config.device_width/2,config.device_height/2,config.device_width/2,config.device_height/2], '找拼图')
+  let btn = ocrUtil.recognizeWithBounds(commonFunctions.checkCaptureScreenPermission(), [config.device_width / 2, config.device_height / 2, config.device_width / 2, config.device_height / 2], '找拼图')
   if (btn && btn.length > 0) {
     logFloaty.pushLog('找到拼图按钮')
     let bounds = btn[0].bounds
@@ -310,10 +371,12 @@ function collectFriends () {
     sleep(1000)
     if (findTrashs(1000, true)) {
       sleep(1000)
-      collectFriends()
+      return collectFriends()
     } else {
       logFloaty.pushLog('查找拼图失败，可能已经没有机会了')
     }
+  } else {
+    logFloaty.pushErrorLog('未找到拼图按钮')
   }
   let backHome = widgetUtils.widgetGetOne(/^回到我的海洋$/, 1000)
   if (backHome) {
@@ -321,6 +384,11 @@ function collectFriends () {
     floatyInstance.setFloatyInfo({ x: backHome.bounds().centerX(), y: backHome.bounds().centerY() }, '点击回到我的海洋')
     automator.click(backHome.bounds().centerX(), backHome.bounds().centerY())
     sleep(1000)
+  } else if (!retry) {
+    logFloaty.pushLog('未识别到回到我的海洋按钮，尝试再次识别垃圾球')
+    return collectFriends(true)
+  } else {
+    logFloaty.pushLog('二次识别垃圾球失败, 退出执行')
   }
 }
 
@@ -344,7 +412,7 @@ function checkNext (tryTime, checkOnly) {
   }
   warningFloaty.disableTip()
   let ocrRegion = [config.sea_ocr_left, config.sea_ocr_top, config.sea_ocr_width, config.sea_ocr_height]
-  floatyInstance.setFloatyInfo({ x: ocrRegion[0], y: ocrRegion[1] - 100}, '识别倒计时中...')
+  floatyInstance.setFloatyInfo({ x: ocrRegion[0], y: ocrRegion[1] - 100 }, '识别倒计时中...')
   sleep(500)
   let screen = commonFunctions.checkCaptureScreenPermission()
   let recognizeFailed = true

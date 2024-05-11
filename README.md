@@ -8,6 +8,8 @@
 基于 Autojs 的蚂蚁森林自动收能量脚本，采用 [AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 版本开发。解锁模块参考自：[https://github.com/e1399579/autojs](https://github.com/e1399579/autojs)
 
 - 脚本执行依赖于：[AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk)，4.1.1原作者完全不会再维护且已经删库，同时存在较多内存泄露等问题、不支持Android12、脚本中部分特性也不支持，如本地OCR 多分辨率找图 等等。Pro限制无障碍操作且存在代码审查机制，不再受支持。
+- 更多版本下载：`https://wwxs.lanzouq.com/b042le51i 密码:b034`
+- 修改版Auto.js源代码：[https://github.com/TonyJiangWJ/Auto.js](https://github.com/TonyJiangWJ/Auto.js)
 - 本项目原始版本 [https://github.com/Nick-Hopps/Ant-Forest-autoscript](https://github.com/Nick-Hopps/Ant-Forest-autoscript) ，原作者[Nick-Hoops](https://github.com/Nick-Hopps)已不再维护。虽然目前版本和原始版本代码已经完全不一样，但是还是非常感谢 [Nick-Hoops](https://github.com/Nick-Hopps)
 - 设备系统要求
 
@@ -29,6 +31,9 @@
 - 运行可视化配置，进入图像识别相关设置，打开使用YOLO模型识别能量球即可启用。如果当前AutoJS不支持或者模型未下载将自动降级使用旧版识别方案。
 - 从1.4.0版本开始将逐渐优化模型，将各种图片配置移除，尽量做的开箱即用
 - 原方案识别能量球速度大概3-40ms，YOLO模型大概100ms请自行取舍，YOLO识别默认关闭
+- shizuku支持，需要安装最新版的修改版AutoJS或困鱼，然后在抽屉中打开启用shizuku并进行授权，需要先将shizuku激活，具体操作请自行参考shizuku官方文档
+- 内置 `独立工具/shizuku示例工具.js` 可以进行媒体权限授权和Secure写入权限授权（用于自动开启无障碍权限），以及其他一些通过ADB可操作的实例功能请自行查看
+  <img src="./resources/shizuku.jpeg" alt="shizuku" style="max-height: 400px;"/>
 
 ## 使用
 
@@ -101,8 +106,8 @@
   - `自定义3循环千次只收自己.js` 循环收集自己的，适合自己能量快要生成的时候执行，因为每天步行能量生成时间是固定的，因此在生成前一分钟设置定时任务即可，然后再设置2分钟后的定时任务`自定义2计时停止.js`
   - 其他自定义方式请自行创建，内容参考以上文件和config.js中的字段
 - 支持能量收集统计 查看每天能量值增量和收集好友能量数据 参考如下：
-  ![hourly_summary](./resources/hourly_summary.jpg)
-  ![daily_summary](./resources/daily_summary.jpg)
+  <img src="./resources/hourly_summary.jpg" alt="hourly_summary" style="max-height: 400px;"/>
+  <img src="./resources/daily_summary.jpg" alt="daily_summary" style="max-height: 400px;"/>
 
 ### 循环/计时模式、永不停止模式等详细说明
 
@@ -148,7 +153,7 @@
 
 - [创建ISSUE](https://github.com/TonyJiangWJ/Ant-Forest/issues/new) 描述具体问题，提供相应的日志或者截图信息，最好说明一下当前使用的脚本版本以及AutoJS软件版本
 - 详细日志的文件为`logs/log-verboses.log` 默认保存100k之后会将旧日志保存到 `logs/logback` ；反馈问题时需要提供出问题时段的日志文件。
-- 日志文件如果觉得有隐私信息可以单独发我文件，或者删除敏感信息。邮箱: tonyjiangwj@gmail.com
+- 日志文件如果觉得有隐私信息可以单独发我文件，或者删除敏感信息。邮箱: <tonyjiangwj@gmail.com>
 
 ## 添加解锁设备
 
@@ -253,7 +258,6 @@ module.exports = function (obj) {
 - **俊
 - *森
 - *悦
-
 
 #### wechat
 
