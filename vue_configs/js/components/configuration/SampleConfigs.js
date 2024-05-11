@@ -94,8 +94,9 @@ const MagicSeaConfig = {
         sea_ball_region: [860, 1350, 140, 160],
         sea_ball_radius_min: null,
         sea_ball_radius_max: null,
-        ai_type: 'kimi',
+        ai_type: 'kimi',// kimi、chatgml or empty
         kimi_api_key: '',
+        chatgml_api_key: '',
       },
       validations: {
         sea_ocr_region: VALIDATOR.REGION,
@@ -193,11 +194,14 @@ const MagicSeaConfig = {
     <region-input-field :array-value="true" v-model="configs.sea_ball_region" label="垃圾球角标所在位置" label-width="14em" :device-height="device.height" :device-width="device.width" />
     <van-field v-model="configs.sea_ball_radius_min" label="垃圾球角标半径最小值" label-width="14em" type="text" placeholder="留空使用默认配置" input-align="right"/>
     <van-field v-model="configs.sea_ball_radius_max" label="垃圾球角标半径最大值" label-width="14em" type="text" placeholder="留空使用默认配置" input-align="right"/>
-    <tip-block>AI答题配置，目前仅支持KIMI和默认免费接口，留空使用默认配置。KIMI令牌请前往开放平台申请：https://platform.moonshot.cn/console/api-keys</tip-block>
+    <tip-block>AI答题配置，留空使用默认配置。KIMI令牌请前往开放平台申请：https://platform.moonshot.cn/console/api-keys</tip-block>
+    <tip-block>智谱清言(chatgml)令牌请前往开放平台申请（新用户首月免费100万token，后续似乎按量收费，但是响应比Kimi快）：https://open.bigmodel.cn/usercenter/apikeys</tip-block>
     <tip-block>默认的免费接口是个大智障经常性出错或者答错，所以尽量自己去申请KIMI的接口权限。另外真的很推荐使用KIMI小程序或者网页端服务，大部分情况下都很够用</tip-block>
     <tip-block>这个AI答题功能也适用于蚂蚁庄园和蚂蚁新村，打开对应答题页面再点击AI答题即可</tip-block>
+    <tip-block>AI类型可选：kimi、chatgml 留空或者乱填使用默认弱智AI. chatgml速度较快但后期可能需要付费，他和kimi之间的正确率各有优劣，请自行选择</tip-block>
     <van-field v-model="configs.ai_type" label="AI类型" label-width="14em" type="text" placeholder="留空使用默认配置" input-align="right"/>
     <van-field v-model="configs.kimi_api_key" label="KIMI密钥" label-width="14em" type="text" placeholder="留空使用默认AI接口" input-align="right"/>
+    <van-field v-model="configs.chatgml_api_key" label="智谱清言密钥" label-width="14em" type="text" placeholder="留空使用默认AI接口" input-align="right"/>
   </div>
   `
 }

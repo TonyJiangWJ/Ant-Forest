@@ -10,6 +10,7 @@ const About = {
       giteeUrl: '',
       qq_group: '',
       qq_group_url: '',
+      forum_url: '',
     }
   },
   methods: {
@@ -34,6 +35,11 @@ const About = {
     },
     showReleases: function () {
       this.$router.push('/about/releases')
+    },
+    openForum: function () {
+      if (this.forum_url) {
+        $app.invoke('openUrl', { url: this.forum_url })
+      }
     }
   },
   computed: {
@@ -70,6 +76,7 @@ const About = {
       <van-cell title="作者" value="TonyJiangWJ"/>
       <van-cell title="Email" value="TonyJiangWJ@gmail.com"/>
       <van-cell v-if="qq_group" title="QQ交流群" :value="qq_group" @click="openQQGroup"/>
+      <van-cell value-class="long-value" v-if="forum_url" title="论坛" :value="forum_url" @click="openForum"/>
       <van-cell value-class="long-value" v-if="githubShort" title="Github" :value="githubShort" @click="openGithubUrl"/>
       <van-cell value-class="long-value" v-if="giteeShort" title="Gitee" :value="giteeShort" @click="openGiteeUrl"/>
       <van-cell title="开发模式" @click="openDevelopMode" is-link />

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-03-27 22:34:51
+ * @Last Modified time: 2024-05-11 23:15:13
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -285,10 +285,12 @@ let default_config = {
   use_duplicate_card: false,
   // 双击卡使用时间段
   duplicate_card_using_time_ranges: '00:00-00:10',
-  ai_type: 'kimi',
+  ai_type: 'kimi',// 可选 kimi、chatgml
   kimi_api_key: '',
+  chatgml_api_key: '',
+  forum_url: 'https://autoscripts.flarum.cloud/',
   // 代码版本
-  code_version: 'v1.4.4.1',
+  code_version: 'v1.4.4.2',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
