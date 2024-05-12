@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-03-13 11:28:47
+ * @Last Modified time: 2024-05-12 16:24:51
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -980,6 +980,7 @@ function Ant_forest () {
       startApp()
       // 首次启动等待久一点
       sleep(1500)
+      device.keepScreenOn()
       while (true) {
         _current_time++
         _commonFunctions.showEnergyInfo(_current_time)
@@ -1016,6 +1017,7 @@ function Ant_forest () {
         }
         logInfo('========本轮结束========')
       }
+      device.cancelKeepingAwake()
       this.endLoop()
       this.endCollect()
       // 返回最小化支付宝
