@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-05-11 23:15:13
+ * @Last Modified time: 2024-06-12 13:52:16
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -47,6 +47,8 @@ let default_config = {
   develop_saving_mode: false,
   // 是否保存YOLO训练用的图片数据
   save_yolo_train_data: false,
+  save_home_train_data: false,
+  save_no_energy_train_data: false,
   check_device_posture: false,
   check_distance: false,
   posture_threshold_z: 6,
@@ -175,6 +177,8 @@ let default_config = {
   sea_ball_region: null,
   sea_ball_radius_min: null,
   sea_ball_radius_max: null,
+  // yolo图片数据保存
+  sea_ball_train_save_data: false,
   // 排行榜校验区域
   rank_check_left: 190,
   rank_check_top: 170,
@@ -220,6 +224,8 @@ let default_config = {
   recheck_after_stroll: false,
   stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$',
   stroll_button_regenerate: true,
+  // 每次执行都重新识别逛一逛按钮
+  regenerate_stroll_button_every_loop: false,
   stroll_button_left: null,
   stroll_button_top: null,
   stroll_button_width: null,

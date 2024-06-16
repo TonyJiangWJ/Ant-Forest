@@ -39,6 +39,7 @@ if (!floatyInstance.init()) {
   toast('创建悬浮窗失败')
   exit()
 }
+commonFunctions.requestScreenCaptureOrRestart()
 floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('循环执行小号能量雨')
 commonFunctions.listenDelayStart()

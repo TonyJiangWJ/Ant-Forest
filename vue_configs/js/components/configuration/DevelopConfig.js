@@ -10,6 +10,9 @@ const DevelopConfig = {
         develop_mode: true,
         develop_saving_mode: true,
         save_yolo_train_data: true,
+        sea_ball_train_save_data: true,
+        save_home_train_data: true,
+        save_no_energy_train_data: true,
         enable_visual_helper: true,
         auto_check_update: true,
         clear_webview_cache: true,
@@ -37,9 +40,16 @@ const DevelopConfig = {
     <switch-cell title="打印webview日志" v-model="configs.webview_loging" />
     <template v-if="configs.develop_mode">
       <tip-block>脚本执行时保存图片等数据，未启用开发模式时依旧有效，请不要随意开启。部分功能需要下载master分支才能使用，release分支代码开启后可能无法正常运行</tip-block>
-      <switch-cell title="是否保存YOLO训练用的数据" v-model="configs.save_yolo_train_data" />
       <switch-cell title="是否保存一些开发用的数据" v-model="configs.develop_saving_mode" />
       <switch-cell title="是否启用可视化辅助工具" v-model="configs.enable_visual_helper" />
+      <switch-cell title="是否保存YOLO训练用的数据" v-model="configs.save_yolo_train_data" />
+      <template v-if="!configs.save_yolo_train_data">
+      <div style="padding-left: 10px;">
+        <switch-cell title="是否保存神奇海洋训练用数据" v-model="configs.sea_ball_train_save_data" />
+        <switch-cell title="是否保存首页训练用数据" v-model="configs.save_home_train_data" />
+        <switch-cell title="是否保存能量收取失败数据" v-model="configs.save_no_energy_train_data" />
+      </div>
+      </template>
     </template>
   </van-cell-group>
   </div>`

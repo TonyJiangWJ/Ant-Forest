@@ -10,8 +10,12 @@ let widgetUtils = singletonRequire('WidgetUtils')
 let fileUtils = singletonRequire('FileUtils')
 let automator = singletonRequire('Automator')
 let unlocker = require('../lib/Unlock.js')
+// 强制指定为paddleOcr
+config.local_ocr_priority = 'paddle'
+let localOcrUtil = require('../lib/LocalOcrUtil.js')
+let storageFactory = singletonRequire('StorageFactory')
 config.not_lingering_float_window = true
-
+floatyInstance.enableLog()
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
   if (config.auto_lock && unlocker.needRelock() === true) {
@@ -28,7 +32,7 @@ commonFunctions.registerOnEngineRemoved(function () {
   )
 }, 'main')
 if (!commonFunctions.ensureAccessibilityEnabled()) {
-  errorInfo('获取无障碍权限失败')
+  logUtils.errorInfo('获取无障碍权限失败')
   exit()
 }
 unlocker.exec()
@@ -37,11 +41,21 @@ if (!floatyInstance.init()) {
   toast('创建悬浮窗失败')
   exit()
 }
+const ACCOUNT_EXECUTION = "ACCOUNT_EXECUTION"
+commonFunctions.requestScreenCaptureOrRestart()
 floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('同步小号行走步数')
 commonFunctions.listenDelayStart()
+storageFactory.initFactoryByKey(ACCOUNT_EXECUTION, { done: [] })
+
+let doneList = storageFactory.getValueByKey(ACCOUNT_EXECUTION).done
+logUtils.debugInfo(['当前已执行账号列表：{}', JSON.stringify(doneList)])
 if (config.accounts && config.accounts.length >= 1) {
-  config.accounts.forEach(({account}) => {
+  config.accounts.forEach(({ account }) => {
+    if (doneList.indexOf(account) > -1) {
+      return
+    }
+    config.current_execute_account = account
     floatyInstance.setFloatyText('准备切换账号为：' + account)
     sleep(1000)
     accountChange(account)
@@ -49,7 +63,6 @@ if (config.accounts && config.accounts.length >= 1) {
     sleep(500)
     // 执行行走捐同步步数
     openWalkingData()
-    checkIfOKExists()
     findAndEnterWalkingDonate()
     checkWalkingData()
   })
@@ -58,53 +71,51 @@ if (config.accounts && config.accounts.length >= 1) {
   accountChange(config.main_account || config.accounts[0])
   floatyInstance.setFloatyText('切换完毕，再见')
   sleep(500)
+  if (config.has_account_fail) {
+    logUtils.warnInfo(['有账号执行失败，延迟五分钟后重试'])
+    commonFunctions.setUpAutoStart(5)
+  }
+  storageFactory.updateValueByKey(ACCOUNT_EXECUTION, { done: doneList })
 } else {
   logUtils.errorInfo(['当前未配置多账号不进行切换'], true)
 }
 commonFunctions.minimize()
 exit()
 
-function convertPosition(target) {
-  return {x: target.bounds().centerX(), y: target.bounds().centerY()}
+function convertPosition (target) {
+  if (typeof target.bounds == 'function') {
+    return { x: target.bounds().centerX(), y: target.bounds().centerY() }
+  } else {
+    let bounds = target.bounds
+    return { x: bounds.left + bounds.width() / 2, y: bounds.top + bounds.height() }
+  }
 }
 
-function openWalkingData() {
+
+function openWalkingData () {
   logUtils.logInfo('准备打开行走捐')
   app.startActivity({
     action: 'VIEW',
     data: 'alipays://platformapi/startapp?appId=10000009',
     packageName: config.package_name
   })
-  floatyInstance.setFloatyInfo({x: config.device_width /2 , y: config.device_height/2}, "查找是否有'打开'对话框")
+  floatyInstance.setFloatyInfo({ x: config.device_width / 2, y: config.device_height / 2 }, "查找是否有'打开'对话框")
   let confirm = widgetUtils.widgetGetOne(/^打开$/, 1000)
   if (confirm) {
     automator.clickCenter(confirm)
   }
   sleep(1000)
-  widgetUtils.widgetWaiting('我的证书')
+  widgetUtils.widgetWaiting('行走捐', 1000)
 }
 
-function checkIfOKExists() {
-  let ok = widgetUtils.widgetGetOne('好的')
-  if (ok) {
-    floatyInstance.setFloatyInfo(convertPosition(ok), '找到了好的')
-    automator.clickCenter(ok)
-    sleep(1000)
-  }
-}
 
-function findAndEnterWalkingDonate() {
+function findAndEnterWalkingDonate () {
   floatyInstance.setFloatyText('查找行走捐')
   let donate = widgetUtils.widgetGetOne('行走捐')
   if (donate) {
     floatyInstance.setFloatyInfo(convertPosition(donate), '找到了行走捐')
     automator.clickCenter(donate)
     sleep(1000)
-    donate = widgetUtils.widgetGetOne('行走捐', 500)
-    if (donate) {
-      automator.clickCenter(donate)
-      sleep(1000)
-    }
     return true
   } else {
     floatyInstance.setFloatyText('未找到行走捐')
@@ -112,39 +123,64 @@ function findAndEnterWalkingDonate() {
   return false
 }
 
-function checkWalkingData(recheck) {
-  let today = widgetUtils.widgetGetOne('今日步数')
-  if (today) {
-    let walkingData = widgetUtils.subWidgetGetOne(today.parent(), '^\\d+$', null, true)
-    if (walkingData) {
-      let content = walkingData.content
-      floatyInstance.setFloatyInfo(convertPosition(walkingData.target), '当前步数：' + content)
-      logUtils.infoLog(['当前步数：{}', content])
-      sleep(2000)
-      donate()
+function ocrWaiting (text, loop, duration, region) {
+  logUtils.debugInfo(['ocr查找内容：{}', text])
+  let checkLimit = loop || 5
+  duration = duration || 1000
+  let findTarget = false
+  do {
+    let ocrCheck = localOcrUtil.recognizeWithBounds(commonFunctions.captureScreen(), region, text)
+    if (ocrCheck && ocrCheck.length > 0) {
+      logUtils.debugInfo(['ocr找到目标：{} {}', text, JSON.stringify(ocrCheck)])
+      return ocrCheck[0]
     }
-  } else {
-    if (!recheck && findAndEnterWalkingDonate()) {
-      checkWalkingData(true)
+    if (--checkLimit > 0) {
+      sleep(duration)
+    } else {
+      break
     }
-  }
+  } while (!findTarget)
+  logUtils.debugInfo(['ocr查找：「{}」失败', text])
+  return false
 }
 
-function donate() {
-  floatyInstance.setFloatyText('查找是否存在立即捐步')
-  let donateBtn = widgetUtils.widgetGetOne('立即捐步')
-  if (donateBtn) {
-    floatyInstance.setFloatyInfo(convertPosition(donateBtn), '立即捐步')
+function checkWalkingData (recheck) {
+  let ocrCheckResult = ocrWaiting('今日步数', 5, 1000, [0, 0, config.device_width * 0.5, config.device_height * 0.3])
+  let executeFail = false
+  if (ocrCheckResult) {
+    floatyInstance.setFloatyInfo(convertPosition(ocrCheckResult), '今日步数')
     sleep(1000)
-    automator.clickCenter(donateBtn)
-    sleep(1000)
-    let okBtn = widgetUtils.widgetGetOne('知道了')
-    if (okBtn) {
-      automator.clickCenter(okBtn)
+    let donateBtn = ocrWaiting('立即捐步', 1, 1000)
+    if (!donateBtn) {
+      floatyInstance.setFloatyText('未找到立即捐步，检查是否已完成')
+      sleep(1000)
+      let done = ocrWaiting('查看受捐项目', 1, 1000)
+      if (done) {
+        floatyInstance.setFloatyInfo(convertPosition(done), '今日已捐助')
+        sleep(1000)
+      } else {
+        logUtils.debugInfo(['未找到立即捐步，也未找到已捐助信息'])
+        executeFail = true
+      }
+    } else {
+      let position = convertPosition(donateBtn)
+      floatyInstance.setFloatyInfo(position, '点击捐步')
+      automator.click(position.x, position.y)
+      sleep(1000)
     }
-    sleep(1000)
   } else {
-    floatyInstance.setFloatyText('未找到立即捐步按钮')
-    sleep(500)
+    logUtils.debugInfo(['未找到今日步数, 尝试重新进入界面'])
+    sleep(1000)
+    if (!recheck && findAndEnterWalkingDonate()) {
+      return checkWalkingData(true)
+    } else {
+      executeFail = true
+    }
+  }
+  if (executeFail) {
+    logUtils.debugInfo(['{}账号执行失败', config.current_execute_account])
+    config.has_account_fail = true
+  } else {
+    doneList.push(config.current_execute_account)
   }
 }

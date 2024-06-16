@@ -147,6 +147,16 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
           window.collect_friends.setText('收取好友垃圾')
           changeButtonStyle('collect_friends', null, '#3FBE7B')
         })
+      },
+      // 点击执行中时，触发终止
+      handleExecuting: () => {
+        if (config.collecting_friends) {
+          ui.run(() => {
+            window.collect_friends.setText('等待停止')
+            changeButtonStyle('collect_friends', null, '#FF753A')
+          })
+          config.collecting_friends = false
+        }
       }
     }, {
       id: 'check_next',
@@ -235,14 +245,9 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
       window[btn.id].on('click', () => {
         // region 点击操作执行中，对于collect_friends触发终止，等待执行结束
         if (data.clickExecuting) {
-          if (btn.id === 'collect_friends') {
-            if (config.collecting_friends) {
-              ui.run(() => {
-                window.collect_friends.setText('等待停止')
-                changeButtonStyle('collect_friends', null, '#FF753A')
-              })
-              config.collecting_friends = false
-            }
+          if (btn.handleExecuting) {
+            btn.handleExecuting()
+            return
           }
           threadPool.execute(function () {
             logFloaty.pushLog('点击执行中，请稍等')
@@ -327,7 +332,7 @@ function findTrashs (delay, onceOnly) {
     debugInfo(['找到的球：{}', JSON.stringify(findBalls)])
     if (findBalls && findBalls.length > 0) {
       // config.save_yolo_train_data = true
-      YoloTrainHelper.saveImage(this.temp_img, '有垃圾球')
+      YoloTrainHelper.saveImage(this.temp_img, '有垃圾球', 'sea_ball', config.sea_ball_train_save_data)
       this.temp_img.recycle()
       let ball = findBalls[0]
       floatyInstance.setFloatyInfo({ x: ball.x, y: ball.y }, '找到了垃圾')
@@ -349,6 +354,8 @@ function findTrashs (delay, onceOnly) {
       }
     } else {
       floatyInstance.setFloatyText('未找到垃圾球')
+      YoloTrainHelper.saveImage(this.temp_img, '无垃圾球', 'sea_ball', config.sea_ball_train_save_data)
+      this.temp_img.recycle()
     }
   }
   return false
@@ -363,6 +370,7 @@ function collectFriends (retry) {
   logFloaty.pushLog('OCR查找找拼图')
   let btn = ocrUtil.recognizeWithBounds(commonFunctions.checkCaptureScreenPermission(), [config.device_width / 2, config.device_height / 2, config.device_width / 2, config.device_height / 2], '找拼图')
   if (btn && btn.length > 0) {
+    YoloTrainHelper.saveImage(commonFunctions.captureScreen(), '找到拼图按钮', 'sea_ball_friend', config.sea_ball_train_save_data)
     logFloaty.pushLog('找到拼图按钮')
     let bounds = btn[0].bounds
     btn = { x: bounds.centerX(), y: bounds.centerY() }
@@ -376,6 +384,7 @@ function collectFriends (retry) {
       logFloaty.pushLog('查找拼图失败，可能已经没有机会了')
     }
   } else {
+    YoloTrainHelper.saveImage(commonFunctions.captureScreen(), '未找到拼图按钮', 'sea_ball_friend', config.sea_ball_train_save_data)
     logFloaty.pushErrorLog('未找到拼图按钮')
   }
   let backHome = widgetUtils.widgetGetOne(/^回到我的海洋$/, 1000)

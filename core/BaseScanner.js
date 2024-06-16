@@ -840,6 +840,7 @@ const BaseScanner = function () {
     } else {
       warnInfo(['未收取能量，可能有森林赠礼，延迟等待动画'], true)
       sleep(1500)
+      YoloTrainHelper.saveImage(_commonFunctions.captureScreen(), '未能收取能量', 'friend_no_energy', _config.save_no_energy_train_data)
       this.nocollect_count++
       if (!this.collect_any && this.nocollect_count >= 3) {
         warnInfo(['如果你首次使用，且无法收取能量，请检查并关闭MIUI电诈防护功能，具体见可视化配置中常见问题，不要再单独来问，谢谢'], true)
