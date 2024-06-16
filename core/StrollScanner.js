@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-02-28 15:40:50
+ * @Last Modified time: 2024-06-16 22:25:17
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -76,6 +76,9 @@ const StrollScanner = function () {
 
   this.start = function () {
     debugInfo('逛一逛即将开始')
+    if (_config.regenerate_stroll_button_every_loop) {
+      debugInfo('重新识别逛一逛按钮: ' + regenerateStrollButton())
+    }
     return this.collecting()
   }
 
@@ -341,7 +344,7 @@ function ocrFindText(screen, text, tryTime) {
 }
 
 function regenerateByOcr(screen) {
-  let ocrCheck = ocrFindText(screen, '找能量', 3)
+  let ocrCheck = ocrFindText(screen, '找能量', 1)
   if (ocrCheck) {
     let bounds = ocrCheck.bounds
     if (!bounds) {
@@ -358,15 +361,22 @@ function regenerateByOcr(screen) {
 }
 
 function regenerateByImg(screen) {
+  let configImageFail = false
   let imagePoint = OpenCvUtil.findByGrayBase64(screen, _config.image_config.stroll_icon)
   if (!imagePoint) {
+    configImageFail = true
     imagePoint = OpenCvUtil.findBySIFTGrayBase64(screen, _config.image_config.stroll_icon)
   }
   if (imagePoint) {
     region = [
-      imagePoint.left, imagePoint.top,
+      Math.floor(imagePoint.left), Math.floor(imagePoint.top),
       imagePoint.width(), imagePoint.height()
     ]
+    if (configImageFail) {
+      logInfo(['找到目标区域，截图保存：{}', JSON.stringify(region)])
+      let croppedImage = images.clip(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), region[0], region[1], region[2], region[3])
+      _config.overwrite('image_config.stroll_icon', images.toBase64(croppedImage))
+    }
     refillStrollInfo(region)
     _commonFunctions.ensureRegionInScreen(region)
     return true

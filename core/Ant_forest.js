@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-03-13 11:28:47
+ * @Last Modified time: 2024-06-13 09:45:48
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -44,7 +44,8 @@ function Ant_forest () {
     _lost_someone = false, // 是否漏收,
     _lost_count = 0, // 漏收异常次数,
     _lost_reason = '', // 漏收原因
-    _friends_min_countdown = null
+    _friends_min_countdown = null,
+    _floaty_failed_time = 0
   /***********************
    * 综合操作
    ***********************/
@@ -88,12 +89,18 @@ function Ant_forest () {
   }
 
   function alipayInFloatyWindow() {
+    if (_floaty_failed_time >= 3) {
+      return false
+    }
     sleep(1000)
     let navBar = _widgetUtils.widgetGetById('.*navigationBarBackground', 1000)
     if (navBar) {
       let barWidth = navBar.bounds().width()
       debugInfo(['当前导航条宽度：{} id:{}', barWidth, navBar.id()])
-      return barWidth < _config.device_width
+      if (barWidth < _config.device_width) {
+        _floaty_failed_time++
+        return true
+      }
     } else {
       debugInfo(['未找到导航条，无法验证'])
     }
@@ -766,6 +773,7 @@ function Ant_forest () {
     // 自动识别能量球区域
     autoDetectTreeCollectRegion()
     clearPopup()
+    YoloTrainHelper.saveImage(_commonFunctions.captureScreen(), '进入个人首页', 'home', _config.save_home_train_data)
     // 校验是否使用了双击卡
     _widgetUtils.checkIsDuplicateCardUsed()
     // 神奇物种签到 改到逛一逛结束
@@ -980,6 +988,7 @@ function Ant_forest () {
       startApp()
       // 首次启动等待久一点
       sleep(1500)
+      device.keepScreenOn()
       while (true) {
         _current_time++
         _commonFunctions.showEnergyInfo(_current_time)
@@ -1016,6 +1025,7 @@ function Ant_forest () {
         }
         logInfo('========本轮结束========')
       }
+      device.cancelKeepingAwake()
       this.endLoop()
       this.endCollect()
       // 返回最小化支付宝
