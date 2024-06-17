@@ -29,6 +29,10 @@ let Index = {
           link: '/basic/magic_sea'
         },
         {
+          title: '巡护设置',
+          link: '/basic/patrol/walker'
+        },
+        {
           title: '收集设置',
           link: '/basic/collect'
         },
