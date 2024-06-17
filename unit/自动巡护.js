@@ -15,7 +15,6 @@ let alipayUnlocker = singletonRequire('AlipayUnlocker')
 config.buddha_like_mode = false
 config.not_lingering_float_window = true
 
-
 // 注册自动移除运行中任务
 commonFunctions.registerOnEngineRemoved(function () {
   if (config.auto_lock === true && unlocker.needRelock() === true) {
@@ -38,6 +37,8 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
   errorInfo('获取无障碍权限失败')
   exit()
 }
+// 设置自动静音
+config.mute_exec = true
 let unlocker = require('../lib/Unlock.js')
 unlocker.exec()
 

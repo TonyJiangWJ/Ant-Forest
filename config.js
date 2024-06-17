@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-12 13:52:16
+ * @Last Modified time: 2024-06-17 22:35:15
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -13,6 +13,8 @@ let default_config = {
   unlock_device_flag: 'normal',
   password: '',
   infinite_retry_unlock: false,
+  // 静音执行
+  mute_exec: false,
   is_alipay_locked: false,
   alipay_lock_password: '',
   color_offset: 20,
@@ -296,7 +298,7 @@ let default_config = {
   chatgml_api_key: '',
   forum_url: 'https://autoscripts.flarum.cloud/',
   // 代码版本
-  code_version: 'v1.4.4.3',
+  code_version: 'v1.4.4.4',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
