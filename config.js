@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-17 22:35:15
+ * @Last Modified time: 2024-06-22 23:56:46
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -39,6 +39,8 @@ let default_config = {
   // 异步等待截图，当截图超时后重新获取截图 默认开启
   async_waiting_capture: true,
   capture_waiting_time: 500,
+  // 截图最小间隔时间 避免连续截图失败 默认10ms
+  capture_screen_gap: 10,
   random_sleep_time: 500,
   max_collect_wait_time: 60,
   show_debug_log: true,
@@ -51,6 +53,7 @@ let default_config = {
   save_yolo_train_data: false,
   save_home_train_data: false,
   save_no_energy_train_data: false,
+  save_one_key_train_data: false,
   check_device_posture: false,
   check_distance: false,
   posture_threshold_z: 6,
@@ -207,6 +210,10 @@ let default_config = {
   skip_own_watering_ball: false,
   // 是否使用YOLO模型检测能量球
   detect_ball_by_yolo: false,
+  yolo_shape_size: 320,
+  yolo_confidence_threshold: 0.5,
+  yolo_model_path: '/config_data/forest_lite.onnx',
+  yolo_labels: ['cannot', 'collect', 'countdown', 'help_revive', 'item', 'tree', 'water', 'waterBall', 'stroll_btn', 'sea_ball', 'sea_garbage', 'backpack', 'gift', 'magic_species', 'one_key', 'patrol_ball', 'reward', 'sea_ocr', 'energy_ocr'],
   hough_param1: 30,
   hough_param2: 30,
   hough_min_radius: null,
@@ -298,7 +305,7 @@ let default_config = {
   chatgml_api_key: '',
   forum_url: 'https://autoscripts.flarum.cloud/',
   // 代码版本
-  code_version: 'v1.4.4.4',
+  code_version: 'v1.5.0',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']

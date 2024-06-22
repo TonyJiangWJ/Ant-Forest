@@ -110,12 +110,12 @@ const WaterBackConfig = {
   <div>
     <van-divider content-position="left">浇水设置</van-divider>
     <van-cell-group>
-      <switch-cell title="是否浇水回馈" v-model="configs.wateringBack" />
+      <switch-cell :title="getLabelByConfigKey('wateringBack')" v-model="configs.wateringBack" />
       <template v-if="configs.wateringBack">
-        <van-field v-model="configs.wateringThreshold" label="浇水阈值" placeholder="请输入浇水阈值" label-width="8em" type="text" input-align="right" />
-        <van-cell center title="浇水回馈数量" :value="configs.targetWateringAmount" @click="showTargetWateringAmount=true" />
+        <van-field v-model="configs.wateringThreshold" :label="getLabelByConfigKey('wateringThreshold')" placeholder="请输入浇水阈值" label-width="8em" type="text" input-align="right" />
+        <van-cell center :title="getLabelByConfigKey('targetWateringAmount')" :value="configs.targetWateringAmount" @click="showTargetWateringAmount=true" />
         <van-popup v-model="showTargetWateringAmount" position="bottom" :style="{ height: '30%' }">
-          <van-picker show-toolbar title="浇水数量" :columns="wateringAmountColumns" :default-index="0" @confirm="selectedTargetAmount" />
+          <van-picker show-toolbar :title="getLabelByConfigKey('wateringBlackList')" :columns="wateringAmountColumns" :default-index="0" @confirm="selectedTargetAmount" />
         </van-popup>
         <van-divider content-position="left">
           浇水黑名单设置
@@ -306,8 +306,6 @@ const RegionConfig = {
         rank_check_region: '',
         bottom_check_region: '',
         tree_collect_region: '',
-        // 能量球识别配置
-        detect_ball_by_yolo: true,
         skip_own_watering_ball: true,
         hough_param1: null,
         hough_param2: null,
@@ -453,6 +451,7 @@ const RegionConfig = {
   template: `
   <div>
     <div ref="top-block"></div>
+    <tip-block>在收集设置中打开YOLO检测，则可以不用再配置以下区域信息数据</tip-block>
     <van-divider content-position="left">
       图像分析相关
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="showRealVisual">实时查看区域配置</van-button>
@@ -473,7 +472,6 @@ const RegionConfig = {
         :error-message="validationError.tree_collect_region"
         v-model="configs.tree_collect_region" label="能量球所在区域" label-width="10em" />
       <van-field :readonly="true" v-else value="下次运行时重新识别" label="能量球所在区域" label-width="10em" type="text" input-align="right" />
-      <switch-cell title="使用YOLO模型识别能量球" v-model="configs.detect_ball_by_yolo" />
       <switch-cell title="下次运行时重新识别" v-model="configs.auto_detect_tree_collect_region" />
       <switch-cell title="霍夫变换进阶配置" label="如非必要请不要随意修改" v-model="hough_config" />
       <template v-if="hough_config">

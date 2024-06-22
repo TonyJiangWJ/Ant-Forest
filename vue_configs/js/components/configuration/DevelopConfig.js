@@ -48,6 +48,7 @@ const DevelopConfig = {
         <switch-cell title="是否保存神奇海洋训练用数据" v-model="configs.sea_ball_train_save_data" />
         <switch-cell title="是否保存首页训练用数据" v-model="configs.save_home_train_data" />
         <switch-cell title="是否保存能量收取失败数据" v-model="configs.save_no_energy_train_data" />
+        <switch-cell title="是否保存一键收数据" v-model="configs.save_one_key_train_data" />
       </div>
       </template>
     </template>

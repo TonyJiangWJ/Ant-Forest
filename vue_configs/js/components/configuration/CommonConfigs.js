@@ -236,6 +236,7 @@ const AdvanceCommonConfig = {
         // 截图相关
         async_waiting_capture: true,
         capture_waiting_time: 500,
+        capture_screen_gap: 10,
         request_capture_permission: true,
         capture_permission_button: 'START NOW|立即开始|允许',
         is_pro: false,
@@ -319,6 +320,10 @@ const AdvanceCommonConfig = {
       <tip-block>偶尔通过captureScreen获取截图需要等待很久，或者一直阻塞无法进行下一步操作，建议开启异步等待，然后设置截图等待时间</tip-block>
       <switch-cell title="是否异步等待截图" v-model="configs.async_waiting_capture" />
       <number-field v-if="configs.async_waiting_capture" v-model="configs.capture_waiting_time" label="获取截图超时时间" label-width="8em" placeholder="请输入超时时间" >
+        <template #right-icon><span>毫秒</span></template>
+      </number-field>
+      <tip-block>两次截图之间如果时间太短，会经常性导致截图超时，需要自行调试修改最小间隔时间，如果不需要间隔，则设置为0即可</tip-block>
+      <number-field v-model="configs.capture_screen_gap" label="获取截图最小间隔时间" label-width="12em" placeholder="请输入间隔时间" >
         <template #right-icon><span>毫秒</span></template>
       </number-field>
       <switch-cell v-if="!configs.is_pro" title="是否通话时暂停脚本" title-style="width: 10em;flex:2;" label="需要授权AutoJS获取通话状态，Pro版暂时无法使用" v-model="configs.enable_call_state_control" />

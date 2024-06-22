@@ -144,21 +144,21 @@ const AlipayAccountManage = {
   template: `
   <div>
     <van-cell-group>
-      <!--<switch-cell title="是否启用多账号切换" v-model="configs.enable_multi_account" />-->
-      <van-cell title="当前主账号" :value="configs.main_account" >
+      <!--<switch-cell :title="getLabelByConfigKey('enable_multi_account')" v-model="configs.enable_multi_account" />-->
+      <van-cell :title="getLabelByConfigKey('main_account')" :value="configs.main_account" >
         <template #right-icon v-if="configs.main_account">
           <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="changeAccount">切换账号</van-button>
         </template>
       </van-cell>
-      <switch-cell title="小号收集完成后对大号浇水" v-model="configs.watering_main_account" />
+      <switch-cell :title="getLabelByConfigKey('watering_main_account')" v-model="configs.watering_main_account" />
       <template v-if="configs.watering_main_account">
        <tip-block>默认使用大号昵称查找大号入口，如果小号首页无法找到大号则无法进行浇水，请自行获取userId以确保百分百跳转大号</tip-block>
-        <switch-cell title="使用userid跳转大号" v-model="configs.to_main_by_user_id" />
+        <switch-cell :title="getLabelByConfigKey('to_main_by_user_id')" v-model="configs.to_main_by_user_id" />
         <template v-if="configs.to_main_by_user_id">
           <tip-block>使用神秘代码直接跳转大号界面，需要获取大号的USER_ID，为2088开头的字符串，可以登录网页版支付宝，然后进入个人首页，右键查看网页源代码，搜索2088即可找到。关闭或者为空则会使用控件方式直接查找大号</tip-block>
-          <van-field v-model="configs.main_userid" label="主账号USERID" label-width="10em" placeholder="输入2088开头的userId" type="text" input-align="right" />
+          <van-field v-model="configs.main_userid" :label="getLabelByConfigKey('main_userid')" label-width="10em" placeholder="输入2088开头的userId" type="text" input-align="right" />
         </template>
-        <van-cell title="大号浇水时机">
+        <van-cell :title="getLabelByConfigKey('watering_main_at')">
           <template #right-icon>
             <van-dropdown-menu active-color="#1989fa" class="cell-dropdown">
               <van-dropdown-item v-model="configs.watering_main_at" :options="waterAtOptions" @change="waterAtChanged"/>

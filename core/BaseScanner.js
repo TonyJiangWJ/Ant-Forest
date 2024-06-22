@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-03-25 10:54:28
+ * @Last Modified time: 2024-06-23 00:05:31
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -132,7 +132,7 @@ const BaseScanner = function () {
   // 收取能量
   this.collectEnergy = function (isOwn) {
     this.collect_operated = false
-    if (!isOwn && _config.use_one_key_collect && _config.image_config.one_key_collect) {
+    if (!isOwn && _config.use_one_key_collect && (YoloDetection.enabled || _config.image_config.one_key_collect)) {
       this.collectByOneKeyCollect()
       return
     }
@@ -155,20 +155,49 @@ const BaseScanner = function () {
     let recheck = false
     do {
       haveValidBalls = false
+      WarningFloaty.clearAll()
       let screen = _commonFunctions.checkCaptureScreenPermission()
       if (screen) {
         if (this.isProtected) {
           // 已判定为使用了保护罩
           return
         }
-        let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.one_key_collect))
-        if (collect) {
-          haveValidBalls = true
-          if (!this.awaitForCollectable()) {
-            return
+        let collected = false
+        if (YoloDetection.enabled) {
+          let yoloCheckList = YoloDetection.forward(screen, { confidence: 0.7, filter: (result) => result.label == 'one_key' })
+          debugInfo(['本次yolo模型判断一键收信息总耗时：{}ms 找到目标数：{}', new Date().getTime() - start, yoloCheckList.length])
+          if (yoloCheckList && yoloCheckList.length > 0) {
+            let collect = yoloCheckList[0]
+            WarningFloaty.addRectangle('一键收', [collect.x - 10, collect.y - 10, collect.width + 20, collect.height + 20])
+            automator.click(collect.centerX, collect.centerY)
+            if (_config._double_click_card_used) {
+              sleep(50)
+              automator.click(collect.centerX, collect.centerY)
+            }
+            collected = true
           }
-          WarningFloaty.addRectangle('一键收', [collect.left, collect.top, collect.width(), collect.height()])
-          automator.click(collect.centerX(), collect.centerY())
+        } 
+        if (!collected) {
+          if (YoloDetection.enabled) {
+            warnInfo(['yolo识别一键收失败'])
+            YoloTrainHelper.saveImage(screen, '一键收', 'one_key_fail', _config.save_one_key_train_data)
+          }
+          let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.one_key_collect))
+          if (collect) {
+            WarningFloaty.addRectangle('一键收', [collect.left - 10, collect.top - 10, collect.width() + 20, collect.height() + 20])
+            automator.click(collect.centerX(), collect.centerY())
+            if (_config._double_click_card_used) {
+              sleep(50)
+              automator.click(collect.centerX(), collect.centerY())
+            }
+            collected = true
+          }
+        }
+
+        if (collected) {
+          this.one_key_had_success = true
+          haveValidBalls = true
+          YoloTrainHelper.saveImage(screen, '一键收', 'one_key', _config.save_one_key_train_data)
           this.collect_operated = true
         } else if (!recheck) {
           warnInfo(['未能通过一键收图片找到目标按钮，请确认在查找图片设这中正确配置了相应图片，仅仅覆盖文字即可，不要截取多余的信息'])
@@ -195,15 +224,17 @@ const BaseScanner = function () {
           } else {
             warnInfo(['无法通过ocr找到一键收，可能当前有活动元素阻断'])
           }
+        } else if (_config.double_check_collect) {
+          debugInfo(['二次校验未能找到一键收'])
         }
       }
-      if (haveValidBalls) {
+      if (haveValidBalls && _config.double_check_collect) {
         recheck = true
-        debugInfo(['需要二次校验，等待{}ms', 500])
-        sleep(500)
+        debugInfo(['需要二次校验，等待{}ms', 150])
+        sleep(150)
       }
       WarningFloaty.clearAll()
-    } while (haveValidBalls)
+    } while (haveValidBalls && _config.double_check_collect)
     debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
   }
 
@@ -211,6 +242,13 @@ const BaseScanner = function () {
    * 等待保护罩校验完成 并返回是否使用了保护罩
    */
   this.awaitForCollectable = function () {
+    if (this.is_own) {
+      return true
+    }
+    if (!this.is_own && _config.use_one_key_collect && _config.image_config.one_key_collect) {
+      debugInfo('一键收模式下不等待保护罩校验')
+      return true
+    }
     if (!this.isProtectDetectDone) {
       this.protectDetectingLock.lock()
       try {
@@ -228,10 +266,18 @@ const BaseScanner = function () {
   /**
    * 根据YOLO模型进行识别 收取能量球
    * @param {boolean} isOwn 是否收集自己
+   * @param {function} findBallsCallback 测试用 回调找到的球列表
+   * @param {function} findPointCallback 测试用 回调可点击的点
+   * @param {function} findInvalidCallback 测试用 回调非可点击的点
    * @param {int} recheckLimit 识别次数
    */
-  this.checkAndCollectByYolo = function (isOwn, recheckLimit) {
+  this.checkAndCollectByYolo = function (isOwn, findBallsCallback, findPointCallback, findInvalidCallback, recheckLimit) {
     this.is_own = isOwn || false
+    this.collect_operated = false
+    findBallsCallback = findBallsCallback || EMPTY_FUNC
+    findPointCallback = findPointCallback || EMPTY_FUNC
+    findInvalidCallback = findInvalidCallback || EMPTY_FUNC
+
     recheckLimit = recheckLimit || 3
     let repeat = false
     if (this.is_own) {
@@ -251,8 +297,20 @@ const BaseScanner = function () {
           return
         }
         let _start = new Date().getTime()
-        let collectableList = YoloDetection.forward(rgbImg, { confidence: 0.85, filter: (result) => result.label == 'collect' || isOwn && result.label == 'waterBall' })
-        debugInfo(['本次yolo模型判断可收集能量球信息总耗时：{}ms', new Date().getTime() - _start])
+        let yoloCheckList = YoloDetection.forward(rgbImg, { confidence: 0.85, filter: (result) => result.label == 'collect' || isOwn && (result.label == 'waterBall' || result.label == 'countdown' || result.label == 'cannot') })
+        debugInfo(['本次yolo模型判断可收集能量球信息总耗时：{}ms 找到目标数：{}', new Date().getTime() - _start, yoloCheckList.length])
+        let collectableList = yoloCheckList.filter(c => {
+          if (c.label == 'collect' || isOwn && c.label == 'waterBall') {
+            return true
+          }
+          // 转换成圆心坐标
+          findInvalidCallback({
+            x: c.x + c.width / 2,
+            y: c.y + c.height / 2,
+            radius: c.width / 2,
+          })
+          return false
+        })
         if (collectableList.length > 0) {
           haveValidBalls = true
           if (!this.awaitForCollectable()) {
@@ -574,6 +632,10 @@ const BaseScanner = function () {
    * @param {string} name
    */
   this.protectInfoDetect = function (name) {
+    if (!this.is_own && _config.use_one_key_collect && _config.image_config.one_key_collect) {
+      debugInfo('一键收模式下不进行保护罩校验')
+      return
+    }
     this.isProtectDetectDone = false
     this.isProtected = false
     let loadMoreButton = _widgetUtils.widgetGetOne(_config.friend_load_more_content || '点击展开好友动态', 1000)
@@ -781,6 +843,14 @@ const BaseScanner = function () {
     }
     let collectedEnergy = postGet - preGot
     debugInfo(['执行前，收集数据：{}; 执行后，收集数据：{}', preGot, postGet])
+    if (!this.collect_operated) {
+      this.failed_count = (this.failed_count||0) + 1
+      debugInfo(['未收集能量，失败次数+1 [{}]', this.failed_count])
+      if (_config.use_one_key_collect && !this.one_key_had_success && this.failed_count >= 3) {
+        warnInfo(['一键收从未成功且收取失败次数过多，临时关闭一键收'])
+        _config.use_one_key_collect = false
+      }
+    }
     if (this.collect_operated && collectedEnergy === 0 && !obj.recheck) {
       // 没有收集到能量，可能有保护罩，等待1.5秒
       warnInfo(['未收集到能量，可能当前能量值未刷新或者好友使用了保护罩，等待1.5秒'], true)
@@ -893,22 +963,37 @@ const BaseScanner = function () {
    */
   this.checkForPlantReward = function () {
     let screen = _commonFunctions.checkCaptureScreenPermission()
+    if (!screen) {
+      warnInfo(['获取截图失败，无法判断是否存在森林赠礼'])
+      return
+    }
     YoloTrainHelper.saveImage(screen, '校验是否有种树奖励')
-    if (screen && _config.image_config.reward_for_plant) {
+    let clicked = false
+    if (YoloDetection.enabled) {
+      let result = YoloDetection.forward(screen, { confidence: 0.75, filter: (result) => result.label == 'gift' })
+      if (result && result.length > 0) {
+        result = result[0]
+        automator.click(result.centerX, result.centerY)
+        clicked = true
+      }
+    } else if (_config.image_config.reward_for_plant) {
       let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.reward_for_plant))
       if (collect) {
         debugInfo('截图找到了目标, 获取森林赠礼')
         automator.click(collect.centerX(), collect.centerY())
-        // 等待点击后的动画结束
-        sleep(1000)
-        let gotItBtn = _widgetUtils.widgetGetOne('知道了', 1000)
-        if (gotItBtn) {
-          debugInfo('大礼盒需要点击知道了')
-          automator.clickCenter(gotItBtn)
-          sleep(300)
-        }
-        return true
+        clicked = true
       }
+    } else {
+      warnInfo(['无法正确判断是否存在森林赠礼种树奖励,请确认配置赠礼图片或者开启Yolo模型识别'])
+    }
+    if (clicked) {
+      let gotItBtn = _widgetUtils.widgetGetOne('知道了', 1000)
+      if (gotItBtn) {
+        debugInfo('大礼盒需要点击知道了')
+        automator.clickCenter(gotItBtn)
+        sleep(300)
+      }
+      return true
     }
     return false
   }

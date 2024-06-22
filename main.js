@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-03-27 23:14:44
+ * @Last Modified time: 2024-06-21 13:28:02
  * @Description: 蚂蚁森林自动收能量
  */
 console.warn('如遇语法报错，请从README下载最新版的AutoJS，旧版本不维护，不适配')
@@ -13,6 +13,7 @@ require('./modules/init_if_needed.js')(runtime, global)
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 let commonFunctions = singletonRequire('CommonFunction')
+let YoloDetection = singletonRequire('YoloDetectionUtil')
 
 // 避免定时任务打断前台运行中的任务
 commonFunctions.checkAnyReadyAndSleep()
@@ -104,6 +105,8 @@ logInfo(['运行模式：{} {} {}',
 logInfo(['设备分辨率：[{}, {}] 配置缩放比例：{}', config.device_width, config.device_height, config.scaleRate])
 let { tree_collect_left, tree_collect_top, tree_collect_width, tree_collect_height } = config
 logInfo(['能量球所在区域：{}', JSON.stringify([tree_collect_left, tree_collect_top, tree_collect_width, tree_collect_height])])
+logInfo(['Yolo支持：{}', YoloDetection.enabled])
+YoloDetection.validLabels()
 // -------- WARING --------
 warnInfo('以上配置的详细内容请见README.md')
 
