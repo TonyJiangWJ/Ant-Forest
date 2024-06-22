@@ -5,6 +5,7 @@ const loadJsList = [
   'https://fastly.jsdelivr.net/npm/axios@0.25.0/dist/axios.min.js',
   'https://fastly.jsdelivr.net/npm/js-base64@3.7.2/base64.min.js',
   './js/mdjs.min.js',
+  './js/configLabels.js',
   './js/components/configuration/About.js',
   './js/components/configuration/ImageConfig.js',
   './js/components/configuration/DevelopConfig.js',

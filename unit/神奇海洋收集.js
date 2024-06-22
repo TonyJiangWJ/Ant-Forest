@@ -8,6 +8,7 @@ let commonFunctions = singletonRequire('CommonFunction')
 let widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let YoloTrainHelper = singletonRequire('YoloTrainHelper')
+let YoloDetectionUtil = singletonRequire('YoloDetectionUtil')
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let TouchController = require('../lib/TouchController.js')
 let AiUtil = require('../lib/AIRequestUtil.js')
@@ -306,30 +307,28 @@ function openMiracleOcean () {
   sleep(1000)
 }
 
-function findTrashs (delay, onceOnly) {
+function findTrashs (delay, onceOnly, friend) {
   floatyInstance.setFloatyInfo({ x: config.device_width / 2, y: config.device_height / 2 }, '找垃圾球中...')
   sleep(delay || 3000)
   let screen = commonFunctions.checkCaptureScreenPermission()
   if (screen) {
     this.temp_img = images.copy(screen, true)
-    let grayImgInfo = images.grayscale(images.medianBlur(screen, 5))
-    let findBalls = images.findCircles(
-      grayImgInfo,
-      {
-        param1: config.hough_param1 || 30,
-        param2: config.hough_param2 || 30,
-        minRadius: config.sea_ball_radius_min || cvt(20),
-        maxRadius: config.sea_ball_radius_max || cvt(35),
-        minDst: config.hough_min_dst || cvt(100),
-        region: config.sea_ball_region
-      }
-    )
-    findBalls = findBalls.map(ball => {
-      ball.x = ball.x + config.sea_ball_region[0]
-      ball.y = ball.y + config.sea_ball_region[1]
-      return ball
-    })
+    let findBalls = doFindTrashs(screen)
     debugInfo(['找到的球：{}', JSON.stringify(findBalls)])
+    if (!friend) {
+      let energyBalls = findBalls.filter(ball => ball.label == 'collect')
+      if (energyBalls && energyBalls.length > 0) {
+        debugInfo(['找到能量球：{}', JSON.stringify(energyBalls)])
+        energyBalls.forEach(ball => {
+          clickPoint(ball.x + ball.width / 2, ball.y + ball.height / 2)
+          sleep(100)
+        })
+      }
+    }
+    warningFloaty.clearAll()
+    if (YoloDetectionUtil.enabled) {
+      findBalls = findBalls.filter(ball => ball.label == 'sea_garbage')
+    }
     if (findBalls && findBalls.length > 0) {
       // config.save_yolo_train_data = true
       YoloTrainHelper.saveImage(this.temp_img, '有垃圾球', 'sea_ball', config.sea_ball_train_save_data)
@@ -337,10 +336,15 @@ function findTrashs (delay, onceOnly) {
       let ball = findBalls[0]
       floatyInstance.setFloatyInfo({ x: ball.x, y: ball.y }, '找到了垃圾')
       sleep(500)
-      let clickPos = { x: ball.x - ball.radius * 1.5, y: ball.y + ball.radius * 1.5 }
-      floatyInstance.setFloatyInfo(clickPos, '点击位置')
-      sleep(2000)
-      clickPoint(clickPos.x, clickPos.y)
+      if (!YoloDetectionUtil.enabled) {
+        let clickPos = { x: ball.x - ball.radius * 1.5, y: ball.y + ball.radius * 1.5 }
+        floatyInstance.setFloatyInfo(clickPos, '点击位置')
+        sleep(2000)
+        clickPoint(clickPos.x, clickPos.y)
+      } else {
+        floatyInstance.setFloatyInfo({ x: ball.centerX, y: ball.centerY }, '点击位置')
+        clickPoint(ball.centerX, ball.centerY)
+      }
       sleep(1000)
       let collect = widgetUtils.widgetGetOne('.*(清理|收下|(欢迎|迎回)伙伴|.*不.*了.*).*')
       if (collect) {
@@ -368,16 +372,15 @@ function collectFriends (retry) {
   }
   logFloaty.pushLog('准备收取好友垃圾')
   logFloaty.pushLog('OCR查找找拼图')
-  let btn = ocrUtil.recognizeWithBounds(commonFunctions.checkCaptureScreenPermission(), [config.device_width / 2, config.device_height / 2, config.device_width / 2, config.device_height / 2], '找拼图')
-  if (btn && btn.length > 0) {
+  let btn = findStrollBtn()
+  if (btn) {
     YoloTrainHelper.saveImage(commonFunctions.captureScreen(), '找到拼图按钮', 'sea_ball_friend', config.sea_ball_train_save_data)
     logFloaty.pushLog('找到拼图按钮')
-    let bounds = btn[0].bounds
-    btn = { x: bounds.centerX(), y: bounds.centerY() }
     floatyInstance.setFloatyInfo({ x: btn.x, y: btn.y }, '点击拼图按钮')
-    automator.click(btn.x, btn.y)
+    clickPoint(btn.x, btn.y)
     sleep(1000)
-    if (findTrashs(1000, true)) {
+    waitForStrollBtn()
+    if (findTrashs(1000, true, true)) {
       sleep(1000)
       return collectFriends()
     } else {
@@ -391,7 +394,7 @@ function collectFriends (retry) {
   if (backHome) {
     logFloaty.pushLog('点击回到我的海洋')
     floatyInstance.setFloatyInfo({ x: backHome.bounds().centerX(), y: backHome.bounds().centerY() }, '点击回到我的海洋')
-    automator.click(backHome.bounds().centerX(), backHome.bounds().centerY())
+    clickPoint(backHome.bounds().centerX(), backHome.bounds().centerY())
     sleep(1000)
   } else if (!retry) {
     logFloaty.pushLog('未识别到回到我的海洋按钮，尝试再次识别垃圾球')
@@ -420,7 +423,7 @@ function checkNext (tryTime, checkOnly) {
     return
   }
   warningFloaty.disableTip()
-  let ocrRegion = [config.sea_ocr_left, config.sea_ocr_top, config.sea_ocr_width, config.sea_ocr_height]
+  let ocrRegion = getOcrRegionByYolo() || [config.sea_ocr_left, config.sea_ocr_top, config.sea_ocr_width, config.sea_ocr_height]
   floatyInstance.setFloatyInfo({ x: ocrRegion[0], y: ocrRegion[1] - 100 }, '识别倒计时中...')
   sleep(500)
   let screen = commonFunctions.checkCaptureScreenPermission()
@@ -461,4 +464,101 @@ function checkNext (tryTime, checkOnly) {
   }
   warningFloaty.enableTip()
 
+}
+
+
+function getOcrRegionByYolo () {
+  if (!YoloDetectionUtil.enabled) {
+    return null
+  }
+  let screen = commonFunctions.checkCaptureScreenPermission()
+  let result = YoloDetectionUtil.forward(screen, { labelRegex: 'sea_ocr', confidence: 0.7 })
+  if (result && result.length > 0) {
+    let { x, y, width, height, label, confidence } = result[0]
+    debugInfo(['yolo 识别ocr区域：「{}」confidence: {}', [x, y, width, height], confidence])
+    return [x, y, width, height]
+  }
+  return null
+}
+
+function doFindTrashs (screen) {
+  if (YoloDetectionUtil.enabled) {
+    let findBalls = YoloDetectionUtil.forward(screen, { labelRegex: 'sea_garbage|collect', confidence: 0.7 })
+    if (findBalls && findBalls.length > 0) {
+      findBalls.sort((a, b) => a.label == 'collect' ? 1 : -1)
+      findBalls.forEach(b => {
+        warningFloaty.addRectangle(b.label, [b.x, b.y, b.width, b.height])
+      })
+    }
+    return findBalls
+  } else {
+    let grayImgInfo = images.grayscale(images.medianBlur(screen, 5))
+    let findBalls = images.findCircles(
+      grayImgInfo,
+      {
+        param1: config.hough_param1 || 30,
+        param2: config.hough_param2 || 30,
+        minRadius: config.sea_ball_radius_min || cvt(20),
+        maxRadius: config.sea_ball_radius_max || cvt(35),
+        minDst: config.hough_min_dst || cvt(100),
+        region: config.sea_ball_region
+      }
+    )
+    findBalls = findBalls.map(ball => {
+      ball.x = ball.x + config.sea_ball_region[0]
+      ball.y = ball.y + config.sea_ball_region[1]
+      return ball
+    })
+    return findBalls
+  }
+}
+
+function findStrollBtn () {
+  let screen = commonFunctions.checkCaptureScreenPermission()
+  if (YoloDetectionUtil.enabled) {
+    let btn = YoloDetectionUtil.forward(screen, { labelRegex: 'stroll_btn', confidence: 0.7 })
+    if (btn && btn.length > 0) {
+      return btn[0]
+    }
+  } else {
+    let bounds = ocrUtil.recognizeWithBounds(screen, [config.device_width / 2, config.device_height / 2, config.device_width / 2, config.device_height / 2], '找拼图')
+    if (bounds && bounds.length > 0) {
+      bounds = btn[0].bounds
+      return { x: bounds.centerX(), y: bounds.centerY() }
+    }
+  }
+  return null
+}
+function waitForStrollBtn () {
+  if (YoloDetectionUtil.enabled) {
+    return yoloWait('stroll_btn')
+  } else {
+    return ocrWait('找拼图')
+  }
+}
+function yoloWait (labelRegex, limit) {
+  limit = limit || 3
+  if (YoloDetectionUtil.enabled) {
+    do {
+      let result = YoloDetectionUtil.forward(commonFunctions.captureScreen(), { labelRegex: labelRegex, confidence: 0.7 })
+      if (result && result.length > 0) {
+        return true
+      }
+      sleep(500)
+    } while (limit > 0)
+  }
+  return false
+}
+
+function ocrWait (text, limit) {
+  limit = limit || 3
+  do {
+    let screen = commonFunctions.checkCaptureScreenPermission()
+    let result = ocrUtil.recognize(screen)
+    if (result && result.indexOf(text) >= 0) {
+      return true
+    }
+    sleep(500)
+  } while (limit > 0)
+  return false
 }

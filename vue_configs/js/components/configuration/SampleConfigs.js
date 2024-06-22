@@ -229,7 +229,7 @@ const PatrolWalkerConfig = {
   },
   template: `
   <div>
-    <tip-block>对下述文件创建每天固定时间的定时任务即可，不过建议使用github actions刷步数，然后在步数达到1万以上后再触发，以便得到最大巡护次数</tip-block>
+    <tip-block>对下述文件创建每天固定时间的定时任务即可，不过建议使用github actions(搜索 TonyJiangWJ/mimotion 按说明配置即可)刷步数，然后在步数达到1万以上后再触发，以便得到最大巡护次数</tip-block>
     <tip-block>unit/自动巡护.js{{timedUnit1|displayTime}}</tip-block>
     <van-divider content-position="left">
       自动巡护配置
@@ -248,6 +248,8 @@ const CollectConfig = {
     return {
       cardTipsName: [],
       configs: {
+        // 开启yolo目标检测
+        detect_ball_by_yolo: true,
         no_friend_list_countdown: true,
         is_cycle: true,
         cycle_times: 10,
@@ -384,6 +386,11 @@ const CollectConfig = {
   template: `
     <div>
       <van-cell-group>
+        <tip-block>YOLO目标检测需要 AutoJS修改版或者困鱼 版本支持，同时需要下载ONNX模型，运行 独立工具/模型下载.js 即可自动下载</tip-block>
+        <tip-block>开启YOLO目标检测后，基本所有图像识别相关设置都可以不再进行配置。如果YOLO识别精度过低，可以在关于项目-开发模式
+           打开启用开发模式，打开是否保存YOLO训练用数据 然后关闭开发模式。运行一段时间后将resources/trainData目录打包发送给开发者，进行进一步训练以便提高模型识别精度</tip-block>
+        <tip-block>运行 独立工具/YOLOJ检测.js 可以查看模型识别效果</tip-block>
+        <switch-cell title="使用YOLO模型识别检测元素" v-model="configs.detect_ball_by_yolo" />
         <tip-block>当前版本仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，有一定几率会漏收倒计时刚刚结束的能量</tip-block>
         <switch-cell title="逛一逛结束后重复一遍" v-model="configs.recheck_after_stroll" label="逛一逛收集到能量后，重复逛一逛避免漏收倒计时刚刚结束的能量" title-style="flex:3.5;" />
         <switch-cell title="不去排行榜获取倒计时数据" v-model="configs.no_friend_list_countdown"/>

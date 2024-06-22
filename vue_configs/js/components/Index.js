@@ -21,6 +21,10 @@ let Index = {
           link: '/basic/lock'
         },
         {
+          title: '收集设置',
+          link: '/basic/collect'
+        },
+        {
           title: '能量雨设置',
           link: '/basic/rain'
         },
@@ -31,10 +35,6 @@ let Index = {
         {
           title: '巡护设置',
           link: '/basic/patrol/walker'
-        },
-        {
-          title: '收集设置',
-          link: '/basic/collect'
         },
         {
           title: '多账号管理',

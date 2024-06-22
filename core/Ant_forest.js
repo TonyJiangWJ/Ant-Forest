@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-13 09:45:48
+ * @Last Modified time: 2024-06-22 23:53:54
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -16,6 +16,7 @@ let AntForestDao = singletonRequire('AntForestDao')
 let FloatyInstance = singletonRequire('FloatyUtil')
 let WarningFloaty = singletonRequire('WarningFloaty')
 let YoloTrainHelper = singletonRequire('YoloTrainHelper')
+let YoloDetection = singletonRequire('YoloDetectionUtil')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
@@ -290,7 +291,12 @@ function Ant_forest () {
    */
   function getValidClickableBalls () {
     let ballPoints = []
-    _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, null, 1)
+    if (YoloDetection.enabled) {
+      // 获取倒计时球 invalidBall
+      _base_scanner.checkAndCollectByYolo(true, null, ball => ballPoints.push(ball), null, 1)
+    } else {
+      _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, null, 1)
+    }
     return ballPoints.filter(ball => {
       let radius = parseInt(ball.radius)
       if (
@@ -585,7 +591,12 @@ function Ant_forest () {
       }
       let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
       if (backToForest) {
-        automator.clickCenter(backToForest)
+        if (!backToForest.click()) {
+          warnInfo('无障碍点击失败，尝试坐标点击')
+          randomScrollDown()
+          backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
+          backToForest && automator.clickCenter(backToForest)
+        }
       } else {
         automator.back()
       }
@@ -668,17 +679,34 @@ function Ant_forest () {
     } while (confirm && --maxTry > 0)
     automator.back()
     sleep(1000)
+    _commonFunctions.setMagicCollected()
   }
 
   function signUpForMagicSpecies () {
+    if (_commonFunctions.checkMagicCollected()) {
+      return
+    }
     let screen = _commonFunctions.checkCaptureScreenPermission()
     YoloTrainHelper.saveImage(screen, '识别神奇物种入口')
-    if (screen && _config.image_config.magic_species_icon) {
-      let find = OpenCvUtil.findByGrayBase64(screen, _config.image_config.magic_species_icon)
-      if (find) {
-        debugInfo(['找到了神奇物种入口：{}', JSON.stringify(find)])
-        automator.click(find.centerX(), find.centerY())
+    if (!screen) {
+      warnInfo('未获取到截图，无法识别神奇物种入口')
+      return
+    }
+    if (YoloDetection.enabled) {
+      let result = YoloDetection.forward(screen, { confidendce: 0.7, labelRegex: 'magic_species' })
+      if (result && result.length > 0) {
+        debugInfo(['找到了神奇物种入口：{}', JSON.stringify(result)])
+        automator.click(result[0].centerX, result[0].centerY)
         doSignUpForMagicSpecies()
+      }
+    } else {
+      if (_config.image_config.magic_species_icon) {
+        let find = OpenCvUtil.findByGrayBase64(screen, _config.image_config.magic_species_icon)
+        if (find) {
+          debugInfo(['找到了神奇物种入口：{}', JSON.stringify(find)])
+          automator.click(find.centerX(), find.centerY())
+          doSignUpForMagicSpecies()
+        }
       }
     }
   }
@@ -697,8 +725,19 @@ function Ant_forest () {
       return
     }
     let screen = _commonFunctions.checkCaptureScreenPermission()
+    if (!screen) {
+      warnInfo(['获取截图失败'])
+      return
+    }
     YoloTrainHelper.saveImage(screen, '识别每日奖励')
-    if (screen && _config.image_config.sign_reward_icon) {
+    let collectPoint = null
+    if (YoloDetection.enabled) {
+      let result = YoloDetection.forward(screen, { confidendce: 0.7, labelRegex: 'reawrd' })
+      if (result && result.length > 0) {
+        collectPoint = result[0]
+      }
+    } 
+    if (!collectPoint && _config.image_config.sign_reward_icon) {
       let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.sign_reward_icon))
       if (collect) {
         debugInfo('截图找到了 奖励')
@@ -710,28 +749,34 @@ function Ant_forest () {
         }
       }
       if (collect) {
-        automator.click(collect.centerX(), collect.centerY())
-        sleep(1000)
-        let getRewards = _widgetUtils.widgetGetAll('^(立即领取|领取)$')
-        if (getRewards && getRewards.length > 0) {
-          debugInfo(['找到可领取的奖励数量：{}', getRewards.length])
-          getRewards.forEach(getReward => {
-            getReward.click()
-            let confirmBtn = _widgetUtils.widgetGetOne('知道了', 500)
-            if (confirmBtn) {
-              automator.clickCenter(confirmBtn)
-              sleep(500)
-            }
-          })
-        } else {
-          debugInfo(['未找到可领取的奖励'])
+        collectPoint = {
+          centerX: collect.centerX(),
+          centerY: collect.centerY()
         }
-        _commonFunctions.setRewardCollected()
-        automator.click(_config.device_width * 0.2, _config.device_width * 0.3)
-        sleep(200)
-      } else {
-        warnInfo('未找到奖励')
       }
+    }
+    if (collectPoint) {
+      automator.click(collectPoint.centerX, collectPoint.centerY)
+      sleep(1000)
+      let getRewards = _widgetUtils.widgetGetAll('^(立即领取|领取)$')
+      if (getRewards && getRewards.length > 0) {
+        debugInfo(['找到可领取的奖励数量：{}', getRewards.length])
+        getRewards.forEach(getReward => {
+          getReward.click()
+          let confirmBtn = _widgetUtils.widgetGetOne('知道了', 500)
+          if (confirmBtn) {
+            automator.clickCenter(confirmBtn)
+            sleep(500)
+          }
+        })
+      } else {
+        debugInfo(['未找到可领取的奖励'])
+      }
+      _commonFunctions.setRewardCollected()
+      automator.click(_config.device_width * 0.2, _config.device_width * 0.3)
+      sleep(200)
+    } else {
+      warnInfo('未找到奖励按钮')
     }
   }
 
@@ -787,6 +832,26 @@ function Ant_forest () {
     getPreEnergy()
   }
 
+  // 收集巡护能量球
+  const collectPatrolEnergy = function () {
+    if (!YoloDetection.enabled) {
+      warnInfo(['当前不支持YOLO，无法收取巡护能量球'])
+      return
+    }
+    let screen = _commonFunctions.captureScreen()
+    if (screen) {
+      let ball = YoloDetection.forward(screen, { confidendce: 0.5, labelRegex: 'patrol_ball' })
+      if (ball && ball.length > 0) {
+        ball = ball[0]
+        WarningFloaty.addRectangle('巡护球', [ball.x, ball.y, ball.width, ball.height])
+        automator.click(ball.x, ball.y)
+        sleep(100)
+      } else {
+        debugInfo(['未找到可收取的巡护能量球'])
+      }
+    }
+  }
+
   // 收取自己的能量
   const collectOwn = function () {
     if (_config.not_collect_self) {
@@ -801,6 +866,8 @@ function Ant_forest () {
       debugInfo('准备计算最短时间')
       getMinCountdownOwn()
     }
+    // 收集巡护能量球
+    collectPatrolEnergy()
     _post_energy = getCurrentEnergy(true)
     let collectedEnergy = _post_energy - energyBeforeCollect
     if (collectedEnergy) {

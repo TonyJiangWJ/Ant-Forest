@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-16 22:25:17
+ * @Last Modified time: 2024-06-21 02:13:45
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -15,6 +15,7 @@ let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let localOcrUtil = require('../lib/LocalOcrUtil.js')
 let WarningFloaty = singletonRequire('WarningFloaty')
 let YoloTrainHelper = singletonRequire('YoloTrainHelper')
+let YoloDetection = singletonRequire('YoloDetectionUtil')
 
 let BaseScanner = require('./BaseScanner.js')
 
@@ -116,7 +117,8 @@ const StrollScanner = function () {
       this.visualHelper.addRectangle('准备点击下一个', region)
       WarningFloaty.addRectangle('逛一逛按钮区域', region, '#00ff00')
       this.visualHelper.displayAndClearAll()
-      automator.clickRandomRegion({ left: region[0], top: region[1], width: region[2], height: region[3] })
+      // 直接点击中间位置
+      automator.click(region[0] + region[2] / 2, region[1] + region[3] / 2)
       sleep(300)
       hasNext = this.collectTargetFriend()
     }
@@ -343,6 +345,21 @@ function ocrFindText(screen, text, tryTime) {
   }
 }
 
+function regenerateByYolo(screen) {
+  let yoloCheck = YoloDetection.forward(screen, { labelRegex: 'stroll_btn' })
+  if (yoloCheck && yoloCheck.length > 0) {
+    let bounds = yoloCheck[0]
+    region = [
+      bounds.x, bounds.y,
+      bounds.width, bounds.height
+    ]
+    refillStrollInfo(region)
+    return true
+  }
+  return false
+
+}
+
 function regenerateByOcr(screen) {
   let ocrCheck = ocrFindText(screen, '找能量', 1)
   if (ocrCheck) {
@@ -372,6 +389,12 @@ function regenerateByImg(screen) {
       Math.floor(imagePoint.left), Math.floor(imagePoint.top),
       imagePoint.width(), imagePoint.height()
     ]
+    if (region[0] + region[2] > _config.device_width) {
+      region[2] = _config.device_width - region[0]
+    }
+    if (region[1] + region[3] > _config.device_height) {
+      region[3] = _config.device_height - region[1]
+    }
     if (configImageFail) {
       logInfo(['找到目标区域，截图保存：{}', JSON.stringify(region)])
       let croppedImage = images.clip(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), region[0], region[1], region[2], region[3])
@@ -396,7 +419,10 @@ function regenerateStrollButton() {
   }
   YoloTrainHelper.saveImage(screen, '识别逛一逛按钮')
   let successful = true
-  if (!regenerateByOcr(screen)) {
+  if (localOcrUtil.enabled) {
+    successful = regenerateByYolo(screen)
+  }
+  if (!successful && !regenerateByOcr(screen)) {
     successful = regenerateByImg(screen)
   }
   return successful
