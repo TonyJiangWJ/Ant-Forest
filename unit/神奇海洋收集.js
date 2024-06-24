@@ -35,6 +35,9 @@ commonFunctions.registerOnEngineRemoved(function () {
   }
   config.resetBrightness && config.resetBrightness()
   debugInfo('校验并移除已加载的dex')
+  if (typeof destoryPool != 'undefined') {
+    destoryPool()
+  }
   // 移除运行中任务
   runningQueueDispatcher.removeRunningTask(true, false,
     () => {
@@ -65,7 +68,10 @@ if (!shizukuSupport) {
 unlocker.exec()
 
 let executeArguments = engines.myEngine().execArgv
-debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
+// 部分设备中参数有脏东西 可能导致JSON序列化异常
+if (Object.keys(executeArguments).length < 5 && executeArguments && (!executeArguments.intent || Object.keys(executeArguments.intent) < 5)) {
+  debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
+}
 
 commonFunctions.listenDelayStart()
 commonFunctions.requestScreenCaptureOrRestart()
@@ -75,6 +81,14 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
   openMiracleOcean()
   checkNext()
   findTrashs()
+  // 查找好友垃圾
+  if (executeArguments.find_friend_trash) {
+    config.collecting_friends = true
+    collectFriends()
+  }
+  if (executeArguments.collect_reward) {
+    collectRewards()
+  }
   commonFunctions.minimize()
   exit()
 } else {
@@ -95,6 +109,9 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
       }
     })
   )
+  function destoryPool () {
+    threadPool && threadPool.shutdown()
+  }
   let data = {
     _clickExecuting: false,
     set clickExecuting (val) {
@@ -261,7 +278,7 @@ if (executeArguments.intent || executeArguments.executeByDispatcher) {
           try {
             btn.onClick()
           } catch (e) {
-            errorInfo(['点击执行异常：{}', e.message], true)
+            errorInfo(['点击执行异常：{} {}', e, e.message], true)
           } finally {
             data.clickExecuting = false
           }
@@ -371,7 +388,6 @@ function collectFriends (retry) {
     return
   }
   logFloaty.pushLog('准备收取好友垃圾')
-  logFloaty.pushLog('OCR查找找拼图')
   let btn = findStrollBtn()
   if (btn) {
     YoloTrainHelper.saveImage(commonFunctions.captureScreen(), '找到拼图按钮', 'sea_ball_friend', config.sea_ball_train_save_data)
@@ -516,11 +532,13 @@ function doFindTrashs (screen) {
 function findStrollBtn () {
   let screen = commonFunctions.checkCaptureScreenPermission()
   if (YoloDetectionUtil.enabled) {
+    logFloaty.pushLog('YOLO查找找拼图')
     let btn = YoloDetectionUtil.forward(screen, { labelRegex: 'stroll_btn', confidence: 0.7 })
     if (btn && btn.length > 0) {
       return btn[0]
     }
   } else {
+    logFloaty.pushLog('OCR查找找拼图')
     let bounds = ocrUtil.recognizeWithBounds(screen, [config.device_width / 2, config.device_height / 2, config.device_width / 2, config.device_height / 2], '找拼图')
     if (bounds && bounds.length > 0) {
       bounds = btn[0].bounds
@@ -530,14 +548,45 @@ function findStrollBtn () {
   return null
 }
 function waitForStrollBtn () {
+  logFloaty.pushLog('等待加载完成，目标元素 找拼图')
   if (YoloDetectionUtil.enabled) {
-    return yoloWait('stroll_btn')
+    return yoloWait('stroll_btn', null, () => config.collecting_friends)
   } else {
-    return ocrWait('找拼图')
+    return ocrWait('找拼图', null, () => config.collecting_friends)
   }
 }
-function yoloWait (labelRegex, limit) {
-  limit = limit || 3
+
+/**
+ * 领取奖励
+ */
+function collectRewards () {
+  if (!YoloDetectionUtil.enabled) {
+    logFloaty.pushErrorLog('领奖励需要YOLO支持')
+    warnInfo(['领取奖励功能需要开启YOLO'], true)
+    return
+  }
+  let reward = YoloDetectionUtil.forward(commonFunctions.captureScreen(), { labelRegex: 'reward', confidence: 0.7 })
+  if (reward && reward.length > 0) {
+    reward = reward[0]
+    floatyInstance.setFloatyInfo({ x: reward.centerX, y: reward.centerY }, '领奖励')
+    clickPoint(reward.centerX, reward.centerY)
+    sleep(1000)
+    let collect = widgetUtils.widgetGetOne('立即领取', 1000)
+    let limit = 5
+    while (collect && limit-- > 0) {
+      floatyInstance.setFloatyInfo({ x: collect.bounds().centerX(), y: collect.bounds().centerY() }, '立即领取')
+      collect.click()
+      sleep(500)
+      collect = widgetUtils.widgetGetOne('立即领取', 1000)
+    }
+    automator.back()
+  }
+}
+
+
+function yoloWait (labelRegex, limit, checker) {
+  limit = limit || 5
+  checker = checker || function () { return true }
   if (YoloDetectionUtil.enabled) {
     do {
       let result = YoloDetectionUtil.forward(commonFunctions.captureScreen(), { labelRegex: labelRegex, confidence: 0.7 })
@@ -545,13 +594,14 @@ function yoloWait (labelRegex, limit) {
         return true
       }
       sleep(500)
-    } while (limit > 0)
+    } while (limit-- > 0 && checker())
   }
   return false
 }
 
-function ocrWait (text, limit) {
-  limit = limit || 3
+function ocrWait (text, limit, checker) {
+  limit = limit || 5
+  checker = checker || function () { return true }
   do {
     let screen = commonFunctions.checkCaptureScreenPermission()
     let result = ocrUtil.recognize(screen)
@@ -559,6 +609,6 @@ function ocrWait (text, limit) {
       return true
     }
     sleep(500)
-  } while (limit > 0)
+  } while (limit-- > 0 && checker())
   return false
 }
