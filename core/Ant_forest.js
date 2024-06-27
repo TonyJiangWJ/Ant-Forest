@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-22 23:53:54
+ * @Last Modified time: 2024-06-27 22:21:11
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -293,10 +293,11 @@ function Ant_forest () {
     let ballPoints = []
     if (YoloDetection.enabled) {
       // 获取倒计时球 invalidBall
-      _base_scanner.checkAndCollectByYolo(true, null, ball => ballPoints.push(ball), null, 1)
+      _base_scanner.checkAndCollectByYolo(true, null, null, ball => ballPoints.push(ball), 1)
     } else {
       _base_scanner.checkAndCollectByHough(true, balls => ballPoints = balls, null, null, 1)
     }
+    debugInfo(['识别不可收取能量球数量：{}', ballPoints.length])
     return ballPoints.filter(ball => {
       let radius = parseInt(ball.radius)
       if (

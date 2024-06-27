@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-21 13:28:02
+ * @Last Modified time: 2024-06-27 18:49:40
  * @Description: 蚂蚁森林自动收能量
  */
 console.warn('如遇语法报错，请从README下载最新版的AutoJS，旧版本不维护，不适配')
@@ -184,6 +184,7 @@ commonFunctions.autoSetUpBangOffset()
  * 主程序
  ***********************/
 if (config.develop_mode) {
+  warnInfo(['如非必要，请关闭开发模式，保存YOLO数据等机制不需要持续开启开发模式'], true)
   antForestRunner.exec()
 } else {
   try {

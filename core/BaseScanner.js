@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-23 00:05:31
+ * @Last Modified time: 2024-06-27 22:30:09
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -321,6 +321,9 @@ const BaseScanner = function () {
             automator.click(c.x + c.width / 2, c.y + c.height / 2)
             self.collect_count++
             self.randomSleep()
+            if (c.label == 'waterBall') {
+              this.recheck = true
+            }
           })
           self.collect_operated = true
         }
@@ -328,7 +331,7 @@ const BaseScanner = function () {
       }
       // 有浇水能量球且收自己时，进行二次校验 最多3次 || 非收取自己，且未找到可操作能量球，二次校验 仅一次 || 使用了双击卡，且点击过球
       repeat = this.recheck && this.is_own && --recheckLimit > 0
-        || !haveValidBalls && --recheckLimit >= 2
+        || !this.is_own && !haveValidBalls && --recheckLimit >= 2
         || _config.double_check_collect && haveValidBalls && --recheckLimit > 0
       if (repeat) {
         debugInfo(['需要二次校验，等待{}ms', this.is_own ? 200 : 500])

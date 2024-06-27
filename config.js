@@ -305,7 +305,7 @@ let default_config = {
   chatgml_api_key: '',
   forum_url: 'https://autoscripts.flarum.cloud/',
   // 代码版本
-  code_version: 'v1.5.1',
+  code_version: 'v1.5.2',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
