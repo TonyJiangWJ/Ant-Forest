@@ -32,3 +32,12 @@ function getLabelByConfigKey(key) {
   }
   return key
 }
+
+/**
+ * getLabelByConfigKey 简化写法
+ * @param {String} key 
+ * @returns 
+ */
+function $t(key) {
+  return getLabelByConfigKey(key)
+}
