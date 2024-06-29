@@ -77,7 +77,9 @@ commonFunctions.listenDelayStart()
 commonFunctions.requestScreenCaptureOrRestart()
 
 if (executeArguments.intent || executeArguments.executeByDispatcher) {
-  commonFunctions.showCommonDialogAndWait('神奇海洋收垃圾')
+  if (!(executeArguments.find_friend_trash || executeArguments.collect_reward)) {
+    commonFunctions.showCommonDialogAndWait('神奇海洋收垃圾')
+  }
   openMiracleOcean()
   checkNext()
   findTrashs()
