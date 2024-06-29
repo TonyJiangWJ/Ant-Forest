@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-27 22:30:09
+ * @Last Modified time: 2024-06-29 11:31:19
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -153,6 +153,7 @@ const BaseScanner = function () {
     let start = new Date().getTime()
     let haveValidBalls = false
     let recheck = false
+    let limit = 3
     do {
       haveValidBalls = false
       WarningFloaty.clearAll()
@@ -164,19 +165,28 @@ const BaseScanner = function () {
         }
         let collected = false
         if (YoloDetection.enabled) {
-          let yoloCheckList = YoloDetection.forward(screen, { confidence: 0.7, filter: (result) => result.label == 'one_key' })
+          let yoloCheckList = YoloDetection.forward(screen, { confidence: 0.7, filter: (result) => result.label == 'one_key' || result.label == 'collect' })
           debugInfo(['本次yolo模型判断一键收信息总耗时：{}ms 找到目标数：{}', new Date().getTime() - start, yoloCheckList.length])
           if (yoloCheckList && yoloCheckList.length > 0) {
-            let collect = yoloCheckList[0]
-            WarningFloaty.addRectangle('一键收', [collect.x - 10, collect.y - 10, collect.width + 20, collect.height + 20])
-            automator.click(collect.centerX, collect.centerY)
-            if (_config._double_click_card_used) {
-              sleep(50)
+            let collect = yoloCheckList.filter(r => r.label == 'one_key')[0]
+            if (collect) {
+              if (limit < 3) {
+                // 二次校验 检查是否有可收取球
+                if (yoloCheckList.filter(c => c.label == 'collect').length <= 0) {
+                  warnInfo(['yolo识别一键收多次且未找到可收取球，可能识别不正确，推出循环'])
+                  break
+                }
+              }
+              WarningFloaty.addRectangle('一键收', [collect.x - 10, collect.y - 10, collect.width + 20, collect.height + 20])
               automator.click(collect.centerX, collect.centerY)
+              if (_config._double_click_card_used) {
+                sleep(50)
+                automator.click(collect.centerX, collect.centerY)
+              }
+              collected = true
             }
-            collected = true
           }
-        } 
+        }
         if (!collected) {
           if (YoloDetection.enabled) {
             warnInfo(['yolo识别一键收失败'])
@@ -234,7 +244,7 @@ const BaseScanner = function () {
         sleep(150)
       }
       WarningFloaty.clearAll()
-    } while (haveValidBalls && _config.double_check_collect)
+    } while (haveValidBalls && _config.double_check_collect && limit-- > 0)
     debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
   }
 
@@ -847,7 +857,7 @@ const BaseScanner = function () {
     let collectedEnergy = postGet - preGot
     debugInfo(['执行前，收集数据：{}; 执行后，收集数据：{}', preGot, postGet])
     if (!this.collect_operated) {
-      this.failed_count = (this.failed_count||0) + 1
+      this.failed_count = (this.failed_count || 0) + 1
       debugInfo(['未收集能量，失败次数+1 [{}]', this.failed_count])
       if (_config.use_one_key_collect && !this.one_key_had_success && this.failed_count >= 3) {
         warnInfo(['一键收从未成功且收取失败次数过多，临时关闭一键收'])
