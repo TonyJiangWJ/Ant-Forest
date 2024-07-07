@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-27 22:21:11
+ * @Last Modified time: 2024-07-05 10:41:35
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -17,6 +17,7 @@ let FloatyInstance = singletonRequire('FloatyUtil')
 let WarningFloaty = singletonRequire('WarningFloaty')
 let YoloTrainHelper = singletonRequire('YoloTrainHelper')
 let YoloDetection = singletonRequire('YoloDetectionUtil')
+let logFloaty = singletonRequire('LogFloaty')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
@@ -89,7 +90,7 @@ function Ant_forest () {
     }
   }
 
-  function alipayInFloatyWindow() {
+  function alipayInFloatyWindow () {
     if (_floaty_failed_time >= 3) {
       return false
     }
@@ -460,7 +461,9 @@ function Ant_forest () {
 
   // 记录最终能量值
   const getPostEnergy = function (collectedFriend) {
+    logFloaty.show()
     if (collectedFriend) {
+      logFloaty.pushLog('校验是否打开主页面')
       if (!_widgetUtils.homePageWaiting()) {
         debugInfo('非仅收自己，返回主页面')
         automator.back()
@@ -469,10 +472,12 @@ function Ant_forest () {
       // 二次收集自身能量
       recheckOwn()
     }
+    // 收取双倍能量
+    collectDoubleEnergy()
     // 等待能量值稳定
     sleep(500)
     _post_energy = getCurrentEnergy()
-    logInfo('当前能量：' + _post_energy)
+    logFloaty.pushLog('当前能量：' + _post_energy)
     // 领取奖励, 如果是循环模式则跳过每日奖励
     if (!_config.is_cycle) {
       getSignReward()
@@ -523,7 +528,7 @@ function Ant_forest () {
     do {
       randomScrollUp()
       randomScrollUp()
-    } while (limit-- > 0 && !_widgetUtils.widgetGetOne(/\d+g/, 1000, false, false, m => m.boundsInside(_config.device_width / 2, 0, _config.device_width, _config.device_width * 0.4), { algorithm: 'PVDFS' }))
+    } while (limit-- > 0 && !_widgetUtils.widgetGetOne('去保护', 1000, false, false, m => m.boundsInside(_config.device_width / 2, 0, _config.device_width, _config.device_width * 0.4), { algorithm: 'PVDFS' }))
     randomScrollUp()
   }
 
@@ -687,6 +692,7 @@ function Ant_forest () {
     if (_commonFunctions.checkMagicCollected()) {
       return
     }
+    logFloaty.pushLog('执行神奇物种签到')
     let screen = _commonFunctions.checkCaptureScreenPermission()
     YoloTrainHelper.saveImage(screen, '识别神奇物种入口')
     if (!screen) {
@@ -725,9 +731,10 @@ function Ant_forest () {
       debugInfo('今日已经领取过奖励 跳过领取')
       return
     }
+    logFloaty.pushLog('准备获取每日奖励')
     let screen = _commonFunctions.checkCaptureScreenPermission()
     if (!screen) {
-      warnInfo(['获取截图失败'])
+      logFloaty.pushErrorLog('获取截图失败')
       return
     }
     YoloTrainHelper.saveImage(screen, '识别每日奖励')
@@ -736,8 +743,10 @@ function Ant_forest () {
       let result = YoloDetection.forward(screen, { confidendce: 0.7, labelRegex: 'reawrd' })
       if (result && result.length > 0) {
         collectPoint = result[0]
+      } else {
+        debugInfo(['未能通过YOLO找到奖励按钮'])
       }
-    } 
+    }
     if (!collectPoint && _config.image_config.sign_reward_icon) {
       let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.sign_reward_icon))
       if (collect) {
@@ -761,7 +770,7 @@ function Ant_forest () {
       sleep(1000)
       let getRewards = _widgetUtils.widgetGetAll('^(立即领取|领取)$')
       if (getRewards && getRewards.length > 0) {
-        debugInfo(['找到可领取的奖励数量：{}', getRewards.length])
+        logFloaty.pushLog('找到可领取的奖励数量：' + getRewards.length)
         getRewards.forEach(getReward => {
           getReward.click()
           let confirmBtn = _widgetUtils.widgetGetOne('知道了', 500)
@@ -771,13 +780,13 @@ function Ant_forest () {
           }
         })
       } else {
-        debugInfo(['未找到可领取的奖励'])
+        logFloaty.pushLog('未找到可领取的奖励')
       }
       _commonFunctions.setRewardCollected()
       automator.click(_config.device_width * 0.2, _config.device_width * 0.3)
       sleep(200)
     } else {
-      warnInfo('未找到奖励按钮')
+      logFloaty.pushErrorLog('未找到奖励按钮')
     }
   }
 
@@ -847,9 +856,32 @@ function Ant_forest () {
         WarningFloaty.addRectangle('巡护球', [ball.x, ball.y, ball.width, ball.height])
         automator.click(ball.x, ball.y)
         sleep(100)
+        debugInfo('检查是否需要重新派遣')
+        let redispatch = _widgetUtils.widgetGetOne('立即派遣|重新派遣', 1000)
+        if (redispatch) {
+          automator.clickCenter(redispatch)
+          sleep(1000)
+        }
       } else {
         debugInfo(['未找到可收取的巡护能量球'])
       }
+    }
+  }
+
+  function collectDoubleEnergy () {
+    logFloaty.pushLog('准备查找是否存在双倍能量')
+    let doubleEnergy = selector().className('android.widget.TextView').textMatches(/[1-9]\d*g/).depth(21).findOne(_config.timeout_findOne)
+    if (doubleEnergy) {
+      logFloaty.pushLog('找到可收取的双倍能量，能量值：' + doubleEnergy.text())
+      let bd = doubleEnergy.bounds()
+      if (automator.checkCenterClickable(doubleEnergy)) {
+        WarningFloaty.addRectangle('双倍能量', [bd.left, bd.right, bd.width(), bd.height()])
+        automator.clickCenter(doubleEnergy)
+      } else {
+        logFloaty.pushLog('双倍能量位置不可点击 当前不收取:' + [bd.left, bd.right, bd.width(), bd.height()])
+      }
+    } else {
+      logFloaty.pushLog('未能找到可收取的双倍能量')
     }
   }
 
@@ -886,6 +918,7 @@ function Ant_forest () {
     if (_config.not_collect_self) {
       return
     }
+    logFloaty.pushLog('二次收集自身能量')
     _commonFunctions.addOpenPlacehold('开始二次收集自己能量')
     debugInfo('准备收集自己能量')
     let energyBeforeCollect = getCurrentEnergy(true)
@@ -893,8 +926,11 @@ function Ant_forest () {
     let energyAfterCollect = getCurrentEnergy(true)
     let collectedEnergy = energyAfterCollect - energyBeforeCollect
     if (collectedEnergy) {
+      logFloaty.pushLog('二次收取自身能量：' + collectedEnergy)
       logInfo(['收集自己能量：{}g', collectedEnergy])
       _base_scanner.showCollectSummaryFloaty(collectedEnergy)
+    } else {
+      logFloaty.pushLog('二次校验未收取能量')
     }
     _commonFunctions.addClosePlacehold("二次收集自己的能量完毕")
   }
@@ -1025,6 +1061,7 @@ function Ant_forest () {
       }
       // 清除过长日志
       _commonFunctions.reduceConsoleLogs()
+      logFloaty.hide()
     }
 
     this.interruptStopListenThread = function () {
