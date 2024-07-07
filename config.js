@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-22 23:56:46
+ * @Last Modified time: 2024-07-07 20:58:51
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -213,7 +213,9 @@ let default_config = {
   yolo_shape_size: 320,
   yolo_confidence_threshold: 0.5,
   yolo_model_path: '/config_data/forest_lite.onnx',
-  yolo_labels: ['cannot', 'collect', 'countdown', 'help_revive', 'item', 'tree', 'water', 'waterBall', 'stroll_btn', 'sea_ball', 'sea_garbage', 'backpack', 'gift', 'magic_species', 'one_key', 'patrol_ball', 'reward', 'sea_ocr', 'energy_ocr'],
+  yolo_labels: ['cannot', 'collect', 'countdown', 'help_revive', 'item', 'tree', 'water', 'waterBall',
+    'stroll_btn', 'sea_ball', 'sea_garbage', 'backpack', 'gift', 'magic_species', 'one_key', 'patrol_ball',
+    'reward', 'sea_ocr', 'energy_ocr', 'cooperation'],
   hough_param1: 30,
   hough_param2: 30,
   hough_min_radius: null,
@@ -305,7 +307,7 @@ let default_config = {
   chatgml_api_key: '',
   forum_url: 'https://autoscripts.flarum.cloud/',
   // 代码版本
-  code_version: 'v1.5.2.1',
+  code_version: 'v1.5.2.2',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']
@@ -417,6 +419,7 @@ if (!isRunningMode) {
           return reactiveTime
         }
       }
+      config.detect_by_yolo = config.detect_ball_by_yolo
 
       // 安全范围
       config.topRange = () => getRange(config.random_gesture_safe_range_top)
@@ -443,6 +446,9 @@ if (!isRunningMode) {
               newConfigInfos = JSON.parse(newConfigInfos)
               Object.keys(newConfigInfos).forEach(key => {
                 scope.config_instance.config[key] = getConfigValue(newConfigInfos[key], key)
+                if (key == 'detect_ball_by_yolo') {
+                  scope.config_instance.detect_by_yolo = scope.config_instance.config[key]
+                }
               })
               if (scope.subscribe_callback) {
                 scope.subscribe_callback(scope.config_instance.config)

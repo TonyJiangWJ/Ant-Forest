@@ -1,4 +1,4 @@
-require('../config.js')(runtime, global)
+let { config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let FileUtils = singletonRequire('FileUtils')
 let unlocker = require('../lib/Unlock.js')
@@ -13,11 +13,25 @@ commonFunctions.showCommonDialogAndWait('神奇海洋收垃圾好友垃圾')
 let source = mainScriptPath + "/unit/神奇海洋收集.js"
 // 提前加入任务队列
 runningQueueDispatcher.doAddRunningTask({ source: source })
-engines.execScriptFile(source, {
+let execution = engines.execScriptFile(source, {
   path: mainScriptPath + "/unit/", arguments: {
     executeByDispatcher: true,
     find_friend_trash: true,
     collect_reward: true,
   }
 })
-exit()
+try {
+  if (execution && execution.getEngine()) {
+    execution.getEngine().setOnDestroyListener(new com.stardust.autojs.engine.ScriptEngine.OnDestroyListener({
+      onDestroy: function (engine) {
+        console.log('目标脚本执行完毕：' + engine.getSource())
+        config.resetBrightness && config.resetBrightness()
+        exit()
+      }
+    }))
+  } else {
+    setTimeout(() => { exit() }, 5000)
+  }
+} catch (e) {
+
+}

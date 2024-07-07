@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-29 11:31:19
+ * @Last Modified time: 2024-07-01 10:44:04
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -179,7 +179,7 @@ const BaseScanner = function () {
               }
               WarningFloaty.addRectangle('一键收', [collect.x - 10, collect.y - 10, collect.width + 20, collect.height + 20])
               automator.click(collect.centerX, collect.centerY)
-              if (_config._double_click_card_used) {
+              if (_config.double_check_collect) {
                 sleep(50)
                 automator.click(collect.centerX, collect.centerY)
               }
