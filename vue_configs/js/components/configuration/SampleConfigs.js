@@ -94,6 +94,7 @@ const MagicSeaConfig = {
         sea_ball_region: [860, 1350, 140, 160],
         sea_ball_radius_min: null,
         sea_ball_radius_max: null,
+        force_sea_auto_click: true,
         ai_type: 'kimi',// kimi、chatgml or empty
         kimi_api_key: '',
         chatgml_api_key: '',
@@ -180,12 +181,13 @@ const MagicSeaConfig = {
   <div>
     <tip-block>对下述文件创建每天7点的定时任务即可，如果怕影响偷能量则创建9点的。脚本执行后会自动每隔两小时创建定时任务</tip-block>
     <tip-block>unit/神奇海洋收集.js{{timedUnit1|displayTime}}<van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="startSea">启动脚本</van-button></tip-block>
-    <tip-block>神奇海洋默认无法通过无障碍点击收集，请在神奇海洋设置中关闭3D模式。入口在神奇海洋右上角三点菜单中，点击“设置”按钮，然后关闭“3D模式”即可。</tip-block>
-    <tip-block>脚本默认尝试shizuku点击，如已关闭3D模式日志相关提示无视即可</tip-block>
     <van-divider content-position="left">
       神奇海洋配置
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="showRealVisual">实时查看区域配置</van-button>
     </van-divider>
+    <tip-block>神奇海洋默认无法通过无障碍点击收集，请在神奇海洋设置中关闭3D模式。入口在神奇海洋右上角三点菜单中，点击“设置”按钮，然后关闭“3D模式”即可。</tip-block>
+    <tip-block>脚本默认尝试shizuku点击，如已关闭3D模式日志相关提示无视即可。或者你确认关闭3D模式后可以主动打开以下开关</tip-block>
+    <switch-cell title="使用无障碍点击" v-model="configs.force_sea_auto_click"/>
     <region-input-field
         :device-height="device.height" :device-width="device.width"
         :error-message="validationError.sea_ocr_region"
@@ -250,6 +252,7 @@ const CollectConfig = {
       configs: {
         // 开启yolo目标检测
         detect_ball_by_yolo: true,
+        yolo_confidence: 0.7,
         no_friend_list_countdown: true,
         is_cycle: true,
         cycle_times: 10,
@@ -391,6 +394,7 @@ const CollectConfig = {
            打开启用开发模式，打开是否保存YOLO训练用数据 然后关闭开发模式。运行一段时间后将resources/trainData目录打包发送给开发者，进行进一步训练以便提高模型识别精度</tip-block>
         <tip-block>运行 独立工具/YOLOJ检测.js 可以查看模型识别效果</tip-block>
         <switch-cell title="使用YOLO模型识别检测元素" v-model="configs.detect_ball_by_yolo" />
+        <number-field v-if="configs.detect_ball_by_yolo" v-model="configs.yolo_confidence" label="yolo可信度过滤(0-1)" label-width="12em" placeholder="请输入0-1" ></number-field>
         <tip-block>当前版本仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，有一定几率会漏收倒计时刚刚结束的能量</tip-block>
         <switch-cell title="逛一逛结束后重复一遍" v-model="configs.recheck_after_stroll" label="逛一逛收集到能量后，重复逛一逛避免漏收倒计时刚刚结束的能量" title-style="flex:3.5;" />
         <switch-cell title="不去排行榜获取倒计时数据" v-model="configs.no_friend_list_countdown"/>
