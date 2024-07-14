@@ -112,6 +112,22 @@ let btns = [
       })
     }
   },
+  {
+    id: 'openSetting',
+    text: '打开设置',
+    ignoreShizuku: true,
+    onClick: () => {
+      app.startActivity(new Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS))
+    }
+  },
+  {
+    id: 'openDevelop',
+    text: '打开开发者选项',
+    ignoreShizuku: true,
+    onClick: () => {
+      app.startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS))
+    }
+  }
 ]
 ui.layout(
   `<frame>
@@ -227,13 +243,16 @@ function changeButtonStork (id, color) {
 
 
 // 设置按钮点击事件
-if (isRunning) {
-  btns.forEach(btn => {
+
+btns.forEach(btn => {
+  if (isRunning || btn.ignoreShizuku) {
     if (!btn.onClick) {
       return
     }
     ui[btn.id].on('click', btn.onClick)
-  })
+  }
+})
+if (isRunning) {
   ui.click.on('click', () => {
     let clickX = ui.clickX.getText(), clickY = ui.clickY.getText()
     threads.start(function () {

@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-07-01 10:44:04
+ * @Last Modified time: 2024-07-11 10:40:17
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -165,7 +165,7 @@ const BaseScanner = function () {
         }
         let collected = false
         if (YoloDetection.enabled) {
-          let yoloCheckList = YoloDetection.forward(screen, { confidence: 0.7, filter: (result) => result.label == 'one_key' || result.label == 'collect' })
+          let yoloCheckList = YoloDetection.forward(screen, { confidence: _config.yolo_confidence || 0.7, filter: (result) => result.label == 'one_key' || result.label == 'collect' })
           debugInfo(['本次yolo模型判断一键收信息总耗时：{}ms 找到目标数：{}', new Date().getTime() - start, yoloCheckList.length])
           if (yoloCheckList && yoloCheckList.length > 0) {
             let collect = yoloCheckList.filter(r => r.label == 'one_key')[0]
@@ -307,7 +307,7 @@ const BaseScanner = function () {
           return
         }
         let _start = new Date().getTime()
-        let yoloCheckList = YoloDetection.forward(rgbImg, { confidence: 0.85, filter: (result) => result.label == 'collect' || isOwn && (result.label == 'waterBall' || result.label == 'countdown' || result.label == 'cannot') })
+        let yoloCheckList = YoloDetection.forward(rgbImg, { confidence: _config.yolo_confidence || 0.85, filter: (result) => result.label == 'collect' || isOwn && (result.label == 'waterBall' || result.label == 'countdown' || result.label == 'cannot') })
         debugInfo(['本次yolo模型判断可收集能量球信息总耗时：{}ms 找到目标数：{}', new Date().getTime() - _start, yoloCheckList.length])
         let collectableList = yoloCheckList.filter(c => {
           if (c.label == 'collect' || isOwn && c.label == 'waterBall') {
@@ -983,7 +983,7 @@ const BaseScanner = function () {
     YoloTrainHelper.saveImage(screen, '校验是否有种树奖励')
     let clicked = false
     if (YoloDetection.enabled) {
-      let result = YoloDetection.forward(screen, { confidence: 0.75, filter: (result) => result.label == 'gift' })
+      let result = YoloDetection.forward(screen, { confidence: _config.yolo_confidence || 0.75, filter: (result) => result.label == 'gift' })
       if (result && result.length > 0) {
         result = result[0]
         automator.click(result.centerX, result.centerY)

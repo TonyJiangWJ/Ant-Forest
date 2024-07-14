@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-07-05 10:41:35
+ * @Last Modified time: 2024-07-14 20:24:43
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -870,7 +870,9 @@ function Ant_forest () {
 
   function collectDoubleEnergy () {
     logFloaty.pushLog('准备查找是否存在双倍能量')
-    let doubleEnergy = selector().className('android.widget.TextView').textMatches(/[1-9]\d*g/).depth(21).findOne(_config.timeout_findOne)
+    let doubleEnergy = selector().className('android.widget.TextView').textMatches(/[1-9]\d*(\.\d+)?g/)
+      .boundsInside(_config.device_width * 0.8, _config.device_height * 0.4, _config.device_width, _config.device_height * 0.7)
+      .findOne(_config.timeout_findOne)
     if (doubleEnergy) {
       logFloaty.pushLog('找到可收取的双倍能量，能量值：' + doubleEnergy.text())
       let bd = doubleEnergy.bounds()

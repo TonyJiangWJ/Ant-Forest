@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-07-07 20:58:51
+ * @Last Modified time: 2024-07-14 23:00:19
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -184,6 +184,7 @@ let default_config = {
   sea_ball_radius_max: null,
   // yolo图片数据保存
   sea_ball_train_save_data: false,
+  force_sea_auto_click: false,
   // 排行榜校验区域
   rank_check_left: 190,
   rank_check_top: 170,
@@ -210,6 +211,7 @@ let default_config = {
   skip_own_watering_ball: false,
   // 是否使用YOLO模型检测能量球
   detect_ball_by_yolo: false,
+  yolo_confidence: null,
   yolo_shape_size: 320,
   yolo_confidence_threshold: 0.5,
   yolo_model_path: '/config_data/forest_lite.onnx',
@@ -307,7 +309,7 @@ let default_config = {
   chatgml_api_key: '',
   forum_url: 'https://autoscripts.flarum.cloud/',
   // 代码版本
-  code_version: 'v1.5.2.2',
+  code_version: 'v1.5.2.3',
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']

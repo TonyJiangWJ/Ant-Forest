@@ -53,15 +53,20 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
   exit()
 }
 let shizukuSupport = true
-if (typeof $shizuku == 'undefined') {
-  errorInfo('当前版本不支持shizuku')
+if (!config.force_sea_auto_click) {
+  if (typeof $shizuku == 'undefined') {
+    errorInfo('当前版本不支持shizuku')
+    shizukuSupport = false
+  } else if (!$shizuku.isRunning()) {
+    errorInfo('当前shizuku未运行 无法执行shizuku点击')
+    shizukuSupport = false
+  }
+  if (!shizukuSupport) {
+    errorInfo('请在神奇海洋设置中关闭3D模式，否则无法执行点击操作', true)
+  }
+} else {
   shizukuSupport = false
-} else if (!$shizuku.isRunning()) {
-  errorInfo('当前shizuku未运行 无法执行shizuku点击')
-  shizukuSupport = false
-}
-if (!shizukuSupport) {
-  errorInfo('请在神奇海洋设置中关闭3D模式，否则无法执行点击操作', true)
+  warnInfo(['当前强制使用无障碍点击，不使用shizuku，请确保在神奇海洋设置中关闭3D模式，否则无法执行点击操作'])
 }
 
 
@@ -424,7 +429,9 @@ function collectFriends (retry) {
 
 function clickPoint (x, y) {
   if (shizukuSupport) {
-
+    x = parseInt(x)
+    y = parseInt(y)
+    debugInfo(['shizuku点击：{}, {}', x, y])
     $shizuku(`input tap ${x} ${y}`)
   } else {
     automator.click(x, y)
@@ -490,18 +497,23 @@ function getOcrRegionByYolo () {
     return null
   }
   let screen = commonFunctions.checkCaptureScreenPermission()
-  let result = YoloDetectionUtil.forward(screen, { labelRegex: 'sea_ocr', confidence: 0.7 })
+  let result = YoloDetectionUtil.forward(screen, { labelRegex: 'sea_ocr', confidence: config.yolo_confidence || 0.7 })
   if (result && result.length > 0) {
     let { x, y, width, height, label, confidence } = result[0]
     debugInfo(['yolo 识别ocr区域：「{}」confidence: {}', [x, y, width, height], confidence])
-    return [x, y, width, height]
+    let region = [x, y, width, height]
+    config.overwrite('sea_ocr_left', x)
+    config.overwrite('sea_ocr_top', y)
+    config.overwrite('sea_ocr_width', width)
+    config.overwrite('sea_ocr_height', height)
+    return region
   }
   return null
 }
 
 function doFindTrashs (screen) {
   if (YoloDetectionUtil.enabled) {
-    let findBalls = YoloDetectionUtil.forward(screen, { labelRegex: 'sea_garbage|collect', confidence: 0.7 })
+    let findBalls = YoloDetectionUtil.forward(screen, { labelRegex: 'sea_garbage|collect', confidence: config.yolo_confidence || 0.7 })
     if (findBalls && findBalls.length > 0) {
       findBalls.sort((a, b) => a.label == 'collect' ? 1 : -1)
       findBalls.forEach(b => {
@@ -535,7 +547,7 @@ function findStrollBtn () {
   let screen = commonFunctions.checkCaptureScreenPermission()
   if (YoloDetectionUtil.enabled) {
     logFloaty.pushLog('YOLO查找找拼图')
-    let btn = YoloDetectionUtil.forward(screen, { labelRegex: 'stroll_btn', confidence: 0.7 })
+    let btn = YoloDetectionUtil.forward(screen, { labelRegex: 'stroll_btn', confidence: config.yolo_confidence || 0.7 })
     if (btn && btn.length > 0) {
       return btn[0]
     }
@@ -567,7 +579,7 @@ function collectRewards () {
     warnInfo(['领取奖励功能需要开启YOLO'], true)
     return
   }
-  let reward = YoloDetectionUtil.forward(commonFunctions.captureScreen(), { labelRegex: 'reward', confidence: 0.7 })
+  let reward = YoloDetectionUtil.forward(commonFunctions.captureScreen(), { labelRegex: 'reward', confidence: config.yolo_confidence || 0.7 })
   if (reward && reward.length > 0) {
     reward = reward[0]
     floatyInstance.setFloatyInfo({ x: reward.centerX, y: reward.centerY }, '领奖励')
@@ -591,7 +603,7 @@ function yoloWait (labelRegex, limit, checker) {
   checker = checker || function () { return true }
   if (YoloDetectionUtil.enabled) {
     do {
-      let result = YoloDetectionUtil.forward(commonFunctions.captureScreen(), { labelRegex: labelRegex, confidence: 0.7 })
+      let result = YoloDetectionUtil.forward(commonFunctions.captureScreen(), { labelRegex: labelRegex, confidence: config.yolo_confidence || 0.7 })
       if (result && result.length > 0) {
         return true
       }
