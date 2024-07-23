@@ -1,10 +1,11 @@
-importClass(com.tony.autojs.common.OkHttpDownloader)
 let { config } = require('../config.js')(runtime, global)
 
-
+let cancel = false
+let failed = false
 let downloadDialog = dialogs.build({
   title: '下载模型中...',
   content: '获取文件大小中',
+  negative: '取消',
   cancelable: false,
   progress: {
     max: 100,
@@ -12,12 +13,16 @@ let downloadDialog = dialogs.build({
     showMinMax: false
   }
 })
+  .on('negative', () => {
+    cancel = true
+    downloadDialog.dismiss()
+  })
 downloadDialog.show()
 
 let call = http
   .client()
   .newCall(
-    http.buildRequest(config.yolo_onnx_model_url, {
+    http.buildRequest('https://tonyjiang.hatimi.top/autojs/onnx_model/forest_lite.onnx', {
       method: "GET",
     })
   )
@@ -25,9 +30,8 @@ let call = http
 
 
 let fs = null
-let failed = false
 try {
-  fs = new java.io.FileOutputStream(files.path("../config_data/forest_lite.onnx"));
+  fs = new java.io.FileOutputStream(files.path("../config_data/forest_lite.onnx.tmp"));
   let buffer = util.java.array("byte", 1024); //byte[]
   let byteSum = 0; //总共读取的文件大小
   let byteRead; //每次读取的byte数
@@ -35,7 +39,7 @@ try {
   let fileSize = call.body().contentLength();
   toastLog("开始下载, 总大小：" + fileSize);
   let last = 0
-  while ((byteRead = is.read(buffer)) != -1) {
+  while ((byteRead = is.read(buffer)) != -1 && !cancel) {
     byteSum += byteRead;
     fs.write(buffer, 0, byteRead); //读取
     let progress = (byteSum / fileSize) * 100
@@ -55,12 +59,10 @@ try {
     fs.close()
   }
 }
-if (!failed) {
+if (!failed && !cancel) {
   toastLog("下载完成");
   downloadDialog.setContent('下载完成')
-  config.detect_ball_by_yolo = true
-  let yoloDetection = require('../lib/prototype/YoloDetectionUtil.js')
-  yoloDetection.validLabels()
+  files.move(files.path("../config_data/forest_lite.onnx.tmp"), files.path("../config_data/forest_lite.onnx"))
 }
 sleep(1000)
 downloadDialog.dismiss()
