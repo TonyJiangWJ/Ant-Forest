@@ -70,18 +70,24 @@ if (!config.force_sea_auto_click) {
 }
 
 
-unlocker.exec()
 
-let executeArguments = engines.myEngine().execArgv
+let executeArguments = Object.assign({}, engines.myEngine().execArgv)
+let executeByTimeTask = !!executeArguments.intent
 // 部分设备中参数有脏东西 可能导致JSON序列化异常
-if (Object.keys(executeArguments).length < 5 && executeArguments && (!executeArguments.intent || Object.keys(executeArguments.intent) < 5)) {
+delete executeArguments.intent
+if (executeArguments) {
   debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
 }
+if (executeArguments.change_auto_start) {
+  // 修改自启动脚本，避免参数丢失
+  config._force_auto_start_script = executeArguments.change_auto_start
+}
 
+unlocker.exec()
 commonFunctions.listenDelayStart()
 commonFunctions.requestScreenCaptureOrRestart()
 
-if (executeArguments.intent || executeArguments.executeByDispatcher) {
+if (executeByTimeTask || executeArguments.executeByDispatcher) {
   if (!(executeArguments.find_friend_trash || executeArguments.collect_reward)) {
     commonFunctions.showCommonDialogAndWait('神奇海洋收垃圾')
   }
@@ -501,7 +507,7 @@ function getOcrRegionByYolo () {
   if (result && result.length > 0) {
     let { x, y, width, height, label, confidence } = result[0]
     debugInfo(['yolo 识别ocr区域：「{}」confidence: {}', [x, y, width, height], confidence])
-    let region = [x, y, width, height]
+    let region = [x, y, width, height].map(v => parseInt(v))
     config.overwrite('sea_ocr_left', x)
     config.overwrite('sea_ocr_top', y)
     config.overwrite('sea_ocr_width', width)

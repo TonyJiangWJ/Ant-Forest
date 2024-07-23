@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-07-11 10:40:17
+ * @Last Modified time: 2024-07-23 10:21:12
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -187,20 +187,24 @@ const BaseScanner = function () {
             }
           }
         }
-        if (!collected) {
+        if (!collected && !recheck) {
           if (YoloDetection.enabled) {
             warnInfo(['yolo识别一键收失败'])
             YoloTrainHelper.saveImage(screen, '一键收', 'one_key_fail', _config.save_one_key_train_data)
           }
-          let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.one_key_collect))
-          if (collect) {
-            WarningFloaty.addRectangle('一键收', [collect.left - 10, collect.top - 10, collect.width() + 20, collect.height() + 20])
-            automator.click(collect.centerX(), collect.centerY())
-            if (_config._double_click_card_used) {
-              sleep(50)
+          if (_config.image_config.one_key_collect) {
+            let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.one_key_collect))
+            if (collect) {
+              WarningFloaty.addRectangle('一键收', [collect.left - 10, collect.top - 10, collect.width() + 20, collect.height() + 20])
               automator.click(collect.centerX(), collect.centerY())
+              if (_config._double_click_card_used) {
+                sleep(50)
+                automator.click(collect.centerX(), collect.centerY())
+              }
+              collected = true
             }
-            collected = true
+          } else {
+            warnInfo(['未配置一键收图片信息，无法通过图片查找'])
           }
         }
 
@@ -210,7 +214,11 @@ const BaseScanner = function () {
           YoloTrainHelper.saveImage(screen, '一键收', 'one_key', _config.save_one_key_train_data)
           this.collect_operated = true
         } else if (!recheck) {
-          warnInfo(['未能通过一键收图片找到目标按钮，请确认在查找图片设这中正确配置了相应图片，仅仅覆盖文字即可，不要截取多余的信息'])
+          if (YoloDetection.enabled) {
+            warnInfo(['未能通过一键收图片找到目标按钮，请确认在查找图片设这中正确配置了相应图片，仅仅覆盖文字即可，不要截取多余的信息'])
+          } else {
+            warnInfo(['未能通过YOLO识别一键收位置，建议收集YOLO图片数据，并上传 让作者进一步训练'])
+          }
           debugInfo(['尝试ocr识别一键收'])
           let ocrCheck = localOcrUtil.recognizeWithBounds(screen, null, '一键收')
           if (ocrCheck && ocrCheck.length > 0) {

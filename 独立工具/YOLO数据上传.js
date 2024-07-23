@@ -6,6 +6,7 @@ try {
 }
 try {
   importClass(java.util.concurrent.TimeUnit)
+  importClass(java.io.File)
   importClass("okhttp3.MediaType")
   importClass("okhttp3.MultipartBody")
   importClass("okhttp3.OkHttpClient")
@@ -19,43 +20,118 @@ let aesUtil = require('../lib/AesUtil.js')
 let deviceId = aesUtil.md5(device.getAndroidId() + 'forest_salt').toString()
 let dataPath = files.path('../resources/trainData')
 console.show()
-let dataUploader = new DataUploader()
-dataUploader.getDirectIp()
-dataUploader.validDirectIp()
+
+let deleteUploaded = false
+let executeUpload = false
+
+let lock = threads.lock()
+let complete = lock.newCondition()
+lock.lock()
+
+threads.start(function () {
+  let confirmDialog = dialogs.build({
+    title: '上传完毕后是否删除',
+    content: '是否将上传成功的文件进行删除',
+    positive: '删除',
+    positiveColor: '#f9a01c',
+    negative: '不删除',
+    negativeColor: 'red',
+    neutral: '只删除，不上传',
+    cancelable: false
+  })
+    .on('positive', () => {
+      lock.lock()
+      try {
+        complete.signal()
+      } finally {
+        lock.unlock()
+      }
+      deleteUploaded = true
+      executeUpload = true
+      confirmDialog.dismiss()
+    })
+    .on('negative', () => {
+      deleteUploaded = false
+      executeUpload = true
+      lock.lock()
+      try {
+        complete.signal()
+      } finally {
+        lock.unlock()
+      }
+      confirmDialog.dismiss()
+    })
+    .on('neutral', () => {
+      deleteUploaded = true
+      executeUpload = false
+      lock.lock()
+      try {
+        complete.signal()
+      } finally {
+        lock.unlock()
+      }
+      confirmDialog.dismiss()
+    })
+    .show()
+})
+try {
+  complete.await()
+} finally {
+  lock.unlock()
+}
 
 let rootFilePath = files.listDir(dataPath, (file) => {
   console.log('find file: ' + file)
   return files.isDir(files.join(dataPath, file))
 })
 
+let dataUploader = new DataUploader()
+if (executeUpload) {
+  dataUploader.getDirectIp()
+  dataUploader.validDirectIp()
+}
 console.log('dir list:' + JSON.stringify(rootFilePath))
 let allUploadFiles = []
 rootFilePath.forEach((dir) => {
-  uploadSubFileInDir(files.join(dataPath, dir), dir)
+  if (executeUpload) {
+    findUploadFileInDir(files.join(dataPath, dir), dir, allUploadFiles)
+  }
 })
 
 if (allUploadFiles.length > 0) {
   let total = allUploadFiles.length
   let done = 0, failed = 0
+  let totalSize = allUploadFiles.map(file => file.length).reduce((a, b) => a += b, 0) / 1024 / 1024
   allUploadFiles.forEach((file) => {
     if (!dataUploader.upload(file.file, file.subPath, deviceId)) {
       failed++
     }
     done++
-    console.log('上传进度：' + (done / total * 100).toFixed(2) + '% 失败总数：' + failed)
+    console.log('上传进度：' + (done / total * 100).toFixed(2) + '% 失败总数：' + failed + ' 总大小：' + totalSize.toFixed(2) + 'MB')
   })
 } else {
   console.log('当前无待上传数据')
 }
 
+if (deleteUploaded) {
+  let removeFileList = []
+  rootFilePath.forEach(dir => {
+    findRemoveFiles(files.join(dataPath, dir), removeFileList)
+  })
+  removeUploadedFiles(removeFileList)
+  rootFilePath.forEach(dir => {
+    // 删除完毕后清除空目录
+    removeEmptyDirs(files.join(dataPath, dir))
+  })
+}
 console.log('上传结束')
 
 
-function uploadSubFileInDir (filePath, subPath) {
+function findUploadFileInDir (filePath, subPath, allUploadFiles) {
   files.listDir(filePath, file => {
     let subFile = files.join(filePath, file)
     if (files.isDir(subFile)) {
-      uploadSubFileInDir(files.join(filePath, file), subPath + '/' + file)
+      findUploadFileInDir(files.join(filePath, file), subPath + '/' + file, allUploadFiles)
     } else {
       if (file.endsWith('.uploaded')) {
         return false
@@ -64,30 +140,69 @@ function uploadSubFileInDir (filePath, subPath) {
       if (files.exists(uploadedFile)) {
         return false
       }
-      allUploadFiles.push({ file: subFile, subPath: subPath })
+      allUploadFiles.push({ file: subFile, subPath: subPath, length: new File(subFile).length() })
     }
     return true
   })
 }
 
-function removeUploadedFiles (filePath) {
+function findRemoveFiles (filePath, removeFileList) {
   files.listDir(filePath, file => {
     let subFile = files.join(filePath, file)
     if (files.isDir(subFile)) {
-      removeUploadedFiles(subFile)
+      findRemoveFiles(subFile, removeFileList)
     } else {
       if (file.endsWith('.uploaded')) {
+        removeFileList.push({ path: subFile, length: new File(subFile).length() })
         return false
       }
       let uploadedFile = subFile + '.uploaded'
       if (files.exists(uploadedFile)) {
-        files.remove(subFile)
-        files.remove(uploadedFile)
+        removeFileList.push({ path: subFile, length: new File(subFile).length() })
       }
     }
     return true
   })
+}
 
+function removeUploadedFiles (fileList) {
+  let total = fileList.length
+  if (total <= 0) {
+    return
+  }
+  let current = 0
+  let totalSize = fileList.map(file => file.length).reduce((a, b) => a += b, 0) / 1024 / 1024
+  fileList.forEach(file => {
+    let removeFile = file.path
+    if (files.exists(removeFile)) {
+      console.verbose('删除文件：' + removeFile)
+      files.remove(removeFile)
+      current++
+      if (current % 10 == 0) {
+        console.log('删除进度：', (current / total * 100).toFixed(2) + '%' + ' 总大小：' + totalSize.toFixed(2) + 'MB')
+      }
+    }
+  })
+  console.log('删除进度：100%')
+}
+
+function removeEmptyDirs (filePath) {
+  let subFiles = []
+  let hasSubDir = false
+  files.listDir(filePath, file => {
+    let subFile = files.join(filePath, file)
+    if (files.isDir(subFile)) {
+      hasSubDir = true
+      removeEmptyDirs(subFile)
+    } else {
+      subFiles.push(file)
+    }
+    return true
+  })
+  if (subFiles.length == 0 && !hasSubDir) {
+    console.verbose('删除空目录：', filePath)
+    files.remove(filePath)
+  }
 }
 
 
