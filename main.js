@@ -128,13 +128,14 @@ try {
 }
 
 logInfo('解锁成功')
-let executeArguments = engines.myEngine().execArgv || {}
+let executeArguments = Object.assign({}, engines.myEngine().execArgv)
+let executeByTimeTask = !!executeArguments.intent
 // 部分设备中参数有脏东西 可能导致JSON序列化异常
-if (Object.keys(executeArguments).length < 5 && (!executeArguments.intent || Object.keys(executeArguments.intent) < 5)) {
-  debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
-}
+delete executeArguments.intent
+debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
+
 // 定时启动的任务, 将截图权限滞后请求
-if (!executeArguments.intent || executeArguments.executeByDispatcher) {
+if (!executeByTimeTask || executeArguments.executeByDispatcher) {
   commonFunctions.requestScreenCaptureOrRestart()
   commonFunctions.ensureDeviceSizeValid()
   if (files.exists(FileUtils.getRealMainScriptPath(true) + '/请认准github下载.txt')) {

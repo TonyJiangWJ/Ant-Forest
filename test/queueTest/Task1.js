@@ -1,11 +1,14 @@
-
+let { config } = require('../../config.js')(runtime, global)
 let singletonRequire = require('../../lib/SingletonRequirer.js')(runtime, global)
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let commonFunctions = singletonRequire('CommonFunction')
+let unlocker = require('../../lib/Unlock.js')
 
 runningQueueDispatcher.addRunningTask()
+unlocker.exec()
 runningQueueDispatcher.showDispatchStatus()
-log('task1 start')
+let taskNumber = engines.myEngine().execArgv.taskNumber
+log('task1 start, my taskNumber: ' + taskNumber)
 let count = 15
 while (count-- > 0) {
   let content = 'Task1 Running count:' + count
@@ -15,3 +18,4 @@ while (count-- > 0) {
 log('task1 end')
 runningQueueDispatcher.showDispatchStatus()
 runningQueueDispatcher.removeRunningTask()
+exit()
