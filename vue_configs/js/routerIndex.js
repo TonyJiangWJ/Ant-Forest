@@ -25,6 +25,7 @@ const router = new VueRouter({
     { path: '/basic/floaty', component: FloatyConfig, meta: { index: 1, title: '悬浮窗设置' } },
     { path: '/basic/log', component: LogConfig, meta: { index: 1, title: '日志设置' } },
     { path: '/advance/skipPackage', component: SkipPackageConfig, meta: { index: 1, title: '前台应用白名单设置' } },
+    { path: '/advance/videoPackage', component: VideoPackageConfig, meta: { index: 1, title: '视频应用设置' } },
     { path: '/advance/common', component: AdvanceCommonConfig, meta: { index: 1, title: '高级设置' } },
     { path: '/content_widget_config', component: WidgetConfigs, meta: { index: 1, title: '控件文本设置' } },
     { path: '/about', component: About, meta: { index: 1, title: '关于项目' } },

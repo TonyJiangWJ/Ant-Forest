@@ -524,6 +524,7 @@ function openRainPage () {
   if (starting) {
     return
   }
+  commonFunction.backHomeIfInVideoPackage()
   ui.run(function () {
     clickButtonWindow.openRainPage.setText('正在打开能量雨界面')
   })

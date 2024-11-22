@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-07-03 14:08:12
+ * @Last Modified time: 2024-11-22 16:07:05
  * @Description: 蚂蚁森林自动收能量
  */
 console.warn('如遇语法报错，请从README下载最新版的AutoJS，旧版本不维护，不适配')

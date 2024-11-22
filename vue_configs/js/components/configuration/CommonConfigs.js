@@ -227,6 +227,7 @@ const AdvanceCommonConfig = {
       activeNames: [],
       enabledServices: 'com.taobao.idlefishs.modify.opencv4/org.autojs.autojs.timing.work.AlarmManagerProvider:com.taobao.idlefishs.modify.opencv4/org.autojs.autojs.timing.work.AlarmManagerProvider:com.taobao.idlefishs.modify.opencv4/org.autojs.autojs.timing.work.AlarmManagerProvider',
       configs: {
+        show_summary_notice: true,
         auto_set_bang_offset: false,
         single_script: true,
         auto_restart_when_crashed: true,
@@ -282,6 +283,8 @@ const AdvanceCommonConfig = {
   template: `
   <div>
     <van-cell-group>
+      <tip-block>脚本执行完毕显示一个通知，展示当前执行次数，总收集能量值等信息</tip-block>
+      <switch-cell title="执行完毕后显示通知" v-model="configs.show_summary_notice" />
       <tip-block>当需要使用多个脚本时不要勾选（如同时使用我写的蚂蚁庄园脚本），避免抢占前台</tip-block>
       <switch-cell title="是否单脚本运行" v-model="configs.single_script" />
       <tip-block>刘海屏或者挖孔屏悬浮窗显示位置和实际目测位置不同，需要施加一个偏移量，一般是负值，脚本运行时会自动设置，非异形屏请自行修改为0</tip-block>
@@ -407,6 +410,85 @@ const SkipPackageConfig = {
       </template>
       <van-field v-model="newSkipRunningAppName" placeholder="请输入应用名称" label="应用名称" />
       <van-field v-model="newSkipRunningPackage" placeholder="请输入应用包名" label="应用包名" />
+    </van-dialog>
+  </div>`
+}
+
+
+/**
+ * 视频应用设置
+ */
+const VideoPackageConfig = {
+  mixins: [mixin_common],
+  data () {
+    return {
+      newVideoPackage: '',
+      newVideoAppName: '',
+      showAddVideoPkgDialog: false,
+      configs: {
+        video_packages: [{ packageName: 'tv.danmaku.bili', appName: '哔哩哔哩' }],
+      }
+    }
+  },
+  methods: {
+    addSkipPackage: function () {
+      this.newVideoPackage = ''
+      this.newVideoAppName = ''
+      this.showAddVideoPkgDialog = true
+    },
+    doAddSkipPackage: function () {
+      if (!this.isNotEmpty(this.newVideoAppName)) {
+        vant.Toast('请输入应用名称')
+        return
+      }
+      if (!this.isNotEmpty(this.newVideoPackage)) {
+        vant.Toast('请输入应用包名')
+        return
+      }
+      if (this.addedVideoPackageNames.indexOf(this.newVideoPackage) < 0) {
+        this.configs.video_packages.push({ packageName: this.newVideoPackage, appName: this.newVideoAppName })
+      }
+    },
+    deleteSkipPackage: function (idx) {
+      this.$dialog.confirm({
+        message: '确认要删除' + this.configs.video_packages[idx].packageName + '吗？'
+      }).then(() => {
+        this.configs.video_packages.splice(idx, 1)
+      }).catch(() => { })
+    },
+    handlePackageChange: function (payload) {
+      this.newVideoAppName = payload.appName
+      this.newVideoPackage = payload.packageName
+    },
+  },
+  computed: {
+    addedVideoPackageNames: function () {
+      return this.configs.video_packages.map(v => v.packageName)
+    }
+  },
+  template: `
+  <div>
+    <van-divider content-position="left">
+      视频应用设置
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addSkipPackage">增加</van-button>
+    </van-divider>
+    <tip-block>在HyperOS下，如果视频应用在前台时会在小窗中打开应用，导致脚本执行异常，通过在下面设置视频应用包名，脚本将在判断包名后先打开手机首页再打开应用，避免在小窗中打开。</tip-block>
+    <van-cell-group>
+      <div style="min-height:10rem;overflow:scroll;padding:1rem;background:#f1f1f1;">
+        <van-swipe-cell v-for="(skip,idx) in configs.video_packages" :key="skip.packageName" stop-propagation>
+          <van-cell :title="skip.appName" :label="skip.packageName" />
+          <template #right>
+            <van-button square type="danger" text="删除" @click="deleteSkipPackage(idx)" style="height: 100%"/>
+          </template>
+        </van-swipe-cell>
+      </div>
+    </van-cell-group>
+    <van-dialog v-model="showAddVideoPkgDialog" show-cancel-button @confirm="doAddSkipPackage" :get-container="getContainer">
+      <template #title>
+        <installed-package-selector @value-change="handlePackageChange" :added-package-names="addedVideoPackageNames"/>
+      </template>
+      <van-field v-model="newVideoAppName" placeholder="请输入应用名称" label="应用名称" />
+      <van-field v-model="newVideoPackage" placeholder="请输入应用包名" label="应用包名" />
     </van-dialog>
   </div>`
 }

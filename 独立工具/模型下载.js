@@ -1,5 +1,8 @@
 let { config } = require('../config.js')(runtime, global)
 
+let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
+let YoloDetection = singletonRequire('YoloDetectionUtil')
+
 let cancel = false
 let failed = false
 let downloadDialog = dialogs.build({
@@ -22,7 +25,7 @@ downloadDialog.show()
 let call = http
   .client()
   .newCall(
-    http.buildRequest('https://tonyjiang.hatimi.top/autojs/onnx_model/forest_lite.onnx', {
+    http.buildRequest('https://tonyjiang.hatimi.top/autojs/onnx_model/forest_lite_v2.onnx', {
       method: "GET",
     })
   )
@@ -37,7 +40,7 @@ try {
   let byteRead; //每次读取的byte数
   let is = call.body().byteStream();
   let fileSize = call.body().contentLength();
-  toastLog("开始下载, 总大小：" + fileSize);
+  toastLog("开始下载, 总大小：" + fileSize)
   let last = 0
   while ((byteRead = is.read(buffer)) != -1 && !cancel) {
     byteSum += byteRead;
@@ -62,7 +65,15 @@ try {
 if (!failed && !cancel) {
   toastLog("下载完成");
   downloadDialog.setContent('下载完成')
-  files.move(files.path("../config_data/forest_lite.onnx.tmp"), files.path("../config_data/forest_lite.onnx"))
+  let labelList = YoloDetection.checkYoloModelValid(files.path("../config_data/forest_lite.onnx.tmp"))
+  if (!labelList) {
+    toastLog('模型格式不正确，请检查日志 或者手动下载')
+  } else {
+    if (!YoloDetection.validLabels(labelList)) {
+      toastLog('模型标签不匹配，请检查日志')
+    }
+    files.move(files.path("../config_data/forest_lite.onnx.tmp"), files.path("../config_data/forest_lite.onnx"))
+  }
 }
 sleep(1000)
 downloadDialog.dismiss()

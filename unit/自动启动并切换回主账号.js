@@ -38,6 +38,7 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
 let unlocker = require('../lib/Unlock.js')
 unlocker.exec()
 
+commonFunctions.backHomeIfInVideoPackage()
 accountChange(config.main_account)
 
 commonFunctions.minimize()

@@ -1,5 +1,5 @@
 // 杀死当前同名脚本 see killMyDuplicator
-(()=>{let g=engines.myEngine();var e=engines.all(),n=e.length;let r=g.getSource()+"";1<n&&e.forEach(e=>{var n=e.getSource()+"";g.id!==e.id&&n==r&&e.forceStop()})})();
+(() => { let g = engines.myEngine(); var e = engines.all(), n = e.length; let r = g.getSource() + ""; 1 < n && e.forEach(e => { var n = e.getSource() + ""; g.id !== e.id && n == r && e.forceStop() }) })();
 
 require('../modules/init_if_needed.js')(runtime, this)
 let FloatyButton = require('../lib/FloatyButton.js')
@@ -9,6 +9,7 @@ let inspectConfig = {
   save_history: true,
   save_data_js: true,
   save_img_js: true,
+  show_floaty: true,
 }
 let floatyButton = new FloatyButton({
   logo_src: winBase64,
@@ -23,7 +24,8 @@ let floatyButton = new FloatyButton({
             capture: true,
             save_data_js: inspectConfig.save_data_js,
             save_history: inspectConfig.save_history,
-            save_img_js: inspectConfig.save_img_js
+            save_img_js: inspectConfig.save_img_js,
+            show_floaty: inspectConfig.show_floaty,
           }
         })
       })
@@ -40,7 +42,8 @@ let floatyButton = new FloatyButton({
             capture: inspectConfig.capture,
             save_data_js: inspectConfig.save_data_js,
             save_history: inspectConfig.save_history,
-            save_img_js: inspectConfig.save_img_js
+            save_img_js: inspectConfig.save_img_js,
+            show_floaty: inspectConfig.show_floaty,
           }
         })
       })
@@ -50,8 +53,13 @@ let floatyButton = new FloatyButton({
     exit()
   },
   menu5_on_click: function () {
-    let arr = ["保存uiobjects.json", "保存data.js", "保存img.js", "保存历史数据"]
-    let selected = [inspectConfig.capture ? 0 : null, inspectConfig.save_data_js ? 1 : null, inspectConfig.save_img_js ? 2 : null, inspectConfig.save_history ? 3 : null].filter(v => v != null)
+    let arr = ["保存uiobjects.json", "保存data.js", "保存img.js", "保存历史数据", '显示悬浮窗']
+    let selected = [
+      inspectConfig.capture ? 0 : null,
+      inspectConfig.save_data_js ? 1 : null,
+      inspectConfig.save_img_js ? 2 : null,
+      inspectConfig.save_history ? 3 : null,
+      inspectConfig.show_floaty ? 4 : null].filter(v => v != null)
     mDialogs.build({
       title: "设置",
       buttonRippleColor: "#000000",
@@ -66,6 +74,7 @@ let floatyButton = new FloatyButton({
       inspectConfig.save_data_js = indices.indexOf(1) > -1
       inspectConfig.save_img_js = indices.indexOf(2) > -1
       inspectConfig.save_history = indices.indexOf(3) > -1
+      inspectConfig.show_floaty = indices.indexOf(4) > -1
     }).show()
   }
 })

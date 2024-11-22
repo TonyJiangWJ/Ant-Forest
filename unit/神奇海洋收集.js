@@ -14,7 +14,11 @@ let TouchController = require('../lib/TouchController.js')
 let AiUtil = require('../lib/AIRequestUtil.js')
 let logFloaty = singletonRequire('LogFloaty')
 let warningFloaty = singletonRequire('WarningFloaty')
+let NotificationHelper = singletonRequire('Notification')
 let ocrUtil = require('../lib/LocalOcrUtil.js')
+let formatDate = require('../lib/DateUtil.js')
+// 神奇海洋专用通知id
+const NOTIFICATION_ID = config.notificationId * 10 + 2
 infoLog(['当前使用的OCR类型为：{} 是否启用：{}', ocrUtil.type, ocrUtil.enabled])
 let unlocker = require('../lib/Unlock.js')
 // 回收图像资源
@@ -92,7 +96,9 @@ if (executeByTimeTask || executeArguments.executeByDispatcher) {
     commonFunctions.showCommonDialogAndWait('神奇海洋收垃圾')
   }
   openMiracleOcean()
-  checkNext()
+  if (!executeArguments.find_friend_trash) {
+    checkNext()
+  }
   findTrashs()
   // 查找好友垃圾
   if (executeArguments.find_friend_trash) {
@@ -152,7 +158,7 @@ if (executeByTimeTask || executeArguments.executeByDispatcher) {
       onClick: function () {
         checkNext()
         findTrashs(null)
-        exit()
+        threads.start(function () { sleep(500); exit() })
       }
     }, {
       id: 'find_trashs',
@@ -318,6 +324,7 @@ if (executeByTimeTask || executeArguments.executeByDispatcher) {
 
 function openMiracleOcean () {
   logInfo('准备打开神奇海洋')
+  commonFunctions.backHomeIfInVideoPackage()
   app.startActivity({
     action: 'VIEW',
     data: 'alipays://platformapi/startapp?appId=2021003115672468',
@@ -329,7 +336,7 @@ function openMiracleOcean () {
     automator.clickCenter(confirm)
   }
   sleep(1000)
-  if (widgetUtils.idWaiting('ocean-fish-cnt-percent', '神奇海洋')) {
+  if (widgetUtils.idWaiting('user-energy-info', '神奇海洋')) {
     debugInfo(['打开神奇海洋成功'])
   } else {
     warnInfo(['打开神奇海洋检测超时'])
@@ -450,6 +457,7 @@ function checkNext (tryTime, checkOnly) {
     if (new Date().getHours() < 21) {
       warnInfo('当前版本AutoJS不支持本地OCR，直接设置两小时后的定时任务，此方式并不准确请手动设置实际定时时间，每天间隔两小时的定时任务 并注释下面自动设置定时任务的代码')
       commonFunctions.setUpAutoStart(120)
+      NotificationHelper.createNotification('神奇海洋收集两小时后执行', '当前版本不支持OCR识别，直接设置两小时后执行，执行时间：' + buildNextTime(120), NOTIFICATION_ID)
     }
     return
   }
@@ -463,7 +471,9 @@ function checkNext (tryTime, checkOnly) {
     debugInfo(['ocr识别区域：{}', JSON.stringify(ocrRegion)])
     screen = images.inRange(images.grayscale(screen), '#BEBEBE', '#ffffff')
     let clip = images.clip(screen, ocrRegion[0], ocrRegion[1], ocrRegion[2], ocrRegion[3])
-    debugInfo(['图片信息：data:image/png;base64,{}', images.toBase64(clip)])
+    if (config.develop_mode) {
+      debugForDev(['图片信息：data:image/png;base64,{}', images.toBase64(clip)])
+    }
     let text = ocrUtil.recognize(screen, ocrRegion)
     if (text) {
       text = text.replace(/\n/g, '')
@@ -477,6 +487,7 @@ function checkNext (tryTime, checkOnly) {
         debugInfo(['下次生产时间: {} 分 {} 秒', remainMins, remainSecs])
         if (!checkOnly) {
           commonFunctions.setUpAutoStart(remainMins + 1)
+          NotificationHelper.createNotification('神奇海洋收集，' + (remainMins + 1) + '分钟后执行', 'OCR识别成功，下次执行时间：' + buildNextTime(remainMins + 1), NOTIFICATION_ID)
         }
         recognizeFailed = false
       }
@@ -490,11 +501,18 @@ function checkNext (tryTime, checkOnly) {
         checkNext(++tryTime)
       } else {
         commonFunctions.setUpAutoStart(120)
+        NotificationHelper.createNotification('神奇海洋收集，两小时后执行', 'OCR识别失败，直接设置两小时后的定时任务，执行时间：' + buildNextTime(120), NOTIFICATION_ID)
       }
     }
   }
   warningFloaty.enableTip()
 
+}
+
+function buildNextTime (mins) {
+  let now = new Date()
+  let next = new Date(now.getTime() + mins * 60 * 1000)
+  return formatDate(next, 'HH:mm:ss')
 }
 
 

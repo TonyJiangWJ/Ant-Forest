@@ -28,6 +28,9 @@ let usePaddle = config.local_ocr_priority == 'paddle'
 let currentPath = fileUtils.getCurrentWorkPath()
 // 强制指定为paddleOcr
 if (usePaddle) {
+  if (!paddleOcr.initialized) {
+    paddleOcr.init()
+  }
   localOcr = paddleOcr
 } else {
   localOcr = mlkitOcr
@@ -277,7 +280,7 @@ canvasWindow.recognizeText.on('click', () => {
   threads.start(function () {
     if (cutMode) {
       if (localOcr == null || !localOcr.enabled) {
-        toastLog(['当前版本AutoJS不支持本地OCR {}', localOcr ? localOcr.type : ''])
+        toastLog(['当前版本AutoJS不支持本地OCR ' + localOcr ? localOcr.type : ''])
         ui.post(() => {
           canvasWindow.recognize_text.text('当前版本AutoJS不支持本地' + (localOcr ? localOcr.type : '') + 'Ocr')
         })

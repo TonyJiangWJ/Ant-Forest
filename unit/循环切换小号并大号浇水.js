@@ -42,6 +42,7 @@ if (!floatyInstance.init()) {
 floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('切换小号给大号浇水')
 commonFunctions.listenDelayStart()
+commonFunctions.backHomeIfInVideoPackage()
 if (config.accounts && config.accounts.length > 1) {
   config.accounts.forEach((accountInfo, idx) => {
     let { account, accountName } = accountInfo
