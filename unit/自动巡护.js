@@ -44,6 +44,7 @@ unlocker.exec()
 
 commonFunctions.showCommonDialogAndWait('自动巡护')
 commonFunctions.listenDelayStart()
+commonFunctions.backHomeIfInVideoPackage()
 let patrol = new Patrol()
 patrol.exec()
 

@@ -16,6 +16,7 @@ runningQueueDispatcher.doAddRunningTask({ source: source })
 engines.execScriptFile(source, {
   path: mainScriptPath + "/unit/", arguments: {
     executeByDispatcher: true,
+    triggerImmediately: true,
     find_friend_trash: true,
     collect_reward: true,
     // 提前解锁，传递原始亮度信息

@@ -87,8 +87,8 @@ let rootFilePath = files.listDir(dataPath, (file) => {
 
 let dataUploader = new DataUploader()
 if (executeUpload) {
-  dataUploader.getDirectIp()
-  dataUploader.validDirectIp()
+  // dataUploader.getDirectIp()
+  // dataUploader.validDirectIp()
 }
 console.log('dir list:' + JSON.stringify(rootFilePath))
 let allUploadFiles = []
@@ -102,12 +102,25 @@ if (allUploadFiles.length > 0) {
   let total = allUploadFiles.length
   let done = 0, failed = 0
   let totalSize = allUploadFiles.map(file => file.length).reduce((a, b) => a += b, 0) / 1024 / 1024
+  let startTime = new Date().getTime()
+  function formatTime (time) {
+    if (time < 120) {
+      return time.toFixed(2) + '秒'
+    } else if (time > 3600) {
+      return Math.ceil(time / 3600) + '小时' + Math.ceil(time % 3600 / 60) + '分' + (time % 60) + '秒'
+    } else {
+      return Math.ceil(time % 3600 / 60) + '分' + (time % 60).toFixed(0) + '秒'
+    }
+  }
   allUploadFiles.forEach((file) => {
     if (!dataUploader.upload(file.file, file.subPath, deviceId)) {
       failed++
     }
     done++
-    console.log('上传进度：' + (done / total * 100).toFixed(2) + '% 失败总数：' + failed + ' 总大小：' + totalSize.toFixed(2) + 'MB')
+    let passTime = (new Date() - startTime) / 1000
+    console.log('龟速上传中 耗时：' + formatTime(passTime))
+    console.log('预计剩余时间：' + formatTime((total - done) * (passTime / done)))
+    console.log('进度：' + done + '/' + total + '(' + (done / total * 100).toFixed(2) + '%) 失败总数：' + failed + ' 总大小：' + totalSize.toFixed(2) + 'MB')
   })
 } else {
   console.log('当前无待上传数据')
@@ -266,7 +279,7 @@ function DataUploader () {
     if (this.directIp != null) {
       return 'http://' + this.directIp
     }
-    return 'https://tonyjiang.hatimi.top'
+    return 'https://hatimi.top/yolo/upload'
   }
 
   this.upload = function (file, subPath, deviceId) {

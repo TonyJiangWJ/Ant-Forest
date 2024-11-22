@@ -46,6 +46,7 @@ commonFunctions.requestScreenCaptureOrRestart()
 floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('同步小号行走步数')
 commonFunctions.listenDelayStart()
+commonFunctions.backHomeIfInVideoPackage()
 storageFactory.initFactoryByKey(ACCOUNT_EXECUTION, { done: [] })
 
 let doneList = storageFactory.getValueByKey(ACCOUNT_EXECUTION).done
@@ -63,8 +64,11 @@ if (config.accounts && config.accounts.length >= 1) {
     sleep(500)
     // 执行行走捐同步步数
     openWalkingData()
-    findAndEnterWalkingDonate()
-    checkWalkingData()
+    if (findAndEnterWalkingDonate()) {
+      checkWalkingData()
+    } else {
+      logUtils.errorInfo(['未找到行走捐赠按钮，退出执行'])
+    }
   })
   floatyInstance.setFloatyText('账号切换完毕，切换回主账号')
   sleep(1000)
@@ -105,16 +109,16 @@ function openWalkingData () {
     automator.clickCenter(confirm)
   }
   sleep(1000)
-  widgetUtils.widgetWaiting('行走捐', 1000)
 }
 
 
 function findAndEnterWalkingDonate () {
   floatyInstance.setFloatyText('查找行走捐')
-  let donate = widgetUtils.widgetGetOne('行走捐')
+  let donate = ocrWaiting('行走捐', 3, 1000)
   if (donate) {
-    floatyInstance.setFloatyInfo(convertPosition(donate), '找到了行走捐')
-    automator.clickCenter(donate)
+    donate = convertPosition(donate)
+    floatyInstance.setFloatyInfo(donate, '找到了行走捐')
+    automator.click(donate.x, donate.y)
     sleep(1000)
     return true
   } else {
@@ -128,6 +132,8 @@ function ocrWaiting (text, loop, duration, region) {
   let checkLimit = loop || 5
   duration = duration || 1000
   let findTarget = false
+  floatyInstance.hide()
+  sleep(50)
   do {
     let ocrCheck = localOcrUtil.recognizeWithBounds(commonFunctions.captureScreen(), region, text)
     if (ocrCheck && ocrCheck.length > 0) {
@@ -141,6 +147,7 @@ function ocrWaiting (text, loop, duration, region) {
     }
   } while (!findTarget)
   logUtils.debugInfo(['ocr查找：「{}」失败', text])
+  floatyInstance.restore()
   return false
 }
 

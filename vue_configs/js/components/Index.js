@@ -81,6 +81,10 @@ let Index = {
           link: '/advance/skipPackage'
         },
         {
+          title: '视频应用设置',
+          link: '/advance/videoPackage'
+        },
+        {
           title: '高级设置',
           link: '/advance/common'
         },

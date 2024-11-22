@@ -44,6 +44,7 @@ if (!floatyInstance.init()) {
 floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('循环执行小号并收集能量')
 commonFunctions.listenDelayStart()
+commonFunctions.backHomeIfInVideoPackage()
 if (config.accounts && config.accounts.length > 1) {
   if (!config.main_account_username) {
     let match = config.accounts.filter(acc => acc.account === config.main_account)

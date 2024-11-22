@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-07-14 20:24:43
+ * @Last Modified time: 2024-11-21 15:10:57
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -60,6 +60,7 @@ function Ant_forest () {
       warnInfo(['当前屏幕为横向，为避免出现问题，回到桌面再执行'])
       home()
     }
+    _commonFunctions.backHomeIfInVideoPackage()
     if (_config.start_alipay_by_url) {
       debugInfo(['使用app.openUrl方式打开森林，如果无法打开请去配置中关闭'])
       app.openUrl('https://render.alipay.com/p/s/i/?scheme=' + encodeURIComponent('alipays://platformapi/startapp?appId=60000002'))
@@ -76,11 +77,6 @@ function Ant_forest () {
       automator.clickCenter(confirm)
     }
     _commonFunctions.readyForAlipayWidgets()
-    if (alipayInFloatyWindow()) {
-      warnInfo(['当前为小窗模式，回到桌面重新打开'])
-      home()
-      return startApp()
-    }
     if (openAlipayMultiLogin(reopen)) {
       return
     }
@@ -483,7 +479,7 @@ function Ant_forest () {
       getSignReward()
     }
     _post_energy > 0 && AntForestDao.saveMyEnergy(_post_energy)
-    _commonFunctions.showEnergyInfo()
+    _commonFunctions.showEnergyInfo(null, _has_next ? getRealSleepTime(_min_countdown) : null)
     let energyInfo = _commonFunctions.getTodaysRuntimeStorage('energy')
     if (!_has_next) {
       showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共增加' + energyInfo.totalIncrease + 'g')
@@ -854,7 +850,7 @@ function Ant_forest () {
       if (ball && ball.length > 0) {
         ball = ball[0]
         WarningFloaty.addRectangle('巡护球', [ball.x, ball.y, ball.width, ball.height])
-        automator.click(ball.x, ball.y)
+        automator.click(ball.centerX, ball.centerY)
         sleep(100)
         debugInfo('检查是否需要重新派遣')
         let redispatch = _widgetUtils.widgetGetOne('立即派遣|重新派遣', 1000)

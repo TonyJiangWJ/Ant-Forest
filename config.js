@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-07-14 23:00:19
+ * @Last Modified time: 2024-11-21 15:42:40
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -54,6 +54,7 @@ let default_config = {
   save_home_train_data: false,
   save_no_energy_train_data: false,
   save_one_key_train_data: false,
+  save_one_key_fail_train_data: false,
   check_device_posture: false,
   check_distance: false,
   posture_threshold_z: 6,
@@ -248,6 +249,8 @@ let default_config = {
   limit_runnable_time_range: true,
   // 当以下包正在前台运行时，延迟执行
   skip_running_packages: [],
+  // 视频app，当前app前台时先退出到桌面再打开支付宝 避免小窗执行
+  video_packages: [{ packageName: 'tv.danmaku.bili', appName: '哔哩哔哩' }],
   warn_skipped_ignore_package: false,
   warn_skipped_too_much: false,
   enable_visual_helper: false,
@@ -310,6 +313,10 @@ let default_config = {
   forum_url: 'https://autoscripts.flarum.cloud/',
   // 代码版本
   code_version: 'v1.5.2.4',
+  notificationId: 133,
+  notificationChannelId: 'ant_forest_channel_id',
+  notificationChannel: '蚂蚁森林通知',
+  show_summary_notice: true,
 }
 // 文件更新后直接生效，不使用缓存的值
 let no_cache_configs = ['release_access_token', 'code_version']

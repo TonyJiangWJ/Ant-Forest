@@ -43,6 +43,7 @@ commonFunctions.requestScreenCaptureOrRestart()
 floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('循环执行小号能量雨')
 commonFunctions.listenDelayStart()
+commonFunctions.backHomeIfInVideoPackage()
 if (config.accounts && config.accounts.length > 1) {
   config.accounts.forEach((accountInfo, idx) => {
     let { account, accountName } = accountInfo
