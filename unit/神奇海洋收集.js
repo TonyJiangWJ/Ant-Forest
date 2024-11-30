@@ -458,6 +458,8 @@ function checkNext (tryTime, checkOnly) {
       warnInfo('当前版本AutoJS不支持本地OCR，直接设置两小时后的定时任务，此方式并不准确请手动设置实际定时时间，每天间隔两小时的定时任务 并注释下面自动设置定时任务的代码')
       commonFunctions.setUpAutoStart(120)
       NotificationHelper.createNotification('神奇海洋收集两小时后执行', '当前版本不支持OCR识别，直接设置两小时后执行，执行时间：' + buildNextTime(120), NOTIFICATION_ID)
+    } else {
+      NotificationHelper.createNotification('神奇海洋收集执行完毕', '当前已经到达21点，今天的神奇海洋收集已经执行完毕', NOTIFICATION_ID)
     }
     return
   }
@@ -503,6 +505,8 @@ function checkNext (tryTime, checkOnly) {
         commonFunctions.setUpAutoStart(120)
         NotificationHelper.createNotification('神奇海洋收集，两小时后执行', 'OCR识别失败，直接设置两小时后的定时任务，执行时间：' + buildNextTime(120), NOTIFICATION_ID)
       }
+    } else {
+      NotificationHelper.createNotification('神奇海洋收集执行完毕', '当前已经到达21点，今天的神奇海洋收集已经执行完毕', NOTIFICATION_ID)
     }
   }
   warningFloaty.enableTip()
