@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-11-22 10:12:57
+ * @Last Modified time: 2024-11-30 16:09:30
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -979,7 +979,7 @@ const BaseScanner = function () {
       }
     }
     // 校验是否有森林赠礼
-    if (this.checkForPlantReward()) {
+    if (!this.collect_any && this.checkForPlantReward()) {
       infoLog(['好友「{}」有森林赠礼，已领取', obj.name])
     }
     screen && screen.recycle()
@@ -1032,7 +1032,7 @@ const BaseScanner = function () {
     YoloTrainHelper.saveImage(screen, '校验是否有种树奖励')
     let clicked = false
     if (YoloDetection.enabled) {
-      let result = YoloDetection.forward(screen, { confidence: 0.6, filter: (result) => result.label == 'gift' })
+      let result = YoloDetection.forward(screen, { confidence: 0.75, filter: (result) => result.label == 'gift' })
       if (result && result.length > 0) {
         result = result[0]
         automator.click(result.centerX, result.centerY)
