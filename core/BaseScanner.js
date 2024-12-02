@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-12-02 12:01:29
+ * @Last Modified time: 2024-12-02 13:37:56
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -182,12 +182,7 @@ const BaseScanner = function () {
                 }
               }
               WarningFloaty.addRectangle('一键收', [collect.x - 10, collect.y - 10, collect.width + 20, collect.height + 20])
-              automator.click(collect.centerX, collect.centerY)
-              if (_config.double_check_collect) {
-                // 启用了二次校验 直接双击
-                sleep(50)
-                // automator.click(collect.centerX, collect.centerY)
-              }
+              clickOneKeyPoint(collect.centerX, collect.centerY)
               collected = true
             }
           }
@@ -241,12 +236,7 @@ const BaseScanner = function () {
       let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.one_key_collect))
       if (collect) {
         WarningFloaty.addRectangle('一键收', [collect.left - 10, collect.top - 10, collect.width() + 20, collect.height() + 20])
-        automator.click(collect.centerX(), collect.centerY())
-        if (_config.double_check_collect) {
-          // 启用了二次校验 直接双击
-          sleep(50)
-          // automator.click(collect.centerX(), collect.centerY())
-        }
+        clickOneKeyPoint(collect.centerX(), collect.centerY())
         return true
       } else {
         warnInfo(['尝试图片查找一键收按钮失败，请重新通过可视化配置配置一键收图片，尽量仅覆盖文字以提高识别准确性'])
@@ -282,17 +272,26 @@ const BaseScanner = function () {
       let subImage = images.clip(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), region[0], region[1], region[2], region[3])
       _config.overwrite('image_config.one_key_collect', images.toBase64(subImage))
       WarningFloaty.addRectangle('一键收', region)
-      automator.click(bounds.left + (bounds.right - bounds.left) * 0.5, bounds.top + (bounds.bottom - bounds.top) * 0.5)
-      if (_config.double_check_collect) {
-        // 启用了二次校验 直接双击
-        sleep(50)
-        // automator.click(bounds.left + (bounds.right - bounds.left) * 0.5, bounds.top + (bounds.bottom - bounds.top) * 0.5)
-      }
+      clickOneKeyPoint(bounds.left + (bounds.right - bounds.left) * 0.5, bounds.top + (bounds.bottom - bounds.top) * 0.5)
       return true
     } else {
       warnInfo(['无法通过ocr找到一键收，可能当前有活动元素阻断'])
     }
     return false
+  }
+
+  /**
+   * 如果开启了 二次校验 则直接在一键收位置点击两次避免二次识别失败
+   * @param {*} x 
+   * @param {*} y 
+   */
+  function clickOneKeyPoint(x, y) {
+    automator.click(x, y)
+    if (_config.double_check_collect) {
+      // 启用了二次校验 直接双击
+      sleep(50)
+      automator.click(x, y)
+    }
   }
 
   /**
