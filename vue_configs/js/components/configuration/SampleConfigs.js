@@ -394,6 +394,7 @@ const CollectConfig = {
            打开启用开发模式，打开是否保存YOLO训练用数据 然后关闭开发模式。运行一段时间后将resources/trainData目录打包发送给开发者，进行进一步训练以便提高模型识别精度</tip-block>
         <tip-block>运行 独立工具/YOLOJ检测.js 可以查看模型识别效果</tip-block>
         <switch-cell title="使用YOLO模型识别检测元素" v-model="configs.detect_ball_by_yolo" />
+        <tip-block>留空使用默认值即可</tip-block>
         <number-field v-if="configs.detect_ball_by_yolo" v-model="configs.yolo_confidence" label="yolo可信度过滤(0-1)" label-width="12em" placeholder="请输入0-1" ></number-field>
         <tip-block>当前版本仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，有一定几率会漏收倒计时刚刚结束的能量</tip-block>
         <switch-cell title="逛一逛结束后重复一遍" v-model="configs.recheck_after_stroll" label="逛一逛收集到能量后，重复逛一逛避免漏收倒计时刚刚结束的能量" title-style="flex:3.5;" />
