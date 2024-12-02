@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-06-21 02:13:45
+ * @Last Modified time: 2024-12-02 11:58:12
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -419,10 +419,10 @@ function regenerateStrollButton() {
   }
   YoloTrainHelper.saveImage(screen, '识别逛一逛按钮')
   let successful = true
-  if (localOcrUtil.enabled) {
+  if (YoloDetection.enabled) {
     successful = regenerateByYolo(screen)
   }
-  if (!successful && !regenerateByOcr(screen)) {
+  if (!successful && !(successful = regenerateByOcr(screen))) {
     successful = regenerateByImg(screen)
   }
   return successful

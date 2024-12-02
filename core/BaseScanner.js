@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-11-30 16:09:30
+ * @Last Modified time: 2024-12-02 12:01:29
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -154,12 +154,14 @@ const BaseScanner = function () {
     let haveValidBalls = false
     let recheck = false
     let limit = 3
+    // 等待控件加载 否则截图可能存在载入动画
+    _widgetUtils.widgetGetOne(_config.friend_load_more_content || '展开好友动态', 500)
     do {
       haveValidBalls = false
       WarningFloaty.clearAll()
+      // 避免截图太快将悬浮窗内容截图进来
+      sleep(30)
       let screen = _commonFunctions.checkCaptureScreenPermission()
-      // 等待控件加载 否则截图可能存在载入动画
-      _widgetUtils.widgetGetOne(_config.friend_load_more_content || '展开好友动态', 500)
       if (screen) {
         if (this.isProtected) {
           // 已判定为使用了保护罩
@@ -175,46 +177,31 @@ const BaseScanner = function () {
               if (limit < 3) {
                 // 二次校验 检查是否有可收取球
                 if (yoloCheckList.filter(c => c.label == 'collect').length <= 0) {
-                  warnInfo(['yolo识别一键收多次且未找到可收取球，可能识别不正确，推出循环'])
+                  warnInfo(['yolo识别一键收多次且未找到可收取球，可能识别不正确，退出循环'])
                   break
                 }
               }
               WarningFloaty.addRectangle('一键收', [collect.x - 10, collect.y - 10, collect.width + 20, collect.height + 20])
               automator.click(collect.centerX, collect.centerY)
               if (_config.double_check_collect) {
+                // 启用了二次校验 直接双击
                 sleep(50)
-                automator.click(collect.centerX, collect.centerY)
+                // automator.click(collect.centerX, collect.centerY)
               }
               collected = true
             }
           }
-        }
-        if (!collected && !recheck) {
-          sleep(500)
-          if (YoloDetection.enabled) {
+          if (!collected && !recheck) {
+            // 首次执行且yolo识别失败，尝试图片查找
             warnInfo(['yolo识别一键收失败'])
             YoloTrainHelper.saveImage(screen, '一键收', 'one_key_fail', _config.save_one_key_fail_train_data)
+            // 通过图片查找补充
+            collected = this.oneKeyCollectByImg()
           }
-          // 重新截图
-          screen = _commonFunctions.checkCaptureScreenPermission()
-          if (_config.image_config.one_key_collect) {
-            debugInfo(['尝试图片识别一键收'])
-            let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.one_key_collect))
-            if (collect) {
-              WarningFloaty.addRectangle('一键收', [collect.left - 10, collect.top - 10, collect.width() + 20, collect.height() + 20])
-              automator.click(collect.centerX(), collect.centerY())
-              if (_config._double_click_card_used) {
-                sleep(50)
-                automator.click(collect.centerX(), collect.centerY())
-              }
-              collected = true
-            } else {
-              warnInfo(['尝试图片查找一键收按钮失败，请重新通过可视化配置配置一键收图片，尽量仅覆盖文字以提高识别准确性'])
-            }
-          } else {
-            warnInfo(['未配置一键收图片信息，无法通过图片查找'])
-          }
+        } else {
+          collected = this.oneKeyCollectByImg()
         }
+
 
         if (collected) {
           this.one_key_had_success = true
@@ -227,29 +214,11 @@ const BaseScanner = function () {
           } else {
             warnInfo(['未能通过YOLO识别一键收位置，建议收集YOLO图片数据，并上传 让作者进一步训练'])
           }
-          debugInfo(['尝试ocr识别一键收'])
           sleep(500)
-          let ocrCheck = localOcrUtil.recognizeWithBounds(screen, null, '一键收')
-          if (ocrCheck && ocrCheck.length > 0) {
-            let bounds = ocrCheck[0].bounds
-            debugInfo(['识别结果：{}', JSON.stringify(bounds)])
-            try {
-              debugInfo(['{} {} {} {}', bounds.left, bounds.top, bounds.width(), bounds.height])
-            } catch (e) {
-
-            }
-            let region = [
-              bounds.left, bounds.top,
-              bounds.right - bounds.left, bounds.bottom - bounds.top
-            ]
-            debugInfo(['通过ocr找到了目标：{}', region])
-            let subImage = images.clip(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), region[0], region[1], region[2], region[3])
-            _config.overwrite('image_config.one_key_collect', images.toBase64(subImage))
-            WarningFloaty.addRectangle('一键收', region)
-            automator.click(bounds.left + (bounds.right - bounds.left) * 0.5, bounds.top + (bounds.bottom - bounds.top) * 0.5)
+          // 兜底的OCR识别一键收
+          if (this.oneKeyCollectByOcr()) {
             this.collect_operated = true
-          } else {
-            warnInfo(['无法通过ocr找到一键收，可能当前有活动元素阻断'])
+            haveValidBalls = true
           }
         } else if (_config.double_check_collect) {
           debugInfo(['二次校验未能找到一键收'])
@@ -263,6 +232,67 @@ const BaseScanner = function () {
       WarningFloaty.clearAll()
     } while (haveValidBalls && _config.double_check_collect && limit-- > 0)
     debugInfo(['收集能量球总耗时：{}ms', new Date().getTime() - start])
+  }
+
+  this.oneKeyCollectByImg = function () {
+    let screen = _commonFunctions.checkCaptureScreenPermission()
+    if (_config.image_config.one_key_collect) {
+      debugInfo(['尝试图片识别一键收'])
+      let collect = OpenCvUtil.findByImageSimple(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), images.fromBase64(_config.image_config.one_key_collect))
+      if (collect) {
+        WarningFloaty.addRectangle('一键收', [collect.left - 10, collect.top - 10, collect.width() + 20, collect.height() + 20])
+        automator.click(collect.centerX(), collect.centerY())
+        if (_config.double_check_collect) {
+          // 启用了二次校验 直接双击
+          sleep(50)
+          // automator.click(collect.centerX(), collect.centerY())
+        }
+        return true
+      } else {
+        warnInfo(['尝试图片查找一键收按钮失败，请重新通过可视化配置配置一键收图片，尽量仅覆盖文字以提高识别准确性'])
+      }
+    } else {
+      warnInfo(['一键收图片没有配置，无法加载'])
+    }
+  }
+
+  /**
+   * 尝试OCR识别一键收，识别成功后将现有文字区域截图 覆盖配置的一键收图片 image_config.one_key_collect
+   * @returns 
+   */
+  this.oneKeyCollectByOcr = function () {
+    let screen = _commonFunctions.checkCaptureScreenPermission()
+    let ocrRegion = ((w, h) => [0.2 * w, 0.4 * h, 0.6 * w, 0.3 * h])(_config.device_width, _config.device_height)
+    debugInfo(['尝试ocr识别一键收，识别区域：[{}]', JSON.stringify(ocrRegion)])
+    WarningFloaty.addRectangle('OCR识别区域', ocrRegion)
+    let ocrCheck = localOcrUtil.recognizeWithBounds(screen, ocrRegion, '一键收')
+    if (ocrCheck && ocrCheck.length > 0) {
+      let bounds = ocrCheck[0].bounds
+      debugInfo(['识别结果：{}', JSON.stringify(bounds)])
+      try {
+        debugInfo(['{} {} {} {}', bounds.left, bounds.top, bounds.width(), bounds.height])
+      } catch (e) {
+        // pass
+      }
+      let region = [
+        bounds.left, bounds.top,
+        bounds.right - bounds.left, bounds.bottom - bounds.top
+      ]
+      debugInfo(['通过ocr找到了目标：{}', region])
+      let subImage = images.clip(images.cvtColor(images.grayscale(screen), 'GRAY2BGRA'), region[0], region[1], region[2], region[3])
+      _config.overwrite('image_config.one_key_collect', images.toBase64(subImage))
+      WarningFloaty.addRectangle('一键收', region)
+      automator.click(bounds.left + (bounds.right - bounds.left) * 0.5, bounds.top + (bounds.bottom - bounds.top) * 0.5)
+      if (_config.double_check_collect) {
+        // 启用了二次校验 直接双击
+        sleep(50)
+        // automator.click(bounds.left + (bounds.right - bounds.left) * 0.5, bounds.top + (bounds.bottom - bounds.top) * 0.5)
+      }
+      return true
+    } else {
+      warnInfo(['无法通过ocr找到一键收，可能当前有活动元素阻断'])
+    }
+    return false
   }
 
   /**

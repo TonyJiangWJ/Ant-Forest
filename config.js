@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-11-30 17:46:17
+ * @Last Modified time: 2024-12-02 12:10:02
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -312,7 +312,7 @@ let default_config = {
   chatgml_api_key: '',
   forum_url: 'https://autoscripts.flarum.cloud/',
   // 代码版本
-  code_version: 'v1.5.3.1',
+  code_version: 'v1.5.3.2',
   notificationId: 133,
   notificationChannelId: 'ant_forest_channel_id',
   notificationChannel: '蚂蚁森林通知',
