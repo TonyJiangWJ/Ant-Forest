@@ -27,8 +27,8 @@
 ## 实验性功能
 
 - 1.4.0版本开始增加基于YOLO的目标检测算法，需要下载最新版本的[AutoJS Modify](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.modify.latest.apk) 或 [困鱼](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/AutoJS.fake.latest.apk)
-- 请手动下载YOLO模型，并将其放置到config_data目录下，链接地址：[https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/forest_lite.onnx](https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/forest_lite.onnx)
-- 运行可视化配置，进入图像识别相关设置，打开使用YOLO模型识别能量球即可启用。如果当前AutoJS不支持或者模型未下载将自动降级使用旧版识别方案。
+- 运行 `独立工具/模型下载.js` 下载YOLO模型，否则无法进行识别。如果下载失败请手动下载并解压到config_data目录下，路径: `./config_data/forest_lite.onnx`。下载地址：`https://wwxs.lanzoup.com/b042le51i 密码:b034`
+- 模型下载完毕后，运行可视化配置，进入图像识别相关设置，打开 `使用YOLO模型识别能量球` 即可启用。如果当前AutoJS不支持或者模型未下载将自动降级使用旧版识别方案。
 - 从1.4.0版本开始将逐渐优化模型，将各种图片配置移除，尽量做的开箱即用
 - 原方案识别能量球速度大概3-40ms，YOLO模型大概100ms请自行取舍，YOLO识别默认关闭
 - shizuku支持，需要安装最新版的修改版AutoJS或困鱼，然后在抽屉中打开启用shizuku并进行授权，需要先将shizuku激活，具体操作请自行参考shizuku官方文档
