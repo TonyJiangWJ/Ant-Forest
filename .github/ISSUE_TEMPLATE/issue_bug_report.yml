@@ -11,7 +11,7 @@ body:
       options:
         - label: 我已提供清晰的问题描述以及复现步骤和日志。
           required: true
-        - label: 我已阅读并遵循了项目 `README.md` 的指引，已经正确阅读常见问题中所描述的内容。
+        - label: 我已阅读并遵循了项目 [README](https://github.com/TonyJiangWJ/Ant-Forest/blob/master/README.md) 的指引，已经正确阅读常见问题中所描述的内容。
           required: true
         - label: 我已搜索现有 [Issues](https://github.com/TonyJiangWJ/Ant-Forest/issues?q=is%3Aissue)，确认没有重复问题。
           required: true
@@ -43,6 +43,6 @@ body:
   - type: textarea
     attributes:
       label: 日志/截图
-      description: 在下方附上运行日志，或附上日志截图
+      description: 在下方附上运行日志，或附上日志截图。脚本详细日志文件所在位置为 `logs/log-verboses.log`, 历史日志在`logs/logback`目录下。如运行报错请直接长截图AutoJS日志以便查看详细的报错信息
     validations:
       required: false

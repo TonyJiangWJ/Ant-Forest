@@ -8,7 +8,7 @@ body:
       label: 验证步骤（必填）
       description: 请仔细阅读以下内容并勾选确认，否则该 Issue 可能被关闭。
       options:
-        - label: 我已阅读并理解 [贡献指南](https://github.com/TonyJiangWJ/Ant-Forest/blob/master/CONTRIBUTING.md)，确认该功能未被实现。
+        - label: 我已阅读并理解 [README](https://github.com/TonyJiangWJ/Ant-Forest/blob/master/README.md)，并且运行了 `可视化配置.js` 理解了其中的菜单项。确认该功能未被实现。
           required: true
         - label: 我已搜索现有 [Issues](https://github.com/TonyJiangWJ/Ant-Forest/issues?q=is%3Aissue)，确认没有类似功能请求。
           required: true
