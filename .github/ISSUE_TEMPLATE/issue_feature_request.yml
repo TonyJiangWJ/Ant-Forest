@@ -12,6 +12,8 @@ body:
           required: true
         - label: 我已搜索现有 [Issues](https://github.com/TonyJiangWJ/Ant-Forest/issues?q=is%3Aissue)，确认没有类似功能请求。
           required: true
+        - label: 功能疑问请移步 [Discussions](https://github.com/TonyJiangWJ/Ant-Forest/discussions) 或者 [论坛](https://autoscripts.flarum.cloud/)。
+          required: false
   - type: input
     id: feature-name
     attributes:
