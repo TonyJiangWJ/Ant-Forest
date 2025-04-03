@@ -179,8 +179,9 @@
 
 * 脚本会自动记录能量收集数据。
 * 可在 `可视化配置.js` 中查看图表化的统计信息。
-    <img src="./resources/hourly_summary.jpg" alt="hourly_summary" style="max-height: 400px;"/>
-    <img src="./resources/daily_summary.jpg" alt="daily_summary" style="max-height: 400px;"/>
+* 
+  <img src="./resources/hourly_summary.jpg" alt="hourly_summary" height="400"/>
+  <img src="./resources/daily_summary.jpg" alt="daily_summary" height="400"/>
 
 ## 🔧 高级定制
 
@@ -253,7 +254,7 @@ module.exports = function () {
   * 使用最新版 **修改版 AutoJS** 或 **困鱼**。
   * 在 AutoJS 的抽屉菜单中启用 Shizuku 并授权。
 * **示例**: `独立工具/shizuku示例工具.js` 包含通过 Shizuku 授权媒体权限、写入 Secure 设置 (用于自动开无障碍) 等示例。
-    <img src="./resources/shizuku.jpeg" alt="shizuku" style="max-height: 400px;"/>
+    <img src="./resources/shizuku.jpeg" alt="shizuku" height="400"/>
 
 ## 🔄 脚本更新
 
