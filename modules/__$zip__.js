@@ -3,7 +3,6 @@ module.exports = function (runtime, global) {
     let ZipFile = Packages.net.lingala.zip4j.core.ZipFile;
     let File = java.io.File;
     let ArrayList = java.util.ArrayList;
-    let bridges = require("__bridges__");
     let $files = global.files;
     let Zip4jConstants = Packages.net.lingala.zip4j.util.Zip4jConstants;
 
@@ -145,7 +144,7 @@ module.exports = function (runtime, global) {
     }
 
     Zip.prototype.getFileHeaders = function () {
-        return bridges.toArray(this._zip.getFileHeaders());
+        return util.java.toJsArray(this._zip.getFileHeaders());
     }
 
     Zip.prototype.isEncrypted = function () {

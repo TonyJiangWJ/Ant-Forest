@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-12-02 13:37:56
+ * @Last Modified time: 2025-03-28 14:48:28
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -167,6 +167,7 @@ const BaseScanner = function () {
           // 已判定为使用了保护罩
           return
         }
+        let saveScreen = images.copy(screen, true)
         let collected = false
         if (YoloDetection.enabled) {
           let yoloCheckList = YoloDetection.forward(screen, { confidence: _config.yolo_confidence || 0.7, filter: (result) => result.label == 'one_key' || result.label == 'collect' })
@@ -189,7 +190,7 @@ const BaseScanner = function () {
           if (!collected && !recheck) {
             // 首次执行且yolo识别失败，尝试图片查找
             warnInfo(['yolo识别一键收失败'])
-            YoloTrainHelper.saveImage(screen, '一键收', 'one_key_fail', _config.save_one_key_fail_train_data)
+            YoloTrainHelper.saveImage(saveScreen, '一键收', 'one_key_fail', _config.save_one_key_fail_train_data)
             // 通过图片查找补充
             collected = this.oneKeyCollectByImg()
           }
@@ -197,11 +198,10 @@ const BaseScanner = function () {
           collected = this.oneKeyCollectByImg()
         }
 
-
         if (collected) {
           this.one_key_had_success = true
           haveValidBalls = true
-          YoloTrainHelper.saveImage(screen, '一键收', 'one_key', _config.save_one_key_train_data)
+          YoloTrainHelper.saveImage(saveScreen, '一键收', 'one_key', _config.save_one_key_train_data)
           this.collect_operated = true
         } else if (!recheck) {
           if (!YoloDetection.enabled) {
@@ -218,6 +218,9 @@ const BaseScanner = function () {
         } else if (_config.double_check_collect) {
           debugInfo(['二次校验未能找到一键收'])
         }
+        saveScreen.recycle()
+      } else {
+        errorInfo('获取截图失败')
       }
       if (haveValidBalls && _config.double_check_collect) {
         recheck = true
@@ -690,6 +693,11 @@ const BaseScanner = function () {
 
   this.getFriendName = function () {
     let titleContainer = _widgetUtils.widgetGetOne(_config.friend_name_getting_regex || '.*的蚂蚁森林', null, true)
+    if (titleContainer) {
+      toastLog('content: ' + titleContainer.content)
+    } else {
+      toastLog('未找到目标控件')
+    }
     let regex = new RegExp(_config.friend_name_getting_regex || '(.*)的蚂蚁森林')
     if (titleContainer && regex.test(titleContainer.content)) {
       return regex.exec(titleContainer.content)[1]

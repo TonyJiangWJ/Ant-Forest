@@ -380,6 +380,11 @@ const SkipPackageConfig = {
       this.newSkipRunningAppName = payload.appName
       this.newSkipRunningPackage = payload.packageName
     },
+    syncSkipPackage: function () {
+      $nativeApi.request('syncSkipPackages', { skip_running_packages: this.configs.skip_running_packages }).then(resp => {
+        this.configs.skip_running_packages = resp.skip_running_packages
+      })
+    }
   },
   computed: {
     addedSkipPackageNames: function () {
@@ -391,6 +396,7 @@ const SkipPackageConfig = {
     <van-divider content-position="left">
       前台应用白名单设置
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addSkipPackage">增加</van-button>
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="syncSkipPackage">从其他脚本同步</van-button>
     </van-divider>
     <van-cell-group>
       <switch-cell title="当前台白名单跳过次数过多时提醒" label="当白名单跳过3次之后会toast提醒，按音量下可以直接执行" title-style="width: 12em;flex:2;" v-model="configs.warn_skipped_too_much" />
@@ -460,6 +466,11 @@ const VideoPackageConfig = {
       this.newVideoAppName = payload.appName
       this.newVideoPackage = payload.packageName
     },
+    syncSkipPackage: function () {
+      $nativeApi.request('syncVideoPackages', { video_packages: this.configs.video_packages }).then(resp => {
+        this.configs.video_packages = resp.video_packages
+      })
+    }
   },
   computed: {
     addedVideoPackageNames: function () {
@@ -471,6 +482,7 @@ const VideoPackageConfig = {
     <van-divider content-position="left">
       视频应用设置
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addSkipPackage">增加</van-button>
+      <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="syncSkipPackage">从其他脚本同步</van-button>
     </van-divider>
     <tip-block>在HyperOS下，如果视频应用在前台时会在小窗中打开应用，导致脚本执行异常，通过在下面设置视频应用包名，脚本将在判断包名后先打开手机首页再打开应用，避免在小窗中打开。</tip-block>
     <van-cell-group>

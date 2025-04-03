@@ -179,6 +179,8 @@ if (!FloatyInstance.init()) {
   runningQueueDispatcher.executeTargetScript(FileUtils.getRealMainScriptPath())
   exit()
 }
+// 开启websocket监控
+require('./lib/WebsocketCaptureHijack.js')()
 // 自动设置刘海偏移量
 commonFunctions.autoSetUpBangOffset()
 /************************

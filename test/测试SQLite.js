@@ -106,7 +106,7 @@ let data2 = sqliteHelper.selectById(tableIdentify, '2', fullColumnConverter)
 console.info('data2:', JSON.stringify(data2))
 
 
-let allData = runtime.bridges.bridges.toArray(sqliteHelper.rawQueryWithModel('SELECT ID,CUST_NAME,AGE,CREATE_TIME,MODIFY_TIME FROM TEST_TABLE WHERE ID > ? LIMIT 0, 10', ["1"], fullColumnConverter))
+let allData = util.java.toJsArray(sqliteHelper.rawQueryWithModel('SELECT ID,CUST_NAME,AGE,CREATE_TIME,MODIFY_TIME FROM TEST_TABLE WHERE ID > ? LIMIT 0, 10', ["1"], fullColumnConverter))
 console.info('全部数据：', JSON.stringify(allData))
 
 let countColumnConverter = new SQLiteHelper.ModelFromCursorConverter({

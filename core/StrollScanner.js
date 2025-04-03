@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-12-02 11:58:12
+ * @Last Modified time: 2024-12-17 21:16:52
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -50,7 +50,7 @@ const DuplicateChecker = function () {
       exist = { name: obj.name, count: 1 }
     }
     this.duplicateChecked[obj.name] = exist
-    
+
   }
 
   /**
@@ -198,11 +198,15 @@ StrollScanner.prototype.collectTargetFriend = function () {
     )
     sleep(500)
     if (count >= 3) {
-      if (regenerateStrollButton()) {
-        let region = [_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height]
-        automator.clickRandomRegion({ left: region[0], top: region[1], width: region[2], height: region[3] })
-        sleep(1000)
-        continue
+      if (!this.regenerated_stroll_button) {
+        warnInfo(['可能逛一逛按钮不正确，重新识别'])
+        if (regenerateStrollButton()) {
+          let region = [_config.stroll_button_left, _config.stroll_button_top, _config.stroll_button_width, _config.stroll_button_height]
+          automator.clickRandomRegion({ left: region[0], top: region[1], width: region[2], height: region[3] })
+          sleep(1000)
+          this.regenerated_stroll_button = true
+          continue
+        }
       }
       this._regenerate_stroll_button = true
       warnInfo('重试超过3次，取消操作')
@@ -223,7 +227,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
     obj.name = name
     debugInfo(['进入好友[{}]首页成功', obj.name])
     if (name == this.lastFriendName) {
-      this.duplicateEnterCount = (this.duplicateEnterCount?this.duplicateEnterCount:0)+1
+      this.duplicateEnterCount = (this.duplicateEnterCount ? this.duplicateEnterCount : 0) + 1
     } else {
       this.duplicateEnterCount = 0
     }
@@ -292,7 +296,7 @@ StrollScanner.prototype.checkAndCollectRain = function () {
       automator.clickCenter(target)
       sleep(1000)
       let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
-      runningQueueDispatcher.doAddRunningTask({source: source})
+      runningQueueDispatcher.doAddRunningTask({ source: source })
       engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByStroll: true, executorSource: engines.myEngine().getSource() + '' } })
       _commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
       automator.back()
@@ -320,7 +324,7 @@ module.exports = StrollScanner
 
 // inner functions
 
-function refillStrollInfo(region) {
+function refillStrollInfo (region) {
   _config.stroll_button_left = parseInt(region[0])
   _config.stroll_button_top = parseInt(region[1])
   _config.stroll_button_width = parseInt(region[2])
@@ -331,7 +335,7 @@ function refillStrollInfo(region) {
   debugInfo(['重新生成逛一逛按钮区域：{}', JSON.stringify(region)])
 }
 
-function ocrFindText(screen, text, tryTime) {
+function ocrFindText (screen, text, tryTime) {
   tryTime = tryTime || 0
   let ocrCheck = localOcrUtil.recognizeWithBounds(screen, null, text)
   if (ocrCheck && ocrCheck.length > 0) {
@@ -345,7 +349,7 @@ function ocrFindText(screen, text, tryTime) {
   }
 }
 
-function regenerateByYolo(screen) {
+function regenerateByYolo (screen) {
   let yoloCheck = YoloDetection.forward(screen, { labelRegex: 'stroll_btn' })
   if (yoloCheck && yoloCheck.length > 0) {
     let bounds = yoloCheck[0]
@@ -360,7 +364,7 @@ function regenerateByYolo(screen) {
 
 }
 
-function regenerateByOcr(screen) {
+function regenerateByOcr (screen) {
   let ocrCheck = ocrFindText(screen, '找能量', 1)
   if (ocrCheck) {
     let bounds = ocrCheck.bounds
@@ -377,7 +381,7 @@ function regenerateByOcr(screen) {
   return false
 }
 
-function regenerateByImg(screen) {
+function regenerateByImg (screen) {
   let configImageFail = false
   let imagePoint = OpenCvUtil.findByGrayBase64(screen, _config.image_config.stroll_icon)
   if (!imagePoint) {
@@ -407,7 +411,7 @@ function regenerateByImg(screen) {
   return false
 }
 
-function regenerateStrollButton() {
+function regenerateStrollButton () {
   if (!_config.image_config.stroll_icon && !localOcrUtil.enabled) {
     warnInfo(['请配置逛一逛按钮图片或者手动指定逛一逛按钮区域'], true)
     return false

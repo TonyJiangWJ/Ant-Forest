@@ -17,6 +17,7 @@ const DevelopConfig = {
         auto_check_update: true,
         clear_webview_cache: true,
         webview_loging: true,
+        enable_websocket_hijack: true,
       },
       showVConsole: window.vConsole && window.vConsole.isInited,
     }
@@ -34,6 +35,7 @@ const DevelopConfig = {
   <div>
   <van-cell-group>
     <switch-cell title="是否自动检测更新" v-model="configs.auto_check_update" />
+    <switch-cell title="是否开启websocket监控" v-model="configs.enable_websocket_hijack" />
     <switch-cell title="是否启用开发模式" v-model="configs.develop_mode" />
     <switch-cell title="是否显示VConsole" v-model="showVConsole" />
     <switch-cell title="下次打开配置时清空缓存" v-model="configs.clear_webview_cache" />
