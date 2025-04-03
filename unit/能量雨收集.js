@@ -4,15 +4,13 @@ importClass(java.util.concurrent.TimeUnit)
 importClass(java.util.concurrent.CountDownLatch)
 importClass(java.util.concurrent.ThreadFactory)
 importClass(java.util.concurrent.Executors)
-importClass(com.stardust.autojs.core.graphics.ScriptCanvas)
 
 let currentEngine = engines.myEngine()
 let runningEngines = engines.all()
 let runningSize = runningEngines.length
 let currentSource = currentEngine.getSource() + ''
 if (runningSize > 1) {
-  runningEngines.forEach(engine => {
-    let compareEngine = engine
+  runningEngines.forEach(compareEngine => {
     let compareSource = compareEngine.getSource() + ''
     if (currentEngine.id !== compareEngine.id && compareSource === currentSource) {
       // 强制关闭同名的脚本
@@ -93,6 +91,7 @@ let maxGap = config.device_width / 4 - 5
 let middlePoint = config.device_width / 2
 // 暴力点击的区域
 let violentClickPoints = [middlePoint - 2 * clickGap, middlePoint - clickGap, middlePoint, middlePoint + clickGap, middlePoint + 2 * clickGap].map(v => [v, config.rain_click_top || cvt(300)])
+// 控制当前是开发调试还是正常模式，调试模式控制点击时间短于实际时间，将退出点击避免浪费机会。但需要人为控制结束
 let VIOLENT_CLICK_TIME = config.rain_collect_debug_mode ? 13 : (config.rain_collect_duration || 18)
 
 let startTimestamp = new Date().getTime()
@@ -111,7 +110,7 @@ threadPool.execute(function () {
       writeLock.unlock()
     }
     if (clickRunning) {
-      // 暴力点击方式执行
+      // 暴力点击方式执行，当前点击持续时间小于等于设定时间继续点击，超过后便停止
       if (passedTime <= VIOLENT_CLICK_TIME) {
         violentClickPoints.forEach(p => press(p[0], p[1], pressDuration))
         sleep(sleepTime)
@@ -257,6 +256,9 @@ clickButtonWindow.delayClose.setOnTouchListener(new android.view.View.OnTouchLis
 
 
 function checkAndSendChance () {
+  if (checkHasValidation()) {
+    return false
+  }
   setDisplayText('正在校验是否存在 “更多好友”，请稍等')
   // 设置至少十秒的查找时间
   let endDateForCheck = new Date().getTime() + 10000 + (config.timeout_rain_find_friend || 3000)
@@ -346,6 +348,12 @@ function checkAndStartCollect () {
         targetEndTime = targetEndTime > new Date().getTime() + 30000 ? targetEndTime : new Date().getTime() + 30000
       } finally {
         writeLock.unlock()
+        threadPool.execute(function () {
+          if (checkHasValidation()) {
+            debugInfo(['检测到验证，停止收集'])
+            clickRunning = false
+          }
+        })
       }
     })
   } else {
@@ -566,4 +574,13 @@ function clearDisplayText () {
       onFloatDisplay = false
     }, 1000)
   })
+}
+
+function checkHasValidation() {
+  let validationWidget = widgetUtils.widgetGetOne('.*请进行验证.*', 1000)
+  if (validationWidget) {
+    warnInfo(['有验证，请手动执行'], true)
+    return true
+  }
+  return false
 }
