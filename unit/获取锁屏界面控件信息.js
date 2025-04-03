@@ -261,7 +261,7 @@ function iterateAll (root, depth, index) {
   let uiObjectInfo = new UiObjectInfo(root.root, depth, index)
   logUtils.logInfo(uiObjectInfo.toString())
   if (root.getChildList().size() > 0) {
-    return [uiObjectInfo].concat(runtime.bridges.bridges.toArray(root.getChildList()).map((child, index) => iterateAll(child, depth + 1, index)))
+    return [uiObjectInfo].concat(util.java.toJsArray(root.getChildList()).map((child, index) => iterateAll(child, depth + 1, index)))
   } else {
     return [uiObjectInfo]
   }
