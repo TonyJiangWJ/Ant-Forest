@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-06-13 16:48:18
+ * @Last Modified time: 2025-04-05 11:51:55
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 
@@ -1194,7 +1194,7 @@ function formatDate (date, fmt) {
 
 API = {
   post: function (url, data) {
-    return axios.post(url, qs.stringify(data))
+    return axios.post(url, data)
       .then(resp => Promise.resolve(resp.data))
       .catch(e => Promise.reject(e))
   },
