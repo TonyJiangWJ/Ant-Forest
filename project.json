@@ -4,7 +4,7 @@
     "ignore": [
         "build"
     ],
-    "versionName": "1.5.3.5",
+    "versionName": "1.5.3.6",
     "packageName": "com.tony.ant.forest",
-    "versionCode": 1535
+    "versionCode": 1536
 }
