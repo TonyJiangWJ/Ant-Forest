@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 13:16:53
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-05 11:51:55
+ * @Last Modified time: 2025-04-09 11:32:22
  * @Description: 组件代码，传统方式，方便在手机上进行修改
  */
 
@@ -833,11 +833,15 @@ Vue.component('tip-block', resolve => {
       tipFontSize: {
         type: String,
         default: '0.7rem'
+      },
+      tipFontColor: {
+        type: String,
+        default: 'gray'
       }
     },
     template: `<van-row>
       <van-col :span="22" :offset="1">
-        <span :style="'color: gray;font-size: ' + tipFontSize"><slot></slot></span>
+        <span :style="{'color': tipFontColor,'font-size': tipFontSize}"><slot></slot></span>
       </van-col>
     </van-row>`
   })

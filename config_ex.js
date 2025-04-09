@@ -185,7 +185,7 @@ module.exports = (default_config, CONFIG_STORAGE_NAME, PROJECT_NAME) => {
       }
       config[config_key] = value
     }
-    console.verbose('覆写配置', storage_name, key)
+    console.verbose('覆写配置', storage_name, key, typeof value == 'string' && value.length > 20 ? value.substring(0, 20) : value)
     storages.create(storage_name).put(key, value)
   }
 
@@ -308,6 +308,9 @@ module.exports = (default_config, CONFIG_STORAGE_NAME, PROJECT_NAME) => {
       }, 3000)
     }
   }
+
+  config.convertDefaultData = convertDefaultData
+  config.getCurrentWorkPath = getCurrentWorkPath
 
   return config
 

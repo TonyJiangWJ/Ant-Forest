@@ -37,7 +37,7 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
 }
 let unlocker = require('../lib/Unlock.js')
 unlocker.exec()
-
+commonFunctions.showCommonDialogAndWait('森林集市')
 let market = new Market()
 market.exec()
 
@@ -95,7 +95,7 @@ function Market () {
   }
 
   this.clickGoodDetail = function () {
-    let clickBtn = widgetUtils.widgetGetOne('\\+200g')
+    let clickBtn = widgetUtils.widgetGetOne('到手价')
     if (clickBtn) {
       logFloaty.pushLog('随机点击一个商品')
       clickBtn.click()
@@ -103,6 +103,8 @@ function Market () {
       back()
       sleep(1000)
       return true
+    } else {
+      logFloaty.pushErrorLog('未找到可点击商品')
     }
     return false
   }
@@ -124,7 +126,8 @@ function Market () {
     let countdownWidget = widgetUtils.widgetGetOne('浏览商品\\d+s', 2000)
     if (countdownWidget) {
       logFloaty.pushLog('找到了倒计时控件，开始浏览商品')
-      while (widgetUtils.widgetGetOne('浏览商品\\d+s', 1000)) {
+      let maxTry = 5
+      while (maxTry-->0 && widgetUtils.widgetGetOne('浏览商品\\d+s', 1000)) {
         let breakLoop = false;
         // 按顺序点来点去
         ['greenConsumer', 'greenFood', 'furniture', 'greenItem'].forEach(id => {
@@ -146,7 +149,8 @@ function Market () {
       let clickWidget = widgetUtils.widgetGetOne('点击\\d+个商品', 2000)
       if (clickWidget) {
         logFloaty.pushLog('点击商品进行浏览')
-        while (widgetUtils.widgetGetOne('点击\\d+个商品', 1000)) {
+        let maxTry = 5
+        while (maxTry-->0 && widgetUtils.widgetGetOne('点击\\d+个商品', 1000)) {
           this.clickGoodDetail()
           if (this.clickRewardIfNeeded()) {
             break
