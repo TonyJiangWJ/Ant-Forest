@@ -2,7 +2,7 @@ let { config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 runningQueueDispatcher.addRunningTask()
-let accountChange = require('../lib/AlipayAccountManage.js')
+let accountChange = require('../lib/AlipayAccountManage.js').changeAccount
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')

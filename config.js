@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-03-28 15:08:46
+ * @Last Modified time: 2025-04-17 14:33:51
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -235,7 +235,7 @@ let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
 
 // 公共扩展
-let config = require('./config_ex.js')(default_config, CONFIG_STORAGE_NAME, PROJECT_NAME)
+let config = require('./config_ex.js')(default_config, { CONFIG_STORAGE_NAME, PROJECT_NAME })
 
 config.exportIfNeeded(module, (key, value) => {
   if (key == 'detect_ball_by_yolo') {
@@ -246,7 +246,8 @@ config.exportIfNeeded(module, (key, value) => {
 // 图片配置相关key值
 config.prepareImageConfig([
   'reward_for_plant', 'backpack_icon', 'sign_reward_icon', 'water_icon',
-  'stroll_icon', 'watering_cooperation', 'magic_species_icon', 'use_item', 'one_key_collect'
+  'stroll_icon', 'watering_cooperation', 'magic_species_icon', 'use_item', 'one_key_collect',
+  'main_account_avatar'
 ])
 
 // 重置配置
