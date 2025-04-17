@@ -17,6 +17,10 @@ let Index = {
           link: '/about'
         },
         {
+          title: '支持作者',
+          link: '/sponsor'
+        },
+        {
           title: '锁屏设置',
           link: '/basic/lock'
         },
@@ -88,11 +92,23 @@ let Index = {
           title: '高级设置',
           link: '/advance/common'
         },
+        {
+          title: '论坛',
+          link: 'https://autoscripts.flarum.cloud/'
+        },
       ]
     }
   },
   methods: {
     routerTo: function (item) {
+      if (item.link.indexOf('https://') > -1) {
+        vant.Toast.loading({
+          duration: 0,
+          message: '等待加载，请稍候'
+        })
+        $app.invoke('jumpToUrl', { url: item.link})
+        return
+      }
       this.$router.push(item.link)
       this.$store.commit('setTitleWithPath', { title: item.title, path: item.link })
     }

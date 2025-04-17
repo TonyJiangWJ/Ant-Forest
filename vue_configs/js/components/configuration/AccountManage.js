@@ -14,6 +14,7 @@ const AlipayAccountManage = {
         to_main_by_user_id: true,
         watering_main_account: true,
         watering_main_at: 'rain',
+        main_account_avatar: '',
       },
       showAddAccountDialog: false,
       isEdit: false,
@@ -125,7 +126,31 @@ const AlipayAccountManage = {
           break
       }
       this.$toast(desc)
-    }
+    },
+    onConfigLoad (config) {
+      this.configs.main_account_avatar = config.image_config.main_account_avatar
+    },
+    doSaveConfigs (deleteFields) {
+      console.log('执行保存配置')
+      let newConfigs = this.filterErrorFields(this.configs)
+      if (deleteFields && deleteFields.length > 0) {
+        deleteFields.forEach(key => {
+          newConfigs[key] = ''
+        })
+      }
+      $app.invoke('saveConfigs', newConfigs)
+      if (this.configs.main_account_avatar) {
+        // 保存图片扩展配置
+        $app.invoke('saveExtendConfigs', { configs: { main_account_avatar: this.configs.main_account_avatar }, prepend: 'image' })
+      }
+    },
+    getAvatar: function () {
+      $nativeApi.request('getAvatar', {}).then(resp => {
+        $app.invoke('loadConfigs', {}, config => {
+          this.configs.main_account_avatar = config.image_config.main_account_avatar
+        })
+      })
+    },
   },
   filters: {
     displayTime: value => {
@@ -145,11 +170,14 @@ const AlipayAccountManage = {
   <div>
     <van-cell-group>
       <!--<switch-cell :title="getLabelByConfigKey('enable_multi_account')" v-model="configs.enable_multi_account" />-->
+      <tip-block>当多个账号的名称匹配相同时，需要通过头像来区分主账号，不过还是建议使用邮箱登录来增加区分度而不是手机号登录。</tip-block>
       <van-cell :title="getLabelByConfigKey('main_account')" :value="configs.main_account" >
         <template #right-icon v-if="configs.main_account">
           <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="changeAccount">切换账号</van-button>
+          <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="getAvatar">自动提取头像</van-button>
         </template>
       </van-cell>
+      <base64-image-viewer title="主账号头像" v-model="configs.main_account_avatar"/>
       <switch-cell :title="getLabelByConfigKey('watering_main_account')" v-model="configs.watering_main_account" />
       <template v-if="configs.watering_main_account">
        <tip-block>默认使用大号昵称查找大号入口，如果小号首页无法找到大号则无法进行浇水，请自行获取userId以确保百分百跳转大号</tip-block>

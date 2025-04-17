@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-11-22 16:07:05
+ * @Last Modified time: 2025-04-11 10:03:56
  * @Description: 蚂蚁森林自动收能量
  */
 console.warn('如遇语法报错，请从README下载最新版的AutoJS，旧版本不维护，不适配')
@@ -84,17 +84,8 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
 }
 commonFunctions.markExtendSuccess()
 logInfo('---前置校验完成;启动系统--->>>>')
-// 打印运行环境信息
-if (files.exists('version.json')) {
-  let content = JSON.parse(files.read('version.json'))
-  logInfo(['版本信息：{} nodeId:{}', content.version, content.nodeId])
-} else if (files.exists('project.json')) {
-  let content = JSON.parse(files.read('project.json'))
-  logInfo(['版本信息：{}', content.versionName])
-} else {
-  logInfo('无法获取脚本版本信息')
-}
 infoLog('本脚本免费使用，更多说明可前往github查阅README.md，地址：https://github.com/TonyJiangWJ/Ant-Forest')
+logInfo(['脚本版本：{}', config.code_version])
 logInfo(['AutoJS version: {}', app.autojs.versionName])
 logInfo(['device info: {} {} {}', device.brand, device.product, device.release])
 logInfo(['运行模式：{} {} {}',

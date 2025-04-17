@@ -332,6 +332,8 @@ module.exports = function () {
 | :----: | :----: | :----: |
 | ![alipay_qrcode](./resources/alipay_qrcode.png) | ![wechat_qrcode](./resources/wechat_qrcode.png) | ![扫码领红包](./resources/hongbao_qrcode.png) |
 
+* 也可以运行 `unit/支持作者.js` 在线获取红包口令，通过支付宝直接打开领取，每使用一个红包我都可以获取一分钱的收益。
+
 ### 🙏 感谢名单 (部分)
 
 <details>

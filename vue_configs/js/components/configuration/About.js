@@ -85,3 +85,81 @@ const About = {
   </div>
   `
 }
+
+
+const Sponsor = {
+  mixins: [mixin_common],
+  data () {
+    return {
+      category: 'hongbao',
+      deviceId: '11234',
+      url: 'https://tonyjiang.hatimi.top/mutual-help',
+      loading: false,
+      announcement: '',
+      announcedAt: '',
+      showAnnouncementDialog: false,
+    }
+  },
+  methods: {
+    getDeviceId: function () {
+      $nativeApi.request('getDeviceId', {}).then(resp => {
+        this.deviceId = resp.deviceId
+        this.getMine()
+        this.getTotalAvailable()
+      })
+    },
+    getAnnouncement: function () {
+      API.get(this.url + '/announcement', {
+        params: {
+          category: this.category,
+          deviceId: this.deviceId,
+        },
+      }).then(resp => {
+        if (resp.announcement) {
+          let data = resp.announcement
+          this.announcedAt = data.updatedAt
+          this.announcement = data.text
+          this.showAnnouncementDialog = true
+        }
+      }).catch(e => { })
+    },
+    openByAlipay: function () {
+      if (!this.announcement) {
+        return
+      }
+      $nativeApi.request('copyAndOpen', { text: this.announcement, urlSchema: 'alipays://platformapi/startapp?appId=20001003&keyword=' + encodeURI(this.announcement) + '&v2=true', packageName: 'com.eg.android.AlipayGphone' })
+    },
+  },
+  computed: {
+    hasUploaded: function () {
+      console.log('check has uploaded', !!this.myText)
+      return !!this.myText
+    },
+    localStorageKey: function () {
+      return 'doNotShowAnnounce' + this.announcedAt
+    }
+  },
+  mounted () {
+    this.getDeviceId()
+  },
+  template: `
+  <div>
+    <van-cell-group>
+      <tip-block>获取红包码，使用红包后作者每一个大概能获取一分钱收益。赞助作者，让作者更有动力开发。</tip-block>
+      <tip-block>也可以直接运行 unit/支持作者.js 来快速获取红包码</tip-block>
+      <van-field
+        v-model="announcement"
+        rows="1"
+        autosize
+        label="红包码"
+        type="textarea"
+        readonly
+      />
+      <div style="display: flex;padding: 1rem;flex-direction: column;justify-content: center;gap: 0.5rem;">
+        <van-button plain type="info" @click="getAnnouncement" :loading="loading">获取红包码</van-button>
+        <van-button plain type="primary" v-if="!!this.announcement" @click="openByAlipay" :loading="loading">通过支付宝打开</van-button>
+      </div>
+    </van-cell-group>
+  </div>
+  `
+}
