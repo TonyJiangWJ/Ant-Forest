@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-11-29 11:28:15
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2023-04-23 11:27:45
+ * @Last Modified time: 2025-04-11 17:24:06
  * @Description: 
  */
 "ui";
@@ -82,6 +82,8 @@ let bridgeHandlerBuilder = require('./lib/BridgeHandler.js')
 let loadSuccess = false
 /**/
 postMessageToWebView = prepareWebView(ui.webview, {
+  // 内部跳转的地址
+  innerJumpUrls: [config.forum_url].concat(config.innerJumpUrls || []),
   enable_log: config.webview_loging,
   mainScriptPath: mainScriptPath,
   indexFilePath: indexFilePath,
