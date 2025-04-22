@@ -2,13 +2,14 @@ let { config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 runningQueueDispatcher.addRunningTask()
-let accountChange = require('../lib/AlipayAccountManage.js').changeAccount
+let { changeAccount, ensureMainAccount } = require('../lib/AlipayAccountManage.js')
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let widgetUtils = singletonRequire('WidgetUtils')
 let fileUtils = singletonRequire('FileUtils')
 let automator = singletonRequire('Automator')
+let LogFloaty = singletonRequire('LogFloaty')
 let unlocker = require('../lib/Unlock.js')
 let _BaseScanner = require('../core/BaseScanner.js')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
@@ -57,12 +58,12 @@ if (config.accounts && config.accounts.length > 1) {
     if (account === config.main_account) {
       return
     }
-    floatyInstance.setFloatyText('准备切换账号为：' + account)
+    LogFloaty.pushLog('准备切换账号为：' + account)
     sleep(1000)
-    accountChange(account)
-    floatyInstance.setFloatyText('切换完毕')
+    changeAccount(account)
+    LogFloaty.pushLog('切换完毕')
     sleep(500)
-    floatyInstance.setFloatyText('开始执行收取能量')
+    LogFloaty.pushLog('开始执行收取能量')
     try {
       doCollectSelf()
       getSignReward()
@@ -71,16 +72,16 @@ if (config.accounts && config.accounts.length > 1) {
           doWaterFriend()
         }
       }
-      floatyInstance.setFloatyText('切换下一个账号')
+      LogFloaty.pushLog('切换下一个账号')
       sleep(500)
     } catch (e) {
       logUtils.errorInfo('执行异常：' + e)
-      floatyInstance.setFloatyText('收取能量异常 进行下一个')
+      LogFloaty.pushLog('收取能量异常 进行下一个')
     }
   })
-  floatyInstance.setFloatyText('全部账号能量收集完毕切换回主账号')
+  LogFloaty.pushLog('全部账号能量收集完毕切换回主账号')
   sleep(1000)
-  accountChange(config.main_account || config.accounts[0])
+  ensureMainAccount()
   sleep(500)
 } else {
   logUtils.errorInfo(['当前未配置多账号或账号只有一个，不进行切换'], true)
@@ -92,7 +93,7 @@ function doCollectSelf () {
   if (!openAndWaitForPersonalHome()) {
     return
   }
-  floatyInstance.setFloatyText('开始识别并收取能量')
+  LogFloaty.pushLog('开始识别并收取能量')
   let scanner = new _BaseScanner()
   let balls = []
   let invalidBalls = []
@@ -101,7 +102,7 @@ function doCollectSelf () {
   scanner.destroy()
   let postEnergy = getCurrentEnergy()
   let validBallCount = balls.length - invalidBalls.length
-  floatyInstance.setFloatyText('收取能量完毕' + ('有效能量球个数：' + validBallCount) + (validBallCount > 0 ? '增加能量值：' + (postEnergy - preEnergy) : ''))
+  LogFloaty.pushLog('收取能量完毕' + ('有效能量球个数：' + validBallCount) + (validBallCount > 0 ? '增加能量值：' + (postEnergy - preEnergy) : ''))
   sleep(500)
 }
 

@@ -1,7 +1,7 @@
 
 var { default_config, config, storage_name: _storage_name } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
-let accountChange = require('../lib/AlipayAccountManage.js').changeAccount
+let changeAccount = require('../lib/AlipayAccountManage.js').changeAccount
 var configStorage = storages.create(_storage_name)
 let FileUtils = singletonRequire('FileUtils')
 let commonFunctions = singletonRequire('CommonFunction')
@@ -37,9 +37,10 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
 }
 let unlocker = require('../lib/Unlock.js')
 unlocker.exec()
-
+commonFunctions.showCommonDialogAndWait('自动切换回主账号')
+commonFunctions.listenDelayStart()
 commonFunctions.backHomeIfInVideoPackage()
-accountChange(config.main_account, true)
+changeAccount(config.main_account, true)
 
 commonFunctions.minimize()
 debugInfo(['切换完毕'])

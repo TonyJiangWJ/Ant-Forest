@@ -2,12 +2,13 @@ let { config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 runningQueueDispatcher.addRunningTask()
-let accountChange = require('../lib/AlipayAccountManage.js').changeAccount
+let { changeAccount, ensureMainAccount } = require('../lib/AlipayAccountManage.js')
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let widgetUtils = singletonRequire('WidgetUtils')
 let fileUtils = singletonRequire('FileUtils')
+let LogFloaty = singletonRequire('LogFloaty')
 let automator = singletonRequire('Automator')
 let unlocker = require('../lib/Unlock.js')
 // 强制指定为paddleOcr
@@ -57,10 +58,10 @@ if (config.accounts && config.accounts.length >= 1) {
       return
     }
     config.current_execute_account = account
-    floatyInstance.setFloatyText('准备切换账号为：' + account)
+    LogFloaty.pushLog('准备切换账号为：' + account)
     sleep(1000)
-    accountChange(account)
-    floatyInstance.setFloatyText('切换完毕')
+    changeAccount(account)
+    LogFloaty.pushLog('切换完毕')
     sleep(500)
     // 执行行走捐同步步数
     openWalkingData()
@@ -70,10 +71,10 @@ if (config.accounts && config.accounts.length >= 1) {
       logUtils.errorInfo(['未找到行走捐赠按钮，退出执行'])
     }
   })
-  floatyInstance.setFloatyText('账号切换完毕，切换回主账号')
+  LogFloaty.pushLog('账号切换完毕，切换回主账号')
   sleep(1000)
-  accountChange(config.main_account || config.accounts[0])
-  floatyInstance.setFloatyText('切换完毕，再见')
+  ensureMainAccount()
+  LogFloaty.pushLog('切换完毕，再见')
   sleep(500)
   if (config.has_account_fail) {
     logUtils.warnInfo(['有账号执行失败，延迟五分钟后重试'])
@@ -113,7 +114,7 @@ function openWalkingData () {
 
 
 function findAndEnterWalkingDonate () {
-  floatyInstance.setFloatyText('查找行走捐')
+  LogFloaty.pushLog('查找行走捐')
   let donate = ocrWaiting('行走捐', 3, 1000)
   if (donate) {
     donate = convertPosition(donate)
@@ -122,7 +123,7 @@ function findAndEnterWalkingDonate () {
     sleep(1000)
     return true
   } else {
-    floatyInstance.setFloatyText('未找到行走捐')
+    LogFloaty.pushLog('未找到行走捐')
   }
   return false
 }
@@ -159,7 +160,7 @@ function checkWalkingData (recheck) {
     sleep(1000)
     let donateBtn = ocrWaiting('立即捐步', 1, 1000)
     if (!donateBtn) {
-      floatyInstance.setFloatyText('未找到立即捐步，检查是否已完成')
+      LogFloaty.pushLog('未找到立即捐步，检查是否已完成')
       sleep(1000)
       let done = ocrWaiting('查看受捐项目', 1, 1000)
       if (done) {

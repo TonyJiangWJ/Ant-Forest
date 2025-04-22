@@ -146,7 +146,7 @@ const Sponsor = {
   <div>
     <van-cell-group>
       <tip-block>获取红包码，使用红包后作者每一个大概能获取一分钱收益。赞助作者，让作者更有动力开发。</tip-block>
-      <tip-block>也可以直接运行 unit/支持作者.js 来快速获取红包码</tip-block>
+      <tip-block>也可以直接运行 unit/支持作者.js 来快速获取红包码。如果你不嫌烦的话可以给 unit/支持作者自动版.js 设置定时任务，每天自动领取。</tip-block>
       <van-field
         v-model="announcement"
         rows="1"
