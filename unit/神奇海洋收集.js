@@ -583,7 +583,7 @@ function findStrollBtn () {
     logFloaty.pushLog('OCR查找找拼图')
     let bounds = ocrUtil.recognizeWithBounds(screen, [config.device_width / 2, config.device_height / 2, config.device_width / 2, config.device_height / 2], '找拼图')
     if (bounds && bounds.length > 0) {
-      bounds = btn[0].bounds
+      bounds = bounds[0].bounds
       return { x: bounds.centerX(), y: bounds.centerY() }
     }
   }

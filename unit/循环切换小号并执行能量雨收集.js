@@ -2,12 +2,13 @@ let { config } = require('../config.js')(runtime, global)
 let singletonRequire = require('../lib/SingletonRequirer.js')(runtime, global)
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 runningQueueDispatcher.addRunningTask()
-let accountChange = require('../lib/AlipayAccountManage.js').changeAccount
+let { changeAccount, ensureMainAccount } = require('../lib/AlipayAccountManage.js')
 let logUtils = singletonRequire('LogUtils')
 let floatyInstance = singletonRequire('FloatyUtil')
 let commonFunctions = singletonRequire('CommonFunction')
 let fileUtils = singletonRequire('FileUtils')
 let automator = singletonRequire('Automator')
+let LogFloaty = singletonRequire('LogFloaty')
 let widgetUtils = singletonRequire('WidgetUtils')
 let unlocker = require('../lib/Unlock.js')
 let { openFriendHome, doWaterFriend, openAndWaitForPersonalHome } = require('./waterFriend.js')
@@ -47,12 +48,12 @@ commonFunctions.backHomeIfInVideoPackage()
 if (config.accounts && config.accounts.length > 1) {
   config.accounts.forEach((accountInfo, idx) => {
     let { account, accountName } = accountInfo
-    floatyInstance.setFloatyText('准备切换账号为：' + account)
+    LogFloaty.pushLog('准备切换账号为：' + account)
     sleep(1000)
-    accountChange(account)
-    floatyInstance.setFloatyText('切换完毕')
+    changeAccount(account)
+    LogFloaty.pushLog('切换完毕')
     sleep(500)
-    floatyInstance.setFloatyText('开始执行能量雨')
+    LogFloaty.pushLog('开始执行能量雨')
     let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
     runningQueueDispatcher.doAddRunningTask({ source: source })
     let targetSendName = config.accounts[(idx + 1) % config.accounts.length].accountName
@@ -65,15 +66,15 @@ if (config.accounts && config.accounts.length > 1) {
       }
     }
   })
-  floatyInstance.setFloatyText('全部账号能量雨执行完毕，切换回主账号')
+  LogFloaty.pushLog('全部账号能量雨执行完毕，切换回主账号')
   sleep(1000)
-  accountChange(config.main_account || config.accounts[0])
-  floatyInstance.setFloatyText('主账号再次校验能量雨机会')
+  ensureMainAccount()
+  LogFloaty.pushLog('主账号再次校验能量雨机会')
   let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
   runningQueueDispatcher.doAddRunningTask({ source: source })
   engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByAccountChanger: true, executorSource: engines.myEngine().getSource() + '' } })
   commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
-  floatyInstance.setFloatyText('能量雨全部执行完毕')
+  LogFloaty.pushLog('能量雨全部执行完毕')
   sleep(500)
 } else {
   logUtils.errorInfo(['当前未配置多账号或账号只有一个，不进行切换'], true)
