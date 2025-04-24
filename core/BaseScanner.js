@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-03-28 14:48:28
+ * @Last Modified time: 2025-04-24 10:02:38
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -120,6 +120,10 @@ const BaseScanner = function () {
    * @param {本次增加的能量值} increased
    */
   this.showCollectSummaryFloaty = function (increased) {
+    if (this.group_execute_mode) {
+      _commonFunctions.showTextFloaty('组队模式执行中，无法统计收集能量值')
+      return
+    }
     increased = increased || 0
     this.increased_energy += increased
     if (_config.is_cycle) {
@@ -914,6 +918,11 @@ const BaseScanner = function () {
       }
       warnInfo(['重新通过控件获取好友名称为：{} 和旧值「{}」不符，重置好友名称', regetFriendName, obj.name])
       obj.name = regetFriendName
+    }
+    if (this.group_execute_mode) {
+      warnInfo('组队模式 不再获取好友能量信息')
+      this.collectEnergy()
+      return this.backToListIfNeeded(false, obj)
     }
     let preGot, postGet, rentery = false
     try {

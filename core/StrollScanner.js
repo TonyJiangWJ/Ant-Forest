@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-22 11:17:54
+ * @Last Modified time: 2025-04-23 00:10:53
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -72,6 +72,7 @@ const StrollScanner = function () {
   this.init = function (option) {
     this.current_time = option.currentTime || 0
     this.increased_energy = option.increasedEnergy || 0
+    this.group_execute_mode = option.group_execute_mode || false
     this.createNewThreadPool()
   }
 
@@ -178,6 +179,9 @@ StrollScanner.prototype.collectTargetFriend = function () {
     let start = new Date().getTime()
     auto.clearCache()
     debugInfo(['刷新根控件成功: {}ms', (new Date().getTime() - start)])
+  }
+  if (_config.friend_home_check_regex.indexOf('的蚂蚁森林') < 0) {
+    _config.overwrite('friend_home_check_regex', _config.friend_home_check_regex + '|.*的蚂蚁森林')
   }
   // 未找到好友首页控件 循环等待三次
   while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, null, false, null, { algorithm: 'PVDFS' })) !== 1) {
