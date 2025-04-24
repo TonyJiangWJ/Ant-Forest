@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2024-11-21 15:10:57
+ * @Last Modified time: 2025-04-24 10:11:35
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -48,6 +48,8 @@ function Ant_forest () {
     _lost_reason = '', // 漏收原因
     _friends_min_countdown = null,
     _floaty_failed_time = 0
+  // 是否是组队模式
+  _group_execute_mode = false
   /***********************
    * 综合操作
    ***********************/
@@ -418,6 +420,11 @@ function Ant_forest () {
    * @param {boolean} noStore 是否不记录当前能量值到缓存
    */
   const getCurrentEnergy = function (noStore) {
+    if (_group_execute_mode) {
+      logFloaty.pushLog('组队模式跳过能量值获取')
+      // 组队模式 直接返回0 统计小队能量意义
+      return 0
+    }
     let currentEnergy = _widgetUtils.getCurrentEnergy()
     if (!noStore && currentEnergy > 0) {
       // 存储能量值数据
@@ -448,6 +455,10 @@ function Ant_forest () {
   }
 
   const showCollectSummaryFloaty = function (increased) {
+    if (_group_execute_mode) {
+      _commonFunctions.showTextFloaty('组队模式执行中，无法统计收集能量值')
+      return
+    }
     if (_config.is_cycle) {
       _commonFunctions.showCollectSummaryFloaty0(_post_energy - _pre_energy, _current_time, increased)
     } else {
@@ -482,7 +493,11 @@ function Ant_forest () {
     _commonFunctions.showEnergyInfo(null, _has_next ? getRealSleepTime(_min_countdown) : null)
     let energyInfo = _commonFunctions.getTodaysRuntimeStorage('energy')
     if (!_has_next) {
-      showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共增加' + energyInfo.totalIncrease + 'g')
+      if (_group_execute_mode) {
+        showFloaty('组队模式，无法统计能量值和倒计时数据，请设置为永不停止')
+      } else {
+        showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共增加' + energyInfo.totalIncrease + 'g')
+      }
     } else {
       showCollectSummaryFloaty()
     }
@@ -579,7 +594,11 @@ function Ant_forest () {
   const tryCollectByStroll = function (recheck) {
     debugInfo('尝试逛一逛收集能量')
     let scanner = new StrollScanner()
-    scanner.init({ currentTime: _current_time, increasedEnergy: _post_energy - _pre_energy })
+    scanner.init({
+      currentTime: _current_time,
+      increasedEnergy: _post_energy - _pre_energy,
+      group_execute_mode: _group_execute_mode
+    })
     let runResult = scanner.start()
     scanner.destroy()
     if (runResult) {
@@ -689,6 +708,15 @@ function Ant_forest () {
       return
     }
     logFloaty.pushLog('执行神奇物种签到')
+    if (_group_execute_mode) {
+      logFloaty.pushLog('组队模式 直接通过控件进入')
+      let entry = _widgetUtils.widgetGetOne('神奇物种')
+      if (!entry) {
+        return
+      }
+      entry.click()
+      return doSignUpForMagicSpecies()
+    }
     let screen = _commonFunctions.checkCaptureScreenPermission()
     YoloTrainHelper.saveImage(screen, '识别神奇物种入口')
     if (!screen) {
@@ -821,6 +849,10 @@ function Ant_forest () {
       exit()
     }
     logInfo('进入个人首页成功')
+    if (_widgetUtils.widgetCheck('排名奖|小队能量.*', 1000)) {
+      logFloaty.pushLog('切换为组队模式，请注意组队模式无法获取倒计时，请修改执行模式为永不停止')
+      _group_execute_mode = true
+    }
     // 自动识别能量球区域
     autoDetectTreeCollectRegion()
     clearPopup()
@@ -829,13 +861,16 @@ function Ant_forest () {
     _widgetUtils.checkIsDuplicateCardUsed()
     // 神奇物种签到 改到逛一逛结束
     // signUpForMagicSpecies()
-    // 执行合种浇水
-    _widgetUtils.enterCooperationPlantAndDoWatering()
-    if (!_widgetUtils.homePageWaiting()) {
-      errorInfo('合种浇水后返回异常，重新打开森林')
-      return openAndWaitForPersonalHome()
+    // 组队模式 不进行合种浇水 也不进行能量值获取
+    if (!_group_execute_mode) {
+      // 执行合种浇水
+      _widgetUtils.enterCooperationPlantAndDoWatering()
+      if (!_widgetUtils.homePageWaiting()) {
+        errorInfo('合种浇水后返回异常，重新打开森林')
+        return openAndWaitForPersonalHome()
+      }
+      getPreEnergy()
     }
-    getPreEnergy()
   }
 
   // 收集巡护能量球
@@ -919,16 +954,20 @@ function Ant_forest () {
     logFloaty.pushLog('二次收集自身能量')
     _commonFunctions.addOpenPlacehold('开始二次收集自己能量')
     debugInfo('准备收集自己能量')
-    let energyBeforeCollect = getCurrentEnergy(true)
-    collectEnergy()
-    let energyAfterCollect = getCurrentEnergy(true)
-    let collectedEnergy = energyAfterCollect - energyBeforeCollect
-    if (collectedEnergy) {
-      logFloaty.pushLog('二次收取自身能量：' + collectedEnergy)
-      logInfo(['收集自己能量：{}g', collectedEnergy])
-      _base_scanner.showCollectSummaryFloaty(collectedEnergy)
+    if (_group_execute_mode) {
+      collectEnergy()
     } else {
-      logFloaty.pushLog('二次校验未收取能量')
+      let energyBeforeCollect = getCurrentEnergy(true)
+      collectEnergy()
+      let energyAfterCollect = getCurrentEnergy(true)
+      let collectedEnergy = energyAfterCollect - energyBeforeCollect
+      if (collectedEnergy) {
+        logFloaty.pushLog('二次收取自身能量：' + collectedEnergy)
+        logInfo(['收集自己能量：{}g', collectedEnergy])
+        _base_scanner.showCollectSummaryFloaty(collectedEnergy)
+      } else {
+        logFloaty.pushLog('二次校验未收取能量')
+      }
     }
     _commonFunctions.addClosePlacehold("二次收集自己的能量完毕")
   }
@@ -949,6 +988,10 @@ function Ant_forest () {
     }
     if (!skip && _config.no_friend_list_countdown) {
       debugInfo('已关闭获取排行榜倒计时')
+      skip = true
+    }
+    if (_group_execute_mode) {
+      debugInfo('当前为组队模式 关闭获取排行榜倒计时')
       skip = true
     }
     !skip && checkFriendListCountdown()
@@ -1268,6 +1311,10 @@ function Ant_forest () {
 
   return {
     exec: function () {
+      // 预热一下YOLO
+      if (YoloDetection.enabled) {
+        YoloDetection.forward(_commonFunctions.captureScreen())
+      }
       let executor = null
       if (_config.is_cycle) {
         executor = new CycleExecutor()
