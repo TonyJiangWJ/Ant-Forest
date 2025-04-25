@@ -257,6 +257,7 @@ const CollectConfig = {
         is_cycle: true,
         cycle_times: 10,
         never_stop: true,
+        force_group_mode: true,
         reactive_time: 60,
         max_collect_wait_time: 60,
         delayStartTime: 5,
@@ -396,6 +397,8 @@ const CollectConfig = {
         <switch-cell title="使用YOLO模型识别检测元素" v-model="configs.detect_ball_by_yolo" />
         <tip-block>留空使用默认值即可</tip-block>
         <number-field v-if="configs.detect_ball_by_yolo" v-model="configs.yolo_confidence" label="yolo可信度过滤(0-1)" label-width="12em" placeholder="请输入0-1" ></number-field>
+        <tip-block>注意 进入组队模式无法识别倒计时，请主动开启永不停止</tip-block>
+        <switch-cell title="是否强制开启组队模式" v-model="configs.force_group_mode"/>
         <tip-block>当前版本仅通过逛一逛收取，排行榜中只识别倒计时信息不识别帮收和可收取，有一定几率会漏收倒计时刚刚结束的能量</tip-block>
         <switch-cell title="逛一逛结束后重复一遍" v-model="configs.recheck_after_stroll" label="逛一逛收集到能量后，重复逛一逛避免漏收倒计时刚刚结束的能量" title-style="flex:3.5;" />
         <switch-cell title="不去排行榜获取倒计时数据" v-model="configs.no_friend_list_countdown"/>

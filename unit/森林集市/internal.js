@@ -179,7 +179,15 @@ function ClickExecutor () {
     logFloaty.pushLog('点击商品进行浏览')
     let maxTry = 5
     while (maxTry-- > 0 && widgetUtils.widgetGetOne('点击\\d+个商品', 1000)) {
-      this.clickGoodDetail()
+      if (!this.clickGoodDetail()) {
+        logFloaty.pushWarningLog('点击商品失败，尝试切换到其他tab')
+        let greenfood = widgetUtils.widgetGetById('greenFood', 1000)
+        if (greenfood) {
+          greenfood.click()
+          sleep(1000)
+          this.clickGoodDetail()
+        }
+      }
       if (clickRewardIfNeeded()) {
         break
       }
@@ -187,7 +195,7 @@ function ClickExecutor () {
   }
 
   this.clickGoodDetail = function () {
-    let clickBtn = widgetUtils.widgetGetOne('到手价')
+    let clickBtn = widgetUtils.widgetGetOne('到手价|折后价')
     if (clickBtn) {
       logFloaty.pushLog('随机点击一个商品')
       clickBtn.click()
