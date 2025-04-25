@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-24 10:11:35
+ * @Last Modified time: 2025-04-25 13:27:01
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -47,9 +47,9 @@ function Ant_forest () {
     _lost_count = 0, // 漏收异常次数,
     _lost_reason = '', // 漏收原因
     _friends_min_countdown = null,
-    _floaty_failed_time = 0
-  // 是否是组队模式
-  _group_execute_mode = false
+    _floaty_failed_time = 0,
+    // 是否是组队模式
+    _group_execute_mode = false
   /***********************
    * 综合操作
    ***********************/
@@ -849,9 +849,28 @@ function Ant_forest () {
       exit()
     }
     logInfo('进入个人首页成功')
-    if (_widgetUtils.widgetCheck('排名奖|小队能量.*', 1000)) {
+    if (_widgetUtils.widgetCheck(_config.group_mode_info || '排名奖|小队能量.*', 1000)) {
       logFloaty.pushLog('切换为组队模式，请注意组队模式无法获取倒计时，请修改执行模式为永不停止')
       _group_execute_mode = true
+    } else if (_config.force_group_mode) {
+      logFloaty.pushWarningLog('未检测到组队模式元素，尝试切换为组队模式')
+      let entryGroupMode = _widgetUtils.widgetGetOne(_config.change_to_group, 2000)
+      if (entryGroupMode) {
+        entryGroupMode.click()
+        sleep(500)
+        let confirmBack = _widgetUtils.widgetGetOne('确定返回', 1000)
+        if (confirmBack) {
+          confirmBack.click()
+        }
+        _widgetUtils.homePageWaiting()
+        if (_widgetUtils.widgetCheck(_config.group_mode_info || '排名奖|小队能量.*', 1000)) {
+          logFloaty.pushLog('成功切换为组队模式')
+          _group_execute_mode = true
+        }
+      }
+      if (!_group_execute_mode) {
+        logFloaty.pushErrorLog('切换为组队模式失败')
+      }
     }
     // 自动识别能量球区域
     autoDetectTreeCollectRegion()

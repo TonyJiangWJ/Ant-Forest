@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-17 14:33:51
+ * @Last Modified time: 2025-04-25 09:18:40
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -80,6 +80,11 @@ let default_config = {
   // 秘钥
   secretKey: '',
   my_id: '',
+  // 是否强制进入组队模式
+  force_group_mode: false,
+  change_to_group: '切换为个人版',
+  change_to_personal: '切换为组队版',
+  group_mode_info: '小队能量.*|排名奖',
   rain_entry_content: '.*能量雨.*',
   rain_start_content: '再来一次|立即开启',
   rain_end_content: '.*去蚂蚁森林看看.*',

@@ -22,6 +22,9 @@ const WidgetConfigs = {
         using_protect_content: '使用了保护罩',
         magic_species_text_in_stroll: '.*神奇物种新图鉴.*',
         friend_list_end_content: '.*没有更多了.*',
+        change_to_group: '切换为个人版',
+        change_to_personal: '切换为组队版',
+        group_mode_info: '小队能量.*|排名奖',
         timeout_findOne: 1000,
         timeout_existing: 8000,
       },
@@ -51,6 +54,10 @@ const WidgetConfigs = {
     <van-field v-model="configs.my_id" label="我的ID" type="text" placeholder="" input-align="right" />
     <switch-cell title="闹钟响铃时暂停执行" title-style="width: 12em;flex:2;" v-model="configs.suspend_on_alarm_clock" />
     <van-field v-if="configs.suspend_on_alarm_clock" v-model="configs.suspend_alarm_content" label="闹钟响铃文本" type="text" placeholder="请输入闹钟响铃文本" input-align="right" />
+    <van-field v-model="configs.group_mode_info" label="组队模式检查控件" label-width="10em" type="text" placeholder="请输入组队模式文本" input-align="right" />
+    <tip-block>不用怀疑，这两个的控件文本和实际肉眼所见的是反过来的</tip-block>
+    <van-field v-model="configs.change_to_group" label="切换为组队版按钮" label-width="10em" type="text" placeholder="请输入切换为组队模式按钮文本" input-align="right" />
+    <van-field v-model="configs.change_to_personal" label="切换为个人版按钮" label-width="10em" type="text" placeholder="请输入切换为个人模式按钮文本" input-align="right" />
     <tip-block>配置在支付码界面时延迟5分钟执行，避免打断日常支付操作</tip-block>
     <van-field v-model="configs.delay_start_pay_code_content" label="支付码界面文本" label-width="10em" type="text" placeholder="请输入支付码界面文本" input-align="right" />
     <van-field v-model="configs.home_ui_content" label="个人首页" type="text" placeholder="请输入个人首页控件文本" input-align="right" />
