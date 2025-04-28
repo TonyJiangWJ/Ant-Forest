@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-25 13:27:01
+ * @Last Modified time: 2025-04-28 08:46:51
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -494,7 +494,7 @@ function Ant_forest () {
     let energyInfo = _commonFunctions.getTodaysRuntimeStorage('energy')
     if (!_has_next) {
       if (_group_execute_mode) {
-        showFloaty('组队模式，无法统计能量值和倒计时数据，请设置为永不停止')
+        showFloaty('组队模式，无法统计能量值')
       } else {
         showFloaty('本次共收取：' + (_post_energy - _pre_energy) + 'g 能量，累积共增加' + energyInfo.totalIncrease + 'g')
       }
@@ -684,7 +684,18 @@ function Ant_forest () {
   }
 
   function doSignUpForMagicSpecies () {
-    sleep(5000)
+    logFloaty.pushLog('等待进入神奇物种界面')
+    sleep(1000)
+    let tryTime = 3, entered = false
+    while (!(entered=_widgetUtils.widgetCheck('.*(你已经发现了|收下|再抽一次|当前图鉴|抽好友卡).*')) && tryTime-- > 0) {
+      logFloaty.pushLog('等待进入神奇物种界面' + tryTime)
+      sleep(1000)
+    }
+    if (!entered) {
+      logFloaty.pushWarningLog('进入校验失败，尝试执行后续逻辑')
+    }
+    logFloaty.pushLog('进入神奇物种界面，检查是否存在 收下|再抽一次')
+    sleep(1000)
     let confirm = _widgetUtils.widgetGetOne('收下|再抽一次.*')
     let maxTry = 3
     do {
@@ -708,6 +719,7 @@ function Ant_forest () {
       return
     }
     logFloaty.pushLog('执行神奇物种签到')
+    /* 支付宝又把入口删了
     if (_group_execute_mode) {
       logFloaty.pushLog('组队模式 直接通过控件进入')
       let entry = _widgetUtils.widgetGetOne('神奇物种')
@@ -717,6 +729,7 @@ function Ant_forest () {
       entry.click()
       return doSignUpForMagicSpecies()
     }
+    */
     let screen = _commonFunctions.checkCaptureScreenPermission()
     YoloTrainHelper.saveImage(screen, '识别神奇物种入口')
     if (!screen) {
@@ -850,7 +863,7 @@ function Ant_forest () {
     }
     logInfo('进入个人首页成功')
     if (_widgetUtils.widgetCheck(_config.group_mode_info || '排名奖|小队能量.*', 1000)) {
-      logFloaty.pushLog('切换为组队模式，请注意组队模式无法获取倒计时，请修改执行模式为永不停止')
+      logFloaty.pushLog('切换为组队模式，请注意组队模式无法统计能量值')
       _group_execute_mode = true
     } else if (_config.force_group_mode) {
       logFloaty.pushWarningLog('未检测到组队模式元素，尝试切换为组队模式')
@@ -1007,10 +1020,6 @@ function Ant_forest () {
     }
     if (!skip && _config.no_friend_list_countdown) {
       debugInfo('已关闭获取排行榜倒计时')
-      skip = true
-    }
-    if (_group_execute_mode) {
-      debugInfo('当前为组队模式 关闭获取排行榜倒计时')
       skip = true
     }
     !skip && checkFriendListCountdown()
