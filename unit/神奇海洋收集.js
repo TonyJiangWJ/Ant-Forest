@@ -352,7 +352,7 @@ function findTrashs (delay, onceOnly, friend) {
     this.temp_img = images.copy(screen, true)
     let findBalls = doFindTrashs(screen)
     debugInfo(['找到的球：{}', JSON.stringify(findBalls)])
-    if (!friend) {
+    if (!friend && !config.not_collect_self) {
       let energyBalls = findBalls.filter(ball => ball.label == 'collect')
       if (energyBalls && energyBalls.length > 0) {
         debugInfo(['找到能量球：{}', JSON.stringify(energyBalls)])
