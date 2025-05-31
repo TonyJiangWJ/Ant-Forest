@@ -94,6 +94,7 @@ const Sponsor = {
       category: 'hongbao',
       deviceId: '11234',
       url: 'https://tonyjiang.hatimi.top/mutual-help',
+      simShopUrl: 'https://h5.lot-ml.com/ProductEn/Index/c4bffa332bb5f367',
       loading: false,
       announcement: '',
       announcedAt: '',
@@ -129,6 +130,9 @@ const Sponsor = {
       }
       $nativeApi.request('copyAndOpen', { text: this.announcement, urlSchema: 'alipays://platformapi/startapp?appId=20001003&keyword=' + encodeURI(this.announcement) + '&v2=true', packageName: 'com.eg.android.AlipayGphone' })
     },
+    openByBrowser() {
+      $app.invoke('openUrl', { url: this.simShopUrl })
+    }
   },
   computed: {
     hasUploaded: function () {
@@ -158,6 +162,13 @@ const Sponsor = {
       <div style="display: flex;padding: 1rem;flex-direction: column;justify-content: center;gap: 0.5rem;">
         <van-button plain type="info" @click="getAnnouncement" :loading="loading">获取红包码</van-button>
         <van-button plain type="primary" v-if="!!this.announcement" @click="openByAlipay" :loading="loading">通过支付宝打开</van-button>
+      </div>
+    </van-cell-group>
+    <van-cell-group>
+      <tip-block>购买流量卡，我可以获取代理抽成，仅推荐有购买需求的用户购买，里面有很多都有合约期和首充限制（有合约期无法提前注销，首充不达标可能就无法达到描述的月租价格），注意甄别。我自己在用的卡是19元80G的省内卡，挺够用的。</tip-block>
+      <tip-block>链接地址：{{this.simShopUrl}}</tip-block>
+      <div style="display: flex;padding: 1rem;flex-direction: column;justify-content: center;gap: 0.5rem;">
+        <van-button plain type="primary" @click="openByBrowser">浏览器打开</van-button>
       </div>
     </van-cell-group>
   </div>

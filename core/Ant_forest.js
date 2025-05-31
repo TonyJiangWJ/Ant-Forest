@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-28 08:46:51
+ * @Last Modified time: 2025-04-29 14:01:04
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -19,6 +19,7 @@ let YoloTrainHelper = singletonRequire('YoloTrainHelper')
 let YoloDetection = singletonRequire('YoloDetectionUtil')
 let logFloaty = singletonRequire('LogFloaty')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
+let NotificationHelper = singletonRequire('Notification')
 let callStateListener = !_config.is_pro && _config.enable_call_state_control ? singletonRequire('CallStateListener')
   : { exitIfNotIdle: () => { }, enableListener: () => { }, disableListener: () => { } }
 let StrollScanner = require('./StrollScanner.js')
@@ -712,6 +713,10 @@ function Ant_forest () {
     automator.back()
     sleep(1000)
     _commonFunctions.setMagicCollected()
+    if (!_widgetUtils.homePageWaiting()) {
+      automator.back()
+      openAndWaitForPersonalHome()
+    }
   }
 
   function signUpForMagicSpecies () {
@@ -920,10 +925,14 @@ function Ant_forest () {
         automator.click(ball.centerX, ball.centerY)
         sleep(100)
         debugInfo('检查是否需要重新派遣')
-        let redispatch = _widgetUtils.widgetGetOne('立即派遣|重新派遣', 1000)
+        let redispatch = _widgetUtils.widgetGetOne('\\w+派遣', 1000)
         if (redispatch) {
           automator.clickCenter(redispatch)
           sleep(1000)
+          NotificationHelper.cancelNotice('patrol')
+        } else {
+          warnInfo(['无法找到派遣按钮，新动物派遣失败'])
+          NotificationHelper.createNotification('动物派遣失败', '巡护动物重新派遣失败，请手动派遣新的动物', 'patrol')
         }
       } else {
         debugInfo(['未找到可收取的巡护能量球'])
