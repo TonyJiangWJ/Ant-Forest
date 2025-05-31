@@ -34,6 +34,7 @@ let commonFunction = sRequire('CommonFunction')
 let widgetUtils = sRequire('WidgetUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let FloatyInstance = sRequire('FloatyUtil')
+let NotificationHelper = sRequire('Notification')
 let processShare = sRequire('ProcessShare')
 let storage = storages.create(_storage_name)
 if (!FloatyInstance.init()) {
@@ -580,6 +581,7 @@ function checkHasValidation() {
   let validationWidget = widgetUtils.widgetGetOne('.*请进行验证.*', 1000)
   if (validationWidget) {
     warnInfo(['有验证，请手动执行'], true)
+    NotificationHelper.createNotification('能量雨执行异常', '存在人机验证，请手动执行')
     return true
   }
   return false

@@ -92,6 +92,15 @@ function Market () {
         automator.clickCenter(drop)
         sleep(1000)
       }
+      logFloaty.pushLog('检查是否有关闭弹窗按钮')
+      let centerCloseBtn = selector().clickable().filter(node => {
+        let bd = node.bounds()
+        return bd.width() / bd.height() == 1 && bd.centerX() == config.device_width / 2 && bd.centerY() > config.device_height / 2
+      }).findOne(2000)
+      if (centerCloseBtn) {
+        logFloaty.pushLog('找到关闭弹窗按钮')
+        centerCloseBtn.click()
+      }
     }
     logFloaty.pushWarningLog('未能找到任务完结按钮，可能界面有阻断')
     return false

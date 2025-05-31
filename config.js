@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-25 09:18:40
+ * @Last Modified time: 2025-04-29 17:58:18
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -193,7 +193,7 @@ let default_config = {
   github_latest_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   gitee_relase_url: 'https://gitee.com/api/v5/repos/TonyJiangWJ/Ant-Forest/releases/latest',
   history_tag_url: 'https://api.github.com/repos/TonyJiangWJ/Ant-Forest/tags',
-  yolo_onnx_model_url: 'https://github.com/TonyJiangWJ/Ant-Forest/releases/download/v1.1.1.4/forest_lite.onnx',
+  yolo_onnx_model_url: 'https://tonyjiang.hatimi.top/autojs/onnx_model/forest_lite_v2.onnx',
   gitee_package_prefix: 'Ant-Forest-',
   gitee_package_url: 'https://gitee.com/TonyJiangWJ/Ant-Forest/raw/release_pkgs/',
   release_access_token: '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',
@@ -240,7 +240,10 @@ let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
 
 // 公共扩展
-let config = require('./config_ex.js')(default_config, { CONFIG_STORAGE_NAME, PROJECT_NAME })
+let config = require('./config_ex.js')(default_config, {
+  CONFIG_STORAGE_NAME, PROJECT_NAME,
+  no_cache_configs: ['qq_group_url', 'yolo_onnx_model_url'],
+})
 
 config.exportIfNeeded(module, (key, value) => {
   if (key == 'detect_ball_by_yolo') {
