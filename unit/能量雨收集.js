@@ -35,6 +35,7 @@ let widgetUtils = sRequire('WidgetUtils')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let FloatyInstance = sRequire('FloatyUtil')
 let NotificationHelper = sRequire('Notification')
+let LogFloaty = sRequire('LogFloaty')
 let processShare = sRequire('ProcessShare')
 let storage = storages.create(_storage_name)
 if (!FloatyInstance.init()) {
@@ -548,6 +549,7 @@ function openRainPage () {
     automator.clickCenter(confirm)
   }
   widgetUtils.widgetWaiting('.*返回蚂蚁森林.*')
+  checkAndCloseVibrate()
   if (executeByTimeTask || executeByAccountChanger) {
     checkAndStartCollect()
   }
@@ -585,4 +587,21 @@ function checkHasValidation() {
     return true
   }
   return false
+}
+
+// 关闭震动
+function checkAndCloseVibrate() {
+  LogFloaty.pushLog('准备检查并关闭震动')
+  let moreIcon = widgetUtils.widgetGetById('com.alipay.multiplatform.phone.xriver_integration:id/imageButton_rightButton1', 1000)
+  if (moreIcon) {
+    moreIcon.click()
+    let closedOrOpen = widgetUtils.alternativeWidget('关闭震动', '打开震动', 1000, true)
+    if (closedOrOpen.value == 1) {
+      LogFloaty.pushLog('关闭震动')
+      automator.clickCenter(closedOrOpen.target)
+    } else {
+      LogFloaty.pushLog('已关闭震动')
+      automator.clickCenter(moreIcon)
+    }
+  }
 }

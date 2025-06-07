@@ -30,7 +30,7 @@ commonFunctions.registerOnEngineRemoved(function () {
   )
 }, 'main')
 if (!commonFunctions.ensureAccessibilityEnabled()) {
-  errorInfo('获取无障碍权限失败')
+  logUtils.errorInfo('获取无障碍权限失败')
   exit()
 }
 unlocker.exec()
@@ -58,7 +58,7 @@ if (config.accounts && config.accounts.length > 1) {
     try {
       let result = market.exec()
       if (!result.success) {
-        LogFloaty.pushErrorLog('森林集市执行失败' + result.errorInfo)
+        LogFloaty.pushErrorLog('森林集市执行失败' + result.errorMsg)
         failedCount++
         failedAccounts += ',' + account
       }

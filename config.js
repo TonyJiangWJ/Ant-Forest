@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-29 17:58:18
+ * @Last Modified time: 2025-06-03 11:44:46
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -230,7 +230,7 @@ let default_config = {
   kimi_api_key: '',
   chatgml_api_key: '',
   // 代码版本
-  code_version: 'v1.5.4.3',
+  code_version: 'v1.5.4.4',
   notificationId: 133,
   notificationChannelId: 'ant_forest_channel_id',
   notificationChannel: '蚂蚁森林通知',

@@ -105,7 +105,7 @@ if (executeByTimeTask || executeArguments.executeByDispatcher) {
     config.collecting_friends = true
     collectFriends()
   }
-  if (executeArguments.collect_reward) {
+  if (executeArguments.collect_reward || checkHasReward()) {
     collectRewards()
   }
   commonFunctions.minimize()
@@ -158,6 +158,10 @@ if (executeByTimeTask || executeArguments.executeByDispatcher) {
       onClick: function () {
         checkNext()
         findTrashs(null)
+
+        if (checkHasReward()) {
+          collectRewards()
+        }
         threads.start(function () { sleep(500); exit() })
       }
     }, {
@@ -165,6 +169,10 @@ if (executeByTimeTask || executeArguments.executeByDispatcher) {
       text: '收垃圾',
       onClick: function () {
         findTrashs(null, true)
+
+        if (checkHasReward()) {
+          collectRewards()
+        }
       }
     }, {
       id: 'collect_friends',
@@ -449,6 +457,23 @@ function clickPoint (x, y) {
   } else {
     automator.click(x, y)
   }
+}
+
+function checkHasReward () {
+  logFloaty.pushLog('检查是否存在可收集拼图')
+  if (!ocrUtil.enabled) {
+    return false
+  }
+  let screen = commonFunctions.captureScreen()
+  if (screen) {
+    let results = ocrUtil.recognizeWithBounds(screen, [config.device_width / 2, config.device_height * 0.7, config.device_width / 2, config.device_height * 0.3], '.*张拼图')
+    if (results && results.length > 0) {
+      logFloaty.pushLog('OCR找到可收集拼图')
+      return true
+    }
+  }
+  logFloaty.pushLog('OCR未找到可收集拼图')
+  return false
 }
 
 function checkNext (tryTime, checkOnly) {

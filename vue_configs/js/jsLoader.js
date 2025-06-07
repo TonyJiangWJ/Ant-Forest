@@ -14,6 +14,7 @@ const loadJsList = [
   './js/components/configuration/SampleConfigs.js',
   './js/components/configuration/WidgetConfigs.js',
   './js/components/configuration/AccountManage.js',
+  './js/components/configuration/MutualHelp.js',
   './js/components/view/CollectSummary.js',
   './js/components/view/CollectChart.js',
   './js/components/view/DailyChart.js',

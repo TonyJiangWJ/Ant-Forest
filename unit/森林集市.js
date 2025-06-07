@@ -38,12 +38,14 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
 let unlocker = require('../lib/Unlock.js')
 unlocker.exec()
 commonFunctions.showCommonDialogAndWait('森林集市')
+commonFunctions.listenDelayStart()
+commonFunctions.backHomeIfInVideoPackage()
 let market = new Market()
 let result = market.exec()
 if (!result.success) {
   logFloaty.pushErrorLog('当前任务未完成，设置五分钟后重启')
   commonFunctions.setUpAutoStart(5)
-  NotificationHelper.createNotification('森林集市执行失败，请检查', result.errorInfo + '，请检查是否存在问题')
+  NotificationHelper.createNotification('森林集市执行失败，请检查', result.errorMsg + '，请检查是否存在问题')
 } else {
   NotificationHelper.cancelNotice()
 }
