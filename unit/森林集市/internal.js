@@ -110,12 +110,12 @@ function Market () {
     let retry = 0
     let opened = false
     let success = false
-    let errorInfo = ''
+    let errorMsg = ''
     let errorType = 0
     logFloaty.pushLog('准备打开森林集市')
     while ((opened = startApp()) == false && retry++ < 3) {
       if (checkIfInVerify()) {
-        errorInfo = '触发身份验证'
+        errorMsg = '触发身份验证'
         break
       }
       warnInfo('打开森林集市失败')
@@ -128,22 +128,22 @@ function Market () {
         if (this.doHangOut()) {
           success = true
         } else {
-          errorInfo = '任务执行失败，稍后重试'
+          errorMsg = '任务执行失败，稍后重试'
           errorType = 3
         }
       } catch (e) {
         errorInfo(['任务执行异常：{}', e])
-        errorInfo = '任务执行异常' + e
+        errorMsg = '任务执行异常' + e
         errorType = 2
       }
     } else {
       logFloaty.pushErrorLog('打开森林集市界面失败')
-      errorInfo = '打开森林集市界面失败'
+      errorMsg = '打开森林集市界面失败'
       errorType = 1
     }
     return {
       success: success,
-      errorInfo: errorInfo,
+      errorMsg: errorMsg,
       errorType: errorType,
     }
   }

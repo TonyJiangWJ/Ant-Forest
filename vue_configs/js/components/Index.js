@@ -93,6 +93,10 @@ let Index = {
           link: '/advance/common'
         },
         {
+          title: '寻宝助力',
+          link: '/advance/mutualHelp'
+        },
+        {
           title: '论坛',
           link: 'https://autoscripts.flarum.cloud/'
         },

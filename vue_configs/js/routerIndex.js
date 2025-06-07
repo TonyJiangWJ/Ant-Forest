@@ -21,6 +21,7 @@ const router = new VueRouter({
     { path: '/advance/protect', component: ProtectedListConfig, meta: { index: 1, title: '好友保护罩使用记录' } },
     { path: '/advance/white', component: WhiteListConfig, meta: { index: 1, title: '白名单设置' } },
     { path: '/advance/water', component: WaterBackConfig, meta: { index: 1, title: '浇水回馈设置' } },
+    { path: '/advance/mutualHelp', component: MutualHelp, meta: { index: 1, title: '寻宝助力' } },
     { path: '/basic/lock', component: LockConfig, meta: { index: 1, title: '锁屏设置' } },
     { path: '/basic/floaty', component: FloatyConfig, meta: { index: 1, title: '悬浮窗设置' } },
     { path: '/basic/log', component: LogConfig, meta: { index: 1, title: '日志设置' } },

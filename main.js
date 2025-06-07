@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-11 10:03:56
+ * @Last Modified time: 2025-06-03 11:38:56
  * @Description: 蚂蚁森林自动收能量
  */
 console.warn('如遇语法报错，请从README下载最新版的AutoJS，旧版本不维护，不适配')
@@ -62,6 +62,11 @@ commonFunctions.registerOnEngineRemoved(function () {
   flushAllLogs()
   // 减少控制台日志数量，避免内存泄露，仅免费版有用
   commonFunctions.reduceConsoleLogs()
+  // 脚本退出时锁定屏幕
+  if (config.auto_lock === true && unlocker.needRelock() === true) {
+    debugInfo('重新锁定屏幕')
+    automator.lockScreen()
+  }
   // 移除运行中任务
   runningQueueDispatcher.removeRunningTask(true, true,
     () => {
