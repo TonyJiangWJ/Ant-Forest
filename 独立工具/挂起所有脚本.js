@@ -32,7 +32,8 @@ let logUtils = sRequire('LogUtils')
 let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
 let NotificationHelper = sRequire('Notification')
 
-runningQueueDispatcher.addRunningTask()
+// 插队运行
+runningQueueDispatcher.addRunningTask(true)
 
 let stop = false
 // 固定通知ID
