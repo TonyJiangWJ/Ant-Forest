@@ -230,7 +230,7 @@ let default_config = {
   kimi_api_key: '',
   chatgml_api_key: '',
   // 代码版本
-  code_version: 'v1.5.4.4',
+  code_version: 'v1.5.4.5',
   notificationId: 133,
   notificationChannelId: 'ant_forest_channel_id',
   notificationChannel: '蚂蚁森林通知',

@@ -228,7 +228,7 @@ const MutualHelp = {
   <div>
     <van-cell-group>
       <tip-block>处理过的口令码可以在获取后直接通过支付宝打开。如果是https链接的，需要通过浏览器打开获取到互助码，再去支付宝搜索，否则直接进入支付宝会没有响应。</tip-block>
-      <tip-block>每天只能帮他人助力一次，如果当前获取的口令无效，请重新获取另一个。</tip-block>
+      <tip-block>目前每天可以能帮他人助力6次，如果当前获取的口令无效，请重新获取另一个。</tip-block>
       <tip-block>当前可用总数：{{total}}</tip-block>
       <van-field
         v-model="getText"
