@@ -204,7 +204,7 @@ function ClickExecutor () {
   }
 
   this.clickGoodDetail = function () {
-    let clickBtn = widgetUtils.widgetGetOne('到手价|折后价')
+    let clickBtn = widgetUtils.widgetGetOne('到手价|折后价|券后价')
     if (clickBtn) {
       logFloaty.pushLog('随机点击一个商品')
       clickBtn.click()
