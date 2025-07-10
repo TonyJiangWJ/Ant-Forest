@@ -11,6 +11,7 @@ let floatyInstance = singletonRequire('FloatyUtil')
 let LogFloaty = singletonRequire('LogFloaty')
 let logUtils = singletonRequire('LogUtils')
 let NotificationHelper = singletonRequire('Notification')
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let { Market } = require('./森林集市/internal.js')
 config.not_lingering_float_window = true
 config.targetWateringAmount = 66
