@@ -268,6 +268,23 @@ function checkAndSendChance () {
   let showMoreFriend = widgetUtils.widgetGetById('J_moreGrant', 1000)
   if (showMoreFriend && (targetSendName || config.send_chance_to_friend)) {
     threadPool.execute(function () {
+      // 尝试获取目标好友
+      let targetFriend = widgetUtils.widgetGetOne(targetSendName || config.send_chance_to_friend, config.timeout_rain_find_friend || 3000)
+      if (targetFriend) {
+        setDisplayText('快捷界面找到了目标好友')
+        targetFriend.parent().child(1).click()
+        infoLog(['点击了送ta机会'])
+        setDisplayText('点击了送ta机会')
+        let newEnd = new Date().getTime() + 25000
+        targetEndTime = newEnd > targetEndTime ? newEnd : targetEndTime
+        sleep(1000)
+        // 点击空白区域 触发关闭蒙层
+        automator.click(violentClickPoints[0][0], violentClickPoints[0][1])
+        sleep(2000)
+        clearDisplayText()
+        checkAndStartCollect()
+        return true
+      }
       automator.clickCenter(showMoreFriend)
       infoLog(['点击了更多好友'])
       setDisplayText('点击了更多好友，校验是否存在目标好友', showMoreFriend.bounds().centerX(), showMoreFriend.bounds().centerY())
@@ -530,7 +547,7 @@ function drawText (text, position, canvas, paint, colorStr) {
   canvas.drawText(text, position.x, position.y + offset, paint)
 }
 let starting = false
-function openRainPage () {
+function openRainPage (reopen) {
   if (starting) {
     return
   }
@@ -548,7 +565,20 @@ function openRainPage () {
   if (confirm) {
     automator.clickCenter(confirm)
   }
-  widgetUtils.widgetWaiting('.*返回蚂蚁森林.*')
+  if (!widgetUtils.widgetWaiting('.*(返回蚂蚁森林|本场机会由好友|去蚂蚁森林看看).*') || !commonFunction.myCurrentPackage() == config.package_name) {
+    errorInfo(['打开能量雨界面失败'], true)
+    if (reopen) {
+      errorInfo('二次打开能量雨界面失败')
+      return
+    }
+    debugInfo('关闭支付宝，再次打开能量雨界面')
+    app.launch(config.package_name)
+    sleep(1000)
+    commonFunction.killCurrentApp()
+    sleep(1000)
+    starting = false
+    return openRainPage(true)
+  }
   checkAndCloseVibrate()
   if (executeByTimeTask || executeByAccountChanger) {
     checkAndStartCollect()

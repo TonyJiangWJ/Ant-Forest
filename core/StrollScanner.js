@@ -294,10 +294,9 @@ StrollScanner.prototype.checkAndCollectRain = function () {
     }
     sleep(1000)
     debugInfo('找到能量雨开始标志，准备自动执行能量雨脚本')
-    target = _widgetUtils.widgetGetOne('去收取')
-    if (target) {
+    if (/去收取/.test(target.content)) {
       WarningFloaty.clearAll()
-      automator.clickCenter(target)
+      automator.clickCenter(target.target)
       sleep(1000)
       let source = fileUtils.getCurrentWorkPath() + '/unit/能量雨收集.js'
       runningQueueDispatcher.doAddRunningTask({ source: source })

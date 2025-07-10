@@ -11,6 +11,7 @@ let fileUtils = singletonRequire('FileUtils')
 let LogFloaty = singletonRequire('LogFloaty')
 let automator = singletonRequire('Automator')
 let unlocker = require('../lib/Unlock.js')
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let { openFriendHome, doWaterFriend, openAndWaitForPersonalHome, getSignReward } = require('./waterFriend.js')
 config.not_lingering_float_window = true
 config.targetWateringAmount = 66

@@ -6,6 +6,7 @@ let widgetUtils = singletonRequire('WidgetUtils')
 let automator = singletonRequire('Automator')
 let commonFunctions = singletonRequire('CommonFunction')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 
 module.exports = {
   openFriendHome: openFriendHome,
@@ -128,33 +129,19 @@ function openFriendHomeByUserId (count) {
 function doWaterFriend () {
   config.targetWateringAmount = 66
   floatyInstance.setFloatyText('准备进行浇水')
-  let done = false
-  threads.start(function () {
-    events.observeToast()
-    // 监控 toast
-    events.onToast(function (toast) {
-      let text = toast.getText()
-      logUtils.debugInfo(['获取到toast文本：{}', text])
-      if (
-        toast &&
-        toast.getPackageName() &&
-        toast.getPackageName().indexOf(config.package_name) >= 0
-      ) {
-        if (/.*浇水已经达到上限.*/.test(text)) {
-          done = true
-        }
-      }
-    })
-  })
   sleep(1000)
   let retryLimit = 6
   let limit = 3
-  while (!done && limit-- > 0 && retryLimit-- > 0) {
+  while (limit-- > 0 && retryLimit-- > 0) {
     floatyInstance.setFloatyText('第' + (3 - limit) + '次浇水')
     if (!widgetUtils.wateringFriends()) {
+      if (widgetUtils.waterDone) {
+        logUtils.debugInfo('浇水已经达到上限')
+        break
+      }
       limit++
     }
-    !done && limit > 0 && sleep(1500)
+    limit > 0 && sleep(1500)
   }
 }
 // 每日签到奖励

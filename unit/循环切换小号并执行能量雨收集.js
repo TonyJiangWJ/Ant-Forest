@@ -10,6 +10,7 @@ let fileUtils = singletonRequire('FileUtils')
 let automator = singletonRequire('Automator')
 let LogFloaty = singletonRequire('LogFloaty')
 let widgetUtils = singletonRequire('WidgetUtils')
+let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let unlocker = require('../lib/Unlock.js')
 let { openFriendHome, doWaterFriend, openAndWaitForPersonalHome } = require('./waterFriend.js')
 config.not_lingering_float_window = true
@@ -45,7 +46,7 @@ floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('循环执行小号能量雨')
 commonFunctions.listenDelayStart()
 commonFunctions.backHomeIfInVideoPackage()
-if (config.accounts && config.accounts.length > 1) {
+if (config.accounts && config.accounts.length > 1) {  
   config.accounts.forEach((accountInfo, idx) => {
     let { account, accountName } = accountInfo
     LogFloaty.pushLog('准备切换账号为：' + account)
@@ -61,6 +62,7 @@ if (config.accounts && config.accounts.length > 1) {
     engines.execScriptFile(source, { path: source.substring(0, source.lastIndexOf('/')), arguments: { executeByAccountChanger: true, executorSource: engines.myEngine().getSource() + '', targetSendName: targetSendName } })
     commonFunctions.commonDelay(2.5, '执行能量雨[', true, true)
     if (config.watering_main_account && config.watering_main_at === 'rain' && account !== config.main_account) {
+      LogFloaty.pushLog('切换到小号浇水')
       if (openFriendHome()) {
         doWaterFriend()
       }
