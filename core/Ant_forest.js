@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-29 14:01:04
+ * @Last Modified time: 2025-07-08 23:52:07
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -545,17 +545,29 @@ function Ant_forest () {
   }
 
   function enterFriendList () {
+    // 测试点，部分用户反馈无法获取到控件了，尝试OCR识别
+    let test = false
     let limit = 5
     do {
       randomScrollDown()
-    } while (--limit > 0 && !_widgetUtils.widgetChecking(_config.enter_friend_list_ui_content || '.*查看更多好友.*', { algorithm: 'PDFS', timeoutSetting: 1000 }))
+    } while (--limit > 0 && (test || !_widgetUtils.widgetChecking(_config.enter_friend_list_ui_content || '.*查看更多好友.*', { algorithm: 'PDFS', timeoutSetting: 1000 })))
     sleep(500)
     let moreFriends = _widgetUtils.widgetGetOne(_config.enter_friend_list_ui_content || '.*查看更多好友.*')
-    if (moreFriends) {
+    if (moreFriends && !test) {
       moreFriends.click()
       sleep(1000)
       return true
     } else {
+      if (localOcrUtil.enabled) {
+        warnInfo(['尝试使用 OCR 识别查看更多好友 控件'])
+        let results = localOcrUtil.recognizeWithBounds(commonFunctions.captureScreen(), null, _config.enter_friend_list_ui_content || '.*查看更多好友.*')
+        if (results && results.length > 0) {
+          let targetBd = results[0].bounds
+          automator.click(targetBd.centerX(), targetBd.centerY())
+          sleep(1000)
+          return true
+        }
+      }
       warnInfo(['查找 查看更多好友 控件失败，无法进入排行榜'])
     }
     return false
