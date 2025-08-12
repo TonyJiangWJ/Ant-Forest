@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-18 14:17:09
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-24 10:02:38
+ * @Last Modified time: 2025-08-11 11:51:00
  * @Description: 能量收集和扫描基类，负责通用方法和执行能量球收集
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -962,7 +962,13 @@ const BaseScanner = function () {
     if (this.collect_operated && collectedEnergy === 0 && !obj.recheck) {
       // 没有收集到能量，可能有保护罩，等待1.5秒
       warnInfo(['未收集到能量，可能当前能量值未刷新或者好友使用了保护罩，等待1.5秒'], true)
-      sleep(1500)
+      // 增加冗余校验 可能进入了组队模式 但是进入首页时校验失败
+      let checkGroupMode = _widgetUtils.widgetGetOne('小队能量', 1500)
+      if (checkGroupMode) {
+        warnInfo('检测到当前进入了小队模式 直接返回')
+        this.group_execute_mode = true
+        return this.backToListIfNeeded(false, obj)
+      }
       try {
         // 1.5秒后重新获取能量值
         postGet = _widgetUtils.getYouCollectEnergy() || 0

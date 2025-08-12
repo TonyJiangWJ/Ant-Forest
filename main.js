@@ -1,7 +1,7 @@
 /*
  * @Author: NickHopps
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-06-03 11:38:56
+ * @Last Modified time: 2025-08-01 15:07:10
  * @Description: 蚂蚁森林自动收能量
  */
 console.warn('如遇语法报错，请从README下载最新版的AutoJS，旧版本不维护，不适配')
@@ -124,10 +124,8 @@ try {
 }
 
 logInfo('解锁成功')
-let executeArguments = Object.assign({}, engines.myEngine().execArgv)
-let executeByTimeTask = !!executeArguments.intent
-// 部分设备中参数有脏东西 可能导致JSON序列化异常
-delete executeArguments.intent
+let executeArguments = config.parseExecArgv()
+let executeByTimeTask = !!engines.myEngine().execArgv.intent
 debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
 
 // 定时启动的任务, 将截图权限滞后请求

@@ -174,7 +174,7 @@ function prepareWalker () {
         this.currentWalker = new QuestionWalker()
         return true
       }
-      let stateCheckWidget = widgetUtils.widgetGetOne('追寻踪迹|观看视频|邀请好友得巡护机会', 1500, true)
+      let stateCheckWidget = widgetUtils.widgetGetOne('追寻踪迹|观看视频.*|邀请好友得巡护机会', 1500, true)
       if (stateCheckWidget) {
         let content = stateCheckWidget.content
         WarningFloaty.addRectangle(content, boundsToRegion(stateCheckWidget.target.bounds()))
@@ -300,14 +300,14 @@ function prepareWalker () {
     context.currentState = 'exchange'
     let exchange = widgetUtils.widgetGetOne('兑换巡护机会', 1000)
     if (exchange) {
-      WarningFloaty.addRectangle('兑换巡护机会', exchange.bounds())
+      WarningFloaty.addRectangle('兑换巡护机会', boundsToRegion(exchange.bounds()))
       automator.clickCenter(exchange)
       sleep(1000)
       let exchangeInstantly = widgetUtils.widgetGetOne('立即兑换', 1000)
       if (exchangeInstantly) {
         debugInfo(['点击立即兑换'])
         WarningFloaty.clearAll()
-        WarningFloaty.addRectangle('立即兑换', exchangeInstantly.bounds())
+        WarningFloaty.addRectangle('立即兑换', boundsToRegion(exchangeInstantly.bounds()))
         logFloaty.pushLog('点击立即兑换')
         automator.clickCenter(exchangeInstantly)
         sleep(1000)
@@ -315,7 +315,7 @@ function prepareWalker () {
         let ended = widgetUtils.widgetGetOne('.*(兑换次数已达上限|步数不足).*', 1000)
         if (ended) {
           WarningFloaty.clearAll()
-          WarningFloaty.addRectangle(ended.desc() || ended.text() || '次数不够', ended.bounds())
+          WarningFloaty.addRectangle(ended.desc() || ended.text() || '次数不够', boundsToRegion(ended.bounds()))
           warnInfo(['兑换已达到上限或步数不足'], true)
           logFloaty.pushWarningLog('兑换已达到上限或步数不足')
           context.ended = true
@@ -335,7 +335,7 @@ function prepareWalker () {
   VideoWalker.prototype.doOperate = function (context) {
     context.currentState = 'video'
     sleep(1000)
-    let watchVideo = widgetUtils.widgetGetOne('观看视频', 1000)
+    let watchVideo = widgetUtils.widgetGetOne('观看视频.*', 1000)
     if (watchVideo) {
       WarningFloaty.addRectangle('观看视频', boundsToRegion(watchVideo.bounds()))
       automator.clickCenter(watchVideo)
@@ -365,7 +365,7 @@ function prepareWalker () {
     sleep(1000)
     let target = selector().className('android.widget.Button').filter(node => node.bounds().left < config.device_width * 0.3 && node.bounds().right > 0.8 * config.device_width).findOne(config.timeout_findOne)
     if (target) {
-      WarningFloaty.addRectangle(target.desc() || target.text(), target.bounds())
+      WarningFloaty.addRectangle(target.desc() || target.text(), boundsToRegion(target.bounds()))
       automator.clickCenter(target)
     } else {
       logFloaty.pushLog('查找答案控件失败')

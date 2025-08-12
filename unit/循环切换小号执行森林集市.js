@@ -13,6 +13,7 @@ let logUtils = singletonRequire('LogUtils')
 let NotificationHelper = singletonRequire('Notification')
 let resourceMonitor = require('../lib/ResourceMonitor.js')(runtime, global)
 let { Market } = require('./森林集市/internal.js')
+let storageFactory = singletonRequire('StorageFactory')
 config.not_lingering_float_window = true
 config.targetWateringAmount = 66
 // 注册自动移除运行中任务
@@ -41,6 +42,21 @@ if (!floatyInstance.init()) {
   toast('创建悬浮窗失败')
   exit()
 }
+
+let DAILY_TASK_DONE = "MARKET_EXECUTION"
+storageFactory.initFactoryByKey(DAILY_TASK_DONE, { executed: {} })
+if (config.accounts && config.accounts.length > 1) {
+  // 循环执行签到任务
+  let forExecuteList = config.accounts.filter((accountInfo, idx) => {
+    let { account } = accountInfo
+    return !checkIsExecuted(account)
+  })
+  if (forExecuteList.length == 0) {
+    toastLog('所有账号已经执行完毕，退出执行')
+    exit()
+  }
+}
+
 floatyInstance.enableLog()
 commonFunctions.showCommonDialogAndWait('切换大小号执行森林集市')
 commonFunctions.listenDelayStart()
@@ -50,6 +66,10 @@ let failedCount = 0, failedAccounts = ''
 if (config.accounts && config.accounts.length > 1) {
   config.accounts.forEach((accountInfo, idx) => {
     let { account, accountName } = accountInfo
+    if (checkIsExecuted(account)) {
+      LogFloaty.pushLog('账号：' + account + '已经执行过，跳过')
+      return
+    }
     LogFloaty.pushLog('准备切换账号为：' + account)
     sleep(1000)
     changeAccount(account)
@@ -62,6 +82,8 @@ if (config.accounts && config.accounts.length > 1) {
         LogFloaty.pushErrorLog('森林集市执行失败' + result.errorMsg)
         failedCount++
         failedAccounts += ',' + account
+      } else {
+        setExecuted(account)
       }
       LogFloaty.pushLog('切换下一个账号')
       sleep(500)
@@ -86,3 +108,16 @@ if (config.accounts && config.accounts.length > 1) {
 }
 commonFunctions.minimize(config.package_name)
 exit()
+
+
+
+function setExecuted (currentRunningAccount) {
+  let currentStorage = storageFactory.getValueByKey(DAILY_TASK_DONE)
+  currentStorage.executed[currentRunningAccount] = true
+  storageFactory.updateValueByKey(DAILY_TASK_DONE, currentStorage)
+}
+
+function checkIsExecuted(currentRunningAccount) {
+  let currentStorage = storageFactory.getValueByKey(DAILY_TASK_DONE)
+  return currentStorage.executed[currentRunningAccount]
+}

@@ -75,8 +75,8 @@ if (!config.force_sea_auto_click) {
 
 
 
-let executeArguments = Object.assign({}, engines.myEngine().execArgv)
-let executeByTimeTask = !!executeArguments.intent
+let executeArguments = config.parseExecArgv()
+let executeByTimeTask = !!engines.myEngine().execArgv.intent
 // 部分设备中参数有脏东西 可能导致JSON序列化异常
 delete executeArguments.intent
 if (executeArguments) {
