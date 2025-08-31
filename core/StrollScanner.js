@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-08-21 07:25:26
+ * @Last Modified time: 2025-08-31 17:36:18
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -151,7 +151,7 @@ const StrollScanner = function () {
    */
   this.getFriendName = function () {
     let friendNameGettingRegex = _config.friend_name_getting_regex || '(.*)的蚂蚁森林'
-    let titleContainer = _widgetUtils.alternativeWidget(friendNameGettingRegex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, null, true, null, { algorithm: 'PVDFS' })
+    let titleContainer = _widgetUtils.alternativeWidget(friendNameGettingRegex, _config.stroll_end_ui_content || /找能量共获得.*/, null, true, null, { algorithm: 'PVDFS' })
     if (titleContainer.value === 1) {
       let regex = new RegExp(friendNameGettingRegex)
       if (titleContainer && regex.test(titleContainer.content)) {
@@ -184,7 +184,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
     _config.overwrite('friend_home_check_regex', _config.friend_home_check_regex + '|.*的蚂蚁森林')
   }
   // 未找到好友首页控件 循环等待三次
-  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, null, false, null, { algorithm: 'PVDFS' })) !== 1) {
+  while ((alternativeFriendOrDone = _widgetUtils.alternativeWidget(_config.friend_home_check_regex, _config.stroll_end_ui_content || /找能量共获得.*/, null, false, null, { algorithm: 'PVDFS' })) !== 1) {
     // 找到了结束标志信息 停止逛一逛
     let ended = false
     if (alternativeFriendOrDone === 2) {

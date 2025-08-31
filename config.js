@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-08-31 10:52:00
+ * @Last Modified time: 2025-08-31 17:50:37
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -180,7 +180,8 @@ let default_config = {
   collect_rain_when_stroll: true,
   // 逛一逛结束后重复一遍
   recheck_after_stroll: false,
-  stroll_end_ui_content: '^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$',
+  stroll_end_ui_content: '找能量共获得.*',
+  stroll_end_back_button: '^(返回(我的|蚂蚁)森林>?|去蚂蚁森林.*)$',
   stroll_button_regenerate: true,
   // 每次执行都重新识别逛一逛按钮
   regenerate_stroll_button_every_loop: false,
@@ -237,9 +238,7 @@ let default_config = {
   kimi_api_key: '',
   chatgml_api_key: '',
   // 代码版本
-  code_version: 'v1.5.5.0',
-  // 更新后需要强制执行的标记
-  updated_temp_flag_1550: true,
+  code_version: 'v1.5.5.1',
   notificationId: 133,
   notificationChannelId: 'ant_forest_channel_id',
   notificationChannel: '蚂蚁森林通知',
@@ -249,6 +248,10 @@ let default_config = {
   speed_race_start_x: null,
   speed_race_start_y: null,
 }
+
+// 更新后需要强制执行的标记
+let resetFlag = 'updated_temp_flag_1551'
+default_config[resetFlag] = true
 
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
 let PROJECT_NAME = '蚂蚁森林能量收集'
@@ -273,9 +276,10 @@ config.prepareImageConfig([
 ])
 
 // 重置配置
-config.resetConfigsIfNeeded('updated_temp_flag_1550', [
+config.resetConfigsIfNeeded(resetFlag, [
   'group_mode_info',
-  'home_ui_content'
+  'home_ui_content',
+  'stroll_end_ui_content',
 ]);
 
 // 蚂蚁森林 排行榜校验区域配置
