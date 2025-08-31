@@ -48,10 +48,6 @@ threads.start(function () {
   captureScreenPermit = true
 })
 
-
-let executeArguments = engines.myEngine().execArgv
-debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
-
 importClass(android.graphics.drawable.GradientDrawable)
 importClass(android.graphics.drawable.RippleDrawable)
 importClass(android.content.res.ColorStateList)

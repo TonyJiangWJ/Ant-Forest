@@ -181,6 +181,8 @@ const LogConfig = {
         back_size: '1024',
         async_save_log_file: true,
         console_log_maximum_size: 1500,
+        // 不显示悬浮窗日志
+        do_not_show_floaty_log: true,
       }
     }
   },
@@ -202,6 +204,8 @@ const LogConfig = {
     <van-cell-group>
       <tip-block v-if="!configs.is_pro">控制台保留的日志行数，避免运行时间长后保留太多的无用日志，导致内存浪费</tip-block>
       <number-field v-if="!configs.is_pro" v-model="configs.console_log_maximum_size" label="控制台日志最大保留行数" label-width="12em" />
+      <tip-block>日志悬浮窗会有一定的性能影响，如果手机发热卡顿，或者不需要显示，可以选择开启隐藏日志悬浮窗</tip-block>
+      <switch-cell title="是否隐藏日志悬浮窗" v-model="configs.do_not_show_floaty_log" />
       <switch-cell title="是否显示debug日志" v-model="configs.show_debug_log" />
       <switch-cell title="是否显示脚本引擎id" v-model="configs.show_engine_id" />
       <switch-cell title="是否保存日志到文件" v-model="configs.save_log_file" />
@@ -318,7 +322,8 @@ const AdvanceCommonConfig = {
       <template v-if="configs.useCustomScrollDown">
         <number-field v-model="configs.bottomHeight" label="模拟底部起始高度" label-width="8em" />
       </template>
-      <switch-cell title="是否自动授权截图权限" v-model="configs.request_capture_permission" />
+      <tip-block>建议通过ADB授权自动获取截图权限，具体见常见问题，特别是高版本Android需要授权单个应用，目前没有做适配</tip-block>
+      <switch-cell title="是否通过无障碍自动授权截图权限" title-style="width: 10em;flex:2;" v-model="configs.request_capture_permission" />
       <van-field v-if="configs.request_capture_permission" v-model="configs.capture_permission_button" label="确定按钮文本" type="text" placeholder="请输入确定按钮文本" input-align="right" />
       <tip-block>偶尔通过captureScreen获取截图需要等待很久，或者一直阻塞无法进行下一步操作，建议开启异步等待，然后设置截图等待时间</tip-block>
       <switch-cell title="是否异步等待截图" v-model="configs.async_waiting_capture" />
@@ -400,7 +405,7 @@ const SkipPackageConfig = {
     </van-divider>
     <van-cell-group>
       <switch-cell title="当前台白名单跳过次数过多时提醒" label="当白名单跳过3次之后会toast提醒，按音量下可以直接执行" title-style="width: 12em;flex:2;" v-model="configs.warn_skipped_too_much" />
-      <switch-cell v-if="configs.warn_skipped_too_much" title="是否无视前台包名" title-style="width: 10em;flex:2;" label="默认情况下包名相同且重复多次时才提醒，开启后连续白名单跳过三次即提醒" v-model="configs.warn_skipped_ignore_package" />
+      <switch-cell v-if="configs.warn_skipped_too_much" title="是否无视前台包名" title-style="width: 10em;flex:2;" label="默认情况下包名相同且重复多次时才提醒，开启后连续白名单跳过三次即提醒（左滑可删除）" v-model="configs.warn_skipped_ignore_package" />
       <div style="min-height:10rem;overflow:scroll;padding:1rem;background:#f1f1f1;">
         <van-swipe-cell v-for="(skip,idx) in configs.skip_running_packages" :key="skip.packageName" stop-propagation>
           <van-cell :title="skip.appName" :label="skip.packageName" />

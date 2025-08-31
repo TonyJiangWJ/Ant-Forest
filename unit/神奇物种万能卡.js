@@ -58,10 +58,8 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
 }
 
 const _package_name = 'com.eg.android.AlipayGphone'
-let executeArguments = Object.assign({}, engines.myEngine().execArgv)
-let executeByTimeTask = !!executeArguments.intent
-// 部分设备中参数有脏东西 可能导致JSON序列化异常
-delete executeArguments.intent
+let executeArguments = config.parseExecArgv()
+let executeByTimeTask = !!engines.myEngine().execArgv.intent
 if (executeArguments) {
   debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
 }

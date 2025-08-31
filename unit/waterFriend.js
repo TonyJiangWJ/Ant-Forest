@@ -78,7 +78,7 @@ function openFriendHome (inPersonalHome) {
 }
 
 function openFriendHomeByWidget () {
-  let target = widgetUtils.widgetGetOne(config.main_account_username)
+  let target = widgetUtils.widgetGetOne(config.main_account_username + '.*')
   if (target) {
     target.click()
   } else {

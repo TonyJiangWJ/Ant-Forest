@@ -6,7 +6,7 @@ const CONFIG_LABELS = {
   accountManage: {
     enable_multi_account: '是否启用多账号切换',
     main_account: '当前主账号',
-    watering_main_account: '小号收集完成后对大号浇水',
+    watering_main_account: '循环小号执行时对大号浇水',
     to_main_by_user_id: '使用userid跳转大号',
     main_userid: '主账号USERID',
     watering_main_at: '大号浇水时机',

@@ -124,6 +124,8 @@ let commonDefaultConfig = {
   show_summary_notice: true,
   // 使用手势杀死APP
   killAppWithGesture: true,
+  // 不显示悬浮窗日志，避免性能消耗
+  do_not_show_floaty_log: false,
 }
 
 
@@ -308,6 +310,24 @@ module.exports = (default_config, options) => {
         engines.execScriptFile(files.cwd() + "/可视化配置.js", { path: files.cwd() })
       }, 3000)
     }
+  }
+
+  /**
+   * 深拷贝解析引擎执行参数 对engines.myEngine().execArgv进行序列化和反序列化处理，自动将Boolean转换成基本类型
+   * 主要作用，避免engines.myEngine().execArgv传参时类型不匹配导致的歧义
+   * @returns {object} 解析后的结果，移除了intent字段值，如需要则需要通过engines.myEngine().execArgv.intent获取
+   */
+  config.parseExecArgv = function () {
+    // 浅拷贝执行入参对象
+    let executeArguments = Object.assign({}, engines.myEngine().execArgv)
+    // 部分设备中intent参数有脏东西 可能导致JSON序列化异常
+    delete executeArguments.intent
+    if (Object.keys(executeArguments).length > 0) {
+      console.log(`启动参数：${JSON.stringify(executeArguments)}`)
+    }
+    // 深拷贝，进行简单的JSON序列化和反序列化处理，特别针对Java中的Boolean对象，将其转换成js中的基本类型
+    // 当然这一步其实有点浪费性能，但是如果按字段判断的话会有额外的嵌套处理
+    return JSON.parse(JSON.stringify(executeArguments))
   }
 
   config.convertDefaultData = convertDefaultData

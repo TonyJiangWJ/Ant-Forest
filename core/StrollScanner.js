@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-04-28 19:18:43
+ * @Last Modified time: 2025-08-21 07:25:26
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -190,6 +190,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
     if (alternativeFriendOrDone === 2) {
       debugInfo('逛一逛啥也没有，不再瞎逛')
       ended = true
+      this.checkDailyReward()
     }
     if (this.checkAndCollectRain()) {
       ended = true
@@ -267,7 +268,8 @@ StrollScanner.prototype.collectTargetFriend = function () {
   }
   this.saveButtonRegionIfNeeded()
   if (this.first_check) {
-    _widgetUtils.checkAndUseDuplicateCard()
+    // 当前在好友界面已经无法使用双击卡了，只能选择赠送
+    // _widgetUtils.checkAndUseDuplicateCard()
     this.first_check = false
   }
   let result = this.doCollectTargetFriend(obj)
@@ -280,10 +282,48 @@ StrollScanner.prototype.collectTargetFriend = function () {
   return result
 }
 
+StrollScanner.prototype.checkDailyReward = function () {
+  if (_commonFunctions.checkStrollRewardCollected()) {
+    return
+  }
+  if (localOcrUtil.enabled) {
+    let screen = _commonFunctions.checkCaptureScreenPermission()
+    if (!screen) {
+      errorInfo(['获取截图失败 无法校验每日奖励'])
+      return
+    }
+    let collectPoint = null, collect = null
+    let rewardBtn = localOcrUtil.recognizeWithBounds(screen, null, '领取')
+    if (rewardBtn && rewardBtn.length > 0) {
+      collect = rewardBtn[0].bounds
+      debugInfo('OCR找到了 奖励')
+    }
+    if (collect) {
+      collectPoint = {
+        centerX: collect.centerX(),
+        centerY: collect.centerY()
+      }
+    }
+
+    if (collectPoint) {
+      automator.click(collectPoint.centerX, collectPoint.centerY)
+      _commonFunctions.setStrollRewardCollected()
+    }
+  }
+}
+
+
 StrollScanner.prototype.checkAndCollectRain = function () {
   let target = null
   auto.clearCache && auto.clearCache()
   if ((target = _widgetUtils.widgetGetOne(_config.rain_entry_content || '.*能量雨.*', 500, true)) != null) {
+    // 首页也有能量雨标志，需要确认是否还停留在首页
+    if (_widgetUtils.widgetCheck(_config.home_ui_content, 500)) {
+      warnInfo('找到能量雨开始标志，但是当前依旧在个人首页')
+      // 重新生成逛一逛按钮区域
+      config._regenerate_stroll_button = true
+      return false
+    }
     if (!_config.collect_rain_when_stroll) {
       debugInfo('找到能量雨开始标志，但是不需要执行能量雨')
       return true

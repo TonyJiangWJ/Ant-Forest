@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-06-03 11:44:46
+ * @Last Modified time: 2025-08-31 10:36:10
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -84,7 +84,7 @@ let default_config = {
   force_group_mode: false,
   change_to_group: '切换为个人版',
   change_to_personal: '切换为组队版',
-  group_mode_info: '小队能量.*|排名奖',
+  group_mode_info: '.*排名奖.*|切换为组队版',
   rain_entry_content: '.*能量雨.*',
   rain_start_content: '再来一次|立即开启',
   rain_end_content: '.*去蚂蚁森林看看.*',
@@ -93,10 +93,15 @@ let default_config = {
   rain_click_top: 400,
   rain_click_gap: null,
   rain_press_duration: 7,
+  // 验证时是否暂停脚本
+  suspend_rain_while_verify: false,
+  suspend_rain_timeout: 120,
+  alert_by_tts_while_verify: false,
+  alert_by_tts_while_verify_content: '检测到当前存在人机验证，请手动处理验证',
   suspend_on_alarm_clock: false,
   suspend_alarm_content: '滑动关闭闹钟',
   delay_start_pay_code_content: '向商家付(钱|款)',
-  home_ui_content: '森林新消息|最新动态|证书|小队能量.*',
+  home_ui_content: '森林新消息|最新动态|证书|切换为.*',
   friend_home_check_regex: '(你收取TA|TA收取你).*|.*的蚂蚁森林',
   friend_name_getting_regex: '(.*)的蚂蚁森林',
   magic_species_text: '点击发现|抽取今日|点击开启',
@@ -207,8 +212,6 @@ let default_config = {
   auto_start_rain: false,
   // 邀请好友获取巡护机会
   invite_friends_gaint_chance: false,
-  // 更新后需要强制执行的标记
-  updated_temp_flag_1534: true,
   // 多账号管理
   accounts: [],
   main_account: '',
@@ -226,14 +229,25 @@ let default_config = {
   use_duplicate_card: false,
   // 双击卡使用时间段
   duplicate_card_using_time_ranges: '00:00-00:10',
+  // 是否使用倍增卡
+  use_multiplier_card: false,
+  // 倍增卡使用时段
+  multiplier_card_using_time_ranges: '00:00-00:10',
   ai_type: 'kimi',// 可选 kimi、chatgml
   kimi_api_key: '',
   chatgml_api_key: '',
   // 代码版本
-  code_version: 'v1.5.4.6',
+  code_version: 'v1.5.4.7',
+  // 更新后需要强制执行的标记
+  updated_temp_flag_1547: true,
   notificationId: 133,
   notificationChannelId: 'ant_forest_channel_id',
   notificationChannel: '蚂蚁森林通知',
+  // 拼手速相关配置
+  speed_race_gap_horizontal: null,
+  speed_race_gap_vertical: null,
+  speed_race_start_x: null,
+  speed_race_start_y: null,
 }
 
 let CONFIG_STORAGE_NAME = 'ant_forest_config_fork_version'
@@ -259,21 +273,22 @@ config.prepareImageConfig([
 ])
 
 // 重置配置
-config.resetConfigsIfNeeded('updated_temp_flag_1534', [
-  'home_ui_content',
+config.resetConfigsIfNeeded('updated_temp_flag_1547', [
+  'group_mode_info',
+  'home_ui_content'
 ]);
 
 // 蚂蚁森林 排行榜校验区域配置
 (() => {
   if (config.device_height > 10 && config.device_width > 10) {
     if (config.bottom_check_top > config.device_height || config.bottom_check_top <= 0) {
-      config.override('bottom_check_top', config.device_height - 50)
-      config.override('bottom_check_width', config.device_width - 50)
+      config.overwrite('bottom_check_top', config.device_height - 50)
+      config.overwrite('bottom_check_width', config.device_width - 50)
     }
 
     if (config.rank_check_left + config.rank_check_width > config.device_width) {
-      config.override('rank_check_left', 100)
-      config.override('rank_check_width', 100)
+      config.overwrite('rank_check_left', 100)
+      config.overwrite('rank_check_width', 100)
     }
   }
 })()

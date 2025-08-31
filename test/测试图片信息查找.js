@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-08-17 22:14:39
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2022-08-10 23:48:48
+ * @Last Modified time: 2025-08-24 10:32:03
  * @Description: 
  */
 importClass(java.util.concurrent.LinkedBlockingQueue)
@@ -161,7 +161,7 @@ window.canvas.on("draw", function (canvas) {
 
     if (passwindow > 1000) {
       startTime = new Date().getTime()
-      console.verbose('关闭倒计时：' + countdown.toFixed(2))
+      // console.verbose('关闭倒计时：' + countdown.toFixed(2))
     }
     if (!capturing) {
       displayRegionIfExists(strollRegion, '逛一逛', canvas, paint)

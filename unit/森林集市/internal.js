@@ -34,6 +34,7 @@ function Market () {
       alipayUnlocker.unlockAlipay()
     }
     if (widgetUtils.widgetWaiting('绿色商品', null)) {
+      checkDialogAndClose()
       return true
     }
     warnInfo(['无法校验 绿色商品 控件，可能没有正确打开'], true)
@@ -64,7 +65,7 @@ function Market () {
 
   this.doHangOut = function (retry) {
 
-    let tryLimit = 10
+    let tryLimit = 15
     let taskRunner = new TaskRunner()
     while (tryLimit-- > 0) {
       if (this.isDone()) {
@@ -95,7 +96,8 @@ function Market () {
       logFloaty.pushLog('检查是否有关闭弹窗按钮')
       let centerCloseBtn = selector().clickable().filter(node => {
         let bd = node.bounds()
-        return bd.width() / bd.height() == 1 && bd.centerX() == config.device_width / 2 && bd.centerY() > config.device_height / 2
+        let rate = bd.width() / bd.height()
+        return rate >= 0.98 && rate <= 1.02 && bd.centerX() == config.device_width / 2 && bd.centerY() > config.device_height / 2
       }).findOne(2000)
       if (centerCloseBtn) {
         logFloaty.pushLog('找到关闭弹窗按钮')
@@ -103,6 +105,7 @@ function Market () {
       }
     }
     logFloaty.pushWarningLog('未能找到任务完结按钮，可能界面有阻断')
+    errorMsg = '执行次数超过指定限制可能存在页面阻断'
     return false
   }
 
@@ -244,6 +247,7 @@ function RewardExecutor () {
 function TaskRunner () {
   this.executors = [new ClickExecutor(), new BrowserExecutor(), new RewardExecutor()]
   this.run = function () {
+    checkDialogAndClose()
     for (let executor of this.executors) {
       if (executor.check()) {
         executor.execute()
@@ -255,9 +259,10 @@ function TaskRunner () {
 }
 
 function clickRewardIfNeeded () {
+  sleep(1000)
   let collectReword = widgetUtils.widgetGetOne('领取奖励', 1000)
   if (collectReword) {
-    collectReword.click()
+    automator.clickCenter(collectReword)
     logFloaty.pushLog('点击了领取奖励，等待界面加载, 5s')
     let limit = 5
     while (limit-- > 0) {
@@ -288,4 +293,21 @@ function checkIfInVerify () {
     }
   }
   return false
+}
+
+function checkDialogAndClose() {
+  logFloaty.pushLog('检查是否存在关闭弹窗按钮')
+  let targetCloseBtn = selector().filter(node => {
+    if (!node || !node.bounds())  {
+      return false
+    }
+    let bd = node.bounds()
+    let rate = bd.width() / bd.height()
+    return rate >= 0.98 && rate <= 1.02 && bd.centerX() > config.device_width * 0.49 && bd.centerX() <= config.device_width * 0.51 && bd.centerY() > config.device_height / 2
+  }).findOne(1000)
+  if (targetCloseBtn) {
+    logFloaty.pushLog('找到关闭弹窗按钮')
+    automator.clickCenter(targetCloseBtn)
+    sleep(1000)
+  }
 }

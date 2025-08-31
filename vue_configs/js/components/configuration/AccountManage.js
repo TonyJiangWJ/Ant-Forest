@@ -208,7 +208,7 @@ const AlipayAccountManage = {
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addAccount">增加</van-button>
     </van-divider>
     <tip-block>多账号管理，用于自动执行小号收集、浇水、能量雨、同步设备步数等</tip-block>
-    <tip-block>配置账号切换界面的脱敏账号和昵称并勾选一个主账号</tip-block>
+    <tip-block>配置账号切换界面的脱敏账号和昵称并勾选一个主账号（左滑可修改或删除）</tip-block>
     <van-radio-group v-model="configs.main_account">
       <van-cell-group>
         <div style="overflow:scroll;padding:1rem;background:#f1f1f1;">

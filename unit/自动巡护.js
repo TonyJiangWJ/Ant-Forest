@@ -174,7 +174,7 @@ function prepareWalker () {
         this.currentWalker = new QuestionWalker()
         return true
       }
-      let stateCheckWidget = widgetUtils.widgetGetOne('追寻踪迹|观看视频|邀请好友得巡护机会', 1500, true)
+      let stateCheckWidget = widgetUtils.widgetGetOne('追寻踪迹|观看视频.*|邀请好友得巡护机会', 1500, true)
       if (stateCheckWidget) {
         let content = stateCheckWidget.content
         WarningFloaty.addRectangle(content, boundsToRegion(stateCheckWidget.target.bounds()))
@@ -201,16 +201,22 @@ function prepareWalker () {
         let content = checkWidget.content
         if (content == '兑换巡护机会') {
           logFloaty.pushLog('切换为兑换机会')
+          this.currentRemainTime = ''
           this.currentWalker = new ExchangeWalker()
           return true
         }
         WarningFloaty.addRectangle('开始巡护', boundsToRegion(checkWidget.target.bounds()))
         logFloaty.pushLog('切换为初始状态')
+        this.currentRemainTime = checkWidget.content
         this.currentWalker = new InitWalker()
         return true
       }
       logFloaty.pushWarningLog('无法确定当前状态，退出执行')
       warnInfo(['无法确定当前状态，退出执行'], true)
+      if (/开始巡护.*[1-9]/.test(this.currentRemainTime)) {
+        logFloaty.pushWarningLog('检测到当前还存在巡护次数，设置五分钟后重试')
+        commonFunctions.setUpAutoStart(5)
+      }
       return false
     }
   }
@@ -300,14 +306,14 @@ function prepareWalker () {
     context.currentState = 'exchange'
     let exchange = widgetUtils.widgetGetOne('兑换巡护机会', 1000)
     if (exchange) {
-      WarningFloaty.addRectangle('兑换巡护机会', exchange.bounds())
+      WarningFloaty.addRectangle('兑换巡护机会', boundsToRegion(exchange.bounds()))
       automator.clickCenter(exchange)
       sleep(1000)
       let exchangeInstantly = widgetUtils.widgetGetOne('立即兑换', 1000)
       if (exchangeInstantly) {
         debugInfo(['点击立即兑换'])
         WarningFloaty.clearAll()
-        WarningFloaty.addRectangle('立即兑换', exchangeInstantly.bounds())
+        WarningFloaty.addRectangle('立即兑换', boundsToRegion(exchangeInstantly.bounds()))
         logFloaty.pushLog('点击立即兑换')
         automator.clickCenter(exchangeInstantly)
         sleep(1000)
@@ -315,7 +321,7 @@ function prepareWalker () {
         let ended = widgetUtils.widgetGetOne('.*(兑换次数已达上限|步数不足).*', 1000)
         if (ended) {
           WarningFloaty.clearAll()
-          WarningFloaty.addRectangle(ended.desc() || ended.text() || '次数不够', ended.bounds())
+          WarningFloaty.addRectangle(ended.desc() || ended.text() || '次数不够', boundsToRegion(ended.bounds()))
           warnInfo(['兑换已达到上限或步数不足'], true)
           logFloaty.pushWarningLog('兑换已达到上限或步数不足')
           context.ended = true
@@ -335,7 +341,7 @@ function prepareWalker () {
   VideoWalker.prototype.doOperate = function (context) {
     context.currentState = 'video'
     sleep(1000)
-    let watchVideo = widgetUtils.widgetGetOne('观看视频', 1000)
+    let watchVideo = widgetUtils.widgetGetOne('观看视频.*', 1000)
     if (watchVideo) {
       WarningFloaty.addRectangle('观看视频', boundsToRegion(watchVideo.bounds()))
       automator.clickCenter(watchVideo)
@@ -353,6 +359,12 @@ function prepareWalker () {
       while (!widgetUtils.widgetWaiting('.*保护地.*', null, 2000) && --tryTime > 0) {
         automator.back()
       }
+    } else {
+      let tryTime = 3
+      logFloaty.pushWarningLog('未找到观看视频按钮')
+      while (!widgetUtils.widgetWaiting('.*保护地.*', null, 2000) && --tryTime > 0) {
+        automator.back()
+      }
     }
   }
 
@@ -365,8 +377,13 @@ function prepareWalker () {
     sleep(1000)
     let target = selector().className('android.widget.Button').filter(node => node.bounds().left < config.device_width * 0.3 && node.bounds().right > 0.8 * config.device_width).findOne(config.timeout_findOne)
     if (target) {
-      WarningFloaty.addRectangle(target.desc() || target.text(), target.bounds())
-      automator.clickCenter(target)
+      WarningFloaty.addRectangle(target.desc() || target.text(), boundsToRegion(target.bounds()))
+      if (!target.click()) {
+        // 如果无法通过click触发 使用控件位置偏移
+        let regionBounds = target.bounds()
+        // 这该死的控件 和实际有偏差 中心点x 顶点下偏移10像素
+        automator.click(regionBounds.centerX(), regionBounds.top + 10)
+      }
     } else {
       logFloaty.pushLog('查找答案控件失败')
     }

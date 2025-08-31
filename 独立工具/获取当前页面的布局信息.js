@@ -17,23 +17,9 @@ let processShare = singletonRequire('ProcessShare')
 checkAndLoadDex(workpath + '/lib/autojs-common.dex')
 importClass(com.tony.autojs.search.UiObjectTreeBuilder)
 
-let args = engines.myEngine().execArgv
+let args = config.parseExecArgv()
 console.log('来源参数：' + JSON.stringify(args))
 let inspectConfig = args || {}
-
-function checkBooleanValue(value, defaultTrue) {
-  defaultTrue = typeof defaultTrue == 'undefined' ? true : defaultTrue
-  if (typeof value == 'undefined') {
-    return defaultTrue
-  }
-  return value == true
-}
-inspectConfig.save_data_js = checkBooleanValue(inspectConfig.save_data_js)
-inspectConfig.save_img_js = checkBooleanValue(inspectConfig.save_img_js)
-inspectConfig.save_history = checkBooleanValue(inspectConfig.save_history)
-inspectConfig.show_floaty = checkBooleanValue(inspectConfig.show_floaty)
-inspectConfig.capture = checkBooleanValue(inspectConfig.capture)
-inspectConfig.immediate = checkBooleanValue(inspectConfig.immediate)
 
 commonFunctions.registerOnEngineRemoved(function () {
   logUtils.showCostingInfo()

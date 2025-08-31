@@ -40,10 +40,6 @@ if (!commonFunctions.ensureAccessibilityEnabled()) {
   exit()
 }
 
-
-let executeArguments = engines.myEngine().execArgv
-debugInfo(['启动参数：{}', JSON.stringify(executeArguments)])
-
 commonFunctions.listenDelayStart()
 importClass(android.graphics.drawable.GradientDrawable)
 importClass(android.graphics.drawable.RippleDrawable)

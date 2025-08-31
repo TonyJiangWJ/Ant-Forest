@@ -37,7 +37,7 @@ const WhiteListConfig = {
   template: `
   <div>
     <van-divider content-position="left">
-      白名单设置
+      白名单设置（左滑可删除）
       <van-button style="margin-left: 0.4rem" plain hairline type="primary" size="mini" @click="addWhite">增加</van-button>
     </van-divider>
     <tip-block>配置不收取的好友</tip-block>

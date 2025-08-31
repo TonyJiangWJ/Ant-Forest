@@ -16,6 +16,11 @@ const RainConfig = {
         rain_click_top: 300,
         collect_rain_when_stroll: true,
         timeout_rain_find_friend: 3000,
+        // 验证时是否暂停脚本
+        suspend_rain_while_verify: true,
+        suspend_rain_timeout: 120,
+        alert_by_tts_while_verify: true,
+        alert_by_tts_while_verify_content: '检测到当前存在人机验证，请手动处理验证',
       },
       validations: {
         rain_press_duration: VALIDATOR.P_INT,
@@ -36,6 +41,12 @@ const RainConfig = {
     startRainCollect: function () {
       this.saveConfigs()
       $app.invoke('startRainCollect', {})
+    },
+    checkTTS: function () {
+      if (!this.configs.alert_by_tts_while_verify_content) {
+        return
+      }
+      $app.invoke('checkTTS', { content: this.configs.alert_by_tts_while_verify_content })
     },
   },
   mounted () {
@@ -72,6 +83,19 @@ const RainConfig = {
         <template #right-icon><span>毫秒</span></template>
       </number-field>
       <number-field v-model="configs.rain_click_top" label="距离顶部的点击高度" label-width="10em" type="text" placeholder="请输入距离顶部的点击高度" input-align="right" />
+      <switch-cell title="人机验证时是否暂停能量雨脚本" title-style="flex:3;" v-model="configs.suspend_rain_while_verify"/>
+      <template v-if="configs.suspend_rain_while_verify">
+        <number-field v-model="configs.suspend_rain_timeout" label="暂停执行时间" label-width="10em" placeholder="请输入暂停执行时间" input-align="right" >
+          <template #right-icon><span>秒</span></template>
+        </number-field>
+        <switch-cell title="人机验证时是否执行语音提醒" title-style="flex:3;" v-model="configs.alert_by_tts_while_verify"/>
+        <template v-if="configs.alert_by_tts_while_verify">
+          <van-field label="语音提醒内容" v-model="configs.alert_by_tts_while_verify_content" label-width="10em" type="text" placeholder="请输入语音提醒内容" input-align="right" />
+          <div style="display: flex;padding: 1rem;flex-direction: column;justify-content: center;gap: 0.5rem;">
+            <van-button plain hairline type="primary" @click="checkTTS">测试TTS</van-button>
+          </div>
+        </template>
+      </template>
     </van-cell-group>
   </div>
   `
