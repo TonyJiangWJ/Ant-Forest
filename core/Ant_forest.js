@@ -620,12 +620,12 @@ function Ant_forest () {
         }
         trySignUpForMagicSpeciesByStroll()
       }
-      let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
+      let backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_back_button || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
       if (backToForest) {
         if (!backToForest.click()) {
           warnInfo('无障碍点击失败，尝试坐标点击')
           randomScrollDown()
-          backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_ui_content || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
+          backToForest = _widgetUtils.widgetGetOne(_config.stroll_end_back_button || /^返回(我的|蚂蚁)森林>?|去蚂蚁森林.*$/, 1000)
           backToForest && automator.clickCenter(backToForest)
         }
       } else {

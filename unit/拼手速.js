@@ -157,9 +157,9 @@ let clickButtons = new SimpleFloatyButton('clickBalls', [
     return `<vertical padding="1" id="${btn.id}_container"><button id="${btn.id}" text="${btn.text}" textSize="${btn.textSize ? btn.textSize : 12}sp" w="*" h="30" marginTop="5" marginBottom="5" /></vertical>`
   }).join('\n')
     }
-    <seekbar id="zoomX" progress="{{startX}}" max="{{config.device_width/2}}" w="200" h="*"/>
-    <seekbar id="zoomGapH" progress="{{clickGapHorizontal}}" max="{{config.device_width/3}}" w="*" h="*" />
-    <seekbar id="zoomGapV" progress="{{clickGapVertical}}" max="{{config.device_height/5}}"  w="*" h="*" />
+    <seekbar id="zoomX" progress="{{startX}}" max="{{parseInt(config.device_width/2)}}" w="200" h="*"/>
+    <seekbar id="zoomGapH" progress="{{clickGapHorizontal}}" max="{{parseInt(config.device_width/3)}}" w="*" h="*" />
+    <seekbar id="zoomGapV" progress="{{clickGapVertical}}" max="{{parseInt(config.device_height/5)}}"  w="*" h="*" />
     </vertical>
     <vertical h="*" w="40">
       <seekbar id="zoomY" progress="{{startY}}" max="{{config.device_height}}" rotation="90" w="200" h="*" />

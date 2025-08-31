@@ -14,7 +14,8 @@ const WidgetConfigs = {
         friend_home_check_regex: '你收取TA|TA收取你',
         friend_name_getting_regex: '(.*)的蚂蚁森林',
         enter_friend_list_ui_content: '查看更多好友',
-        stroll_end_ui_content: '返回我的森林',
+        stroll_end_ui_content: '找能量共获得.*',
+        stroll_end_back_button: '^(返回(我的|蚂蚁)森林>?|去蚂蚁森林.*)$',
         no_more_ui_content: '没有更多了',
         load_more_ui_content: '查看更多',
         do_watering_button_content: '送给\\s*TA|浇水送祝福',
@@ -67,7 +68,8 @@ const WidgetConfigs = {
     <van-field v-model="configs.friend_name_getting_regex" label="好友名称正则表达式" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
     <van-field v-model="configs.enter_friend_list_ui_content" label="查看更多好友按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
     <tip-block>逛一逛结束按钮影响执行逻辑，请不要随意修改，更不要改成立即开启</tip-block>
-    <van-field v-model="configs.stroll_end_ui_content" label="逛一逛结束返回按钮" label-width="10em" type="text" placeholder="逛一逛结束返回按钮" input-align="right" />
+    <van-field v-model="configs.stroll_end_back_button" label="逛一逛结束返回按钮" label-width="10em" type="text" placeholder="逛一逛结束返回按钮" input-align="right" />
+    <van-field v-model="configs.stroll_end_ui_content" label="逛一逛结束文本信息" label-width="10em" type="text" placeholder="逛一逛结束文本信息" input-align="right" />
     <van-field v-model="configs.friend_load_more_content" label="加载好友动态按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
     <van-field v-model="configs.using_protect_content" label="保护罩使用记录" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
     <van-field v-model="configs.do_watering_button_content" label="确认浇水按钮" label-width="10em" type="text" placeholder="请输入待校验控件文本" input-align="right" />
