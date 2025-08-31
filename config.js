@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-08-31 10:36:10
+ * @Last Modified time: 2025-08-31 10:52:00
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -237,9 +237,9 @@ let default_config = {
   kimi_api_key: '',
   chatgml_api_key: '',
   // 代码版本
-  code_version: 'v1.5.4.7',
+  code_version: 'v1.5.5.0',
   // 更新后需要强制执行的标记
-  updated_temp_flag_1547: true,
+  updated_temp_flag_1550: true,
   notificationId: 133,
   notificationChannelId: 'ant_forest_channel_id',
   notificationChannel: '蚂蚁森林通知',
@@ -273,7 +273,7 @@ config.prepareImageConfig([
 ])
 
 // 重置配置
-config.resetConfigsIfNeeded('updated_temp_flag_1547', [
+config.resetConfigsIfNeeded('updated_temp_flag_1550', [
   'group_mode_info',
   'home_ui_content'
 ]);
