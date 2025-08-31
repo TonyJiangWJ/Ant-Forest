@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2019-12-09 20:42:08
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-08-12 19:48:24
+ * @Last Modified time: 2025-08-31 10:36:10
  * @Description: 
  */
 require('./lib/Runtimes.js')(global)
@@ -212,8 +212,6 @@ let default_config = {
   auto_start_rain: false,
   // 邀请好友获取巡护机会
   invite_friends_gaint_chance: false,
-  // 更新后需要强制执行的标记
-  updated_temp_flag_1534: true,
   // 多账号管理
   accounts: [],
   main_account: '',
@@ -231,11 +229,17 @@ let default_config = {
   use_duplicate_card: false,
   // 双击卡使用时间段
   duplicate_card_using_time_ranges: '00:00-00:10',
+  // 是否使用倍增卡
+  use_multiplier_card: false,
+  // 倍增卡使用时段
+  multiplier_card_using_time_ranges: '00:00-00:10',
   ai_type: 'kimi',// 可选 kimi、chatgml
   kimi_api_key: '',
   chatgml_api_key: '',
   // 代码版本
-  code_version: 'v1.5.4.6',
+  code_version: 'v1.5.4.7',
+  // 更新后需要强制执行的标记
+  updated_temp_flag_1547: true,
   notificationId: 133,
   notificationChannelId: 'ant_forest_channel_id',
   notificationChannel: '蚂蚁森林通知',
@@ -269,21 +273,22 @@ config.prepareImageConfig([
 ])
 
 // 重置配置
-config.resetConfigsIfNeeded('updated_temp_flag_1534', [
-  'home_ui_content',
+config.resetConfigsIfNeeded('updated_temp_flag_1547', [
+  'group_mode_info',
+  'home_ui_content'
 ]);
 
 // 蚂蚁森林 排行榜校验区域配置
 (() => {
   if (config.device_height > 10 && config.device_width > 10) {
     if (config.bottom_check_top > config.device_height || config.bottom_check_top <= 0) {
-      config.override('bottom_check_top', config.device_height - 50)
-      config.override('bottom_check_width', config.device_width - 50)
+      config.overwrite('bottom_check_top', config.device_height - 50)
+      config.overwrite('bottom_check_width', config.device_width - 50)
     }
 
     if (config.rank_check_left + config.rank_check_width > config.device_width) {
-      config.override('rank_check_left', 100)
-      config.override('rank_check_width', 100)
+      config.overwrite('rank_check_left', 100)
+      config.overwrite('rank_check_width', 100)
     }
   }
 })()

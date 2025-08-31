@@ -2,7 +2,7 @@
  * @Author: TonyJiangWJ
  * @Date: 2020-09-07 13:06:32
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-08-01 23:57:48
+ * @Last Modified time: 2025-08-21 07:25:26
  * @Description: 逛一逛收集器
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -190,6 +190,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
     if (alternativeFriendOrDone === 2) {
       debugInfo('逛一逛啥也没有，不再瞎逛')
       ended = true
+      this.checkDailyReward()
     }
     if (this.checkAndCollectRain()) {
       ended = true
@@ -267,7 +268,8 @@ StrollScanner.prototype.collectTargetFriend = function () {
   }
   this.saveButtonRegionIfNeeded()
   if (this.first_check) {
-    _widgetUtils.checkAndUseDuplicateCard()
+    // 当前在好友界面已经无法使用双击卡了，只能选择赠送
+    // _widgetUtils.checkAndUseDuplicateCard()
     this.first_check = false
   }
   let result = this.doCollectTargetFriend(obj)
@@ -279,6 +281,37 @@ StrollScanner.prototype.collectTargetFriend = function () {
   }
   return result
 }
+
+StrollScanner.prototype.checkDailyReward = function () {
+  if (_commonFunctions.checkStrollRewardCollected()) {
+    return
+  }
+  if (localOcrUtil.enabled) {
+    let screen = _commonFunctions.checkCaptureScreenPermission()
+    if (!screen) {
+      errorInfo(['获取截图失败 无法校验每日奖励'])
+      return
+    }
+    let collectPoint = null, collect = null
+    let rewardBtn = localOcrUtil.recognizeWithBounds(screen, null, '领取')
+    if (rewardBtn && rewardBtn.length > 0) {
+      collect = rewardBtn[0].bounds
+      debugInfo('OCR找到了 奖励')
+    }
+    if (collect) {
+      collectPoint = {
+        centerX: collect.centerX(),
+        centerY: collect.centerY()
+      }
+    }
+
+    if (collectPoint) {
+      automator.click(collectPoint.centerX, collectPoint.centerY)
+      _commonFunctions.setStrollRewardCollected()
+    }
+  }
+}
+
 
 StrollScanner.prototype.checkAndCollectRain = function () {
   let target = null

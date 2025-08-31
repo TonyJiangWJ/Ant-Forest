@@ -30,6 +30,7 @@ if (runningSize > 1) {
 
 let { config, storage_name: _storage_name } = require('../config.js')(runtime, global)
 let sRequire = require('../lib/SingletonRequirer.js')(runtime, global)
+let formatDate = require('../lib/DateUtil.js')
 config.save_log_file = false
 config.async_save_log_file = false
 let commonFunction = sRequire('CommonFunction')
@@ -45,6 +46,9 @@ let stop = false
 // 固定通知ID
 const NOTICE_ID = 1111
 
+// --- 新增变量：时间管理 ---
+let suspendStartTime = new Date(); // 记录挂起开始时间
+let countdownEndTime = null;       // 记录倒计时结束时间
 // --- 悬浮窗相关变量 ---
 let floatyBtn = null; // 主按钮悬浮窗
 let waitListMenu = null; // 菜单悬浮窗
@@ -61,9 +65,20 @@ let waitList = []
 // 固定的菜单按钮
 const FIXED_ITEM_LIST = [ // 使用常量
   {
+    color: "#4CAF50", // 绿色，区分时间信息
+    text: "挂起开始时间: " + formatDate(suspendStartTime, 'HH:mm:ss'),
+    name: 'startTime'
+  },
+  {
     color: "#40d2ff",
     text: "当前等待中任务数：0",
     name: 'waitCount'
+  },
+
+  {
+    color: "#FF9800", // 橙色，区分倒计时设置
+    text: "设置倒计时退出",
+    name: 'setCountdown'
   },
   {
     color: "#FF4081",
@@ -76,6 +91,7 @@ const FIXED_ITEM_LIST = [ // 使用常量
     name: 'hide'
   }
 ]
+
 // 缓存上次数据，避免重复更新
 let lastWaitingQueueStr = ''
 let lastDataSource = null
@@ -163,7 +179,6 @@ function createFloatyWindows () {
       startVolumeKeyListener(); // 启动监听以便重新打开
     }
   });
-  // 注意：不再在这里调用 postUiUpdate()，因为它在 ui.post 中调用更安全
 }
 
 // 集中处理悬浮窗关闭逻辑
@@ -260,12 +275,12 @@ function bindFloatyEvents () {
 
           // 可选：添加动画结束监听器，确保最终位置精确
           animator.addListener(new android.animation.AnimatorListenerAdapter({
-              onAnimationEnd: function(animation) {
-                  if (floatyBtn) {
-                      floatyBtn.setPosition(targetEdgeX, floatyBtn.getY()); // 确保最终停在目标位置
-                      // log("Animation ended, final position set.");
-                  }
+            onAnimationEnd: function (animation) {
+              if (floatyBtn) {
+                floatyBtn.setPosition(targetEdgeX, floatyBtn.getY()); // 确保最终停在目标位置
+                // log("Animation ended, final position set.");
               }
+            }
           }));
 
           // 启动动画
@@ -290,6 +305,9 @@ function bindFloatyEvents () {
 function postUiUpdate () {
   // 在UI线程中更新界面 (需要检查悬浮窗是否存在)
   ui.run(function () {
+    if (stop) {
+      return
+    }
     // 只有当悬浮窗存在且准备就绪时才更新UI
     if (floatyBtn && waitListMenu && floatyReady) {
       let countText = waitList.length + '';
@@ -297,15 +315,19 @@ function postUiUpdate () {
       if (floatyBtn.waitCount && floatyBtn.waitCount.getText() !== countText) {
         floatyBtn.waitCount.setText(countText);
       }
-
-      FIXED_ITEM_LIST[0].text = '当前等待中任务数：' + waitList.length; // 更新固定项文本
+      // 更新固定项文本 (开始时间)
+      FIXED_ITEM_LIST[0].text = '挂起开始时间: ' + formatDate(suspendStartTime, 'HH:mm:ss');
+      FIXED_ITEM_LIST[1].text = '当前等待中任务数：' + waitList.length; // 更新固定项文本
 
       // 构建新的数据源并只在变化时更新
       let newDataSource = FIXED_ITEM_LIST.map(item => ({
         text: item.text,
         color: item.color,
         name: item.name
-      })).concat(waitList.map(item => ({
+      }));
+
+      // 添加动态等待任务项
+      newDataSource = newDataSource.concat(waitList.map(item => ({
         text: item,
         color: '#ffc640',
         name: 'task',
@@ -324,6 +346,37 @@ function postUiUpdate () {
 
 // 菜单处理函数
 const menuHandler = {
+  'startTime': (item) => { // 点击开始时间项，可以显示更详细信息或无操作
+    toastLog("挂起开始于: " + formatDate(suspendStartTime));
+  },
+  'setCountdown': (item) => { // 设置倒计时
+    dialogs.rawInput("设置倒计时 (分钟):", "30", (input) => {
+      let minutes = parseInt(input);
+      if (!isNaN(minutes) && minutes > 0) {
+        countdownEndTime = new Date(Date.now() + minutes * 60 * 1000);
+        // 如果设置了倒计时，则添加或更新倒计时显示项
+        if (countdownEndTime) {
+          let now = new Date();
+          let timeLeft = countdownEndTime.getTime() - now.getTime();
+          if (timeLeft > 0) {
+            // 找到 'setCountdown' 的索引，插入在其后
+            let countdownIndex = FIXED_ITEM_LIST.findIndex(item => item.name === 'setCountdown');
+            if (countdownIndex !== -1) {
+              FIXED_ITEM_LIST[countdownIndex].text = "自动退出时间：" + formatDate(countdownEndTime, 'HH:mm:ss')
+              FIXED_ITEM_LIST[countdownIndex].color = "#2196F3"
+              postUiUpdate();
+            }
+          } else {
+            // 时间已到，重置 countdownEndTime (虽然线程会处理退出，但这里也清理一下)
+            countdownEndTime = null;
+          }
+        }
+        postUiUpdate(); // 立即更新UI显示倒计时
+      } else {
+        toastLog("请输入有效的分钟数");
+      }
+    });
+  },
   'exit': (item) => {
     let content = ''
     if (waitList.length > 0) {
@@ -331,7 +384,7 @@ const menuHandler = {
     }
     dialogs.confirm('确定要结束挂起吗?', content, (confirm) => {
       if (confirm) {
-        exit()
+        safeExit()
       }
     })
   },
@@ -476,6 +529,14 @@ createFloatyWindows();
 let updateThread = threads.start(function () {
   while (!stop) {
     try {
+      // --- 新增：检查倒计时是否结束 ---
+      if (countdownEndTime) {
+        let now = new Date();
+        if (now >= countdownEndTime) {
+          safeExit(); // 自动退出脚本
+          return
+        }
+      }
       // 将耗时操作放在线程中执行
       runningQueueDispatcher.renewalRunningTask()
       let waitingQueueStr = runningQueueDispatcher.getStorage().get("waitingQueue") || '[]'
@@ -509,7 +570,7 @@ let updateThread = threads.start(function () {
         postUiUpdate() // 统一更新UI
       }
     } catch (e) {
-      logUtils.errorInfo('更新等待队列时出错:', e)
+      logUtils.errorInfo('更新等待队列时出错:' + e)
     }
     // 优化刷新频率逻辑
     let sleepTime;
@@ -521,6 +582,10 @@ let updateThread = threads.start(function () {
     } else {
       sleepTime = 5000; // 5秒
       loopTime++;
+    }
+    if (countdownEndTime) {
+      let remain = countdownEndTime.getTime() - new Date().getTime()
+      sleepTime = sleepTime > remain ? remain : sleepTime
     }
     sleep(sleepTime);
   }
@@ -540,3 +605,11 @@ events.on('exit', function () {
     // 忽略移除监听器时的错误
   }
 })
+
+// 安全退出 避免ui更新时出错
+function safeExit () {
+  stop = true
+  setTimeout(() => {
+    exit()
+  }, 200)
+}

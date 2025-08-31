@@ -2,7 +2,7 @@
  * @Author: NickHopps
  * @Date: 2019-01-31 22:58:00
  * @Last Modified by: TonyJiangWJ
- * @Last Modified time: 2025-07-08 23:52:07
+ * @Last Modified time: 2025-08-24 11:18:08
  * @Description: 
  */
 let { config: _config, storage_name: _storage_name } = require('../config.js')(runtime, global)
@@ -133,35 +133,32 @@ function Ant_forest () {
    */
   const clearPopup = function () {
     // 合种/添加快捷方式提醒
+    let dispose = threads.disposable()
     threads.start(function () {
-      let floty = idEndsWith('J_pop_treedialog_close').findOne(
+      let floatyClose = idMatches('.*(J_pop_treedialog_close|af-mask-close)').findOne(
         _config.timeout_findOne
       )
-      if (floty) {
-        floty.click()
+      if (floatyClose) {
+        floatyClose.click()
       }
+      dispose.setAndNotify(!!floatyClose)
     })
     threads.start(function () {
-
-      let buttons = className('android.widget.Button')
-        .desc('关闭').findOne(
-          _config.timeout_findOne
-        )
-      if (buttons) {
-        buttons.click()
+      let floatyClose = descMatches('关闭蒙层|开心收下|关闭弹窗').findOne(_config.timeout_findOne)
+      if (floatyClose) {
+        debugInfo(['关闭蒙层：{}', floatyClose.text()||floatyClose.desc()])
+        floatyClose.click()
       }
+      dispose.setAndNotify(!!floatyClose)
     })
     threads.start(function () {
-      let floty = descEndsWith('关闭蒙层').findOne(_config.timeout_findOne)
-      if (floty) {
-        floty.click()
+      floatyClose = textMatches('关闭蒙层|开心收下|关闭弹窗').findOne(_config.timeout_findOne)
+      if (floatyClose) {
+        floatyClose.click()
       }
-      floty = textEndsWith('关闭蒙层').findOne(_config.timeout_findOne)
-      if (floty) {
-        floty.click()
-      }
+      dispose.setAndNotify(!!floatyClose)
     })
-    debugInfo('关闭蒙层成功')
+    debugInfo(['关闭蒙层成功: {}', dispose.blockedGet()])
   }
 
   // 显示文字悬浮窗
@@ -700,7 +697,7 @@ function Ant_forest () {
     logFloaty.pushLog('等待进入神奇物种界面')
     sleep(1000)
     let tryTime = 3, entered = false
-    while (!(entered=_widgetUtils.widgetCheck('.*(你已经发现了|收下|再抽一次|当前图鉴|抽好友卡).*')) && tryTime-- > 0) {
+    while (!(entered = _widgetUtils.widgetCheck('.*(你已经发现了|收下|再抽一次|当前图鉴|抽好友卡).*')) && tryTime-- > 0) {
       logFloaty.pushLog('等待进入神奇物种界面' + tryTime)
       sleep(1000)
     }
@@ -806,7 +803,8 @@ function Ant_forest () {
       if (collect) {
         debugInfo('截图找到了 奖励')
       } else if (localOcrUtil.enabled) {
-        let rewardBtn = localOcrUtil.recognizeWithBounds(screen, null, '奖励')
+        let rewardRegion = [0, screen.height * 0.4, screen.width, screen.height * 0.4]
+        let rewardBtn = localOcrUtil.recognizeWithBounds(screen, rewardRegion, '奖励')
         if (rewardBtn && rewardBtn.length > 0) {
           collect = rewardBtn[0].bounds
           debugInfo('OCR找到了 奖励')

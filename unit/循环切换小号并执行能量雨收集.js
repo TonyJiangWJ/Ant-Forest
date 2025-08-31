@@ -111,4 +111,5 @@ if (config.accounts && config.accounts.length > 1) {
   logUtils.errorInfo(['当前未配置多账号或账号只有一个，不进行切换'], true)
 }
 commonFunctions.minimize()
+commonFunctions.onPostExecution()
 exit()
