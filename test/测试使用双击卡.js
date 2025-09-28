@@ -8,19 +8,30 @@ let widgetUtils = sRequire('WidgetUtils')
 let localOcrUtil = require('../lib/LocalOcrUtil')
 let OpenCvUtil = require('../lib/OpenCvUtil.js')
 let warningFloaty = sRequire('WarningFloaty')
+let floatyInstance = sRequire('FloatyUtil')
+
 if (!commonFunctions.ensureAccessibilityEnabled()) {
   errorInfo('获取无障碍权限失败')
   exit()
 }
 let force_ocr = false
 commonFunctions.requestScreenCaptureOrRestart()
+
+floatyInstance.setFloatyInfo({ x: parseInt(config.device_width / 2.7), y: parseInt(config.device_height / 2) }, ' ', { textSize: 20 })
+let limit = 5
+while (limit > 0) {
+  floatyInstance.setFloatyText('倒计时' + limit-- + '秒')
+  sleep(1000)
+}
+floatyInstance.close()
+
 if (!checkIsUse()) {
   let target = findByGrayBase64()
   if (!target) {
     target = ocrCheckTarget(1)
   }
   if (target) {
-    warningFloaty.addRectangle('用道具', boundsToRegion(target.bounds))
+    warningFloaty.addRectangle('双击卡', boundsToRegion(target.bounds))
     automator.clickRandomRegion(boundsToRegion(target.bounds))
     sleep(500)
     let useConfirm = widgetUtils.widgetGetOne('立即使用')
@@ -55,7 +66,7 @@ function ocrCheckTarget (tryTime) {
   tryTime = tryTime || 1
   let screen = commonFunctions.checkCaptureScreenPermission()
   let recognizeResult = localOcrUtil.recognizeWithBounds(screen,
-    [0, config.device_height * 0.5, config.device_width * 0.5, config.device_height * 0.4], '用道具')
+    [0, config.device_height * 0.5, config.device_width * 0.5, config.device_height * 0.4], '双击卡')
   if (recognizeResult && recognizeResult.length > 0) {
     return recognizeResult[0]
   } else if (tryTime <= 3) {

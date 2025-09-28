@@ -511,7 +511,7 @@ const CollectConfig = {
                 <tip-block>同时建议通过unit下的脚本控制自动定时任务触发的执行，避免高能量区间自动执行却未触发双击卡，或者未能在生效的5分钟之内收取最大数量的能量。</tip-block>
                 <tip-block>脚本并不校验双击卡库存，请在自己双击卡充裕的情况下使用</tip-block>
                 <tip-block>可以对 unit/自动使用双击卡-启用[禁用].js 创建定时任务，用于控制每周不同时间是否触发</tip-block>
-                <tip-block>默认使用找图方式查找 用道具 按钮，找不到时使用OCR查找，但是OCR并不稳定因此请在 查找图片设置 中设置适合自己分辨率的实际图片，确保准确触发</tip-block>
+                <tip-block>默认使用找图方式查找 双击卡 按钮，找不到时使用OCR查找，但是OCR并不稳定因此请在 查找图片设置 中设置适合自己分辨率的实际图片，确保准确触发</tip-block>
               </van-collapse-item>
             </van-collapse>
         </template>

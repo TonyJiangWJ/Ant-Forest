@@ -269,7 +269,7 @@ StrollScanner.prototype.collectTargetFriend = function () {
   this.saveButtonRegionIfNeeded()
   if (this.first_check) {
     // 当前在好友界面已经无法使用双击卡了，只能选择赠送
-    // _widgetUtils.checkAndUseDuplicateCard()
+    _widgetUtils.checkAndUseDuplicateCard()
     this.first_check = false
   }
   let result = this.doCollectTargetFriend(obj)
