@@ -53,6 +53,7 @@ let waterCooperationRegion = null
 let wateringRegion = null
 let rewardRegion = null
 let backpackRegion = null
+let duplicateCardRegion = null
 let rewardForPlantRegion = null
 let testRegion = null
 let running = true, capturing = true
@@ -107,6 +108,9 @@ threads.start(function () {
       })
       imageFinderThreadPool.execute(function () {
         backpackRegion = getRegionByImg(screen, config.image_config.backpack_icon, '背包')
+      })
+      imageFinderThreadPool.execute(function () {
+        duplicateCardRegion = getRegionByImg(screen, config.image_config.use_item, '双击卡')
       })
       imageFinderThreadPool.execute(function () {
         rewardForPlantRegion = getRegionByImg(screen, config.image_config.reward_for_plant, '种树奖励')
@@ -169,6 +173,7 @@ window.canvas.on("draw", function (canvas) {
       displayRegionIfExists(wateringRegion, '浇水', canvas, paint)
       displayRegionIfExists(rewardRegion, '奖励', canvas, paint)
       displayRegionIfExists(backpackRegion, '背包', canvas, paint)
+      displayRegionIfExists(duplicateCardRegion, '双击卡', canvas, paint)
       displayRegionIfExists(rewardForPlantRegion, '种树奖励', canvas, paint)
       displayRegionIfExists(testRegion, '测试图片', canvas, paint)
     }
