@@ -538,7 +538,7 @@ let updateThread = threads.start(function () {
         }
       }
       // 将耗时操作放在线程中执行
-      runningQueueDispatcher.renewalRunningTask()
+      runningQueueDispatcher.renewalRunningTask(null, null, true)
       let waitingQueueStr = runningQueueDispatcher.getStorage().get("waitingQueue") || '[]'
       // 只有数据发生变化时才处理
       if (waitingQueueStr !== lastWaitingQueueStr) {

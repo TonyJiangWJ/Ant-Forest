@@ -7,7 +7,7 @@ let logFloaty = singletonRequire('LogFloaty')
 let NotificationHelper = singletonRequire('Notification')
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let { Market } = require('./森林集市/internal.js')
-config.buddha_like_mode = false
+
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 config.not_lingering_float_window = true
 logInfo('======加入任务队列，并关闭重复运行的脚本=======')

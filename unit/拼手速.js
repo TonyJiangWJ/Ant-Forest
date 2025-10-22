@@ -26,6 +26,8 @@ let NotificationHelper = sRequire('Notification')
 let LogFloaty = sRequire('LogFloaty')
 let SimpleFloatyButton = require('../lib/FloatyButtonSimple.js')
 let CanvasDrawer = require('../lib/CanvasDrawer')
+let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
+runningQueueDispatcher.addRunningTask()
 if (!FloatyInstance.init()) {
   toastLog('初始化悬浮窗失败')
   exit()
@@ -36,9 +38,7 @@ if (!commonFunction.ensureAccessibilityEnabled()) {
   exit()
 }
 config.show_debug_log = true
-let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
 commonFunction.autoSetUpBangOffset(true)
-runningQueueDispatcher.addRunningTask()
 let offset = config.bang_offset
 
 let SCALE_RATE = config.scaleRate

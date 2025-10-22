@@ -12,7 +12,7 @@ let logFloaty = singletonRequire('LogFloaty')
 let WarningFloaty = singletonRequire('WarningFloaty')
 let localOcrUtil = require('../lib/LocalOcrUtil.js')
 let alipayUnlocker = singletonRequire('AlipayUnlocker')
-config.buddha_like_mode = false
+
 config.not_lingering_float_window = true
 
 // 注册自动移除运行中任务

@@ -34,6 +34,9 @@ let LogFloaty = sRequire('LogFloaty')
 let processShare = sRequire('ProcessShare')
 let storage = storages.create(_storage_name)
 
+let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
+runningQueueDispatcher.addRunningTask()
+
 let TTSUtil = sRequire('TTSUtil')
 let CanvasDrawer = require('../lib/CanvasDrawer.js')
 let FloatyButtonSimple = require('../lib/FloatyButtonSimple.js')
@@ -47,9 +50,7 @@ if (!commonFunction.ensureAccessibilityEnabled()) {
   exit()
 }
 config.show_debug_log = true
-let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
 commonFunction.autoSetUpBangOffset(true)
-runningQueueDispatcher.addRunningTask()
 let offset = config.bang_offset
 let RUNNING_CONTEXT = { success: true }
 let SCALE_RATE = config.scaleRate

@@ -6,7 +6,7 @@ let commonFunctions = singletonRequire('CommonFunction')
 let automator = singletonRequire('Automator')
 let runningQueueDispatcher = singletonRequire('RunningQueueDispatcher')
 let widgetUtils = singletonRequire('WidgetUtils')
-config.buddha_like_mode = false
+
 let { logInfo, errorInfo, warnInfo, debugInfo, infoLog, debugForDev, clearLogFile, flushAllLogs } = singletonRequire('LogUtils')
 config.not_lingering_float_window = true
 logInfo('======加入任务队列，并关闭重复运行的脚本=======')
