@@ -65,9 +65,9 @@ function Market () {
 
   this.doHangOut = function (retry) {
 
-    let tryLimit = 15
+    let tryLimit = 3
     let taskRunner = new TaskRunner()
-    while (tryLimit-- > 0) {
+    while (tryLimit > 0) {
       if (this.isDone()) {
         logFloaty.pushLog('今日任务已经完成了 退出执行')
         sleep(1000)
@@ -75,6 +75,7 @@ function Market () {
       }
       if (!taskRunner.run()) {
         debugInfo(['未能匹配到任何执行器'])
+        tryLimit--
         if (checkIfInVerify()) {
           return false
         }
@@ -104,9 +105,16 @@ function Market () {
         centerCloseBtn.click()
       }
     }
-    logFloaty.pushWarningLog('未能找到任务完结按钮，可能界面有阻断')
-    errorMsg = '执行次数超过指定限制可能存在页面阻断'
-    return false
+    // logFloaty.pushWarningLog('未能找到任务完结按钮，可能界面有阻断')
+    // errorMsg = '执行次数超过指定限制可能存在页面阻断'
+    // return false
+    // 当前版本没有完整的任务完结按钮 只要确定在任务界面 便判定已经全部执行完毕
+    if (widgetUtils.widgetGetOne('下单得能量')) {
+      return true
+    } else {
+      errorMsg = '执行次数超过指定次数，而且当前不在森林集市界面，可能存在页面阻断'
+      return false
+    }
   }
 
   this.exec = function () {
@@ -155,14 +163,14 @@ function Market () {
 
 function BrowserExecutor () {
   this.check = function () {
-    return !!widgetUtils.widgetGetOne('浏览商品\\d+s', 2000)
+    return !!widgetUtils.widgetGetOne('浏览商品\\d+s得能量', 2000)
   }
 
   this.execute = function () {
     logFloaty.pushLog('找到了倒计时控件，开始浏览商品')
     let maxTry = 5
     let breakLoop = false
-    while (maxTry-- > 0 && widgetUtils.widgetGetOne('浏览商品\\d+s', 1000)) {
+    while (maxTry-- > 0 && widgetUtils.widgetGetOne('浏览商品\\d+s得能量', 1000)) {
       // 按顺序点来点去
       ['greenConsumer', 'greenFood', 'furniture', 'greenItem'].forEach(id => {
         if (breakLoop) {
@@ -171,11 +179,18 @@ function BrowserExecutor () {
         let target = widgetUtils.widgetGetById(id, 1000)
         if (target) {
           target.click()
-          sleep(3000)
+          sleep(2000)
         }
         // 滑动一下 避免无法触发倒计时
-        automator.randomScrollDown()
-        breakLoop = clickRewardIfNeeded()
+        let timeout = 15
+        while (timeout-- > 0) {
+          let h = config.device_height
+          automator.randomScrollDown(0.7 * h, 0.8 * h, 0.2 * h, 0.3 * h)
+          if (checkAndClickIfTaskEnd()) {
+            breakLoop = true
+            break
+          }
+        }
       })
     }
   }
@@ -184,13 +199,13 @@ function BrowserExecutor () {
 
 function ClickExecutor () {
   this.check = function () {
-    return !!widgetUtils.widgetGetOne('点击\\d+个商品', 2000)
+    return !!widgetUtils.widgetGetOne('点击', 2000)
   }
 
   this.execute = function () {
     logFloaty.pushLog('点击商品进行浏览')
     let maxTry = 5
-    while (maxTry-- > 0 && widgetUtils.widgetGetOne('点击\\d+个商品', 1000)) {
+    while (maxTry-- > 0 && widgetUtils.widgetGetOne('点击', 1000)) {
       if (!this.clickGoodDetail()) {
         logFloaty.pushWarningLog('点击商品失败，尝试切换到其他tab')
         let greenfood = widgetUtils.widgetGetById('greenFood', 1000)
@@ -200,7 +215,7 @@ function ClickExecutor () {
           this.clickGoodDetail()
         }
       }
-      if (clickRewardIfNeeded()) {
+      if (checkAndClickIfTaskEnd()) {
         break
       }
     }
@@ -225,11 +240,11 @@ function ClickExecutor () {
 function RewardExecutor () {
 
   this.check = function () {
-    return !!widgetUtils.widgetGetOne('领取奖励', 2000)
+    return !!widgetUtils.widgetGetOne('可领取', 2000)
   }
 
   this.execute = function () {
-    let collectReword = widgetUtils.widgetGetOne('领取奖励', 1000)
+    let collectReword = widgetUtils.widgetGetOne('可领取', 1000)
     if (collectReword) {
       collectReword.click()
       logFloaty.pushLog('点击了领取奖励，等待界面加载, 5s')
@@ -258,6 +273,22 @@ function TaskRunner () {
   }
 }
 
+function checkAndClickIfTaskEnd () {
+  let taskEnd = widgetUtils.widgetGetOne('任务已完成.*立即领取', 1000)
+  if (taskEnd) {
+    // 延迟点击
+    sleep(1000)
+    automator.clickCenter(taskEnd)
+    sleep(1000)
+    return true
+  }
+  return false
+}
+
+/**
+ * @deprecated 旧版界面
+ * @returns 
+ */
 function clickRewardIfNeeded () {
   sleep(1000)
   let collectReword = widgetUtils.widgetGetOne('领取奖励', 1000)
@@ -295,10 +326,10 @@ function checkIfInVerify () {
   return false
 }
 
-function checkDialogAndClose() {
+function checkDialogAndClose () {
   logFloaty.pushLog('检查是否存在关闭弹窗按钮')
   let targetCloseBtn = selector().filter(node => {
-    if (!node || !node.bounds())  {
+    if (!node || !node.bounds()) {
       return false
     }
     let bd = node.bounds()

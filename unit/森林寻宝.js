@@ -33,6 +33,9 @@ let LogFloaty = sRequire('LogFloaty')
 let localOcrUtil = require('../lib/LocalOcrUtil.js')
 let SimpleFloatyButton = require('../lib/FloatyButtonSimple.js')
 let unlocker = require('../lib/Unlock.js')
+
+let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
+runningQueueDispatcher.addRunningTask()
 if (!FloatyInstance.init()) {
   toastLog('初始化悬浮窗失败')
   exit()
@@ -43,14 +46,15 @@ if (!commonFunction.ensureAccessibilityEnabled()) {
   exit()
 }
 config.show_debug_log = true
-let runningQueueDispatcher = sRequire('RunningQueueDispatcher')
 commonFunction.autoSetUpBangOffset(true)
-runningQueueDispatcher.addRunningTask()
 
 const BASE_URL = 'https://tonyjiang.hatimi.top/mutual-help'
 const DEVICE_ID = device.getAndroidId()
 const CATEGORY = 'forestTreasureHunt'
-let CONTEXT = {}
+let CONTEXT = {
+  drawExecuteCount: 0,
+  drawEnd: false
+}
 
 let executeArguments = config.parseExecArgv()
 let executeByTimeTask = !!engines.myEngine().execArgv.intent || executeArguments.executeByDispatcher
@@ -125,6 +129,8 @@ let clickButtons = new SimpleFloatyButton('clickBalls', [
     text: '自动抽奖',
     hide: executeByTimeTask,
     onClick: function () {
+      CONTEXT.drawExecuteCount = 0
+      CONTEXT.drawEnd = false
       doDraw()
     }
   },
@@ -397,6 +403,11 @@ function doAutoCollect () {
   while (target && limit-- > 0) {
     target.click()
     sleep(1000)
+    let confirm = widgetUtils.widgetGetOne('确认兑换', 1000)
+    if (confirm) {
+      confirm.click()
+      sleep(1000)
+    }
     target = widgetUtils.widgetGetOne('去兑换', 1000)
   }
 
@@ -434,6 +445,15 @@ function doAutoCollect () {
 }
 
 function doDraw () {
+  if (CONTEXT.drawExecuteCount > 20) {
+    LogFloaty.pushErrorLog('抽奖次数过多，自动退出 可能界面存在干扰')
+    return
+  } else if (CONTEXT.drawEnd) {
+    LogFloaty.pushErrorLog('抽奖已经标记结束 可能界面存在干扰')
+    return
+  }
+  LogFloaty.pushLog('准备开始抽奖')
+  CONTEXT.drawExecuteCount++
   let target = widgetUtils.widgetGetOne('还有')
   if (target) {
     let chance = widgetUtils.subWidgetGetOne(target.parent(), '\\d+', 2000)
@@ -443,7 +463,8 @@ function doDraw () {
         if (chanceText != '0') {
           automator.clickCenter(chance)
           sleep(2000)
-          while (true) {
+          let checkLimit = 5
+          while (checkLimit-- > 0) {
             let results = localOcrUtil.recognizeWithBounds(commonFunction.captureScreen(), null, '再抽1次')
             if (results && results.length > 0) {
               LogFloaty.pushLog('再抽一次')
@@ -451,10 +472,13 @@ function doDraw () {
               automator.click(bounds.centerX(), bounds.centerY())
               sleep(2000)
             } else {
-              LogFloaty.pushLog('未找到再抽一次 抽奖结束')
+              LogFloaty.pushLog('未找到再抽一次 检查是否存在关闭按钮')
               let closeBtn = selector().clickable().className('android.widget.TextView').filter(node => node.bounds().width() == node.bounds().height()).depth(16).findOne(1000)
               if (closeBtn) {
                 closeBtn.click()
+              } else {
+                LogFloaty.pushErrorLog('未找到关闭按钮')
+                CONTEXT.drawEnd = true
               }
               break
             }
