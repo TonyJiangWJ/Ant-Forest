@@ -48,7 +48,7 @@ const NOTICE_ID = 1111
 
 // --- 新增变量：时间管理 ---
 let suspendStartTime = new Date(); // 记录挂起开始时间
-let countdownEndTime = null;       // 记录倒计时结束时间
+let countdownEndTime = new Date(Date.now() + 180 * 60 * 1000); // 默认3小时后自动退出 避免忘记关闭
 // --- 悬浮窗相关变量 ---
 let floatyBtn = null; // 主按钮悬浮窗
 let waitListMenu = null; // 菜单悬浮窗
