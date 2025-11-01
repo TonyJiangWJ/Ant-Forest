@@ -51,6 +51,7 @@ commonFunction.autoSetUpBangOffset(true)
 const BASE_URL = 'https://tonyjiang.hatimi.top/mutual-help'
 const DEVICE_ID = device.getAndroidId()
 const CATEGORY = 'forestTreasureHunt'
+const CATEGORY2 = 'forestTreasureHunt2'
 let CONTEXT = {
   drawExecuteCount: 0,
   drawEnd: false
@@ -98,7 +99,8 @@ let clickButtons = new SimpleFloatyButton('clickBalls', [
     id: 'getMutualCode',
     text: '自动获取并执行任务',
     onClick: function () {
-      getCodeAndOpen()
+      getCodeAndOpen(CATEGORY)
+      getCodeAndOpen(CATEGORY2)
     }
   },
   {
@@ -142,10 +144,12 @@ let clickButtons = new SimpleFloatyButton('clickBalls', [
       let text = dialogs.rawInput('请输入互助码', CONTEXT.recordText || '')
       if (text) {
         if (dialogs.confirm('是否上传这个互助码', text)) {
+          let chose = dialogs.singleChoice('请选择上传类别', ['默认', '活动'], 0)
+          let chooseCategory = chose === 1 ? CATEGORY2 : CATEGORY
           LogFloaty.pushLog('执行上传新的互助码：' + text)
           http.postJson(BASE_URL + '/upload', {
             deviceId: DEVICE_ID,
-            category: CATEGORY,
+            category: chooseCategory,
             text: text
           }, null, (resp, err) => {
             if (err) {
@@ -182,7 +186,8 @@ setInterval(function () { }, 1000)
 
 if (executeByTimeTask) {
   clickButtons.data.clickExecuting = true
-  getCodeAndOpen()
+  getCodeAndOpen(CATEGORY)
+  getCodeAndOpen(CATEGORY2)
   clickButtons.changeButtonStyle('getMutualCode', null, '#FF753A')
   clickButtons.changeButtonText('getMutualCode', '抽奖中...')
   doDraw()
@@ -213,6 +218,7 @@ function checkMutualCodeStatus () {
   http.get(BASE_URL + '/mine?category=' + CATEGORY + '&deviceId=' + DEVICE_ID, {}, (response, err) => {
     if (err) {
       console.error('请求异常', err)
+      checkMutualCodeStatusEvent()
       return
     }
     if (response) {
@@ -225,6 +231,36 @@ function checkMutualCodeStatus () {
           CONTEXT.recordText = record.text
           console.log('互助码：' + record.text)
           LogFloaty.pushLog('当前互助码更新时间：' + record.updatedAt)
+          LogFloaty.pushLog('今天被获取次数：' + record.dailyCount)
+          LogFloaty.pushLog('被报告无效次数：' + record.invalidCount)
+        } else if (data.error) {
+          LogFloaty.pushLog(data.error)
+        }
+      } catch (e) {
+        console.error('执行异常' + e)
+      }
+    }
+    checkMutualCodeStatusEvent()
+  })
+}
+
+function checkMutualCodeStatusEvent() {
+  LogFloaty.pushLog('正在检查当前活动互助码状态，请稍等')
+  http.get(BASE_URL + '/mine?category=' + CATEGORY2 + '&deviceId=' + DEVICE_ID, {}, (response, err) => {
+    if (err) {
+      console.error('请求异常', err)
+      return
+    }
+    if (response) {
+      let responseStr = response.body.string()
+      console.log('获取响应：', responseStr)
+      try {
+        let data = JSON.parse(responseStr)
+        if (data.record) {
+          let record = data.record
+          CONTEXT.recordText = record.text
+          console.log('互助码：' + record.text)
+          LogFloaty.pushLog('当前活动互助码更新时间：' + record.updatedAt)
           LogFloaty.pushLog('今天被获取次数：' + record.dailyCount)
           LogFloaty.pushLog('被报告无效次数：' + record.invalidCount)
         } else if (data.error) {
@@ -274,12 +310,12 @@ function markUsed (text) {
   })
 }
 
-function getCodeAndOpen () {
+function getCodeAndOpen (category) {
   clickButtons.changeButtonStyle('getMutualCode', null, '#FF753A')
   clickButtons.changeButtonText('getMutualCode', '请求中...')
   toastLog('请求服务接口获取中，请稍后')
   let disposable = threads.disposable()
-  http.get(BASE_URL + '/random?category=' + CATEGORY + '&deviceId=' + DEVICE_ID, {}, (res, err) => {
+  http.get(BASE_URL + '/random?category=' + category + '&deviceId=' + DEVICE_ID, {}, (res, err) => {
     if (err) {
       console.error('请求异常', err)
       disposable.setAndNotify({ success: false, erorr: '请求异常' })
@@ -319,7 +355,7 @@ function getCodeAndOpen () {
         markTextInvalid(result.text)
       }
       LogFloaty.pushLog('准备获取下一个互助码')
-      return getCodeAndOpen()
+      return getCodeAndOpen(category)
     }
     // 等待界面加载完毕
     sleep(1000)
@@ -336,7 +372,7 @@ function getCodeAndOpen () {
         if (widgetUtils.widgetWaiting('^助力成功$', 2000)) {
           LogFloaty.pushLog('准备获取下一个互助码')
           markUsed(result.text)
-          return getCodeAndOpen()
+          return getCodeAndOpen(category)
         } else {
           LogFloaty.pushLog('未能找到 助力成功 可能已经到达上限')
           // 自动领取，然后自动执行逛一逛

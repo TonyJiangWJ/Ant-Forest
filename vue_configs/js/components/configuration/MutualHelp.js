@@ -7,6 +7,8 @@ const MutualHelp = {
   data () {
     return {
       category: 'forestTreasureHunt',
+      category2: 'forestTreasureHunt2',
+      currentCategory: "forestTreasureHunt",
       deviceId: '11234',
       text: '',
       getText: '',
@@ -24,6 +26,10 @@ const MutualHelp = {
       doNotAsk: false,
       announcement: '',
       announcedAt: '',
+      categoryName: {
+        'forestTreasureHunt': '默认活动',
+        'forestTreasureHunt2': '不定期活动'
+      }
     }
   },
   methods: {
@@ -32,31 +38,36 @@ const MutualHelp = {
         vant.Toast.fail('请先输入你的互助码')
         return
       }
-      this.uploading = true
-      API.post(this.url + '/upload', {
-        deviceId: this.deviceId,
-        category: this.category,
-        text: this.text
-      }).then(resp => {
-        vant.Toast.success('上传成功')
-        this.getMine()
-        this.uploading = false
-      }).catch(e => {
-        this.uploading = false
-        if (e.response && e.response.data && e.response.data.error) {
-          vant.Toast.fail('上传失败，' + e.response.data.error)
-          return
-        }
-        vant.Toast.fail('上传失败，请稍后重试')
+      this.$dialog.confirm({
+        title: '是否确认在【'+this.categoryName[this.currentCategory]+'】上传这个码',
+        message: '确认的话将在当前活动类别中覆盖并更新过期时间'
+      }).then(() => {
+        this.uploading = true
+        API.post(this.url + '/upload', {
+          deviceId: this.deviceId,
+          category: this.currentCategory,
+          text: this.text
+        }).then(resp => {
+          vant.Toast.success('上传成功')
+          this.getMine()
+          this.uploading = false
+        }).catch(e => {
+          this.uploading = false
+          if (e.response && e.response.data && e.response.data.error) {
+            vant.Toast.fail('上传失败，' + e.response.data.error)
+            return
+          }
+          vant.Toast.fail('上传失败，请稍后重试')
+        })
       })
     },
     confirmUsed () {
       this.$dialog.confirm({
-        title: '是否确认已使用过',
+        title: '是否确认在【'+this.categoryName[this.currentCategory]+'】已使用过这个码',
         message: '确认的话将在1天内不再显示这个好友的互助码'
       }).then(() => {
         API.post(this.url + '/used', {
-          category: this.category,
+          category: this.currentCategory,
           deviceId: this.deviceId,
           text: this.getText,
         }).then(resp => {
@@ -74,7 +85,7 @@ const MutualHelp = {
       API.get(this.url + "/mine", {
         params: {
           deviceId: this.deviceId,
-          category: this.category
+          category: this.currentCategory
         }
       }).then(resp => {
         console.log('get mine:', resp)
@@ -92,7 +103,7 @@ const MutualHelp = {
     getTotalAvailable () {
       API.get(this.url + '/count', {
         params: {
-          category: this.category,
+          category: this.currentCategory,
           deviceId: this.deviceId
         }
       }).then(resp => {
@@ -110,7 +121,7 @@ const MutualHelp = {
       API.get(this.url + '/random', {
         params: {
           deviceId: this.deviceId,
-          category: this.category,
+          category: this.currentCategory,
         }
       }).then(resp => {
 
@@ -147,7 +158,7 @@ const MutualHelp = {
         message: '多人报告无效后，将移除这个好友的互助码，请勿随便提交无效'
       }).then(() => {
         API.post(this.url + '/invalid', {
-          category: this.category,
+          category: this.currentCategory,
           deviceId: this.deviceId,
           text: this.getText,
         }).then(resp => {
@@ -174,7 +185,7 @@ const MutualHelp = {
       }
       API.get(this.url + '/announcement', {
         params: {
-          category: this.category
+          category: this.currentCategory
         },
       }).then(resp => {
         if (resp.announcement) {
@@ -203,6 +214,13 @@ const MutualHelp = {
       if (!this.showAnnouncementDialog) {
         sessionStorage.setItem('doNotShowMutualAnn', true)
       }
+    },
+    currentCategory: function () {
+      if (this.deviceId) {
+        this.getMine()
+        this.getTotalAvailable()
+      }
+      this.getText = ''
     }
   },
   computed: {
@@ -230,6 +248,13 @@ const MutualHelp = {
       <tip-block>处理过的口令码可以在获取后直接通过支付宝打开。如果是https链接的，需要通过浏览器打开获取到互助码，再去支付宝搜索，否则直接进入支付宝会没有响应。</tip-block>
       <tip-block>目前每天可以能帮他人助力6次，如果当前获取的口令无效，请重新获取另一个。</tip-block>
       <tip-block>当前可用总数：{{total}}</tip-block>
+      <tip-block>当前森林寻宝有两个活动，请手动选择一个类别</tip-block>
+      <div style="display:grid;padding:1rem;text-align=center;">
+        <van-radio-group v-model="currentCategory" direction="horizontal">
+          <van-radio name="forestTreasureHunt">默认活动</van-radio>
+          <van-radio name="forestTreasureHunt2">不定期活动</van-radio>
+        </van-radio-group>
+      </div>
       <van-field
         v-model="getText"
         rows="1"
