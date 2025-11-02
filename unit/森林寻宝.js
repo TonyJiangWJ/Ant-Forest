@@ -190,7 +190,17 @@ if (executeByTimeTask) {
   getCodeAndOpen(CATEGORY2)
   clickButtons.changeButtonStyle('getMutualCode', null, '#FF753A')
   clickButtons.changeButtonText('getMutualCode', '抽奖中...')
-  doDraw()
+  let eventTabs = checkHasEvent()
+  if (eventTabs && eventTabs.length > 1) {
+    eventTabs[0].click()
+    LogFloaty.pushLog('切换默认界面自动抽奖')
+    doDraw()
+    LogFloaty.pushLog('切换活动界面自动抽奖')
+    eventTabs[1].click()
+    doDraw()
+  } else {
+    doDraw()
+  }
   clickButtons.changeButtonText('getMutualCode', '获取互助码并打开')
   clickButtons.changeButtonStyle('getMutualCode', null, '#3FBE7B')
   let limit = 5
@@ -244,7 +254,7 @@ function checkMutualCodeStatus () {
   })
 }
 
-function checkMutualCodeStatusEvent() {
+function checkMutualCodeStatusEvent () {
   LogFloaty.pushLog('正在检查当前活动互助码状态，请稍等')
   http.get(BASE_URL + '/mine?category=' + CATEGORY2 + '&deviceId=' + DEVICE_ID, {}, (response, err) => {
     if (err) {
@@ -318,7 +328,7 @@ function getCodeAndOpen (category) {
   http.get(BASE_URL + '/random?category=' + category + '&deviceId=' + DEVICE_ID, {}, (res, err) => {
     if (err) {
       console.error('请求异常', err)
-      disposable.setAndNotify({ success: false, erorr: '请求异常' })
+      disposable.setAndNotify({ success: false, error: '请求异常' })
       return
     }
     if (res.body) {
@@ -331,11 +341,11 @@ function getCodeAndOpen (category) {
           disposable.setAndNotify({ success: true, text: data.record.text })
         } else if (data.error) {
           toastLog(data.error)
-          disposable.setAndNotify({ success: false, erorr: data.error })
+          disposable.setAndNotify({ success: false, error: data.error })
         }
       } catch (e) {
         console.error('执行异常' + e)
-        disposable.setAndNotify({ success: false, erorr: '执行异常，具体见日志' })
+        disposable.setAndNotify({ success: false, error: '执行异常，具体见日志' })
       }
     }
   })
@@ -377,7 +387,7 @@ function getCodeAndOpen (category) {
           LogFloaty.pushLog('未能找到 助力成功 可能已经到达上限')
           // 自动领取，然后自动执行逛一逛
           clickButtons.changeButtonText('getMutualCode', '执行逛一逛...')
-          doAutoCollect()
+          doAutoCollect(category)
         }
       } else {
         LogFloaty.pushLog('未能找到 帮ta助力 可能已经到达上限')
@@ -385,16 +395,26 @@ function getCodeAndOpen (category) {
     }
   } else {
     toastLog('获取互助码失败' + result.error)
+    doAutoCollect(category)
   }
   clickButtons.changeButtonText('getMutualCode', '获取互助码并打开')
   clickButtons.changeButtonStyle('getMutualCode', null, '#3FBE7B')
 }
 
-function doAutoCollect () {
+function doAutoCollect (category) {
 
   LogFloaty.pushLog('准备自动执行森林集市逛一逛')
   let target = widgetUtils.widgetGetOne('去森林市集逛一逛', 1000)
   let limit = 2
+  let tabs = checkHasEvent()
+  if (tabs && tabs.length > 0) {
+    LogFloaty.pushLog('检测到当前存在活动tab，切换回指定的tab继续')
+    if (category == CATEGORY) {
+      tabs[0].click()
+    } else {
+      tabs[1].click()
+    }
+  }
   while (target && limit-- > 0) {
     let container = target.parent().parent()
     target = widgetUtils.subWidgetGetOne(container, '去逛逛', 1000)
@@ -528,4 +548,24 @@ function doDraw () {
   } else {
     LogFloaty.pushLog('未找到抽奖按钮')
   }
+}
+
+function checkHasEvent () {
+  let appContainer = widgetUtils.widgetGetById('app')
+  if (appContainer) {
+    let subContainer = appContainer.child(0)
+    if (subContainer) {
+      try {
+        let eventTabContainer = subContainer.child(1).child(0)
+        if (eventTabContainer && eventTabContainer.childCount() > 1) {
+          LogFloaty.pushLog('子控件符合活动信息判断条件')
+          return [eventTabContainer.child(0), eventTabContainer.child(1)]
+        }
+      } catch (e) {
+        console.error(e)
+        LogFloaty.pushWarningLog('子控件不符合活动信息判断条件')
+      }
+    }
+  }
+  return false
 }
