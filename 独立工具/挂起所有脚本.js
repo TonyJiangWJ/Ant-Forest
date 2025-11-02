@@ -77,7 +77,7 @@ const FIXED_ITEM_LIST = [ // 使用常量
 
   {
     color: "#FF9800", // 橙色，区分倒计时设置
-    text: "设置倒计时退出",
+    text: "自动退出时间：" + formatDate(countdownEndTime, 'HH:mm:ss'),
     name: 'setCountdown'
   },
   {
