@@ -352,11 +352,49 @@ function openMiracleOcean () {
   sleep(1000)
 }
 
+/**
+ * 检测截图是否为纯黑画面
+ * 神奇海洋开启3D模式时使用硬件层渲染，MediaProjection 截屏只能拿到黑色画面，
+ * 此时 YOLO 对着黑图识别必然返回空，脚本会误报「未找到垃圾球」，让人误以为是识别率问题。
+ * @param {Image} img
+ * @returns {boolean} true 表示画面疑似纯黑
+ */
+function isBlackScreen (img) {
+  if (!img) {
+    return true
+  }
+  try {
+    let width = img.width
+    let height = img.height
+    // 九宫格采样，全部接近纯黑才判定为黑屏，避免夜间深色场景误判
+    let samplePoints = [[0.2, 0.2], [0.5, 0.2], [0.8, 0.2], [0.2, 0.5], [0.5, 0.5], [0.8, 0.5], [0.2, 0.8], [0.5, 0.8], [0.8, 0.8]]
+    for (let i = 0; i < samplePoints.length; i++) {
+      let x = parseInt(width * samplePoints[i][0])
+      let y = parseInt(height * samplePoints[i][1])
+      let color = images.pixel(img, x, y)
+      if (colors.red(color) + colors.green(color) + colors.blue(color) > 30) {
+        return false
+      }
+    }
+    return true
+  } catch (e) {
+    // 采样异常时不阻断主流程
+    warnInfo(['黑屏检测异常：{}', e])
+    return false
+  }
+}
+
 function findTrashs (delay, onceOnly, friend) {
   floatyInstance.setFloatyInfo({ x: config.device_width / 2, y: config.device_height / 2 }, '找垃圾球中...')
   sleep(delay || 3000)
   let screen = commonFunctions.checkCaptureScreenPermission()
   if (screen) {
+    if (isBlackScreen(screen)) {
+      errorInfo(['截图内容为纯黑画面，无法进行识别。请检查：1.支付宝-神奇海洋-设置中是否开启了3D模式（3D模式下截屏为黑屏，请在设置中关闭3D模式） 2.截图权限是否正常', true])
+      logFloaty.pushErrorLog('截图为黑屏，疑似3D模式导致，无法识别垃圾球')
+      YoloTrainHelper.saveImage(images.copy(screen, true), '黑屏截图', 'sea_ball_black', config.sea_ball_train_save_data)
+      return false
+    }
     this.temp_img = images.copy(screen, true)
     let findBalls = doFindTrashs(screen)
     debugInfo(['找到的球：{}', JSON.stringify(findBalls)])
